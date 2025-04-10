@@ -6,6 +6,23 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 [Serializable]
+public class SpawnedObjectData
+{
+    public string id;
+    public bool xFlip;
+    public bool yFlip;
+    public bool zFlip;
+    public bool tracePos;
+    public float objectTime;
+    public string sound;
+}
+//[Serializable]
+public class SpawnedObjectDataList
+{
+    public List<SpawnedObjectData> SpawnedObject;
+}
+
+[Serializable]
 public class AnimationsData
 {
     public string id;
@@ -13,6 +30,7 @@ public class AnimationsData
     public string bodyType;
     public bool canFlip;
     public bool canMove;
+    public float moveRatio;
     public string landingAnim;
     public string finishAnim;
 }
@@ -32,12 +50,8 @@ public class AttackData
     public int coefficient;
     public float knockBack;
     public string upperPower;
-    public bool flipScale;
-    public bool tracePos;
     public float colliderTime;
-    public float objectTime;
     public string hitEffectId;
-    public string sound;
 }
 //[Serializable]
 public class AttackDataList
@@ -63,12 +77,14 @@ public class MissileDataList
 
 public class TableManager : SingletonMono<TableManager>
 {
+    public SpawnedObjectDataList spawnedObject;
     public AnimationsDataList animations;
     public AttackDataList attack;
     public MissileDataList missile;
 
     public void Init()
     {
+        spawnedObject = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject, ConstValues.SpawnedObject);
         animations = LoadDataFromJson<AnimationsDataList>(ConstValues.Animations, ConstValues.Animations);
         attack = LoadDataFromJson<AttackDataList>(ConstValues.Attack, ConstValues.Attack);
         missile = LoadDataFromJson<MissileDataList>(ConstValues.Missile, ConstValues.Missile);

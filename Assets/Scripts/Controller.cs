@@ -54,14 +54,17 @@ public class Controller : Singleton<Controller>
 
     private void PlayerControl()
     {
-        if (Input.GetKey(GameManager.Instance.attackKey))
+        if (Input.GetKeyDown(GameManager.Instance.attackKey))
             player.Attack();
-        if (Input.GetKey(GameManager.Instance.jumpKey))
+        if (Input.GetKeyDown(GameManager.Instance.jumpKey))
             player.Jump();
         
+        if (Input.GetKeyDown(GameManager.Instance.dashKey))
+            player.Skill(GameManager.Instance.dashKey);
         if (Input.GetKeyDown(GameManager.Instance.skillKey2))
             player.Skill(GameManager.Instance.skillKey2);
-        
+        if (Input.GetKeyDown(GameManager.Instance.skillKey3))
+            player.Skill(GameManager.Instance.skillKey3);
         if (Input.GetKeyDown(GameManager.Instance.skillKey4))
             player.Skill(GameManager.Instance.skillKey4);
         
@@ -74,6 +77,6 @@ public class Controller : Singleton<Controller>
         if(isLeftMove)
             player.Move(Vector2.left);
         else if (isRightMove)
-            player.Move(Vector2.right);
+            player.Move(Vector2.right); 
     }
 }

@@ -9,6 +9,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Idle = "Idle";
     public const string Move = "Move";
     public const string Jump = "Jump";
+    public const string JumpDown = "JumpDown";
     public const string Attack = "Attack";
     public const string Attack1 = "Attack1";
     public const string Attack2 = "Attack2";
@@ -26,6 +27,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string Wall = "Wall";
     
     public const string Skill = "Skill";
+    public const string Dash = "Dash";
+    public const string DashEffect = "DashEffect";
     
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
@@ -37,11 +40,13 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Ground = "Ground";
     
+    public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";
 
     public const string id = "id";
     public const string bodyType = "bodyType";
 
+    public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";
     public const string BerserkerAttack2 = "Berserker_Attack2";
     public const string BerserkerAttack3 = "Berserker_Attack3";
@@ -50,10 +55,23 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerJumpAttack2Effect = "Berserker_JumpAttack2_Effect";
 
     public const string BerserkerUpperSlash = "Berserker_UpperSlash";
+    public const string BerserkerCrash = "Berserker_Crash";
+    public const string BerserkerCrashSmash = "Berserker_Crash_Smash";
+    public const string BerserkerCrashExplosion = "Berserker_Crash_Explosion";
     public const string BerserkerFireStrike = "Berserker_FireStrike";
     
     public const string RepositoryUI = "UIPool";
     public const string RepositoryPopup = "PopupPool";
     
     public const string Prefab = ".prefab";
+    
+    public static readonly Color WhiteColor = Color.white;
+    public static readonly Color BlackColor = Color.black;
+    public static readonly Color GrayColor = Color.gray;
+    public static readonly Color RedColor = Color.red;
+    public static readonly Color OrangeColor = new Color(1, 0.55f, 0);
+    public static readonly Color YellowColor = Color.yellow;
+    public static readonly Color GreenColor = Color.green;
+    public static readonly Color BlueColor = Color.blue;
+    public static readonly Color CyanColor = Color.cyan;
 }
