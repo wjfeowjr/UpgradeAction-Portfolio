@@ -5,6 +5,15 @@ using UnityEngine;
 public class ConstValues : Singleton<ConstValues>
 {
     public const float BasicGravity = 1.0f;
+    public const float DownSecond = 0.9f;
+    public const float ReboundSecond = 0.05f;
+    public const float ReboundForce = 2.5f;
+    public const float KnockBackTime = 0.1f;
+    public const float GrabbedSpeed = 30.0f;
+    public const float GrabbedBoundX = 8.0f;
+    public const float GrabbedBoundY = 10.0f;
+    
+    public const string Effect = "Effect";
     
     public const string Idle = "Idle";
     public const string Move = "Move";
@@ -32,6 +41,12 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
+    public const string Grabbed = "Grabbed";
+    public const string Airborne = "Airborne";
+    public const string AirborneDown = "AirborneDown";
+    public const string Stun = "Stun";
+    public const string Down = "Down";
+    public const string Damaged = "Damaged";
     
     public const string Landing = "Landing";
     public const string Jumping = "Jumping";

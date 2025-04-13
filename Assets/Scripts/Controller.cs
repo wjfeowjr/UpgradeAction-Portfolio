@@ -68,6 +68,21 @@ public class Controller : Singleton<Controller>
         if (Input.GetKeyDown(GameManager.Instance.skillKey4))
             player.Skill(GameManager.Instance.skillKey4);
         
+        if (Input.GetKeyDown(KeyCode.Q))
+            player.Grabbed(new Vector2(0, -2.0f));
+        
+        if (Input.GetKeyDown(KeyCode.W))
+            player.Airborne(6, 12);
+
+        if (Input.GetKeyDown(KeyCode.E))
+            player.Stun(3.0f);
+        
+        if (Input.GetKeyDown(KeyCode.R))
+        {
+            player.Damaged(0.5f);
+            player.KnockBack(1.0f);
+        }
+
         if(!isLeftMove && !isRightMove)
             player.Stop();
     }

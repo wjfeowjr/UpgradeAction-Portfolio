@@ -31,8 +31,6 @@ public class AnimationsData
     public bool canFlip;
     public bool canMove;
     public float moveRatio;
-    public string landingAnim;
-    public string finishAnim;
 }
 //[Serializable]
 public class AnimationsDataList

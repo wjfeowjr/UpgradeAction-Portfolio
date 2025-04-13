@@ -30,7 +30,7 @@ public class GameManager : Singleton<GameManager>
     protected override void Awake()
     {
         base.Awake();
-        DefaultKeySetting();
+        DefaultKeySetting(); 
         InitManager();
     }
 
@@ -68,7 +68,7 @@ public class GameManager : Singleton<GameManager>
     {
         var model = new UICommonModel
         {
-            skillList = player.GetSkillList(),
+            skillList = player.GetSkillList(), 
         };
         await UIManager.Instance.OpenAsync(eUIType.UI_Skill, model);
     }

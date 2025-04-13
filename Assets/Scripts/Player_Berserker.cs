@@ -26,7 +26,7 @@ public class Player_Berserker : Player
             return;
         }
         
-        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill)
+        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged())
             return;
 
         Debug.Log("공격 시작");
@@ -35,15 +35,15 @@ public class Player_Berserker : Player
         stateCancellation = new CancellationTokenSource();
         bool finishSuccess = true;
         string type = "지상";
-        switch (jumpState)
+        switch (landingState)
         {
             // 지상공격
-            case EJumpState.Landing:
+            case ELandingState.Ground:
                 finishSuccess = await BerserkerLandingAttack();
                 break;
 
             // 점프공격
-            case EJumpState.Jumping:
+            case ELandingState.Air:
                 type = "점프";
                 finishSuccess = await BerserkerJumpAttack();
                 break;
@@ -57,7 +57,7 @@ public class Player_Berserker : Player
             
         Debug.Log($"{type}공격 끝");
         // 동작이 끝날때 반환하는 트리거
-        StateSetting(ParseState(FinishTrigger()), FinishTrigger(), FinishTrigger());
+        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
 
     private async UniTask<bool> BerserkerLandingAttack()
@@ -80,7 +80,7 @@ public class Player_Berserker : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        SpawnObject(ConstValues.BerserkerAttack1, attack1Pos);
+        SpawnAttack(ConstValues.BerserkerAttack1, attack1Pos);
 
         if (await NextAttackDelay(delay2, afterDelay).SuppressCancellationThrow())
             return false;
@@ -95,7 +95,7 @@ public class Player_Berserker : Player
             if (await AttackDelay(delay3).SuppressCancellationThrow())
                 return false;
 
-            SpawnObject(ConstValues.BerserkerAttack2, attack2Pos);
+            SpawnAttack(ConstValues.BerserkerAttack2, attack2Pos);
             if (await NextAttackDelay(delay4, afterDelay).SuppressCancellationThrow())
                 return false;
 
@@ -108,7 +108,7 @@ public class Player_Berserker : Player
                 if (await AttackDelay(delay5).SuppressCancellationThrow())
                     return false;
 
-                SpawnObject(ConstValues.BerserkerAttack3, attack3Pos);
+                SpawnAttack(ConstValues.BerserkerAttack3, attack3Pos);
 
                 if (await AttackDelay(delay6).SuppressCancellationThrow())
                     return false;
@@ -130,11 +130,11 @@ public class Player_Berserker : Player
             if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
                 return false;
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
-            SpawnObject(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
+            SpawnAttack(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
             if (await AttackDelay(jumpAttackDelay2).SuppressCancellationThrow())
                 return false;
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
-            SpawnObject(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
+            SpawnAttack(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
             if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
                 return false;
         }
@@ -151,7 +151,7 @@ public class Player_Berserker : Player
                 return false;
 
             StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2Drop);
-            SpawnObject(ConstValues.BerserkerJumpAttack2, jumpAttack2Pos);
+            SpawnAttack(ConstValues.BerserkerJumpAttack2, jumpAttack2Pos);
             float dropForce = 30.0f;
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
             while (myRigidbody.linearVelocity.y < 0)
@@ -159,9 +159,9 @@ public class Player_Berserker : Player
                 if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                     return false;
             }
-
+            jumpAttackCount = 0;
             StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2End);
-            SpawnObject(ConstValues.BerserkerJumpAttack2Effect, jumpAttack2Pos);
+            SpawnAttack(ConstValues.BerserkerJumpAttack2Effect, jumpAttack2Pos);
             //SpawnSwordWave(attackPos[2]);
             //GameManager.Instance.playerShare.currentJumpAttack = 0;
             if (await AttackDelay(jumpAttackDelay4).SuppressCancellationThrow())
@@ -189,7 +189,8 @@ public class Player_Berserker : Player
             MoveStateSetting(EMoveState.Stopping);
 
         CancelMotion();
-
+        MotionFlip();
+        
         stateCancellation = new CancellationTokenSource();
         bool finishSuccess = true;
         if (skillKey == GameManager.Instance.dashKey)
@@ -218,7 +219,7 @@ public class Player_Berserker : Player
         Debug.Log($"{skillKey} 스킬 끝");
         GravityChange(ConstValues.BasicGravity);
         // 동작이 끝날때 반환하는 트리거
-        StateSetting(ParseState(FinishTrigger()), FinishTrigger(), FinishTrigger());
+        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
 
     private async UniTask<bool> UpperSlash()
@@ -231,7 +232,7 @@ public class Player_Berserker : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        SpawnObject(ConstValues.BerserkerUpperSlash, upperSlashPos);
+        SpawnAttack(ConstValues.BerserkerUpperSlash, upperSlashPos);
         Leap(6, 20, 1.6f);
 
         if (await AttackDelay(delay2).SuppressCancellationThrow())
@@ -246,7 +247,7 @@ public class Player_Berserker : Player
         float delay2 = 0.05f;
         float delay3 = 0.32f;
 
-        SpawnObject(ConstValues.BerserkerFlash, centerPos);
+        SpawnAttack(ConstValues.BerserkerFlash, centerPos);
         StateSetting(ENormalState.Skill, ConstValues.BerserkerCrash, ConstValues.BerserkerCrash);
         
         // 도움닫기
@@ -268,8 +269,8 @@ public class Player_Berserker : Player
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
         
-        SpawnObject(ConstValues.BerserkerCrash, crashPos);
-        SpawnObject(ConstValues.BerserkerCrashExplosion, crashExplosionPos);
+        SpawnAttack(ConstValues.BerserkerCrash, crashPos);
+        SpawnAttack(ConstValues.BerserkerCrashExplosion, crashExplosionPos);
         
         if (await AttackDelay(delay3).SuppressCancellationThrow())
             return false;
@@ -292,7 +293,7 @@ public class Player_Berserker : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
             
-        SpawnObject(ConstValues.BerserkerFireStrike, fireStrikePos);
+        SpawnAttack(ConstValues.BerserkerFireStrike, fireStrikePos);
         //SpawnObject($"{skillId}_Effect", attackPos[4]);
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
