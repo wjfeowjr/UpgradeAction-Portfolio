@@ -1,0 +1,640 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Unity.VisualScripting;
+using UnityEngine;
+using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
+
+
+[Serializable]
+public class MonsterStat
+{
+    public bool standMotion;
+    public float appearDelay;
+    public float firstCoolTime;
+    public float globalCoolTime;
+    public List<Vector2> attackRange = new List<Vector2>();
+    public List<float> coolTime = new List<float>();
+    public List<int> priority = new List<int>();
+    public List<MonsterPattern> pattern = new List<MonsterPattern>();
+    public float traceLength;
+    public bool hovering;
+    public List<float> hoveringHeight = new List<float>();
+    public float hoveringSpeed;
+    public List<float> appearShake = new List<float>();
+    public string appearEffect;
+    public string dyingMiniEffect;
+    public string dyingEffect;
+}
+[Serializable]
+public class MonsterPattern
+{
+    public int pageHp;
+    public List<int> pagePattern = new List<int>();
+}
+
+[Serializable]
+public class MonsterPatternClass
+{
+    public Vector2 attackRange;          // 공격 인지범위
+    public bool playerInAttackRange;     // 플레이어가 공격 인지범위 안에 들어왔는가?
+    public int priority;                 // 패턴의 우선순위
+    public bool canPattern;              // 패턴사용 가능여부
+    public float patternCoolTime;        // 패턴의 쿨타임
+}
+
+public class Monster : Character
+{
+    [SerializeField] protected MonsterStat myStat;  // 내 스텟(변동되어야 함)
+    [SerializeField] public List<MonsterPatternClass> patternInfo; // 스킬의 우선도와 스킬 사용 가능 여부
+
+    [SerializeField] private int currentSkillIdx;
+    [SerializeField] private List<int> patternIdx = new List<int>(); // 선발된 패턴리스트
+    [SerializeField] private int page;
+    [SerializeField] private float curGlobalCoolTime;
+
+    [SerializeField] private Transform hpBarPos;
+    [SerializeField] private TotalBar totalBar;
+    [SerializeField] private SpriteRenderer[] appearMotions;      // 등장 연출 이미지
+    
+    protected override void Awake()
+    {
+        base.Awake();
+        
+    }
+    
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        InitAdditionalStat();
+        SpawnHpBar();
+        // 등장
+        Appear();
+    }
+
+    private void Update()
+    {
+        if (basicStat.hp <= 0)
+            return;
+        
+        Trace();
+        Move();
+        UpdateGlobalCoolTime();
+        CoolTimeReduce();
+        UpdateBuff();
+        PlayerInAttackRangeCheck();
+        PatternCycle();
+    }
+    
+    protected void OnDrawGizmos()
+    {
+        if (patternInfo == null)
+            return;
+        
+        for (var i = 0; i < patternInfo.Count; i++)
+        {
+            var myTransform = transform;
+            var myPosition = myTransform.position;
+
+            Vector3 patternSize = new Vector3(patternInfo[i].attackRange.x * 2, patternInfo[i].attackRange.y * 2, 1);
+
+            switch (i)
+            {
+                case 0:
+                    Gizmos.color = ConstValues.RedColor;
+                    break;
+                case 1:
+                    Gizmos.color = ConstValues.OrangeColor;
+                    break;
+                case 2:
+                    Gizmos.color = ConstValues.YellowColor;
+                    break;
+                case 3:
+                    Gizmos.color = ConstValues.GreenColor;
+                    break;
+                case 4:
+                    Gizmos.color = ConstValues.BlueColor;
+                    break;
+            }
+
+            Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + myBoxCollider.size.y * 0.5f), patternSize);
+        }
+    }
+
+    // 테이블의 값으로 스텟 초기화(기본 스텟)
+    protected override async void InitBasicStat()
+    {
+        await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
+        var myName = name.Split('(')[0];
+        var targetStat = TableManager.Instance.monsterTable.Monster.Find(x => x.id == myName);
+        
+        basicStat = new BasicStat()
+        {
+            id = targetStat.id,
+            name = targetStat.name,
+            bodyType = targetStat.bodyType,
+            hp = targetStat.hp,
+            power = targetStat.power,
+            defence = targetStat.defence,
+            moveSpeed = targetStat.moveSpeed, 
+            attackSpeed = targetStat.attackSpeed,
+            criticalChance = targetStat.criticalChance,
+            criticalDamage = targetStat.criticalDamage,
+            weight = targetStat.weight,
+            stagger = targetStat.stagger,
+            staggerTime = targetStat.staggerTime,
+        };
+        if (string.IsNullOrEmpty(originStat.id))
+        {
+            originStat = new BasicStat()
+            {
+                id = targetStat.id,
+                name = targetStat.name,
+                bodyType = targetStat.bodyType,
+                hp = targetStat.hp,
+                power = targetStat.power,
+                defence = targetStat.defence,
+                moveSpeed = targetStat.moveSpeed,
+                attackSpeed = targetStat.attackSpeed,
+                criticalChance = targetStat.criticalChance,
+                criticalDamage = targetStat.criticalDamage,
+                weight = targetStat.weight,
+                stagger = targetStat.stagger,
+                staggerTime = targetStat.staggerTime,
+            };
+        }
+
+        // 파싱을 다르게 해야 하는 데이터 존재
+        if (string.IsNullOrEmpty(myStat.appearEffect))
+        {
+            myStat = new MonsterStat();
+            myStat.appearDelay = targetStat.appearDelay;
+            myStat.firstCoolTime = targetStat.firstCoolTime;
+            myStat.globalCoolTime = targetStat.globalCoolTime;
+
+            var totalRangeArray = targetStat.attackRange.Split('ㅗ');
+            foreach (var totalRange in totalRangeArray)
+            {
+                var attackRangeArray = totalRange.Split(',');
+                Vector2 attackRange = new Vector2(float.Parse(attackRangeArray[0]), float.Parse(attackRangeArray[1]));
+                myStat.attackRange.Add(attackRange);
+            }
+
+            var coolTimeArray = targetStat.coolTime.Split(',');
+            foreach (var coolTime in coolTimeArray)
+                myStat.coolTime.Add(float.Parse(coolTime));
+            
+            var priorityArray = targetStat.priority.Split(',');
+            foreach (var priority in priorityArray)
+                myStat.priority.Add(int.Parse(priority));
+
+            var pageHpArray = targetStat.pageHp.Split(',');
+            var pagePatternArray = targetStat.pagePattern.Split('ㅗ');
+            for (var i = 0; i < pagePatternArray.Length; i++)
+            {
+                MonsterPattern monsterPattern = new MonsterPattern();
+                var patternArray = pagePatternArray[i].Split(',');
+                var pagePatternList = new List<int>();
+                foreach (var pattern in patternArray)
+                    pagePatternList.Add(int.Parse(pattern));
+
+                monsterPattern.pageHp = int.Parse(pageHpArray[i]);
+                monsterPattern.pagePattern = pagePatternList;
+                myStat.pattern.Add(monsterPattern);
+            }
+            // 패턴 정보
+            if (patternInfo.Count == 0)
+            {
+                patternInfo = new List<MonsterPatternClass>();
+                for (var i = 0; i < myStat.coolTime.Count; i++)
+                {
+                    MonsterPatternClass monsterPatternClass = new MonsterPatternClass();
+                    monsterPatternClass.attackRange = myStat.attackRange[i];
+                    monsterPatternClass.playerInAttackRange = false;
+                    monsterPatternClass.priority = myStat.priority[i];
+                    monsterPatternClass.canPattern = false;
+                    monsterPatternClass.patternCoolTime = 0;
+                    patternInfo.Add(monsterPatternClass);
+                }
+            }
+            else
+            {
+                // 재생성 시 초기화 되는 상태들
+                for (int i = 0; i < myStat.coolTime.Count; i++)
+                {
+                    patternInfo[i].playerInAttackRange = false;
+                    patternInfo[i].canPattern = false;
+                    patternInfo[i].patternCoolTime = 0;
+                }
+            }
+
+            myStat.traceLength = targetStat.traceLength;
+            myStat.hovering = targetStat.hovering;
+            
+            var hoveringHeightArray = targetStat.hoveringHeight.Split(',');
+            foreach (var hoveringHeight in hoveringHeightArray)
+                myStat.hoveringHeight.Add(float.Parse(hoveringHeight));
+            
+            myStat.hoveringSpeed = targetStat.hoveringSpeed;
+            
+            var appearShakeArray = targetStat.appearShake.Split(',');
+            foreach (var appearShake in appearShakeArray)
+                myStat.appearShake.Add(float.Parse(appearShake));
+            
+            myStat.appearEffect = targetStat.appearEffect;
+            myStat.dyingMiniEffect = targetStat.dyingMiniEffect;
+            myStat.dyingEffect = targetStat.dyingEffect;
+        }
+    }
+    private async void InitAdditionalStat()
+    {
+        await UniTask.WaitUntil(() => basicStat.hp > 0);
+        var finalHp = basicStat.hp;
+        basicStat.maxHp = finalHp;
+        basicStat.hp = finalHp;
+        
+        var finalStagger = basicStat.stagger;
+        basicStat.maxStagger = finalStagger;
+        basicStat.stagger = finalStagger;
+    }
+
+    private async void SpawnHpBar()
+    {
+        await UniTask.WaitUntil(() => basicStat.hp > 0);
+        totalBar = SpawnUI(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
+        totalBar.SetCastCharacter(this);
+    }
+
+    protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
+    {
+        normalState = changeNormalState;
+        SetTriggerAnimator(triggerName);
+    }
+    
+    protected override void StateRecovery()
+    {
+        var findDeBuff = buffList.Find(x => x.buffType == EBuffType.Stun);
+        
+        // 스턴상태가 걸려있지 않은 경우
+        if (findDeBuff == null)
+        {
+            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+            MoveStateSetting(EMoveState.Moving);
+        }
+        // 스턴상태가 걸려있는 경우
+        else
+        {
+            StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
+        }
+        StandHitBox();
+    }
+
+    // 등장
+    private async void Appear()
+    {
+        await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
+        StandHitBox();
+        StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
+        MoveStateSetting(EMoveState.Stopping);
+        LookAt(GameManager.Instance.GetPlayer().transform.position.x);
+        
+        stateCancellation = new CancellationTokenSource();
+        await AppearProduction();
+    }
+    protected virtual async UniTask AppearProduction()
+    {
+        myBoxCollider.enabled = true;
+        
+        if(!myStat.hovering) 
+            GravityChange(ConstValues.BasicGravity);
+        
+        myAnimator.transform.localScale = new Vector3(myAnimator.transform.localScale.x, myAnimator.transform.localScale.y * 2.6f, myAnimator.transform.localScale.z);
+        bool finishSuccess = true;
+
+        finishSuccess = await AppearMotion();
+
+        if (finishSuccess)
+        {
+            StateSetting(ENormalState.AppearEnd, ConstValues.AppearEnd, ConstValues.AppearEnd);
+            if (await NormalDelay(myStat.appearDelay, stateCancellation).SuppressCancellationThrow())
+            {
+                FirstCoolTimeReduce();
+                return;
+            }
+            // Hovering();
+            // AppearShake();
+            
+            MoveStateSetting(EMoveState.Moving);
+            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        }
+        FirstCoolTimeReduce();
+    }
+    // 등장모션
+    protected virtual async UniTask<bool> AppearMotion()
+    {
+        if(appearMotions.Length == 0)
+            return false;
+
+        foreach (var appearMotion in appearMotions)
+        {
+            appearMotion.gameObject.SetActive(true);
+            appearMotion.color = ConstValues.WhiteColor;
+        }
+        
+        float yScale = myAnimator.transform.localScale.y;
+        float alpha = 1.0f;
+        while (yScale > defaultScale.y)
+        {
+            yScale -= 0.35f;
+            alpha -= 0.26f;
+            myAnimator.transform.localScale = new Vector3(myAnimator.transform.localScale.x, yScale, 1);
+            foreach (var appearMotion in appearMotions)
+            {
+                Color color = appearMotion.color;
+                color.a = alpha;
+                appearMotion.color = color;
+            }
+
+            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+            {
+                DeleteAppearObject();
+                Debug.Log("등장 도중 처맞음");
+                return false;
+            }
+        }
+        DeleteAppearObject();
+        return true;
+    }
+
+    private void DeleteAppearObject()
+    {
+        myAnimator.transform.localScale = defaultScale;
+        foreach (var appearMotion in appearMotions)
+            appearMotion.gameObject.SetActive(false);
+    }
+
+    private bool IsCanAttack()
+    {
+        return normalState is ENormalState.Idle or ENormalState.Move;
+    }
+
+    // 이동
+    private void Move()
+    {
+        // 호버링몹 위아래로 움직이게 하기
+        // if (myStat.hovering && normalState == ENormalState.Idle)
+        // {
+        //     
+        // }
+        
+        // 움직이기
+        if (moveState != EMoveState.Moving)
+            return;
+        
+        if (transform.localScale.x > 0)
+            transform.Translate(Vector2.right * (basicStat.moveSpeed * Time.deltaTime), Space.World);
+        else
+            transform.Translate(Vector2.left * (basicStat.moveSpeed * Time.deltaTime), Space.World);
+    }
+    // 추적
+    private void Trace()
+    {
+        if (moveState != EMoveState.Moving || basicStat.moveSpeed <= 0)
+            return;
+        
+        if (transform.localScale.x > 0)
+        {
+            if (GameManager.Instance.GetPlayer().transform.position.x < transform.position.x - myStat.traceLength)
+                LookAt(GameManager.Instance.GetPlayer().transform.position.x);
+        }
+        else
+        {
+            if (GameManager.Instance.GetPlayer().transform.position.x > transform.position.x + myStat.traceLength)
+                LookAt(GameManager.Instance.GetPlayer().transform.position.x);
+        }
+    }
+    
+    // 바라보기
+    public override void LookAt(float xPos)
+    {
+        bool lookAt = myStat.traceLength > 0;
+        if (!lookAt)
+            return;
+
+        base.LookAt(xPos);
+    }
+    
+    public override void TakeDamage(int damage)
+    {
+        base.TakeDamage(damage);
+        totalBar.ReduceHpBar(basicStat.hp, basicStat.maxHp, 1.5f);
+    }
+
+    public override void Die()
+    {
+        base.Die();
+        
+        totalBar.gameObject.SetActive(false);
+        totalBar = null;
+    }
+    
+    // 공격 딜레이
+    protected async UniTask AttackDelay(float attackDelay)
+    {
+        float delay = 0;
+        while (delay < attackDelay)
+        {
+            //float totalAttackSpeed = finalAttackSpeed;
+            delay += Time.deltaTime * basicStat.attackSpeed;
+            await UniTask.Yield(cancellationToken: stateCancellation.Token);
+        }
+    }
+    
+    // 플레이어가 공격범위 안에 들어왔는지 체크
+    private void PlayerInAttackRangeCheck()
+    {
+        foreach (var pattern in patternInfo)
+        {
+            if (GameManager.Instance.GetPlayer().transform.position.x > transform.position.x - pattern.attackRange[0] &&
+                GameManager.Instance.GetPlayer().transform.position.x < transform.position.x + pattern.attackRange[0] &&
+                GameManager.Instance.GetPlayer().transform.position.y > transform.position.y + myBoxCollider.size.y * 0.5f - pattern.attackRange[1] &&
+                GameManager.Instance.GetPlayer().transform.position.y < transform.position.y + myBoxCollider.size.y * 0.5f + pattern.attackRange[1])
+            {
+                pattern.playerInAttackRange = true;
+            }
+            else
+            {
+                pattern.playerInAttackRange = false;
+            }
+        }
+    }
+    
+    // 적의 패턴
+    protected virtual void MonsterPattern(int idx)
+    {
+        // 기존의 공격 트리거를 전부 해제
+        foreach (var parameters in myAnimator.parameters)
+        {
+            if (parameters.name.Split('_')[0] == ConstValues.Attack)
+            {
+                myAnimator.ResetTrigger(parameters.name);
+            }
+        }
+        ResetTriggerAnimator(ConstValues.Pattern);
+        
+        SetTriggerAnimator($"{ConstValues.Attack}_{idx}");
+    }
+    
+    // 최초 쿨타임 리셋
+    protected void FirstCoolTimeReduce()
+    {
+        for(int i = 0; i < patternInfo.Count; i++)
+        {
+            if (i == 0)
+            {
+                patternInfo[i].patternCoolTime = myStat.firstCoolTime;
+            }
+            else
+            {
+                patternInfo[i].patternCoolTime = myStat.coolTime[i] * 0.5f;
+            }
+        }
+        
+        foreach (var canSkillArray in patternInfo)
+            canSkillArray.canPattern = false;
+        
+        currentSkillIdx = 0;
+    }
+    
+    private void UpdateGlobalCoolTime()
+    {
+        if (curGlobalCoolTime < myStat.globalCoolTime)
+            curGlobalCoolTime += Time.deltaTime;
+
+        if (curGlobalCoolTime >= myStat.globalCoolTime)
+            curGlobalCoolTime = myStat.globalCoolTime;
+    }
+    protected bool GetGlobalCoolTime()
+    {
+        bool isFill = curGlobalCoolTime >= myStat.globalCoolTime;
+        return isFill;
+    }
+    // 적 쿨타임 감소
+    private void CoolTimeReduce()
+    {
+        for (var i = 0; i < patternInfo.Count; i++)
+        {
+            if (patternInfo[i].patternCoolTime < myStat.coolTime[i])
+            {
+                patternInfo[i].patternCoolTime += Time.deltaTime;
+            }
+            else
+            {
+                patternInfo[i].patternCoolTime = myStat.coolTime[i];
+                patternInfo[i].canPattern = true;
+            }
+        }
+    }
+    // 적 패턴 끝(해당하는 패턴의 쿨타임이 돌아감)
+    public void PatternEnd(bool movingStart = true)
+    {
+        patternInfo[currentSkillIdx].canPattern = false;
+        
+        curGlobalCoolTime = 0;
+        patternInfo[currentSkillIdx].patternCoolTime = 0;
+        currentSkillIdx = 0;
+        
+        if (!movingStart)
+            return;
+        
+        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        MoveStateSetting(EMoveState.Moving);
+    }
+    
+    // 적 공격
+    private async void MonsterAttack(int idx)
+    {
+        if (IsCanAttack() && patternInfo[idx].canPattern && patternInfo[idx].playerInAttackRange)
+        {
+            // 특정 행동이 끝나는 즉시 행동하면 애니메이션 갭이 일어나서 1프레임 뒤에 실행
+            if(await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+            
+            MoveStateSetting(EMoveState.Stopping);
+            StateSetting(ENormalState.Attack, $"{ConstValues.Attack}_{idx}", $"{ConstValues.Attack}_{idx}");
+            LookAt(GameManager.Instance.GetPlayer().transform.position.x);
+            MonsterPattern(idx);
+        }
+    }
+    
+    // 패턴 사이클
+    private void PatternCycle()
+    {
+        if (!IsCanAttack() || !GetGlobalCoolTime())
+            return;
+        
+        patternIdx.Clear();
+        // 사용 할 수 있는 패턴 색출(쿨타임, 범위)
+        for (int i = 0; i < patternInfo.Count; i++)
+        {
+            // 적의 페이지에 따라 다른 패턴이 들어간다
+            foreach (var pattern in myStat.pattern[page].pagePattern)
+            {
+                if (i != pattern)
+                    continue;
+                        
+                if (patternInfo[i].priority > -1 && patternInfo[i].canPattern && patternInfo[i].playerInAttackRange)
+                {
+                    patternIdx.Add(i);
+                    break;
+                }
+            }
+        }
+
+        // 한 개의 패턴밖에 나올 수 없다면 그 패턴을 그냥 발동시킴 
+        if (patternIdx.Count == 1)
+        {
+            currentSkillIdx = patternIdx[0];
+            MonsterAttack(patternIdx[0]);
+            //Debug.Log($"나올 수 있는 패턴이 {currentSkillIdx}패턴 뿐이다");
+        }
+        else if (patternIdx.Count > 1)
+        {
+            currentSkillIdx = patternIdx[0];
+            int temp = patternInfo[patternIdx[0]].priority;
+            bool sameCount = true;
+
+            for (int i = 0; i < patternIdx.Count; i++)
+            {
+                if (temp != patternInfo[patternIdx[i]].priority)
+                {
+                    sameCount = false;
+                    if (temp < patternInfo[patternIdx[i]].priority)
+                    {
+                        temp = patternInfo[patternIdx[i]].priority;
+                        currentSkillIdx = patternIdx[i];
+                    }
+                }
+            }
+
+            // 들어있는 패턴들의 우선순위가 모두 같을 때
+            if (sameCount)
+            {
+                // 같은 우선순위의 패턴 중 랜덤한 패턴이 발동한다
+                int rand = Random.Range(0, patternIdx.Count);
+                currentSkillIdx = patternIdx[rand];
+                MonsterAttack(currentSkillIdx);
+                //Debug.Log($"우선순위가 같은 스킬들이 {idxList.Count}개다, 나온건 {currentSkillIdx}, {isAttack}");
+            }
+            // 들어있는 패턴들의 우선순위가 하나라도 다를 때
+            else
+            {
+                // 가장 높은 우선순위의 패턴이 발동한다
+                MonsterAttack(currentSkillIdx);
+                //Debug.Log("가장 높은 우선순위" + currentSkillIdx + "발동");
+            }
+        }
+    }
+}

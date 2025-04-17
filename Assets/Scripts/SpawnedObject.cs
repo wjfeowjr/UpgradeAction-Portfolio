@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 [Serializable]
 public class SpawnObjectInfo
@@ -10,7 +12,7 @@ public class SpawnObjectInfo
     public bool zFlip;
     public bool tracePos;
     public float objectTime;
-    public string sound;
+    public List<string> soundList = new List<string>();
 }
 
 public class SpawnedObject : MonoBehaviour
@@ -40,7 +42,11 @@ public class SpawnedObject : MonoBehaviour
         spawnObjectInfo.zFlip = objectData.zFlip;
         spawnObjectInfo.tracePos = objectData.tracePos;
         spawnObjectInfo.objectTime = objectData.objectTime;
-        spawnObjectInfo.sound = objectData.sound;
+
+        var soundArray = objectData.sound.Split(',');
+        foreach (var sound in soundArray)
+            spawnObjectInfo.soundList.Add(sound);
+        
         dir = dirX;
     }
     
@@ -61,7 +67,9 @@ public class SpawnedObject : MonoBehaviour
             zScale = -defaultScale.z;
 
         transform.localScale = new Vector3(xScale, yScale, zScale);
-        SoundManager.Instance.PlaySound(spawnObjectInfo.sound);
+
+        foreach (var sound in spawnObjectInfo.soundList)
+            SoundManager.Instance.PlaySound(sound);
     }
     
     private void ObjectTimer()

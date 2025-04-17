@@ -6,6 +6,9 @@ using UnityEngine.Serialization;
 
 public class GameManager : Singleton<GameManager>
 {
+    public Material defaultMaterial;
+    public Material hitMaterial;
+    
     public KeyCode moveLeftKey;
     public KeyCode moveRightKey;
     public KeyCode attackKey;
@@ -19,7 +22,9 @@ public class GameManager : Singleton<GameManager>
     
     [SerializeField] private Player player;
     [SerializeField] private Transform objectPool;
+    [SerializeField] private Transform uiPool;
     [SerializeField] private List<GameObject> prefabList;
+    [SerializeField] private List<GameObject> uiList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
 
     // 매니저들
@@ -30,6 +35,7 @@ public class GameManager : Singleton<GameManager>
     protected override void Awake()
     {
         base.Awake();
+        Application.targetFrameRate = 60;
         DefaultKeySetting(); 
         InitManager();
     }
@@ -37,6 +43,11 @@ public class GameManager : Singleton<GameManager>
     private void Start()
     {
         OpenUI();
+    }
+
+    public Player GetPlayer()
+    {
+        return player;
     }
 
     private void DefaultKeySetting()
@@ -130,4 +141,33 @@ public class GameManager : Singleton<GameManager>
         return go;
     }
     
+    public GameObject SpawnToUIPool(string id, Transform uiTransform = null)
+    {
+        var objectName = $"{id}(Clone)";
+        var isSearch = objectList.FindAll(x => x.name == objectName);
+        
+        GameObject go;
+        if (isSearch.Count == 0)
+        {
+            go = Instantiate(uiList.Find(x => x.name == id).gameObject, uiPool);
+            objectList.Add(go);
+        }
+        else
+        {
+            var recycleObj = isSearch.Find(x => !x.activeSelf);
+            if (recycleObj == null)
+            {
+                go = Instantiate(uiList.Find(x => x.name == id).gameObject, uiPool);
+                objectList.Add(go);
+            }
+            else
+            {
+                go = recycleObj;
+                go.SetActive(true);
+            }
+        }
+        if(uiTransform != null)
+            go.transform.position = uiTransform.position;
+        return go;
+    } 
 }

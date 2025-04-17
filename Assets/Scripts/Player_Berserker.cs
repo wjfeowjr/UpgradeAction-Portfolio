@@ -7,7 +7,6 @@ using UnityEngine;
 
 public class Player_Berserker : Player
 {
-    [SerializeField] private Transform centerPos;
     [SerializeField] private Transform attack1Pos;
     [SerializeField] private Transform attack2Pos;
     [SerializeField] private Transform attack3Pos;
@@ -120,6 +119,7 @@ public class Player_Berserker : Player
 
     private async UniTask<bool> BerserkerJumpAttack()
     {
+        ResetTriggerAnimator(ConstValues.JumpDown);
         if (jumpAttackCount <= 0)
         {
             jumpAttackCount += 1;

@@ -12,7 +12,11 @@ public class ConstValues : Singleton<ConstValues>
     public const float GrabbedSpeed = 30.0f;
     public const float GrabbedBoundX = 8.0f;
     public const float GrabbedBoundY = 10.0f;
+    public const float WhiteSecond = 0.05f;
+    public const float GaugeReduce = 0.3f;
+    public const float GaugeFillSpeed = 0.02f;
     
+    public const string TotalBar = "TotalBar";
     public const string Effect = "Effect";
     
     public const string Idle = "Idle";
@@ -31,10 +35,15 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string None = "None";
     public const string Normal = "Normal";
+    public const string Pattern = "Pattern";
+    public const string Appear = "Appear";
+    public const string AppearEnd = "AppearEnd";
     
     public const string Missile = "Missile";
     public const string Wall = "Wall";
-    
+    public const string Player = "Player";
+    public const string Monster = "Monster";
+
     public const string Skill = "Skill";
     public const string Dash = "Dash";
     public const string DashEffect = "DashEffect";
@@ -47,6 +56,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Stun = "Stun";
     public const string Down = "Down";
     public const string Damaged = "Damaged";
+    public const string Die = "Die";
     
     public const string Landing = "Landing";
     public const string Jumping = "Jumping";
@@ -58,8 +68,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";
 
-    public const string id = "id";
-    public const string bodyType = "bodyType";
+    public const string MoveSpeed = "MoveSpeed";
+    public const string AttackSpeed = "AttackSpeed";
 
     public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";

@@ -7,11 +7,6 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using static ENormalState;
 
-public class PlayerStat
-{
-    public float speed;
-}
-
 [Serializable]
 public class PlayerSkill
 {
@@ -34,116 +29,48 @@ public class PlayerSkill
 }
 
 [Serializable]
-public class Buff
+public class PlayerStat
 {
-    public EBuffType buffType;
-    public float buffTime;
-    public float currentTime;
+    public int passiveComment;
+    public string passive;
+    public float jumpForce;
+    public float jumpHeight;
+    public int jumpAttackCount;
+    public float jumpAttackForce;
 }
 
-// 기본 상태 모션
-public enum ENormalState
+public abstract class Player : Character
 {
-    Normal,
-    Idle,
-    Move,
-    Jump,
-    Attack,
-    JumpAttack,
-    Dash,
-    Skill,
-    Grabbed,
-    Airborne,
-    Down,
-    Stun,
-    Damaged,
-}
-
-// 실제 이동 관련
-public enum EMoveState
-{
-    Stopping,
-    Moving,
-}
-
-// 지상 관련
-public enum ELandingState
-{
-    Ground,
-    Air,
-}
-
-// 바디 타입
-public enum EBodyType
-{
-    Normal,
-    SuperArmor,
-}
-
-// 버프 타입
-public enum EBuffType
-{
-    Stun,
-}
-
-public abstract class Player : MonoBehaviour
-{
-    private Vector3 defaultScale;
-    private Vector3 reverseScale;
-    private PlayerStat stat;
-    protected CancellationTokenSource stateCancellation;
-    protected CancellationTokenSource anotherCancellation; // 우선 넉백에만사용되고 있음
-
-    protected Rigidbody2D myRigidbody;
-    protected BoxCollider2D myBoxCollider;
-    private Animator myAnimator;
-    private Vector2 chargeVector;
-    private float globalCoolTime;
-    protected float curGlobalCoolTime;
-    protected int airborneCount;     // 에어본 카운트
     protected int jumpAttackCount;
-    protected int moveLayerMask;
-
+    
+    [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
-    [SerializeField] protected List<GameObject> controlObject = new List<GameObject>(); // 직접 시간을 관리하는 '공격판정'
-    [SerializeField] protected List<GameObject> normalObject = new List<GameObject>(); // 직접 시간을 관리하는 '일반 오브젝트'
-    [SerializeField] protected List<GameObject> buffObject = new List<GameObject>(); // 직접 시간을 관리하는 '버프 오브젝트'
-    
-    [SerializeField] protected string charName;
     [SerializeField] protected bool nextAttack;
-    [SerializeField] protected ENormalState normalState;
-    [SerializeField] protected EMoveState moveState;
-    [SerializeField] protected ELandingState landingState;
-    [SerializeField] protected EBodyType bodyType;
-    [SerializeField] protected List<Buff> buffList = new List<Buff>();
-    
     [SerializeField] private bool canFlip;
     [SerializeField] private bool canMove;
-    [SerializeField] private bool immortal;
     [SerializeField] private float moveRatio;
+    
+    protected float globalCoolTime;
+    protected float curGlobalCoolTime;
 
-    [SerializeField] private Transform buffEffectPos;
-
-    private void Awake()
+    // 스킬
+    public abstract void Skill(KeyCode skillKey);
+    // 공격
+    public abstract void Attack();
+    
+    protected override void Awake()
     {
-        myRigidbody = GetComponent<Rigidbody2D>();
-        myBoxCollider = GetComponent<BoxCollider2D>();
-        myAnimator = GetComponent<Animator>();
+        base.Awake();
         globalCoolTime = 0.1f;
-        moveLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
         InitSkill();
     }
 
-    private void OnEnable()
+    protected override void OnEnable()
     {
+        base.OnEnable();
+        InitAdditionalStat();
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-    }
-
-    private void Start()
-    {
-        DefaultSetting();
-        StatSetting();
     }
 
     protected void Update()
@@ -160,44 +87,67 @@ public abstract class Player : MonoBehaviour
         stateCancellation?.Cancel();
     }
 
-    private void DefaultSetting()
+    // 테이블의 값으로 스텟 초기화(기본 스텟)
+    protected override void InitBasicStat()
     {
-        defaultScale = transform.localScale;
-        reverseScale = new Vector3(-defaultScale.x, defaultScale.y, defaultScale.z);
-    }
-
-    private void StatSetting()
-    {
-        stat = new PlayerStat()
+        var myName = name.Split('(')[0];
+        var targetStat = TableManager.Instance.playerTable.Player.Find(x => x.id == myName);
+        
+        basicStat = new BasicStat()
         {
-            speed = 6.0f
+            id = targetStat.id,
+            name = targetStat.name,
+            bodyType = targetStat.bodyType,
+            hp = targetStat.hp,
+            power = targetStat.power,
+            defence = targetStat.defence,
+            moveSpeed = targetStat.moveSpeed,
+            attackSpeed = targetStat.attackSpeed,
+            criticalChance = targetStat.criticalChance,
+            criticalDamage = targetStat.criticalDamage,
+            weight = targetStat.weight,
+            stagger = targetStat.stagger,
+            staggerTime = targetStat.staggerTime,
         };
-    }
-
-    private void AddObjectList(List<GameObject> list, GameObject obj)
-    {
-        list.Add(obj);
-    }
-    private void RemoveObjectList(List<GameObject> list, GameObject obj)
-    {
-        var removeObj = list.Find(x => x == obj);
-
-        obj.gameObject.SetActive(false);
-        if (removeObj != null)
-            list.Remove(removeObj);
-    }
-    protected async void ClearObjectList(List<GameObject> list, float timer = 0.0f)
-    {
-        if (timer > 0)
-            await UniTask.WaitForSeconds(timer);
+        myStat = new PlayerStat()
+        {
+            passiveComment = targetStat.passiveComment,
+            passive = targetStat.passive,
+            jumpForce = targetStat.jumpForce,
+            jumpHeight = targetStat.jumpHeight,
+            jumpAttackCount = targetStat.jumpAttackCount,
+            jumpAttackForce = targetStat.jumpAttackForce,
+        };
         
-        foreach (var obj in list)
-            obj.gameObject.SetActive(false);
+        if (string.IsNullOrEmpty(originStat.id))
+        {
+            originStat = new BasicStat()
+            {
+                id = targetStat.id,
+                name = targetStat.name,
+                bodyType = targetStat.bodyType,
+                hp = targetStat.hp,
+                power = targetStat.power,
+                defence = targetStat.defence,
+                moveSpeed = targetStat.moveSpeed,
+                attackSpeed = targetStat.attackSpeed,
+                criticalChance = targetStat.criticalChance,
+                criticalDamage = targetStat.criticalDamage,
+                weight = targetStat.weight,
+                stagger = targetStat.stagger,
+                staggerTime = targetStat.staggerTime,
+            };
+        }
+    }
+    private void InitAdditionalStat()
+    {
+        var finalHp = basicStat.hp;
+        basicStat.maxHp = finalHp;
+        basicStat.hp = finalHp;
         
-        list.Clear();
     }
 
-    protected void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
+    protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
     {
         myAnimator.ResetTrigger(ConstValues.ComboAttack);
         myAnimator.ResetTrigger(ConstValues.Airborne);
@@ -225,16 +175,16 @@ public abstract class Player : MonoBehaviour
             switch (landingState)
             {
                 case ELandingState.Ground:
-                    myAnimator.SetTrigger(ConstValues.Idle);
+                    SetTriggerAnimator(ConstValues.Idle);
                     break;
                 case ELandingState.Air:
-                    myAnimator.SetTrigger(ConstValues.JumpDown);
+                    SetTriggerAnimator(ConstValues.JumpDown);
                     break;
             }
         }
         else
         {
-            myAnimator.SetTrigger(triggerName);
+            SetTriggerAnimator(triggerName);
         }
 
         if (animId == ConstValues.Normal)
@@ -250,7 +200,7 @@ public abstract class Player : MonoBehaviour
             }
         }
 
-        var animationsData = TableManager.Instance.animations.Animations.Find(x => x.id == animId);
+        var animationsData = TableManager.Instance.animationsTable.Animations.Find(x => x.id == animId);
         if (animationsData != null)
         {
             // 애니메이션 테이블을 체크하여, 해당 애니메이션 도중 전환, 이동이 가능한지 판단
@@ -262,36 +212,22 @@ public abstract class Player : MonoBehaviour
                 BodyTypeSetting(animationsData.bodyType);
         }
     }
-
-    protected void MoveStateSetting(EMoveState changeState)
+    
+    protected override void StateRecovery()
     {
-        moveState = changeState;
-    }
-    private void LandingStateSetting(ELandingState changeState)
-    {
-        landingState = changeState;
-    }
-    private void BodyTypeSetting(string bodyTypeName)
-    {
-        bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), bodyTypeName);
-    }
-    private bool SameBodyType(string bodyTypeName)
-    {
-        return bodyType.ToString() == bodyTypeName;
-    }
-
-    private void Flip(int dir)
-    {
-        switch (dir)
+        var findDeBuff = buffList.Find(x => x.buffType == EBuffType.Stun);
+        
+        // 스턴상태가 걸려있지 않은 경우
+        if (findDeBuff == null)
         {
-            case -1:
-                transform.localScale = reverseScale;
-                break;
-            
-            case 1:
-                transform.localScale = defaultScale;
-                break;
+            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         }
+        // 스턴상태가 걸려있는 경우
+        else
+        {
+            StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
+        }
+        StandHitBox();
     }
 
     protected void MotionFlip()
@@ -345,42 +281,6 @@ public abstract class Player : MonoBehaviour
         return isFill;
     }
 
-    private void UpdateBuff()
-    {
-        int expiredCount = 0;
-        foreach (var deBuff in buffList)
-        {
-            if (deBuff.currentTime < deBuff.buffTime)
-                deBuff.currentTime += Time.deltaTime;
-            else
-                expiredCount += 1;
-        }
-
-        if (expiredCount == 0)
-            return;
-
-        var expiredDeBuffList = buffList.FindAll(x => x.currentTime >= x.buffTime);
-        foreach (var expiredDeBuff in expiredDeBuffList)
-        {
-            buffList.Remove(expiredDeBuff);
-            var removeEffect = buffObject.Find(x => x.name == $"{expiredDeBuff.buffType}{ConstValues.Effect}(Clone)");
-            if(removeEffect != null) 
-                RemoveObjectList(buffObject, removeEffect);
-            
-            // 스턴상태 회복
-            if (expiredDeBuff.buffType == EBuffType.Stun && normalState == ENormalState.Stun)
-            {
-                StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-            }
-        }
-    }
-    
-    // 중력값 변경
-    protected void GravityChange(float value)
-    {
-        myRigidbody.gravityScale = value;
-    }
-    
     public void Move(Vector2 dir)
     {
         if (!canMove)
@@ -397,7 +297,7 @@ public abstract class Player : MonoBehaviour
         }
         
         //myRigidbody.velocity = new Vector3(dir * stat.speed, myRigidbody.velocity.y);
-        transform.Translate(dir * (stat.speed * (moveRatio * 0.01f) * Time.deltaTime));
+        transform.Translate(dir * (basicStat.moveSpeed * (moveRatio * 0.01f) * Time.deltaTime));
     }
 
     // 정지
@@ -412,16 +312,7 @@ public abstract class Player : MonoBehaviour
         if(moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
     }
-    // 행동 캔슬
-    protected void CancelMotion()
-    {
-        stateCancellation?.Cancel();
-        anotherCancellation?.Cancel();
-        
-        ClearObjectList(controlObject);
-        ClearObjectList(normalObject);
-        GravityChange(ConstValues.BasicGravity);
-    }
+    
 
     // 스킬을 사용 할 수 있는가?
     protected bool IsCanSkill(KeyCode skillKey)
@@ -450,12 +341,6 @@ public abstract class Player : MonoBehaviour
         targetSkill.SetCoolTime();
         return true;
     }
-    
-    // 스킬
-    public abstract void Skill(KeyCode skillKey);
-    // 공격
-    public abstract void Attack();
-
 
     // 공격 전진
     protected void AttackAdvance(float distance)
@@ -514,103 +399,6 @@ public abstract class Player : MonoBehaviour
         myRigidbody.linearVelocity = new Vector2(0, 6.0f);
     }
     
-    // 공격 소환
-    protected void SpawnAttack(string id, Transform attackTransform)
-    {
-        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
-        
-        var objectData = TableManager.Instance.spawnedObject.SpawnedObject.Find(x => x.id == id);
-        if (objectData != null)
-        {
-            var spawnedObject = obj.GetComponent<SpawnedObject>();
-            if (!spawnedObject)
-                spawnedObject = obj.AddComponent<SpawnedObject>();
-            
-            spawnedObject.SetupData(objectData, transform.localScale.x);
-            spawnedObject.EnableSetting();
-            if(spawnedObject.GetObjectTime() == 0)
-                AddObjectList(controlObject, obj);
-
-            if (spawnedObject.GetTrace())
-            {
-                var trace = obj.GetComponent<Trace>();
-                if(!trace)
-                    trace = obj.AddComponent<Trace>();
-                
-                trace.SetTarget(attackTransform);
-            }
-        }
-
-        var attackData = TableManager.Instance.attack.Attack.Find(x => x.id == id);
-        if (attackData != null)
-        {
-            var attack = obj.GetComponent<Attack>();
-            if (!attack)
-            {
-                attack = obj.AddComponent<Attack>();
-                attack.SetupData(this, attackData);
-            }
-
-            attack.EnableSetting();
-        }
-        
-        var missileData = TableManager.Instance.missile.Missile.Find(x => x.id == id);
-        if (missileData != null)
-        {
-            var missile = obj.GetComponent<Missile>();
-            if (!missile)
-                missile = obj.AddComponent<Missile>();
-            
-            var dir = Vector2.right;
-            if(transform.localScale.x < 0)
-                dir = Vector2.left;
-            missile.SetupData(missileData, dir, SpawnAttack);
-        }
-    }
-    private GameObject SpawnObject(string id, Transform attackTransform, bool isBuff = false)
-    {
-        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
-        
-        var objectData = TableManager.Instance.spawnedObject.SpawnedObject.Find(x => x.id == id);
-        if (objectData == null)
-            return obj;
-        
-        var spawnedObject = obj.GetComponent<SpawnedObject>();
-        if (!spawnedObject)
-            spawnedObject = obj.AddComponent<SpawnedObject>();
-            
-        spawnedObject.SetupData(objectData, transform.localScale.x);
-        spawnedObject.EnableSetting();
-        if (spawnedObject.GetObjectTime() == 0)
-        {
-            if(isBuff)
-                AddObjectList(buffObject, obj);
-            else
-                AddObjectList(normalObject, obj);
-        }
-
-        if (spawnedObject.GetTrace())
-        {
-            var trace = obj.GetComponent<Trace>();
-            if(!trace)
-                trace = obj.AddComponent<Trace>();
-            
-            trace.SetTarget(attackTransform);
-        }
-
-        return obj;
-    }
-
-    // 1프레임 딜레이
-    protected async UniTask YieldDelay(CancellationTokenSource tokenSource)
-    {
-        await UniTask.Yield(cancellationToken: tokenSource.Token);
-    }
-    // 일반 딜레이
-    protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
-    {
-        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
-    }
     // 공격 딜레이
     protected async UniTask AttackDelay(float attackDelay)
     {
@@ -618,7 +406,7 @@ public abstract class Player : MonoBehaviour
         while (delay < attackDelay)
         {
             //float totalAttackSpeed = finalAttackSpeed;
-            delay += Time.deltaTime;
+            delay += Time.deltaTime * basicStat.attackSpeed;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
             if (Input.GetKeyDown(GameManager.Instance.attackKey))
                 nextAttack = true;
@@ -702,7 +490,7 @@ public abstract class Player : MonoBehaviour
         // 대시 레이캐스트 체크
         chargeVector = RayCheckLength(dashLength, 0);
         // 대시 이팩트 소환
-        var dashEffect = SpawnObject($"{charName}_{ConstValues.DashEffect}", transform);
+        var dashEffect = SpawnObject($"{name}_{ConstValues.DashEffect}", transform);
         if (transform.localScale.x > 0)
             dashEffect.transform.position = new Vector3(dashEffect.transform.position.x - 1.5f, dashEffect.transform.position.y, dashEffect.transform.position.z);
         else
@@ -720,334 +508,5 @@ public abstract class Player : MonoBehaviour
         // 대시 끝
         immortal = false;
         return chargeFinish;
-    }
-    
-    // 돌진 (기본스피드, 제한스피드 배율, 돌진거리, 가속도)
-    protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float acceleration)
-    {
-        float realDashSpeed = basicSpeed;
-        float limitDashSpeed = basicSpeed * limitMag;
-        float finalSpeed = basicSpeed + limitDashSpeed * 0.5f;
-        float finalTime = chargeLength / finalSpeed;
-        
-        float accelerationTime = finalTime + finalTime * 0.5f;
-        float finalAcceleration = 0.0f;
-        float time = 0.0f;
-
-        Vector2 startVector = transform.position;
-        
-        while (time < accelerationTime)
-        {
-            time += Time.deltaTime;
-            transform.position = Vector2.MoveTowards(transform.position, chargeVector, realDashSpeed * Time.deltaTime);
-
-            if (Vector2.Distance(transform.position, chargeVector) * 2 < Vector2.Distance(startVector, chargeVector))
-            {
-                finalAcceleration += acceleration;
-
-                if (acceleration > 0)
-                    finalAcceleration = Mathf.Abs(finalAcceleration);
-                else
-                    finalAcceleration = -Mathf.Abs(finalAcceleration);
-                
-                realDashSpeed += finalAcceleration;
-            }
-
-            if (limitMag >= 1)
-            {
-                if (realDashSpeed > limitDashSpeed)
-                    realDashSpeed = limitDashSpeed;
-            }
-            else
-            {
-                if (realDashSpeed < limitDashSpeed)
-                    realDashSpeed = limitDashSpeed;
-            }
-
-            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-                return false;
-        }
-
-        return true;
-    }
-    
-    // 레이체크(벽 등을 판정하여 최종적으로 도착하는 지점 확인용도)
-    private Vector2 RayCheckLength(float chargeLengthX, float chargeLengthY)
-    {
-        // 왼쪽
-        if (transform.localScale.x < 0)
-        {
-            var leftRay = Physics2D.Raycast(transform.position, Vector2.left, chargeLengthX, moveLayerMask);
-            Debug.DrawRay(transform.position, Vector2.left * chargeLengthX, ConstValues.RedColor, 0.1f);
-            
-            // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            if (leftRay.collider != null)
-                return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) + (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            else
-                return new Vector2(transform.position.x - chargeLengthX + (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
-        }
-        // 오른쪽
-        else
-        {
-            var rightRay = Physics2D.Raycast(transform.position, Vector2.right, chargeLengthX, moveLayerMask);
-            Debug.DrawRay(transform.position, Vector2.right * chargeLengthX, ConstValues.RedColor, 0.1f);
-
-            // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
-            if (rightRay.collider != null)
-                return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            else
-                return new Vector2(transform.position.x + chargeLengthX - (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
-        }
-    }
-    private Vector2 RayCheckReverse(float chargeLengthX, float chargeLengthY)
-    {
-        // 왼쪽
-        if (transform.localScale.x > 0)
-        {
-            var leftRay = Physics2D.Raycast(transform.position, Vector2.left, chargeLengthX, moveLayerMask);
-            Debug.DrawRay(transform.position, Vector2.left * chargeLengthX, ConstValues.RedColor, 0.1f);
-            
-            // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            if (leftRay.collider != null)
-                return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) + (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            else
-                return new Vector2(transform.position.x - chargeLengthX + (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
-        }
-        // 오른쪽
-        else
-        {
-            var rightRay = Physics2D.Raycast(transform.position, Vector2.right, chargeLengthX, moveLayerMask);
-            Debug.DrawRay(transform.position, Vector2.right * chargeLengthX, ConstValues.RedColor, 0.1f);
-
-            // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
-            if (rightRay.collider != null)
-                return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            else
-                return new Vector2(transform.position.x + chargeLengthX - (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
-        }
-    }
-
-    private void OnCollisionEnter2D(Collision2D col)
-    {
-        // 착지
-        if (col.gameObject.layer == LayerMask.NameToLayer("Ground") && landingState == ELandingState.Air)
-        {
-            LandingStateSetting(ELandingState.Ground);
-            
-            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            myRigidbody.linearVelocity = Vector2.zero;
-
-            // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
-            switch (normalState)
-            {
-                case ENormalState.Jump:
-                    StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-                    break;
-                case ENormalState.Airborne:
-                    DownAndStand();
-                    break;
-            }
-        }
-    }
-
-    private void OnCollisionExit2D(Collision2D col)
-    {
-        // 점프
-        if (col.gameObject.layer == LayerMask.NameToLayer("Ground"))
-        {
-            LandingStateSetting(ELandingState.Air);
-        }
-    }
-    
-    // 상속화 할 예정
-    
-    // 피해를 입고있는 모션인가?
-    protected bool IsDamaged()
-    {
-        return normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun or ENormalState.Damaged;
-    }
-    // 군중제어에 걸렸는가?
-    public bool IsCc()
-    {
-        bool normalCondition = normalState is ENormalState.Grabbed or ENormalState.Stun;
-        bool buffCondition = FindBuff(EBuffType.Stun);
-        return normalCondition || buffCondition;
-    }
-    private bool FindBuff(EBuffType buffType)
-    {
-        return buffList.Find(x => x.buffType == buffType) != null;
-    }
-    
-    public async void Grabbed(Vector3 grabVector)
-    {
-        CancelMotion();
-        StateSetting(ENormalState.Grabbed, ConstValues.Grabbed, ConstValues.Grabbed);
-        
-        GravityChange(0);
-        myRigidbody.linearVelocity = Vector2.zero;
-        
-        float grabSpeed = ConstValues.GrabbedSpeed;
-        float grabBoundX = ConstValues.GrabbedBoundX;
-        float grabBoundY = ConstValues.GrabbedBoundY;
-        if (transform.position.x < grabVector.x)
-            grabBoundX = -ConstValues.GrabbedBoundX;
-        
-        stateCancellation = new CancellationTokenSource();
-        while (transform.position != grabVector)
-        {
-            transform.position = Vector2.MoveTowards(transform.position, grabVector, grabSpeed * Time.deltaTime);
-            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-                return;
-        }
-        Airborne(grabBoundX, grabBoundY);
-    }
-    public void Airborne(float xVelocity, float yVelocity)
-    {
-        CancelMotion();
-        
-        airborneCount = 1;
-        LandingStateSetting(ELandingState.Air);
-
-        stateCancellation = new CancellationTokenSource();
-        Bound(xVelocity, yVelocity);
-        //DownHitBox();
-
-        if (xVelocity == 0)
-            return;
-        
-        transform.localScale = xVelocity > 0 ? reverseScale : defaultScale;
-    }
-    private void Bound(float xVelocity, float yVelocity)
-    {
-        StateSetting(ENormalState.Airborne, ConstValues.Airborne, ConstValues.Airborne);
-        GravityChange(ConstValues.BasicGravity);
-        myRigidbody.linearVelocity = new Vector2(xVelocity, yVelocity);
-    }
-    private async void DownAndStand()
-    {
-        StateSetting(ENormalState.Down, ConstValues.Down, ConstValues.Down);
-        // 최초 공중에 떴을 때는, 땅에 닿자마자 다시 공중으로 고정높이만큼 뜬다
-        if (airborneCount > 0)
-        {
-            airborneCount -= 1;
-            //GameObject downDust = CharacterObjectPool.Instance.SpawnFromPool("DownDust_Monster");
-            //downDust.transform.position = transform.position;
-            //downDust.SetActive(true);
-            //AddStaticEffect(GameManager.IDDown, 0.05f);
-            //await UniTask.WaitUntil(() => !EffectInfo(GameManager.IDDown).isApplied, cancellationToken: cancellationToken);
-            if (await NormalDelay(ConstValues.ReboundSecond, stateCancellation).SuppressCancellationThrow())
-                return;
-            
-            Bound(0, ConstValues.ReboundForce);
-        }
-        // 이후에는 고정된 시간만큼 누워있다가 일어난다
-        else
-        {
-            if (await NormalDelay(ConstValues.DownSecond, stateCancellation).SuppressCancellationThrow())
-                return;
-            
-            StateRecovery();
-        }
-    }
-
-    private void AddBuff(EBuffType buffType, float buffTime)
-    {
-        var findDeBuff = buffList.Find(x => x.buffType == buffType);
-        // 해당 디버프가 적용되어있지 않음
-        if (findDeBuff == null)
-        {
-            var newDeBuff = new Buff()
-            {
-                buffType = buffType,
-                buffTime = buffTime,
-                currentTime = 0,
-            };
-            buffList.Add(newDeBuff);
-            SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, true);
-        }
-        // 해당 디버프가 적용되어 있음
-        else
-        {
-            var leftTime = findDeBuff.buffTime - findDeBuff.currentTime;
-
-            if (leftTime < buffTime)
-            {
-                findDeBuff.buffTime = buffTime;
-                findDeBuff.currentTime = 0;
-            }
-        }
-    }
-    public void Stun(float stunTime)
-    {
-        // 스턴 디버프 추가
-        AddBuff(EBuffType.Stun, stunTime);
-        
-        // 이후 현재 판정에 따라서 애니메이션을 변화함
-        if (normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
-        {
-            Debug.Log($"상위 판정이 존재함: {normalState}");
-            return;
-        }
-        
-        CancelMotion();
-        stateCancellation = new CancellationTokenSource();
-        StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
-    }
-    
-    public async void Damaged(float damagedTime) 
-    {
-        if (normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
-        {
-            Debug.Log($"상위 판정이 존재함: {normalState}");
-            return;
-        }
-        
-        CancelMotion();
-        stateCancellation = new CancellationTokenSource();
-        StateSetting(ENormalState.Damaged, ConstValues.Damaged, ConstValues.Damaged);
-        if (await NormalDelay(damagedTime, stateCancellation).SuppressCancellationThrow())
-            return;
-        
-        StateRecovery();
-    }
-
-    // 상태 회복
-    private void StateRecovery()
-    {
-        var findDeBuff = buffList.Find(x => x.buffType == EBuffType.Stun);
-        
-        // 스턴상태가 걸려있지 않은 경우
-        if (findDeBuff == null)
-        {
-            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-        }
-        // 스턴상태가 걸려있는 경우
-        else
-        {
-            StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
-        }
-    }
-
-    // 넉백
-    public async void KnockBack(float knockBackLength)
-    {
-        var knockPosX = RayCheckReverse(knockBackLength, 0).x;
-        var startDir = transform.position;
-        var endDir = new Vector2(knockPosX, transform.position.y);
-        float duration = ConstValues.KnockBackTime;
-        float elapsed = 0f;
-        
-        anotherCancellation = new CancellationTokenSource();
-        while (elapsed < duration)
-        {
-            transform.position = Vector3.Lerp(startDir, endDir, elapsed / duration);
-            elapsed += Time.deltaTime;
-            if (await YieldDelay(anotherCancellation).SuppressCancellationThrow())
-                return;
-        }
     }
 }

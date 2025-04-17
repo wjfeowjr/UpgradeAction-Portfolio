@@ -16,7 +16,7 @@ public class SpawnedObjectData
     public float objectTime;
     public string sound;
 }
-//[Serializable]
+[Serializable]
 public class SpawnedObjectDataList
 {
     public List<SpawnedObjectData> SpawnedObject;
@@ -32,7 +32,7 @@ public class AnimationsData
     public bool canMove;
     public float moveRatio;
 }
-//[Serializable]
+[Serializable]
 public class AnimationsDataList
 {
     public List<AnimationsData> Animations;
@@ -51,7 +51,7 @@ public class AttackData
     public float colliderTime;
     public string hitEffectId;
 }
-//[Serializable]
+[Serializable]
 public class AttackDataList
 {
     public List<AttackData> Attack;
@@ -73,23 +73,103 @@ public class MissileDataList
     public List<MissileData> Missile;
 }
 
+[Serializable]
+public class PlayerData
+{
+    // 공통 데이터
+    public string id;
+    public int name;
+    public string bodyType;
+    public int hp;
+    public int power;
+    public int defence;
+    public float moveSpeed;
+    public float attackSpeed;
+    public float criticalChance;
+    public float criticalDamage;
+    public float weight;
+    public int stagger;
+    public float staggerTime;
+    
+    // 독립 데이터
+    public int passiveComment;
+    public string passive;
+    public float jumpForce;
+    public float jumpHeight;
+    public int jumpAttackCount;
+    public float jumpAttackForce;
+}
+[Serializable]
+public class PlayerDataList
+{
+    public List<PlayerData> Player;
+}
+
+[Serializable]
+public class MonsterData
+{
+    // 공통 데이터
+    public string id;
+    public int name;
+    public string bodyType;
+    public int hp;
+    public int power;
+    public int defence;
+    public float moveSpeed;
+    public float attackSpeed;
+    public float criticalChance;
+    public float criticalDamage;
+    public float weight;
+    public int stagger;
+    public float staggerTime;
+    
+    // 독립 데이터
+    public bool standMotion;
+    public float appearDelay;
+    public float firstCoolTime;
+    public float globalCoolTime;
+    public string attackRange;
+    public string coolTime;
+    public string priority;
+    public string pageHp;
+    public string pagePattern;
+    public float traceLength;
+    public bool hovering;
+    public string hoveringHeight;
+    public float hoveringSpeed;
+    public string appearShake;
+    public string appearEffect;
+    public string dyingMiniEffect;
+    public string dyingEffect;
+}
+[Serializable]
+public class MonsterDataList
+{
+    public List<MonsterData> Monster;
+}
+
 public class TableManager : SingletonMono<TableManager>
 {
-    public SpawnedObjectDataList spawnedObject;
-    public AnimationsDataList animations;
-    public AttackDataList attack;
-    public MissileDataList missile;
+    public SpawnedObjectDataList spawnedObjectTable;
+    public AnimationsDataList animationsTable;
+    public AttackDataList attackTable;
+    public MissileDataList missileTable;
+    public PlayerDataList playerTable;
+    public MonsterDataList monsterTable;
 
     public void Init()
     {
-        spawnedObject = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject, ConstValues.SpawnedObject);
-        animations = LoadDataFromJson<AnimationsDataList>(ConstValues.Animations, ConstValues.Animations);
-        attack = LoadDataFromJson<AttackDataList>(ConstValues.Attack, ConstValues.Attack);
-        missile = LoadDataFromJson<MissileDataList>(ConstValues.Missile, ConstValues.Missile);
+        spawnedObjectTable = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject);
+        animationsTable = LoadDataFromJson<AnimationsDataList>(ConstValues.Animations);
+        attackTable = LoadDataFromJson<AttackDataList>(ConstValues.Attack);
+        missileTable = LoadDataFromJson<MissileDataList>(ConstValues.Missile);
+        playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
+        monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
+        
         Debug.Log($"{name} 초기화 완료");
     }
     
-    private T LoadDataFromJson<T>(string fileName, string headerName)
+    private T LoadDataFromJson<T>(string fileName)
     {
         var jsonText = Resources.Load<TextAsset>($"JsonFolder/{fileName}");
         if (jsonText == null)
@@ -97,11 +177,9 @@ public class TableManager : SingletonMono<TableManager>
             Debug.LogError($"JSON 파일을 찾을 수 없다: {fileName}");
             return default;
         }
-
-        // JSON이 배열 형식일 경우, { "headerName": [...] } 로 감싸기
-        string wrappedJson = $"{{\"{headerName}\": {jsonText.text}}}";
-        //Debug.Log($"Wrapped JSON: {wrappedJson}");
-        var data = JsonUtility.FromJson<T>(wrappedJson);
+        
+        //Debug.Log(jsonText.text);
+        var data = JsonUtility.FromJson<T>(jsonText.text);
         return data;
     }
 }
