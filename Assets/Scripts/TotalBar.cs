@@ -106,22 +106,22 @@ public class TotalBar : MonoBehaviour
         }
     }
     
-    public void SetGauge(float currentHp, float maxHp, float currentStagger = 0, float maxStagger = 0)
-    {
-        if (hpBar)
-        {
-            DisplayHp();
-            hpBar.GaugeSetting(currentHp, maxHp);
-        }
-
-        // 무력화 게이지가 존재한다면 무력화 게이지에 값을 넣어준다
-        if (staggerBar)
-        {
-            staggerBar.GaugeSetting(currentStagger, maxStagger);
-            // 스트롱 아머, 하이퍼 아머가 아닐 경우
-            staggerBar.gameObject.SetActive(castCharacter.GetBodyType() is EBodyType.StrongArmor or EBodyType.HyperArmor);
-        }
-    }
+    // public void SetGauge(float currentHp, float maxHp, float currentStagger = 0, float maxStagger = 0)
+    // {
+    //     if (hpBar)
+    //     {
+    //         DisplayHp();
+    //         hpBar.GaugeSetting(currentHp, maxHp);
+    //     }
+    //
+    //     // 무력화 게이지가 존재한다면 무력화 게이지에 값을 넣어준다
+    //     if (staggerBar)
+    //     {
+    //         staggerBar.GaugeSetting(currentStagger, maxStagger);
+    //         // 스트롱 아머, 하이퍼 아머가 아닐 경우
+    //         staggerBar.gameObject.SetActive(castCharacter.GetBodyType() is EBodyType.StrongArmor or EBodyType.HyperArmor);
+    //     }
+    // }
     
     // 비활성화
     public void ActiveObject(bool active)

@@ -17,6 +17,7 @@ public class ConstValues : Singleton<ConstValues>
     public const float GaugeFillSpeed = 0.02f;
     
     public const string TotalBar = "TotalBar";
+    public const string TextFont = "TextFont";
     public const string Effect = "Effect";
     
     public const string Idle = "Idle";

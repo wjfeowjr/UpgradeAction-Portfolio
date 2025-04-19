@@ -143,7 +143,7 @@ public class GameManager : Singleton<GameManager>
     
     public GameObject SpawnToUIPool(string id, Transform uiTransform = null)
     {
-        var objectName = $"{id}(Clone)";
+        var objectName = $"{id}(Clone)"; 
         var isSearch = objectList.FindAll(x => x.name == objectName);
         
         GameObject go;

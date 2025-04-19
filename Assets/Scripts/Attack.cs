@@ -141,11 +141,17 @@ public class Attack : MonoBehaviour
         var hitTarget = col.GetComponent<Character>();
         if (hitTarget != null)
         {
+            if(hitTarget.GetImmortal())
+                return;
+            
             // 플레이어의 공격
             if (castChar.GetComponent<Player>())
             {
                 if (col.GetComponent<Monster>() == null)
                     return;
+                
+                // 스프라이트가 점멸한다
+                hitTarget.HitMaterial();
             }
             // 몬스터의 공격
             if (castChar.GetComponent<Monster>())
@@ -153,16 +159,18 @@ public class Attack : MonoBehaviour
                 if (col.GetComponent<Player>() == null)
                     return;
             }
-            
-            // 스프라이트가 점멸한다
-            hitTarget.HitMaterial();
-            
+
             // 피격이팩트 생성
             hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
             
             // 대상이 피해를 입는다(치명타 피해인지 확인)
             bool critical = GetCritical();
-            hitTarget.TakeDamage(GetDamage(critical));
+            int damage = GetDamage(critical);
+            
+            // 피해입기
+            hitTarget.TakeDamage(damage);
+            // 폰트소환
+            hitTarget.SpawnDamageFont(damage, critical);
 
             // 피해를 입고, 체력이 0으로 떨어지면 죽는다
             if (hitTarget.GetBasicStat().hp <= 0)
@@ -197,7 +205,7 @@ public class Attack : MonoBehaviour
                     break;
             }
             
-            if (hitTarget.GetAirborneState())
+            if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
             {
                 hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                 switch (attackInfo.effectType)

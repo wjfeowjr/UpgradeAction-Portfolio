@@ -112,6 +112,7 @@ public abstract class Character : MonoBehaviour
     [SerializeField] private Transform diePos;
     [SerializeField] protected Transform buffEffectPos;
     [SerializeField] protected Transform centerPos;
+    [SerializeField] protected Transform fontPos;
     
     [SerializeField] protected Vector2 standHitBoxSize;
     [SerializeField] protected Vector2 downHitBoxSize;
@@ -205,11 +206,18 @@ public abstract class Character : MonoBehaviour
     {
         return normalState == ENormalState.Airborne;
     }
+    public bool GetJumpState()
+    {
+        return landingState == ELandingState.Air;
+    }
     public EBodyType GetBodyType()
     {
         return bodyType;
     }
-
+    public bool GetImmortal()
+    {
+        return immortal;
+    }
     public bool GetImmuneStagger()
     {
         return immuneStagger;
@@ -248,8 +256,23 @@ public abstract class Character : MonoBehaviour
 
     public virtual void TakeDamage(int damage)
     {
+        if (damage == 0)
+            return;
+        
         // 체력 다는 알고리즘 삽입
         basicStat.hp -= damage;
+    }
+
+    public void SpawnDamageFont(int damage, bool critical)
+    {
+        var textFont = GameManager.Instance.SpawnToUIPool(ConstValues.TextFont, fontPos).GetComponent<TextFont>();
+
+        if (critical)
+            textFont.ColorSetting(EFontType.Critical);
+        else
+            textFont.ColorSetting(EFontType.Damage);
+        
+        textFont.DisplayFont(55, damage.ToString());
     }
 
     public void SpawnHitEffect(string id, float minScale = 1.0f)
@@ -419,6 +442,7 @@ public abstract class Character : MonoBehaviour
     {
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
+        immortal = false;
         
         ClearObjectList(controlObject);
         ClearObjectList(normalObject);

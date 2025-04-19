@@ -429,6 +429,9 @@ public class Monster : Character
     public override void TakeDamage(int damage)
     {
         base.TakeDamage(damage);
+        
+        if (damage == 0)
+            return;
         totalBar.ReduceHpBar(basicStat.hp, basicStat.maxHp, 1.5f);
     }
 

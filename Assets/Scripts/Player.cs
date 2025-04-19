@@ -49,8 +49,8 @@ public abstract class Player : Character
     [SerializeField] private bool canFlip;
     [SerializeField] private bool canMove;
     [SerializeField] private float moveRatio;
-    
-    protected float globalCoolTime;
+
+    private float globalCoolTime;
     protected float curGlobalCoolTime;
 
     // 스킬
@@ -369,6 +369,8 @@ public abstract class Player : Character
         
         if (landingState == ELandingState.Ground && normalState is ENormalState.Idle or ENormalState.Move or ENormalState.Attack)
         {
+            Debug.Log("점프");
+            curGlobalCoolTime = 0;
             jumpAttackCount = 0;
             CancelMotion();
             StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
@@ -480,7 +482,7 @@ public abstract class Player : Character
     {
         StateSetting(ENormalState.Dash, ConstValues.Dash, ConstValues.Dash);
         immortal = true;
-        //StandHitBox();
+        StandHitBox();
         GravityChange(0);
         myRigidbody.linearVelocity = Vector2.zero;
 

@@ -122,6 +122,17 @@ public class Missile : MonoBehaviour
         {
             if (!col.CompareTag(hitTag))
                 continue;
+
+            // 캐릭터들이 무적상태라면 무시한다
+            if (hitTag is ConstValues.Player or ConstValues.Monster)
+            {
+                var character = col.GetComponent<Character>();
+                if (character != null)
+                {
+                    if (character.GetImmortal())
+                        return;
+                }
+            }
             
             // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
             if (hitTag == ConstValues.Wall)
