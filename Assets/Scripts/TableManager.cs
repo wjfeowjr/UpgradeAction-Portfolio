@@ -148,6 +148,20 @@ public class MonsterDataList
     public List<MonsterData> Monster;
 }
 
+[Serializable]
+public class SkillData
+{
+    public string id;
+    public string type;
+    public float coolTime;
+    public string icon;
+}
+[Serializable]
+public class SkillDataList
+{
+    public List<SkillData> Skill;
+}
+
 public class TableManager : SingletonMono<TableManager>
 {
     public SpawnedObjectDataList spawnedObjectTable;
@@ -156,6 +170,7 @@ public class TableManager : SingletonMono<TableManager>
     public MissileDataList missileTable;
     public PlayerDataList playerTable;
     public MonsterDataList monsterTable;
+    public SkillDataList skillTable;
 
     public void Init()
     {
@@ -165,6 +180,7 @@ public class TableManager : SingletonMono<TableManager>
         missileTable = LoadDataFromJson<MissileDataList>(ConstValues.Missile);
         playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
         monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
+        skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);
         
         Debug.Log($"{name} 초기화 완료");
     }

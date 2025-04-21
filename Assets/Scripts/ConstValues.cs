@@ -15,10 +15,28 @@ public class ConstValues : Singleton<ConstValues>
     public const float WhiteSecond = 0.05f;
     public const float GaugeReduce = 0.3f;
     public const float GaugeFillSpeed = 0.02f;
+
+    public const string AtlasClone = "_0(Clone)";
+    
+    public const string LeftMoveKey = "LeftMoveKey";
+    public const string RightMoveKey = "RightMoveKey";
+    public const string AttackKey = "AttackKey";
+    public const string JumpKey = "JumpKey";
+    public const string DashKey = "DashKey";
+    public const string SkillKey1 = "SkillKey1";
+    public const string SkillKey2 = "SkillKey2";
+    public const string SkillKey3 = "SkillKey3";
+    public const string SkillKey4 = "SkillKey4";
+    public const string SkillKey5 = "SkillKey5";
+    public const string SkillKey6 = "SkillKey6";
+    public const string SkillKey7 = "SkillKey7";
+    public const string SkillKey8 = "SkillKey8";
     
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";
     public const string Effect = "Effect";
+
+    public const string Berserker = "Berserker";
     
     public const string Idle = "Idle";
     public const string Move = "Move";
@@ -46,9 +64,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string Monster = "Monster";
 
     public const string Skill = "Skill";
+    public const string PlayerSkill = "PlayerSkill";
     public const string Dash = "Dash";
     public const string DashEffect = "DashEffect";
-    
+
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
     public const string Grabbed = "Grabbed";
@@ -72,6 +91,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MoveSpeed = "MoveSpeed";
     public const string AttackSpeed = "AttackSpeed";
 
+    
     public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";
     public const string BerserkerAttack2 = "Berserker_Attack2";
@@ -80,6 +100,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerJumpAttack2 = "Berserker_JumpAttack2";
     public const string BerserkerJumpAttack2Effect = "Berserker_JumpAttack2_Effect";
 
+    public const string BerserkerDash = "Berserker_Dash";
     public const string BerserkerUpperSlash = "Berserker_UpperSlash";
     public const string BerserkerCrash = "Berserker_Crash";
     public const string BerserkerCrashSmash = "Berserker_Crash_Smash";

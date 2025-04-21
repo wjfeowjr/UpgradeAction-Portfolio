@@ -180,7 +180,8 @@ public class Player_Berserker : Player
             return;
         }
         
-        if (!IsCanSkill(skillKey))
+        var skillId = GameManager.Instance.GetBerserkerSkillKeyList().Find(x => x.keyCode == skillKey).skillId;
+        if (!IsCanSkill(skillId))
             return;
         
         Debug.Log("스킬 시작");
@@ -197,15 +198,16 @@ public class Player_Berserker : Player
         {
             finishSuccess = await Dash();
         }
-        else if (skillKey == GameManager.Instance.skillKey2)
+        
+        if (skillId == ConstValues.BerserkerUpperSlash)
         {
             finishSuccess = await UpperSlash();
         }
-        else if (skillKey == GameManager.Instance.skillKey3)
+        else if (skillId == ConstValues.BerserkerCrash)
         {
             finishSuccess = await Crash();
         }
-        else if (skillKey == GameManager.Instance.skillKey4)
+        else if (skillId == ConstValues.BerserkerFireStrike)
         {
             finishSuccess = await FireStrike();
         }

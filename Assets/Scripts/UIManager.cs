@@ -30,14 +30,17 @@ public class UIManager : SingletonMono<UIManager>
     private EventSystem eventSystem;
     private GameObject uiRootObject;
 
-    private UISkillPresenter uiSkillPresenter;
-    
     [SerializeField] private List<UIBase> uiList = new List<UIBase>();
     private Dictionary<ePoolType, RectTransform> dicPool = new Dictionary<ePoolType, RectTransform>();
 
     private void Update()
     {
-        uiSkillPresenter?.StartCoolTimeUpdater();
+        
+    }
+
+    public void RefreshSkillUI()
+    {
+        
     }
 
     #region 초기화
@@ -93,11 +96,6 @@ public class UIManager : SingletonMono<UIManager>
     {
         switch (type)
         {
-            case eUIType.UI_Skill:
-                if (uiBase is IUICommonView v1 && model is UICommonModel m1)
-                    uiSkillPresenter = new UISkillPresenter(v1, m1);
-                break;
-
             case eUIType.Popup_Common:
                 if (uiBase is IPopupCommonView v2 && model is PopupCommonModel m2)
                     new PopupCommonPresenter(v2, m2);

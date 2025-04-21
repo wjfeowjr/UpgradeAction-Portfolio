@@ -12,10 +12,10 @@ public class PlayerSkill
 {
     public string skillName;
     public float coolTime;
+    public string icon;
     private float lastUsedTime = -Mathf.Infinity;
     public bool IsOnCooldown => Time.time < lastUsedTime + coolTime;
-    public KeyCode skillKeyCode;
-    
+
     public float GetRemainingCooldown()
     {
         float remaining = (lastUsedTime + coolTime) - Time.time;
@@ -315,23 +315,25 @@ public abstract class Player : Character
     
 
     // 스킬을 사용 할 수 있는가?
-    protected bool IsCanSkill(KeyCode skillKey)
+    protected bool IsCanSkill(string id)
     {
-        var targetSkill = GetSkill(skillKey);
+        var targetSkill = GetSkill(id);
         if (targetSkill.IsOnCooldown)
         {
             Debug.Log($"{targetSkill.skillName} 쿨타임 중: {targetSkill.GetRemainingCooldown():F1}초 남음");
             return false;
         }
-        
+
+        var type = TableManager.Instance.skillTable.Skill.Find(x => x.id == id).type;
+
         // 대시
-        if (skillKey == GameManager.Instance.dashKey && IsCc())
+        if (type == ConstValues.Dash && IsCc())
         {
             Debug.Log("대시를 사용 할 수 있는 상태가 아님");
             return false;
         }
         // 일반 스킬
-        if (skillKey != GameManager.Instance.dashKey && (normalState == ENormalState.Skill || IsDamaged()))
+        if (type == ConstValues.Skill && (normalState == ENormalState.Skill || IsDamaged()))
         {
             Debug.Log("스킬을 사용 할 수 있는 상태가 아님");
             return false;
@@ -348,10 +350,10 @@ public abstract class Player : Character
         var dir = 0;
         
         // 오른쪽
-        if (transform.localScale.x > 0 && Input.GetKey(GameManager.Instance.moveRightKey))
+        if (transform.localScale.x > 0 && Input.GetKey(GameManager.Instance.rightMoveKey))
             dir = 1;
         // 왼쪽
-        if (transform.localScale.x < 0 && Input.GetKey(GameManager.Instance.moveLeftKey))
+        if (transform.localScale.x < 0 && Input.GetKey(GameManager.Instance.leftMoveKey))
             dir = -1;
         
         if(dir != 0)
@@ -434,37 +436,16 @@ public abstract class Player : Character
 
     private void InitSkill()
     {
-        PlayerSkill dash = new PlayerSkill()
+        foreach (var skill in TableManager.Instance.skillTable.Skill)
         {
-            skillName = "회피",
-            coolTime = 1,
-            skillKeyCode = KeyCode.Z,
-        };
-        skillList.Add(dash);
-        
-        PlayerSkill upperSlash = new PlayerSkill()
-        {
-            skillName = "올려베기",
-            coolTime = 1,
-            skillKeyCode = KeyCode.S,
-        };
-        skillList.Add(upperSlash);
-        
-        PlayerSkill crash = new PlayerSkill()
-        {
-            skillName = "박살내기",
-            coolTime = 1,
-            skillKeyCode = KeyCode.D,
-        };
-        skillList.Add(crash);
-        
-        PlayerSkill fireStrike = new PlayerSkill()
-        {
-            skillName = "불꽃강타",
-            coolTime = 1,
-            skillKeyCode = KeyCode.F,
-        };
-        skillList.Add(fireStrike);
+            PlayerSkill addedSkill = new PlayerSkill()
+            {
+                skillName = skill.id,
+                coolTime = skill.coolTime,
+                icon = skill.icon,
+            };
+            skillList.Add(addedSkill);
+        }
     }
     
     public List<PlayerSkill> GetSkillList()
@@ -472,9 +453,9 @@ public abstract class Player : Character
         return skillList;
     }
 
-    private PlayerSkill GetSkill(KeyCode skillCode)
+    private PlayerSkill GetSkill(string id)
     {
-        return skillList.Find(x => x.skillKeyCode == skillCode);
+        return skillList.Find(x => x.skillName == id);
     }
 
     // 대시
