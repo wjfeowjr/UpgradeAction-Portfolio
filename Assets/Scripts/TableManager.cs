@@ -153,6 +153,7 @@ public class SkillData
 {
     public string id;
     public string type;
+    public string caster;
     public float coolTime;
     public string icon;
 }

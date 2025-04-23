@@ -17,6 +17,9 @@ public class ConstValues : Singleton<ConstValues>
     public const float GaugeFillSpeed = 0.02f;
 
     public const string AtlasClone = "_0(Clone)";
+
+    public const string TitleScene = "Title";
+    public const string BattleScene = "Battle";
     
     public const string LeftMoveKey = "LeftMoveKey";
     public const string RightMoveKey = "RightMoveKey";
@@ -90,7 +93,6 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string MoveSpeed = "MoveSpeed";
     public const string AttackSpeed = "AttackSpeed";
-
     
     public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";

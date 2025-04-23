@@ -651,6 +651,7 @@ public abstract class Character : MonoBehaviour
     public virtual void Die()
     {
         CancelMotion();
+        ClearObjectList(buffObject);
         
         StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
         MoveStateSetting(EMoveState.Stopping);

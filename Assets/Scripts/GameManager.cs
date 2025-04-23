@@ -1,8 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using UnityEditor.U2D;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
 
@@ -43,7 +43,7 @@ public static class SkillBinding
     }
 
     // 불러올 때
-    public static string LoadSkillId(string defaultCollection)
+    public static string LoadSkillCollection(string defaultCollection)
     {
         if (PlayerPrefs.HasKey(ConstValues.PlayerSkill))
         {
@@ -114,7 +114,6 @@ public class GameManager : Singleton<GameManager>
     
     // 등록된 스킬 목록
     public SkillKeyCollection playerSkillKeyCollection;
-    public List<SettingSkill> settingSkillList = new List<SettingSkill>();
 
     // 매니저들
     public TableManager tableManager;
@@ -130,14 +129,23 @@ public class GameManager : Singleton<GameManager>
         InitAtlas();
     }
 
+    public void GoScene(string sceneName)
+    {
+        SceneManager.LoadScene(sceneName);
+    }
+
     public Player GetPlayer()
     {
         return player;
     }
+    public void SetPlayer(Player targetPlayer)
+    {
+        player = targetPlayer;
+    }
 
     private void DefaultKeySetting()
     {
-        PlayerPrefs.DeleteAll();
+        //PlayerPrefs.DeleteAll();
         
         leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
@@ -225,21 +233,19 @@ public class GameManager : Singleton<GameManager>
         };
         berserkerSkillKeyList.Add(skill8);
         playerSkillKeyCollection.berserkerSkillKeyList = berserkerSkillKeyList;
-
+        
         // json화
         string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
-        SkillBinding.LoadSkillId(json);
+        var loadJson = SkillBinding.LoadSkillCollection(json);
+        
+        var loadedSkillKeyCollection = JsonUtility.FromJson<SkillKeyCollection>(loadJson);
+        playerSkillKeyCollection = loadedSkillKeyCollection;
     }
-
-    private void SetBerserkerSkillId(KeyCode keyCode, string skillId)
+    public void SetBerserkerSkillId(KeyCode keyCode, string skillId)
     {
         playerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == keyCode).skillId = skillId;
-    }
 
-    private void SkillTest()
-    {
-        //SetBerserkerSkillId(skillKey1, default);
-        // json화
+        // 저장
         string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
         SkillBinding.SaveKey(json);
     }
@@ -263,7 +269,11 @@ public class GameManager : Singleton<GameManager>
         var playerSkillList = player.GetSkillList();
         foreach (var playerSkill in playerSkillList)
         {
-            settingSkillList.Find(x => x.skillId == playerSkill.skillName).playerSkill = playerSkill;
+            var matchSkillList = settingSkillList.FindAll(x => x.skillId == playerSkill.skillName);
+            foreach (var matchSkill in matchSkillList)
+            {
+                matchSkill.playerSkill = playerSkill;
+            }
         }
 
         return settingSkillList;
@@ -293,7 +303,7 @@ public class GameManager : Singleton<GameManager>
         return atlasDic[id];
     }
 
-    private async void InitManager()
+    private async void InitManager() 
     {
         tableManager = TableManager.Instance;
         resourceManager = ResourceManager.Instance;
@@ -306,7 +316,6 @@ public class GameManager : Singleton<GameManager>
     
     private async void OpenUI()
     {
-        
         //await UIManager.Instance.OpenAsync(eUIType.UI_Skill, model);
     }
 

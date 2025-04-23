@@ -4,6 +4,7 @@ using UnityEngine;
 using System.Linq;
 using UnityEngine.EventSystems;
 using Cysharp.Threading.Tasks;
+using UnityEngine.Serialization;
 
 public enum ePoolType
 {
@@ -26,22 +27,11 @@ public enum eUIType
 public class UIManager : SingletonMono<UIManager>
 {
     private bool isActive = false;
-    
     private EventSystem eventSystem;
     private GameObject uiRootObject;
-
-    [SerializeField] private List<UIBase> uiList = new List<UIBase>();
     private Dictionary<ePoolType, RectTransform> dicPool = new Dictionary<ePoolType, RectTransform>();
-
-    private void Update()
-    {
-        
-    }
-
-    public void RefreshSkillUI()
-    {
-        
-    }
+    
+    [SerializeField] private List<UIBase> uiList = new List<UIBase>();
 
     #region 초기화
     public void Init()
@@ -55,11 +45,8 @@ public class UIManager : SingletonMono<UIManager>
             
             uiRootObject.name = "UICanvas";
 
-            var uiPool = Utils.Search<RectTransform>(uiRootObject, ConstValues.RepositoryUI);
-            var popupPool = Utils.Search<RectTransform>(uiRootObject, ConstValues.RepositoryPopup);
-
-            dicPool.Add(ePoolType.UI, uiPool);
-            dicPool.Add(ePoolType.Popup, popupPool);
+            dicPool[ePoolType.UI]    = Utils.Search<RectTransform>(uiRootObject, ConstValues.RepositoryUI);
+            dicPool[ePoolType.Popup] = Utils.Search<RectTransform>(uiRootObject, ConstValues.RepositoryPopup);
 
             eventSystem = EventSystem.current;
             //DontDestroyOnLoad(uiRootObject);
@@ -73,6 +60,18 @@ public class UIManager : SingletonMono<UIManager>
     #endregion
 
     #region UI 컨트롤
+
+    public async void OpenSkillUI()
+    {
+        await UniTask.WaitUntil(() => GameManager.Instance.GetPlayer().GetSkillList().Count > 0);
+        
+        var model = new UISkillModel
+        {
+            settingSkillList = GameManager.Instance.GetSettingSkillList()
+        };
+        await OpenAsync(eUIType.UI_Skill, model);
+    }
+
     // 해당 타입의 UI를 닫는다.
     public void Close(eUIType uiType)
     {
@@ -96,6 +95,17 @@ public class UIManager : SingletonMono<UIManager>
     {
         switch (type)
         {
+            case eUIType.UI_Skill:
+                if (uiBase is UI_Skill skillView && model is UISkillModel skillModel)
+                {
+                    // 뷰 리스트를 인터페이스로 변환
+                    var viewInterfaces = skillView.SkillViews.ConvertAll(v => (IUISkillView)v);
+                    var presenter = new UISkillPresenter(viewInterfaces, skillModel);
+                    skillView.SetPresenter(presenter);
+                    presenter.SetSkillInfo();
+                }
+                break;
+            
             case eUIType.Popup_Common:
                 if (uiBase is IPopupCommonView v2 && model is PopupCommonModel m2)
                     new PopupCommonPresenter(v2, m2);
@@ -113,7 +123,8 @@ public class UIManager : SingletonMono<UIManager>
             SetActive(true);
             return uiBase;
         }
-        Debug.LogError($"{type}타입의 UI를 찾을 수 없다");
+
+        Debug.LogError($"{type} 타입의 UI를 찾을 수 없습니다.");
         SetActive(true);
         return null;
     }

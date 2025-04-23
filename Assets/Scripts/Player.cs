@@ -62,7 +62,6 @@ public abstract class Player : Character
     {
         base.Awake();
         globalCoolTime = 0.1f;
-        InitSkill();
     }
 
     protected override void OnEnable()
@@ -71,6 +70,12 @@ public abstract class Player : Character
         InitAdditionalStat();
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        GameManager.Instance.SetPlayer(this);
+    }
+
+    private void Start()
+    {
+        InitSkill();
     }
 
     protected void Update()
@@ -318,6 +323,12 @@ public abstract class Player : Character
     protected bool IsCanSkill(string id)
     {
         var targetSkill = GetSkill(id);
+        if (targetSkill == null)
+        {
+            Debug.Log($"해당 키에 등록된 스킬이 없음");
+            return false;
+        }
+        
         if (targetSkill.IsOnCooldown)
         {
             Debug.Log($"{targetSkill.skillName} 쿨타임 중: {targetSkill.GetRemainingCooldown():F1}초 남음");
@@ -438,6 +449,9 @@ public abstract class Player : Character
     {
         foreach (var skill in TableManager.Instance.skillTable.Skill)
         {
+            if (skill.caster != basicStat.id)
+                continue;
+            
             PlayerSkill addedSkill = new PlayerSkill()
             {
                 skillName = skill.id,
@@ -457,7 +471,7 @@ public abstract class Player : Character
     {
         return skillList.Find(x => x.skillName == id);
     }
-
+ 
     // 대시
     protected async UniTask<bool> Dash()
     {
