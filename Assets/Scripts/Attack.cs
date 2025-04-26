@@ -115,18 +115,18 @@ public class Attack : MonoBehaviour
     private bool GetCritical()
     {
         var critPercent = Random.Range(0, 100);
-        return critPercent < castChar.GetBasicStat().criticalChance;
+        return critPercent < castChar.BasicStat.criticalChance;
     }
     
     private int GetDamage(bool isCrit)
     {
         // 원래 주는 피해량
-        float originDamage = castChar.GetBasicStat().power * attackInfo.coefficient * 0.01f;
+        float originDamage = castChar.BasicStat.power * attackInfo.coefficient * 0.01f;
         // 룬, 특성에 따라서 최종적인 대미지의 피해량이 높아짐
         int finalDamage = (int)originDamage;
         if (isCrit)
         {
-            float critDamage = originDamage * castChar.GetBasicStat().criticalDamage * 0.01f;
+            float critDamage = originDamage * castChar.BasicStat.criticalDamage * 0.01f;
             finalDamage = (int)critDamage;
         }
 
@@ -141,7 +141,7 @@ public class Attack : MonoBehaviour
         var hitTarget = col.GetComponent<Character>();
         if (hitTarget != null)
         {
-            if(hitTarget.GetImmortal())
+            if(hitTarget.Immortal)
                 return;
             
             // 플레이어의 공격
@@ -173,7 +173,7 @@ public class Attack : MonoBehaviour
             hitTarget.SpawnDamageFont(damage, critical);
 
             // 피해를 입고, 체력이 0으로 떨어지면 죽는다
-            if (hitTarget.GetBasicStat().hp <= 0)
+            if (hitTarget.BasicStat.hp <= 0)
             {
                 hitTarget.Die();
                 return;
@@ -207,11 +207,14 @@ public class Attack : MonoBehaviour
             
             if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
             {
-                hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
+                if(hitTarget.BasicStat.bodyType == EBodyType.Normal)
+                    hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
+                
                 switch (attackInfo.effectType)
                 {
                     case EEffectType.Stun:
-                        hitTarget.Stun(attackInfo.effectTime);
+                        if(hitTarget.BasicStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor)
+                            hitTarget.Stun(attackInfo.effectTime);
                         break;
                 }
             }
@@ -220,16 +223,21 @@ public class Attack : MonoBehaviour
                 switch (attackInfo.effectType)
                 {
                     case EEffectType.Airborne:
-                        hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
+                        if(hitTarget.BasicStat.bodyType == EBodyType.Normal)
+                            hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                         break;
             
                     case EEffectType.Stun:
-                        hitTarget.Stun(attackInfo.effectTime);
+                        if(hitTarget.BasicStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor)
+                            hitTarget.Stun(attackInfo.effectTime);
                         break;
             
                     case EEffectType.Damaged:
-                        hitTarget.Damaged(attackInfo.effectTime);
-                        hitTarget.KnockBack(knockBackX);
+                        if (hitTarget.BasicStat.bodyType == EBodyType.Normal)
+                        {
+                            hitTarget.Damaged(attackInfo.effectTime);
+                            hitTarget.KnockBack(knockBackX);
+                        }
                         break;
                 }
             }

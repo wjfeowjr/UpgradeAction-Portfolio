@@ -67,7 +67,7 @@ public class TotalBar : MonoBehaviour
     // 무력화 게이지 감소
     public void StaggerBarReduce(float currentValue, float maxValue, float speed)
     {
-        if (castCharacter.GetImmuneStagger() || !staggerBar.gameObject.activeSelf)
+        if (castCharacter.ImmuneStagger || !staggerBar.gameObject.activeSelf)
             return;
 
         if (currentValue > 0)
@@ -94,15 +94,15 @@ public class TotalBar : MonoBehaviour
         if (hpBar)
         {
             DisplayHp();
-            hpBar.GaugeSetting(character.GetBasicStat().hp, character.GetBasicStat().maxHp);
+            hpBar.GaugeSetting(character.BasicStat.hp, character.BasicStat.maxHp);
         }
 
         // 무력화 게이지가 존재한다면 무력화 게이지에 값을 넣어준다
         if (staggerBar)
         {
-            staggerBar.GaugeSetting(character.GetBasicStat().stagger, character.GetBasicStat().maxStagger);
+            staggerBar.GaugeSetting(character.BasicStat.stagger, character.BasicStat.maxStagger);
             // 스트롱 아머, 하이퍼 아머가 아닐 경우
-            staggerBar.gameObject.SetActive(castCharacter.GetBodyType() is EBodyType.StrongArmor or EBodyType.HyperArmor);
+            staggerBar.gameObject.SetActive(castCharacter.BasicStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor);
         }
     }
     

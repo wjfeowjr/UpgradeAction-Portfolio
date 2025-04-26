@@ -1,13 +1,20 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class Controller : Singleton<Controller>
 {
-    [SerializeField] private Player player;
+    private Player player;
     public bool isLeftMove;
     public bool isRightMove;
+
+    private async void Start()
+    {
+        await UniTask.WaitUntil(() => GameManager.Instance.CurPlayer != null);
+        player = GameManager.Instance.CurPlayer;
+    }
 
     private void Update()
     {

@@ -69,7 +69,7 @@ public class BasicStat
 {
     public string id;
     public int name;
-    public string bodyType;
+    public EBodyType bodyType;
     public int hp;
     public int maxHp;
     public int power;
@@ -106,7 +106,6 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected ENormalState normalState;
     [SerializeField] protected EMoveState moveState;
     [SerializeField] protected ELandingState landingState;
-    [SerializeField] protected EBodyType bodyType;
     [SerializeField] protected List<Buff> buffList = new List<Buff>();
     
     [SerializeField] private Transform diePos;
@@ -125,9 +124,12 @@ public abstract class Character : MonoBehaviour
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
-
-    // 스텟 초기화
-    protected abstract void InitBasicStat();
+    
+    // 프로퍼티
+    public BasicStat BasicStat => basicStat;
+    public bool Immortal => immortal;
+    public bool ImmuneStagger => immuneStagger;
+    
     // 상태 설정
     protected abstract void StateSetting(ENormalState changeNormalState, string triggerName, string animId);
 
@@ -143,11 +145,6 @@ public abstract class Character : MonoBehaviour
         
         ScaleSetting();
         ColSizeSetting();
-    }
-
-    protected virtual void OnEnable()
-    {
-        InitBasicStat();
     }
 
     private void ScaleSetting()
@@ -192,16 +189,12 @@ public abstract class Character : MonoBehaviour
             // 스턴상태 회복
             if (expiredDeBuff.buffType == EBuffType.Stun && normalState == ENormalState.Stun)
             {
-                //StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+                basicStat.bodyType = originStat.bodyType;
                 StateRecovery();
             }
         }
     }
 
-    public BasicStat GetBasicStat()
-    {
-        return basicStat;
-    }
     public bool GetAirborneState()
     {
         return normalState == ENormalState.Airborne;
@@ -210,19 +203,7 @@ public abstract class Character : MonoBehaviour
     {
         return landingState == ELandingState.Air;
     }
-    public EBodyType GetBodyType()
-    {
-        return bodyType;
-    }
-    public bool GetImmortal()
-    {
-        return immortal;
-    }
-    public bool GetImmuneStagger()
-    {
-        return immuneStagger;
-    }
-    
+
     protected virtual void SetTriggerAnimator(string parameter)
     {
         myAnimator.SetTrigger(parameter);
@@ -265,7 +246,7 @@ public abstract class Character : MonoBehaviour
 
     public void SpawnDamageFont(int damage, bool critical)
     {
-        var textFont = GameManager.Instance.SpawnToUIPool(ConstValues.TextFont, fontPos).GetComponent<TextFont>();
+        var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, fontPos).GetComponent<TextFont>();
 
         if (critical)
             textFont.ColorSetting(EFontType.Critical);
@@ -401,7 +382,7 @@ public abstract class Character : MonoBehaviour
     }
     protected GameObject SpawnUI(string id, Transform uiTransform)
     {
-        var obj = GameManager.Instance.SpawnToUIPool(id, uiTransform);
+        var obj = GameManager.Instance.SpawnToUIObjectPool(id, uiTransform);
         
         var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (uiData == null)
@@ -496,11 +477,11 @@ public abstract class Character : MonoBehaviour
     }
     protected void BodyTypeSetting(string bodyTypeName)
     {
-        bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), bodyTypeName);
+        basicStat.bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), bodyTypeName);
     }
     protected bool SameBodyType(string bodyTypeName)
     {
-        return bodyType.ToString() == bodyTypeName;
+        return basicStat.bodyType.ToString() == bodyTypeName;
     }
     
     // 중력값 변경
@@ -742,6 +723,13 @@ public abstract class Character : MonoBehaviour
                 currentTime = 0,
             };
             buffList.Add(newDeBuff);
+            switch (buffType)
+            {
+                case EBuffType.Stun:
+                    basicStat.bodyType = EBodyType.Normal;
+                    break;
+            }
+            
             SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, true);
         }
         // 해당 디버프가 적용되어 있음

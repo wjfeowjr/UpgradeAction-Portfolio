@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class UIBase : MonoBehaviour
 {
-    public eUIType uiType;
+    [SerializeField] private eUIType uiType;
 
     public void Setup(eUIType type)
     {

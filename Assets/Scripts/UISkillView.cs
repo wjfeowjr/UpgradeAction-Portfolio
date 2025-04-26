@@ -45,7 +45,7 @@ public class UISkillPresenter
         SetSkillInfo();
     }
     
-    private void RefreshModel()
+    private async void RefreshModel()
     {
         _model = new UISkillModel
         {
@@ -89,6 +89,7 @@ public class UISkillPresenter
 public class UISkillView : MonoBehaviour, IUISkillView
 {
     private float maxCoolTime;
+    private string mySkillId;
     private KeyCode myKeyCode;
     
     [SerializeField] private Image skillImage;
@@ -98,9 +99,25 @@ public class UISkillView : MonoBehaviour, IUISkillView
     [SerializeField] private Image coolTimeImage;
     public event Action OnSkillDropped;
 
+    public bool IsDash()
+    {
+        return myKeyCode == GameManager.Instance.dashKey;
+    }
+    
+    public string GetSkillId()
+    {
+        return mySkillId;
+    }
+
+    public Sprite GetSprite()
+    {
+        return skillImage.sprite;
+    }
+    
     public void SetSkillInfo(KeyCode keyCode, string skillId, float coolTime)
     {
         myKeyCode = keyCode;
+        mySkillId = skillId;
         maxCoolTime = coolTime;
         
         skillKey.text = keyCode.ToString();

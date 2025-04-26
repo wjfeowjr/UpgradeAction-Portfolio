@@ -34,9 +34,12 @@ public class ConstValues : Singleton<ConstValues>
     public const string SkillKey6 = "SkillKey6";
     public const string SkillKey7 = "SkillKey7";
     public const string SkillKey8 = "SkillKey8";
+
+    public const string OptionKey = "OptionKey";
     
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";
+    public const string SkillImage = "SkillImage";
     public const string Effect = "Effect";
 
     public const string Berserker = "Berserker";
@@ -109,8 +112,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerCrashExplosion = "Berserker_Crash_Explosion";
     public const string BerserkerFireStrike = "Berserker_FireStrike";
     
-    public const string RepositoryUI = "UIPool";
-    public const string RepositoryPopup = "PopupPool";
+    public const string UIPool = "UIPool";
+    public const string PopupPool = "PopupPool";
     
     public const string Prefab = ".prefab";
     

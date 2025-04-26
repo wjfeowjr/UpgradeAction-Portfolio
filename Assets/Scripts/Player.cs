@@ -64,18 +64,12 @@ public abstract class Player : Character
         globalCoolTime = 0.1f;
     }
 
-    protected override void OnEnable()
+    protected void OnEnable()
     {
-        base.OnEnable();
         InitAdditionalStat();
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-        GameManager.Instance.SetPlayer(this);
-    }
-
-    private void Start()
-    {
-        InitSkill();
+        GameManager.Instance.CurPlayer = this;
     }
 
     protected void Update()
@@ -93,7 +87,7 @@ public abstract class Player : Character
     }
 
     // 테이블의 값으로 스텟 초기화(기본 스텟)
-    protected override void InitBasicStat()
+    public void InitBasicStat()
     {
         var myName = name.Split('(')[0];
         var targetStat = TableManager.Instance.playerTable.Player.Find(x => x.id == myName);
@@ -102,7 +96,7 @@ public abstract class Player : Character
         {
             id = targetStat.id,
             name = targetStat.name,
-            bodyType = targetStat.bodyType,
+            bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
             hp = targetStat.hp,
             power = targetStat.power,
             defence = targetStat.defence,
@@ -130,7 +124,7 @@ public abstract class Player : Character
             {
                 id = targetStat.id,
                 name = targetStat.name,
-                bodyType = targetStat.bodyType,
+                bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
                 hp = targetStat.hp,
                 power = targetStat.power,
                 defence = targetStat.defence,
@@ -387,6 +381,7 @@ public abstract class Player : Character
             jumpAttackCount = 0;
             CancelMotion();
             StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+            LandingStateSetting(ELandingState.Air);
 
             float jumpPosY = transform.position.y + 1.5f;
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 12.0f); 
@@ -402,7 +397,11 @@ public abstract class Player : Character
     // 도약
     protected async void Leap(float xVelocity, float yVelocity, float leapHeight)
     {
-        jumpAttackCount = 0;
+        if(landingState == ELandingState.Ground)
+            jumpAttackCount = 0;
+        
+        Debug.Log("도약");
+        LandingStateSetting(ELandingState.Air);
         float currentHeight = transform.position.y;
         myRigidbody.linearVelocity = new Vector2(transform.localScale.x * xVelocity, yVelocity);
         stateCancellation = new CancellationTokenSource();
@@ -445,7 +444,7 @@ public abstract class Player : Character
         }
     }
 
-    private void InitSkill()
+    public void InitSkill()
     {
         foreach (var skill in TableManager.Instance.skillTable.Skill)
         {

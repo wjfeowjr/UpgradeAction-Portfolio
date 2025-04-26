@@ -42,8 +42,8 @@ public class Gauge : MonoBehaviour
         {
             // 나눗셈을 할때 분모가 0이면 안된다
             float hpPercent = default;
-            if(character.GetBasicStat().maxHp != 0)
-                hpPercent = (float)character.GetBasicStat().hp / character.GetBasicStat().maxHp * 100;
+            if(character.BasicStat.maxHp != 0)
+                hpPercent = (float)character.BasicStat.hp / character.BasicStat.maxHp * 100;
             
             GaugeTextInput($"{(int)hpPercent}%");
             // 살아있을 때 최솟값은 항상 1%로
@@ -57,7 +57,7 @@ public class Gauge : MonoBehaviour
             return;
         
         if (character)
-            GaugeTextInput($"{character.GetBasicStat().hp}/{character.GetBasicStat().maxHp}");
+            GaugeTextInput($"{character.BasicStat.hp}/{character.BasicStat.maxHp}");
     }
 
     // 게이치 풀로 채우기

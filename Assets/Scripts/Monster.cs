@@ -58,16 +58,10 @@ public class Monster : Character
     [SerializeField] private Transform hpBarPos;
     [SerializeField] private TotalBar totalBar;
     [SerializeField] private SpriteRenderer[] appearMotions;      // 등장 연출 이미지
-    
-    protected override void Awake()
+
+    protected void OnEnable()
     {
-        base.Awake();
-        
-    }
-    
-    protected override void OnEnable()
-    {
-        base.OnEnable();
+        InitBasicStat();
         InitAdditionalStat();
         SpawnHpBar();
         // 등장
@@ -124,7 +118,7 @@ public class Monster : Character
     }
 
     // 테이블의 값으로 스텟 초기화(기본 스텟)
-    protected override async void InitBasicStat()
+    public async void InitBasicStat()
     {
         await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
         var myName = name.Split('(')[0];
@@ -134,7 +128,7 @@ public class Monster : Character
         {
             id = targetStat.id,
             name = targetStat.name,
-            bodyType = targetStat.bodyType,
+            bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
             hp = targetStat.hp,
             power = targetStat.power,
             defence = targetStat.defence,
@@ -152,7 +146,7 @@ public class Monster : Character
             {
                 id = targetStat.id,
                 name = targetStat.name,
-                bodyType = targetStat.bodyType,
+                bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
                 hp = targetStat.hp,
                 power = targetStat.power,
                 defence = targetStat.defence,
@@ -298,7 +292,7 @@ public class Monster : Character
         StandHitBox();
         StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
         MoveStateSetting(EMoveState.Stopping);
-        LookAt(GameManager.Instance.GetPlayer().transform.position.x);
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         
         stateCancellation = new CancellationTokenSource();
         await AppearProduction();
@@ -406,13 +400,13 @@ public class Monster : Character
         
         if (transform.localScale.x > 0)
         {
-            if (GameManager.Instance.GetPlayer().transform.position.x < transform.position.x - myStat.traceLength)
-                LookAt(GameManager.Instance.GetPlayer().transform.position.x);
+            if (GameManager.Instance.CurPlayer.transform.position.x < transform.position.x - myStat.traceLength)
+                LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         }
         else
         {
-            if (GameManager.Instance.GetPlayer().transform.position.x > transform.position.x + myStat.traceLength)
-                LookAt(GameManager.Instance.GetPlayer().transform.position.x);
+            if (GameManager.Instance.CurPlayer.transform.position.x > transform.position.x + myStat.traceLength)
+                LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         }
     }
     
@@ -460,10 +454,10 @@ public class Monster : Character
     {
         foreach (var pattern in patternInfo)
         {
-            if (GameManager.Instance.GetPlayer().transform.position.x > transform.position.x - pattern.attackRange[0] &&
-                GameManager.Instance.GetPlayer().transform.position.x < transform.position.x + pattern.attackRange[0] &&
-                GameManager.Instance.GetPlayer().transform.position.y > transform.position.y + myBoxCollider.size.y * 0.5f - pattern.attackRange[1] &&
-                GameManager.Instance.GetPlayer().transform.position.y < transform.position.y + myBoxCollider.size.y * 0.5f + pattern.attackRange[1])
+            if (GameManager.Instance.CurPlayer.transform.position.x > transform.position.x - pattern.attackRange[0] &&
+                GameManager.Instance.CurPlayer.transform.position.x < transform.position.x + pattern.attackRange[0] &&
+                GameManager.Instance.CurPlayer.transform.position.y > transform.position.y + myBoxCollider.size.y * 0.5f - pattern.attackRange[1] &&
+                GameManager.Instance.CurPlayer.transform.position.y < transform.position.y + myBoxCollider.size.y * 0.5f + pattern.attackRange[1])
             {
                 pattern.playerInAttackRange = true;
             }
@@ -567,7 +561,7 @@ public class Monster : Character
             
             MoveStateSetting(EMoveState.Stopping);
             StateSetting(ENormalState.Attack, $"{ConstValues.Attack}_{idx}", $"{ConstValues.Attack}_{idx}");
-            LookAt(GameManager.Instance.GetPlayer().transform.position.x);
+            LookAt(GameManager.Instance.CurPlayer.transform.position.x);
             MonsterPattern(idx);
         }
     }

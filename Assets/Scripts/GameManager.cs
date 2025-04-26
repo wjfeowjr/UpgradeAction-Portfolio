@@ -1,7 +1,11 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.AddressableAssets;
+using UnityEngine.EventSystems;
+using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
@@ -81,6 +85,24 @@ public class SettingSkill
     public PlayerSkill playerSkill;
 }
 
+public enum ePoolType
+{
+    None,
+    UI,
+    Popup,
+}
+
+public enum eUIType
+{
+    None,
+    
+    // UI
+    UI_Skill,
+    
+    // 팝업
+    Popup_Common,
+}
+
 public class GameManager : Singleton<GameManager>
 {
     public Material defaultMaterial;
@@ -101,25 +123,47 @@ public class GameManager : Singleton<GameManager>
     public KeyCode skillKey7;
     public KeyCode skillKey8;
 
+    public KeyCode optionKey;
+
     [SerializeField] private SpriteAtlas uiAtlas;
     private Sprite[] cloneSprites;
     private Dictionary<string, Sprite> atlasDic = new Dictionary<string, Sprite>();
 
-    [SerializeField] private Player player;
+    [SerializeField] private Player curPlayer;
     [SerializeField] private Transform objectPool;
+    [SerializeField] private Transform uiObjectPool;
     [SerializeField] private Transform uiPool;
+    [SerializeField] private Transform popupPool;
+    [SerializeField] private Transform highestPool;
+
+    [SerializeField] private Player[] players;
     [SerializeField] private List<GameObject> prefabList;
-    [SerializeField] private List<GameObject> uiList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
-    
+
+    private string firstPlayer;
+    private string secondPlayer = default;
+
     // 등록된 스킬 목록
     public SkillKeyCollection playerSkillKeyCollection;
 
     // 매니저들
     public TableManager tableManager;
-    public UIManager uiManager;
+    //public UIManager uiManager;
     public ResourceManager resourceManager;
     
+    // 프로퍼티
+    public Player CurPlayer
+    {
+        get => curPlayer;
+        set => curPlayer = value;
+    }
+
+    public string FirstPlayer
+    {
+        get => firstPlayer;
+        set => firstPlayer = value;
+    }
+
     protected override void Awake()
     {
         base.Awake();
@@ -127,31 +171,42 @@ public class GameManager : Singleton<GameManager>
         DefaultKeySetting(); 
         InitManager();
         InitAtlas();
+        InitPlayer();
     }
+    
+    // private async void LoadAllPrefabsByLabel()
+    // {
+    //     await Addressables.InitializeAsync();
+    //     
+    //     var handle = Addressables.LoadAssetsAsync<GameObject>(
+    //         "AllPrefabs",
+    //         prefab => objectList.Add(prefab)
+    //     );
+    //     handle.Completed += OnAllPrefabsLoaded;
+    // }
+    // private void OnAllPrefabsLoaded(AsyncOperationHandle<IList<GameObject>> handle)
+    // {
+    //     if (handle.Status == AsyncOperationStatus.Succeeded)
+    //         Debug.Log($"총 {objectList.Count}개 프리팹 로드 완료");
+    //     else
+    //         Debug.LogError("프리팹 일괄 로드 실패");
+    // }
 
     public void GoScene(string sceneName)
     {
         SceneManager.LoadScene(sceneName);
     }
 
-    public Player GetPlayer()
-    {
-        return player;
-    }
-    public void SetPlayer(Player targetPlayer)
-    {
-        player = targetPlayer;
-    }
-
     private void DefaultKeySetting()
     {
-        //PlayerPrefs.DeleteAll();
+        PlayerPrefs.DeleteAll();
         
         leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
         jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
         dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
+        optionKey = KeyBinding.LoadKey(ConstValues.OptionKey, KeyCode.Escape);
         
         skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.Q);
         skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.W);
@@ -163,7 +218,6 @@ public class GameManager : Singleton<GameManager>
         skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.F);
 
         InitBerserkerSkillKey();
-        //SkillTest();
     }
 
     private void InitBerserkerSkillKey()
@@ -252,7 +306,7 @@ public class GameManager : Singleton<GameManager>
     public List<SettingSkill> GetSettingSkillList()
     {
         var keyList = playerSkillKeyCollection.berserkerSkillKeyList;
-        if(player.GetBasicStat().id == ConstValues.Berserker)
+        if(curPlayer.BasicStat.id == ConstValues.Berserker)
             keyList = playerSkillKeyCollection.berserkerSkillKeyList;
 
         List<SettingSkill> settingSkillList = new List<SettingSkill>();
@@ -265,8 +319,8 @@ public class GameManager : Singleton<GameManager>
             };
             settingSkillList.Add(settingSkill);
         }
-
-        var playerSkillList = player.GetSkillList();
+        
+        var playerSkillList = curPlayer.GetSkillList();
         foreach (var playerSkill in playerSkillList)
         {
             var matchSkillList = settingSkillList.FindAll(x => x.skillId == playerSkill.skillName);
@@ -306,12 +360,12 @@ public class GameManager : Singleton<GameManager>
     private async void InitManager() 
     {
         tableManager = TableManager.Instance;
-        resourceManager = ResourceManager.Instance;
-        uiManager = UIManager.Instance;
+        //resourceManager = ResourceManager.Instance;
+        //uiManager = UIManager.Instance;
         
         tableManager.Init();
-        uiManager.Init();
-        await resourceManager.Init();
+        //uiManager.Init();
+        //await resourceManager.Init();
     }
     
     private async void OpenUI()
@@ -319,7 +373,89 @@ public class GameManager : Singleton<GameManager>
         //await UIManager.Instance.OpenAsync(eUIType.UI_Skill, model);
     }
 
+    // 플레이어
+    private void InitPlayer()
+    {
+        FirstPlayer = ConstValues.Berserker;
+        curPlayer = GetPlayer(FirstPlayer);
+        foreach (var player in players)
+        {
+            player.InitBasicStat();
+            player.InitSkill();
+        }
+    }
+    public void SpawnPlayer(string playerName, Transform playerPos)
+    {
+        ActivePlayer(playerName);
+        curPlayer.transform.position = playerPos.position;
+    }
+
+    private Player GetPlayer(string playerName)
+    {
+        foreach (var player in players)
+        {
+            if (player.name == playerName)
+                return player;
+        }
+        return null;
+    }
+    private void ActivePlayer(string playerName)
+    {
+        foreach (var player in players)
+            player.gameObject.SetActive(player.name == playerName);
+    }
+    
+    // 일반 오브젝트
     public GameObject SpawnToObjectPool(string id, Transform objTransform)
+    {
+        return SpawnToPool(id, objectPool, objTransform);
+    }
+    public GameObject SpawnToObjectPool(string id, Vector2 objVector)
+    {
+        return SpawnToPool(id, objectPool, objVector);
+    }
+    // 일반 UI오브젝트
+    public GameObject SpawnToUIObjectPool(string id, Transform objTransform)
+    {
+        return SpawnToPool(id, uiObjectPool, objTransform);
+    }
+    public GameObject SpawnToUIObjectPool(string id, Vector2 objVector)
+    {
+        return SpawnToPool(id, uiObjectPool, objVector);
+    }
+    // UI화면
+    public GameObject SpawnToUIPool(eUIType type, Transform objTransform)
+    {
+        var go = SpawnToPool(type.ToString(), uiPool, objTransform);
+        SetUI(type, go);
+        return go;
+    }
+    public GameObject SpawnToUIPool(eUIType type, Vector2 objVector)
+    {
+        var go = SpawnToPool(type.ToString(), uiPool, objVector);
+        SetUI(type, go);
+        return go;
+    }
+    // UI팝업화면
+    public GameObject SpawnToPopupPool(eUIType type, Transform objTransform)
+    {
+        return SpawnToPool(type.ToString(), popupPool, objTransform);
+    }
+    public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector)
+    {
+        return SpawnToPool(type.ToString(), popupPool, objVector);
+    }
+    // 최상위 UI오브젝트
+    public GameObject SpawnToHighestPool(string id, Transform objTransform)
+    {
+        return SpawnToPool(id, highestPool, objTransform);
+    }
+    public GameObject SpawnToHighestPool(string id, Vector2 objVector)
+    {
+        return SpawnToPool(id, highestPool, objVector);
+    }
+
+    private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)
     {
         var objectName = $"{id}(Clone)";
         var isSearch = objectList.FindAll(x => x.name == objectName);
@@ -327,7 +463,7 @@ public class GameManager : Singleton<GameManager>
         GameObject go;
         if (isSearch.Count == 0)
         {
-            go = Instantiate(prefabList.Find(x => x.name == id).gameObject, objectPool);
+            go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
             objectList.Add(go);
         }
         else
@@ -335,7 +471,7 @@ public class GameManager : Singleton<GameManager>
             var recycleObj = isSearch.Find(x => !x.activeSelf);
             if (recycleObj == null)
             {
-                go = Instantiate(prefabList.Find(x => x.name == id).gameObject, objectPool);
+                go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
                 objectList.Add(go);
             }
             else
@@ -347,7 +483,7 @@ public class GameManager : Singleton<GameManager>
         go.transform.position = objTransform.position;
         return go;
     }
-    public GameObject SpawnToObjectPool(string id, Vector2 objVector)
+    private GameObject SpawnToPool(string id, Transform pool, Vector2 objVector)
     { 
         var objectName = $"{id}(Clone)";
         var isSearch = objectList.FindAll(x => x.name == objectName);
@@ -355,7 +491,7 @@ public class GameManager : Singleton<GameManager>
         GameObject go;
         if (isSearch.Count == 0)
         {
-            go = Instantiate(prefabList.Find(x => x.name == id).gameObject, objectPool);
+            go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
             objectList.Add(go);
         }
         else
@@ -363,7 +499,7 @@ public class GameManager : Singleton<GameManager>
             var recycleObj = isSearch.Find(x => !x.activeSelf);
             if (recycleObj == null)
             {
-                go = Instantiate(prefabList.Find(x => x.name == id).gameObject, objectPool);
+                go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
                 objectList.Add(go);
             }
             else
@@ -375,34 +511,35 @@ public class GameManager : Singleton<GameManager>
         go.transform.position = objVector;
         return go;
     }
-    
-    public GameObject SpawnToUIPool(string id, Transform uiTransform = null)
+
+    // UI관련 코드
+    // 바인딩
+    private async void BindPresenter(eUIType type, UIBase uiBase)
     {
-        var objectName = $"{id}(Clone)"; 
-        var isSearch = objectList.FindAll(x => x.name == objectName);
-        
-        GameObject go;
-        if (isSearch.Count == 0)
+        switch (type)
         {
-            go = Instantiate(uiList.Find(x => x.name == id).gameObject, uiPool);
-            objectList.Add(go);
+            case eUIType.UI_Skill:
+                if (uiBase is UI_Skill skillView)
+                {
+                    var skillModel = new UISkillModel
+                    {
+                        settingSkillList = GetSettingSkillList()
+                    };
+                    // 뷰 리스트를 인터페이스로 변환
+                    var viewInterfaces = skillView.SkillViews.ConvertAll(v => (IUISkillView)v);
+                    var presenter = new UISkillPresenter(viewInterfaces, skillModel);
+                    skillView.SetPresenter(presenter);
+                    presenter.SetSkillInfo();
+                }
+                break;
         }
-        else
-        {
-            var recycleObj = isSearch.Find(x => !x.activeSelf);
-            if (recycleObj == null)
-            {
-                go = Instantiate(uiList.Find(x => x.name == id).gameObject, uiPool);
-                objectList.Add(go);
-            }
-            else
-            {
-                go = recycleObj;
-                go.SetActive(true);
-            }
-        }
-        if(uiTransform != null)
-            go.transform.position = uiTransform.position;
-        return go;
-    } 
+    }
+
+    private void SetUI(eUIType uiType, GameObject uiObject)
+    {
+        var uiBase = uiObject.GetComponent<UIBase>();
+        uiBase.Setup(uiType);
+        if (uiBase != null)
+            BindPresenter(uiType, uiBase);
+    }
 }
