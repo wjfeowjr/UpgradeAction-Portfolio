@@ -46,6 +46,7 @@ public class AttackData
     public float effectTime;
     public string directionType;
     public int coefficient;
+    public int stagger;
     public float knockBack;
     public string upperPower;
     public float colliderTime;
@@ -154,7 +155,7 @@ public class SkillData
     public string id;
     public string type;
     public string caster;
-    public float coolTime;
+    public string coolTime;
     public string icon;
 }
 [Serializable]

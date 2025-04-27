@@ -16,7 +16,7 @@ public class ConstValues : Singleton<ConstValues>
     public const float GaugeReduce = 0.3f;
     public const float GaugeFillSpeed = 0.02f;
 
-    public const string AtlasClone = "_0(Clone)";
+    public const string AtlasClone = "(Clone)";
 
     public const string TitleScene = "Title";
     public const string BattleScene = "Battle";
@@ -43,7 +43,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string Effect = "Effect";
 
     public const string Berserker = "Berserker";
-    
+    public const string Gunner = "Gunner";
+
     public const string Idle = "Idle";
     public const string Move = "Move";
     public const string Jump = "Jump";
@@ -111,7 +112,18 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerCrashSmash = "Berserker_Crash_Smash";
     public const string BerserkerCrashExplosion = "Berserker_Crash_Explosion";
     public const string BerserkerFireStrike = "Berserker_FireStrike";
+    public const string BerserkerChargeCrash = "Berserker_ChargeCrash";
+    public const string BerserkerChargeCrashSlash = "Berserker_ChargeCrash_Slash";
+    public const string BerserkerChargeCrashSmash = "Berserker_ChargeCrash_Smash";
+    public const string BerserkerChargeCrashSmashEffect = "Berserker_ChargeCrash_SmashEffect";
     
+    public const string GunnerDash = "Gunner_Dash";
+    public const string GunnerGrenade = "Gunner_Grenade";
+    public const string GunnerKnockBackShot = "Gunner_KnockBackShot";
+    public const string GunnerCrazyShot = "Gunner_CrazyShot";
+    public const string GunnerBigShot = "Gunner_BigShot";
+    public const string GunnerBigShotShooting = "Gunner_BigShot_Shooting";
+
     public const string UIPool = "UIPool";
     public const string PopupPool = "PopupPool";
     

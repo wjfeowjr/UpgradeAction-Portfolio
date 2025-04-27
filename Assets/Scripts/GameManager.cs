@@ -75,6 +75,7 @@ public class SkillKey
 public class SkillKeyCollection
 {
     public List<SkillKey> berserkerSkillKeyList;
+    public List<SkillKey> gunnerSkillKeyList;
 }
 
 [Serializable]
@@ -217,76 +218,43 @@ public class GameManager : Singleton<GameManager>
         skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.D);
         skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.F);
 
-        InitBerserkerSkillKey();
+        InitSkillCollection();
     }
 
-    private void InitBerserkerSkillKey()
+    private SkillKey SetSkillKey(string skillId, KeyCode keyCode)
+    {
+        var skillKey = new SkillKey()
+        {
+            skillId = skillId,
+            keyCode = keyCode,
+        };
+        return skillKey;
+    }
+    private void InitSkillCollection()
     {
         List<SkillKey> berserkerSkillKeyList = new List<SkillKey>();
-        
-        SkillKey dash = new SkillKey()
-        {
-            skillId = ConstValues.BerserkerDash,
-            keyCode = dashKey,
-        };
-        berserkerSkillKeyList.Add(dash);
-        
-        SkillKey skill1 = new SkillKey()
-        {
-            skillId = default,
-            keyCode = skillKey1,
-        };
-        berserkerSkillKeyList.Add(skill1);
-        
-        SkillKey skill2 = new SkillKey()
-        {
-            skillId = default,
-            keyCode = skillKey2,
-        };
-        berserkerSkillKeyList.Add(skill2);
-        
-        SkillKey skill3 = new SkillKey()
-        {
-            skillId = default,
-            keyCode = skillKey3,
-        };
-        berserkerSkillKeyList.Add(skill3);
-        
-        SkillKey skill4 = new SkillKey()
-        {
-            skillId = default,
-            keyCode = skillKey4,
-        };
-        berserkerSkillKeyList.Add(skill4);
-        
-        SkillKey skill5 = new SkillKey()
-        {
-            skillId = default,
-            keyCode = skillKey5,
-        };
-        berserkerSkillKeyList.Add(skill5);
-        
-        SkillKey skill6 = new SkillKey()
-        {
-            skillId = ConstValues.BerserkerUpperSlash,
-            keyCode = skillKey6,
-        };
-        berserkerSkillKeyList.Add(skill6);
-        
-        SkillKey skill7 = new SkillKey()
-        {
-            skillId = ConstValues.BerserkerCrash,
-            keyCode = skillKey7,
-        };
-        berserkerSkillKeyList.Add(skill7);
-        
-        SkillKey skill8 = new SkillKey()
-        {
-            skillId = ConstValues.BerserkerFireStrike,
-            keyCode = skillKey8,
-        };
-        berserkerSkillKeyList.Add(skill8);
+        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey1));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey2));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey3));
+        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey5));
+        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerUpperSlash, skillKey6));
+        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey7));
+        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey8));
         playerSkillKeyCollection.berserkerSkillKeyList = berserkerSkillKeyList;
+        
+        List<SkillKey> gunnerSkillKeyList = new List<SkillKey>();
+        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerDash, dashKey));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey1));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey2));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey3));
+        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey5));
+        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey6));
+        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
+        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
+        playerSkillKeyCollection.gunnerSkillKeyList = gunnerSkillKeyList;
         
         // json화
         string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
@@ -295,9 +263,15 @@ public class GameManager : Singleton<GameManager>
         var loadedSkillKeyCollection = JsonUtility.FromJson<SkillKeyCollection>(loadJson);
         playerSkillKeyCollection = loadedSkillKeyCollection;
     }
-    public void SetBerserkerSkillId(KeyCode keyCode, string skillId)
+    public void SetSkillId(KeyCode keyCode, string skillId)
     {
-        playerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == keyCode).skillId = skillId;
+        var berserkerSkillKey = playerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == keyCode);
+        if (berserkerSkillKey != null)
+            berserkerSkillKey.skillId = skillId;
+        
+        var gunnerSkillKey = playerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == keyCode);
+        if (gunnerSkillKey != null)
+            gunnerSkillKey.skillId = skillId;
 
         // 저장
         string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
@@ -305,10 +279,13 @@ public class GameManager : Singleton<GameManager>
     }
     public List<SettingSkill> GetSettingSkillList()
     {
-        var keyList = playerSkillKeyCollection.berserkerSkillKeyList;
+        List<SkillKey> keyList = null;
+        
         if(curPlayer.BasicStat.id == ConstValues.Berserker)
             keyList = playerSkillKeyCollection.berserkerSkillKeyList;
-
+        else if(curPlayer.BasicStat.id == ConstValues.Gunner)
+            keyList = playerSkillKeyCollection.gunnerSkillKeyList;
+        
         List<SettingSkill> settingSkillList = new List<SettingSkill>();
         foreach (var key in keyList)
         {
@@ -348,8 +325,8 @@ public class GameManager : Singleton<GameManager>
 
         foreach (var sprite in cloneSprites)
         {
-            sprite.name = sprite.name.Split(ConstValues.AtlasClone)[0];
-            atlasDic.Add(sprite.name, sprite);
+            var keyName = sprite.name.Split(ConstValues.AtlasClone)[0];
+            atlasDic.Add(keyName, sprite);
         }
     }
     public Sprite GetUISprite(string id)

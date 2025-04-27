@@ -26,6 +26,7 @@ public class AttackInfo
     public float effectTime;
     public EDirectionType directionType;
     public int coefficient;
+    public int stagger;
     public float knockBack;
     public Vector2 upperPower;
     public float colliderTime;
@@ -61,6 +62,7 @@ public class Attack : MonoBehaviour
         attackInfo.effectTime = attackData.effectTime;
         attackInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
         attackInfo.coefficient = attackData.coefficient;
+        attackInfo.stagger = attackData.stagger;
         attackInfo.knockBack = attackData.knockBack;
         
         if (string.IsNullOrEmpty(attackData.upperPower))

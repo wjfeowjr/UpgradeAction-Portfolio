@@ -11,20 +11,68 @@ using static ENormalState;
 public class PlayerSkill
 {
     public string skillName;
-    public float coolTime;
+    public List<float> coolTime = new List<float>();
+    public int maxStack;
     public string icon;
     private float lastUsedTime = -Mathf.Infinity;
-    public bool IsOnCooldown => Time.time < lastUsedTime + coolTime;
-
-    public float GetRemainingCooldown()
+    private float stackUsedTime = -Mathf.Infinity;
+    
+    public bool IsOnCooldown
     {
-        float remaining = (lastUsedTime + coolTime) - Time.time;
-        return Mathf.Max(0f, remaining);
+        get
+        {
+            if (coolTime.Count > 1)
+            {
+                return Time.time < lastUsedTime + coolTime[0] || coolTime[2] < 1;
+            }
+            else
+            {
+                return Time.time < lastUsedTime + coolTime[0];
+            }
+        }
+    }
+
+    public List<float> GetRemainingCooldown()
+    {
+        List<float> remainingList = new List<float>();
+        float remaining = (lastUsedTime + coolTime[0]) - Time.time;
+        remainingList.Add(Mathf.Max(0f, remaining));
+        
+        // 스택형 스킬이라면
+        if (coolTime.Count > 1)
+        {
+            // 스택 쿨타임이 별개로 돌아간다
+            float remaining2 = (stackUsedTime + coolTime[1]) - Time.time;
+            // 스택 쿨타임이 다 차게 되면
+            if (remaining2 < 0 && (int)coolTime[2] < maxStack)
+            {
+                // 스킬 스택이 1 차오르고
+                coolTime[2] += 1;
+                // 스택이 찼는데도 최대 스택에 도달하지 못한다면
+                if ((int)coolTime[2] < maxStack)
+                    // 스택 쿨타임만큼 시간을 늘려준다
+                    stackUsedTime += coolTime[1];
+            }
+            
+            remainingList.Add(Mathf.Max(0f, remaining2));
+            
+            float remaining3 = coolTime[2];
+            remainingList.Add(remaining3);
+        }
+
+        return remainingList;
     }
 
     public void SetCoolTime()
     {
         lastUsedTime = Time.time;
+        if (coolTime.Count > 1)
+        {
+            if((int)coolTime[2] == maxStack)
+                stackUsedTime = Time.time;
+            
+            coolTime[2] -= 1;
+        }
     }
 }
 
@@ -252,6 +300,9 @@ public abstract class Player : Character
     
     private void UpdateJumpDown()
     {
+        if (basicStat.id == ConstValues.Gunner)
+            return;
+        
         if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Jump) && myRigidbody.linearVelocity.y < 0)
         {
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
@@ -325,7 +376,12 @@ public abstract class Player : Character
         
         if (targetSkill.IsOnCooldown)
         {
-            Debug.Log($"{targetSkill.skillName} 쿨타임 중: {targetSkill.GetRemainingCooldown():F1}초 남음");
+            var coolTimeList = targetSkill.GetRemainingCooldown();
+            if(coolTimeList.Count > 0)
+                Debug.Log($"{targetSkill.skillName} 기본 쿨타임 {coolTimeList[0]:F1}초 남음, 스택 쿨타임 {coolTimeList[1]:F1}초 남음, 남은 스택 개수 {coolTimeList[2]:F1}개");
+            else
+                Debug.Log($"{targetSkill.skillName} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
+            
             return false;
         }
 
@@ -419,25 +475,23 @@ public abstract class Player : Character
         float delay = 0;
         while (delay < attackDelay)
         {
-            //float totalAttackSpeed = finalAttackSpeed;
             delay += Time.deltaTime * basicStat.attackSpeed;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
-            if (Input.GetKeyDown(GameManager.Instance.attackKey))
-                nextAttack = true;
+            // if (Input.GetKeyDown(GameManager.Instance.attackKey))
+            //     nextAttack = true;
         }
     }
     protected async UniTask NextAttackDelay(float originDelay, float afterDelay)
     {
-        float timer = 0;
+        float delay = 0;
         float maxDelay = originDelay + afterDelay;
-        while (timer < maxDelay)
+        while (delay < maxDelay)
         {
-            //float totalAttackSpeed = finalAttackSpeed;
-            timer += Time.deltaTime;
+            delay += Time.deltaTime * basicStat.attackSpeed;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
-            if (Input.GetKeyDown(GameManager.Instance.attackKey))
+            if (Input.GetKey(GameManager.Instance.attackKey))
                 nextAttack = true;
-            if (timer > originDelay && nextAttack)
+            if (delay > originDelay && nextAttack)
             {
                 break;
             }
@@ -451,12 +505,18 @@ public abstract class Player : Character
             if (skill.caster != basicStat.id)
                 continue;
             
-            PlayerSkill addedSkill = new PlayerSkill()
-            {
-                skillName = skill.id,
-                coolTime = skill.coolTime,
-                icon = skill.icon,
-            };
+            PlayerSkill addedSkill = new PlayerSkill();
+            
+            addedSkill.skillName = skill.id;
+            var coolTimeArray = skill.coolTime.Split(',');
+            foreach (var coolTime in coolTimeArray)
+                addedSkill.coolTime.Add(float.Parse(coolTime));
+
+            if (addedSkill.coolTime.Count > 1)
+                addedSkill.maxStack = (int)addedSkill.coolTime[2];
+            
+            addedSkill.icon = skill.icon;
+                
             skillList.Add(addedSkill);
         }
     }

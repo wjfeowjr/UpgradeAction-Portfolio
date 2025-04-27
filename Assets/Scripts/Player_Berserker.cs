@@ -16,6 +16,8 @@ public class Player_Berserker : Player
     [SerializeField] private Transform crashPos;
     [SerializeField] private Transform crashExplosionPos;
     [SerializeField] private Transform fireStrikePos;
+    [SerializeField] private Transform chargeCrashSmashPos;
+    [SerializeField] private Transform chargeCrashSmashEffectPos;
     
     public override async void Attack()
     {
@@ -211,6 +213,10 @@ public class Player_Berserker : Player
         {
             finishSuccess = await FireStrike();
         }
+        else if (skillId == ConstValues.BerserkerChargeCrash)
+        {
+            finishSuccess = await ChargeCrash();
+        }
 
         if (!finishSuccess)
         {
@@ -300,6 +306,50 @@ public class Player_Berserker : Player
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
 
+        return true;
+    }
+    
+    // 광전사 차지크래시
+    private async UniTask<bool> ChargeCrash()
+    {
+        float delay1 = 0.35f;
+        float delay2 = 0.25f;
+        float delay3 = 0.4f;
+
+        GravityChange(0);
+        myRigidbody.linearVelocity = Vector2.zero;
+        
+        StateSetting(ENormalState.Skill, ConstValues.BerserkerChargeCrash, ConstValues.BerserkerChargeCrash);
+        
+        SpawnAttack(ConstValues.BerserkerChargeCrash, centerPos);        
+        
+        var dashSpeed = 16;
+        var dashLength = 5;
+        // 대시 레이캐스트 체크
+        chargeVector = RayCheckLength(dashLength, 0);
+        // 돌진
+        await Charge(dashSpeed, 1.0f, dashLength, 0.0f);
+        
+        SetTriggerAnimator(ConstValues.ComboAttack);
+        SpawnAttack(ConstValues.BerserkerChargeCrashSlash, centerPos);       
+        SpawnObject(ConstValues.BerserkerFlash, centerPos);
+        
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+        
+        myRigidbody.linearVelocity = Vector2.zero;
+        SetTriggerAnimator(ConstValues.ComboAttack);
+        
+        if (await AttackDelay(delay2).SuppressCancellationThrow())
+            return false;
+        
+        SpawnAttack(ConstValues.BerserkerChargeCrashSmash, chargeCrashSmashPos);
+        SpawnObject(ConstValues.BerserkerChargeCrashSmashEffect, chargeCrashSmashEffectPos);
+        GravityChange(ConstValues.BasicGravity); 
+        
+        if (await AttackDelay(delay3).SuppressCancellationThrow())
+            return false;
+        
         return true;
     }
 }
