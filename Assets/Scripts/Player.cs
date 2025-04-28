@@ -120,8 +120,9 @@ public abstract class Player : Character
         GameManager.Instance.CurPlayer = this;
     }
 
-    protected void Update()
+    protected override void Update()
     {
+        base.Update();
         UpdateFlip();
         UpdateJumpDown();
         UpdateAirborneDown();
@@ -247,7 +248,7 @@ public abstract class Player : Character
             }
         }
 
-        var animationsData = TableManager.Instance.animationsTable.Animations.Find(x => x.id == animId);
+        var animationsData = TableManager.Instance.animationsTable.Animations.Find(x => x.id == animId && (x.caster == ConstValues.All || x.caster == basicStat.id));
         if (animationsData != null)
         {
             // 애니메이션 테이블을 체크하여, 해당 애니메이션 도중 전환, 이동이 가능한지 판단
@@ -377,7 +378,7 @@ public abstract class Player : Character
         if (targetSkill.IsOnCooldown)
         {
             var coolTimeList = targetSkill.GetRemainingCooldown();
-            if(coolTimeList.Count > 0)
+            if(coolTimeList.Count > 1)
                 Debug.Log($"{targetSkill.skillName} 기본 쿨타임 {coolTimeList[0]:F1}초 남음, 스택 쿨타임 {coolTimeList[1]:F1}초 남음, 남은 스택 개수 {coolTimeList[2]:F1}개");
             else
                 Debug.Log($"{targetSkill.skillName} 쿨타임 중: {coolTimeList[0]:F1}초 남음");

@@ -11,8 +11,9 @@ public class MissileInfo
     public float speed;
     public bool piercingBullet;
     public float limitLength;
-    public List<string> hitTagList;
+    public List<string> hitLayerList;
     public string spawnObject;
+    public bool hitSpawn;
     public Action<string, Transform> explosionAction;
 }
 public class Missile : MonoBehaviour
@@ -34,7 +35,7 @@ public class Missile : MonoBehaviour
         myCollider.enabled = true;
     }
 
-    private void Update()
+    private void FixedUpdate()
     {
         Move();
     }
@@ -49,12 +50,13 @@ public class Missile : MonoBehaviour
             missileInfo.piercingBullet = missileData.piercingBullet;
             missileInfo.limitLength = missileData.limitLength;
         
-            var hitTagSplit = missileData.hitTag.Split(',');
-            missileInfo.hitTagList = new List<string>();
-            foreach (var hitTag in hitTagSplit)
-                missileInfo.hitTagList.Add(hitTag);
-        
+            var hitLayerSplit = missileData.hitLayer.Split(',');
+            missileInfo.hitLayerList = new List<string>();
+            foreach (var hitLayer in hitLayerSplit)
+                missileInfo.hitLayerList.Add(hitLayer);
+            
             missileInfo.spawnObject = missileData.spawnObject;
+            missileInfo.hitSpawn = missileData.hitSpawn;
             missileInfo.explosionAction = action;
         }
         dir = missileDir;
@@ -87,27 +89,37 @@ public class Missile : MonoBehaviour
         {
             if (transform.position.x <= limitPosX)
             {
-                Delete();
+                Delete(false);
             }
         }
         else if (dir == Vector2.right)
         {
             if (transform.position.x >= limitPosX)
             {
-                Delete();
+                Delete(false);
             }
         }
     }
 
-    private async void Delete()
+    private async void Delete(bool isCollision)
     {
         if (isDelete)
             return;
         isDelete = true;
-        
+
         if (missileInfo.spawnObject != ConstValues.None)
-            missileInfo.explosionAction(missileInfo.spawnObject, transform);
-        
+        {
+            if (isCollision)
+            {
+                missileInfo.explosionAction(missileInfo.spawnObject, transform);
+            }
+            else
+            {
+                if (!missileInfo.hitSpawn)
+                    missileInfo.explosionAction(missileInfo.spawnObject, transform);
+            }
+        }
+
         myCollider.enabled = false;
 
         // 잔상 남기기 용도
@@ -118,9 +130,9 @@ public class Missile : MonoBehaviour
     // 미사일 소멸에만 관여(공격판정은 여기서 정하지 않는다)
     private void OnTriggerEnter2D(Collider2D col)
     {
-        foreach (var hitTag in missileInfo.hitTagList)
+        foreach (var hitTag in missileInfo.hitLayerList)
         {
-            if (!col.CompareTag(hitTag))
+            if (col.gameObject.layer != LayerMask.NameToLayer(hitTag))
                 continue;
 
             // 캐릭터들이 무적상태라면 무시한다
@@ -147,7 +159,7 @@ public class Missile : MonoBehaviour
                     return;
             }
 
-            Delete();
+            Delete(true);
             return;
         }
     }

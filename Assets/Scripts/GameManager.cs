@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
 using UnityEngine.EventSystems;
@@ -138,7 +139,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private Transform highestPool;
 
     [SerializeField] private Player[] players;
-    [SerializeField] private List<GameObject> prefabList;
+    [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
 
     private string firstPlayer;
@@ -169,7 +170,7 @@ public class GameManager : Singleton<GameManager>
     {
         base.Awake();
         Application.targetFrameRate = 60;
-        DefaultKeySetting(); 
+        DefaultKeySetting();
         InitManager();
         InitAtlas();
         InitPlayer();
@@ -192,6 +193,21 @@ public class GameManager : Singleton<GameManager>
     //     else
     //         Debug.LogError("프리팹 일괄 로드 실패");
     // }
+
+    public List<GameObject> GetPrefabList()
+    {
+        return prefabList;
+    }
+
+    // 재귀 순회하여 모든 자식 GameObject 추가
+    private static void CollectRecursive(Transform parent, List<GameObject> list)
+    {
+        foreach (Transform child in parent)
+        {
+            list.Add(child.gameObject);
+            CollectRecursive(child, list);
+        }
+    }
 
     public void GoScene(string sceneName)
     {
@@ -353,7 +369,7 @@ public class GameManager : Singleton<GameManager>
     // 플레이어
     private void InitPlayer()
     {
-        FirstPlayer = ConstValues.Berserker;
+        FirstPlayer = ConstValues.Gunner;
         curPlayer = GetPlayer(FirstPlayer);
         foreach (var player in players)
         {
@@ -454,10 +470,13 @@ public class GameManager : Singleton<GameManager>
             else
             {
                 go = recycleObj;
-                go.SetActive(true);
             }
         }
+        
+        // 미사일의 잔상버그를 막기 위한 조치
+        go.SetActive(false);
         go.transform.position = objTransform.position;
+        go.SetActive(true);
         return go;
     }
     private GameObject SpawnToPool(string id, Transform pool, Vector2 objVector)
@@ -482,10 +501,13 @@ public class GameManager : Singleton<GameManager>
             else
             {
                 go = recycleObj;
-                go.SetActive(true);
             }
         }
+        
+        // 미사일의 잔상버그를 막기 위한 조치
+        go.SetActive(false);
         go.transform.position = objVector;
+        go.SetActive(true);
         return go;
     }
 

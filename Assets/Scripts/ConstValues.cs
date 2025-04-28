@@ -15,11 +15,18 @@ public class ConstValues : Singleton<ConstValues>
     public const float WhiteSecond = 0.05f;
     public const float GaugeReduce = 0.3f;
     public const float GaugeFillSpeed = 0.02f;
+    
+    public const float DefaultLinearDamping = 0f;
+    public const float DefaultAngularDamping = 0.05f;
+    
+    public const string PrefabFolder = "Assets/Prefab";
 
     public const string AtlasClone = "(Clone)";
 
     public const string TitleScene = "Title";
     public const string BattleScene = "Battle";
+
+    public const string All = "All";
     
     public const string LeftMoveKey = "LeftMoveKey";
     public const string RightMoveKey = "RightMoveKey";
@@ -89,6 +96,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Jumping = "Jumping";
     
     public const string ComboAttack = "ComboAttack";
+    public const string FinalAttack = "FinalAttack";
     
     public const string Ground = "Ground";
     
@@ -117,6 +125,12 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerChargeCrashSmash = "Berserker_ChargeCrash_Smash";
     public const string BerserkerChargeCrashSmashEffect = "Berserker_ChargeCrash_SmashEffect";
     
+    public const string GunnerFlash = "Berserker_Flash";
+    public const string GunnerAttack1Object = "Gunner_Attack1Object";
+    public const string GunnerAttackEffect1 = "Gunner_AttackEffect1";
+    public const string GunnerAttack2Object = "Gunner_Attack2Object";
+    public const string GunnerAttackEffect2 = "Gunner_AttackEffect2";
+
     public const string GunnerDash = "Gunner_Dash";
     public const string GunnerGrenade = "Gunner_Grenade";
     public const string GunnerKnockBackShot = "Gunner_KnockBackShot";

@@ -40,7 +40,7 @@ public class Attack : MonoBehaviour
     private Collider2D myCollider;
     protected List<Collider2D> targetColliders = new List<Collider2D>();
     
-    private int dir;
+    [SerializeField] private int dir;
     private float leftColliderTime;
 
     private void Awake()

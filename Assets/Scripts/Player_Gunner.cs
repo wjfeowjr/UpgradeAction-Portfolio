@@ -1,8 +1,12 @@
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class Player_Gunner : Player
 {
+    [SerializeField] private Transform attack1Pos;
+    [SerializeField] private Transform attack2Pos;
+
     public override async void Attack()
     {
         if(!GetGlobalCoolTime())
@@ -24,7 +28,7 @@ public class Player_Gunner : Player
         {
             // 지상공격
             case ELandingState.Ground:
-                //finishSuccess = await BerserkerLandingAttack();
+                finishSuccess = await GunnerLandingAttack();
                 break;
 
             // 점프공격
@@ -43,6 +47,70 @@ public class Player_Gunner : Player
         Debug.Log($"{type}공격 끝");
         // 동작이 끝날때 반환하는 트리거
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+    }
+    
+    private async UniTask<bool> GunnerLandingAttack()
+    {
+        if (moveState == EMoveState.Moving)
+            MoveStateSetting(EMoveState.Stopping);
+
+        float delay1 = 0.066f;
+        float delay2 = 0.1f;
+        float delay3 = 0.3f;
+
+        float afterDelay = 0.2f;
+
+        int maxBullet = 9;
+        int bullet = maxBullet;
+        
+        // 총알이 1개 남을 때 까지 난사
+        while (bullet > 1)
+        {
+            if(bullet == maxBullet)
+                StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
+            else if(bullet % 2 == 0)
+                StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
+            else if(bullet % 2 == 1)
+                StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack1);
+            
+            nextAttack = false;
+
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return false;
+
+            SpawnObject(ConstValues.GunnerAttackEffect1, attack1Pos);
+            SpawnObject(ConstValues.GunnerAttack1Object, attack1Pos);
+            bullet--;
+            
+            if (bullet == 1)
+                break;
+        
+            if (await NextAttackDelay(delay1, afterDelay).SuppressCancellationThrow())
+                return false;
+            
+            if (!nextAttack)
+                break;
+        }
+
+        // 막타
+        if (bullet == 1)
+        {
+            if (await AttackDelay(delay3).SuppressCancellationThrow())
+                return false;
+            
+            StateSetting(ENormalState.Attack, ConstValues.FinalAttack, ConstValues.Attack3);
+            if (await AttackDelay(delay2).SuppressCancellationThrow())
+                return false;
+        
+            SpawnObject(ConstValues.GunnerAttackEffect2, attack1Pos);
+            SpawnObject(ConstValues.GunnerAttack2Object, attack1Pos);
+            bullet--;
+            
+            if (await AttackDelay(delay3).SuppressCancellationThrow())
+                return false;
+        }
+
+        return true;
     }
     
     public override async void Skill(KeyCode skillKey)

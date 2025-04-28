@@ -13,6 +13,8 @@ public class SpawnedObjectData
     public bool yFlip;
     public bool zFlip;
     public bool tracePos;
+    public string basicAngle;
+    public string flipAngle;
     public float objectTime;
     public string sound;
 }
@@ -65,8 +67,9 @@ public class MissileData
     public float speed;
     public bool piercingBullet;
     public float limitLength;
-    public string hitTag;
+    public string hitLayer;
     public string spawnObject;
+    public bool hitSpawn;
 }
 [Serializable]
 public class MissileDataList

@@ -11,6 +11,8 @@ public class SpawnObjectInfo
     public bool yFlip;
     public bool zFlip;
     public bool tracePos;
+    public Vector3 basicAngle;
+    public Vector3 flipAngle;
     public float objectTime;
     public List<string> soundList = new List<string>();
 }
@@ -18,6 +20,15 @@ public class SpawnObjectInfo
 public class SpawnedObject : MonoBehaviour
 {
     [SerializeField] private SpawnObjectInfo spawnObjectInfo;
+
+    private BoxCollider2D boxCollider2D;
+    private Vector2 defaultBoxColOffset;
+    private Vector2 reverseBoxColOffset;
+    
+    private CircleCollider2D circleCollider2D;
+    private Vector2 defaultCircleColOffset;
+    private Vector2 reverseCircleColOffset;
+    
     private Vector3 defaultScale;
     
     private float dir;
@@ -25,6 +36,20 @@ public class SpawnedObject : MonoBehaviour
 
     private void Awake()
     {
+        boxCollider2D = GetComponent<BoxCollider2D>();
+        if (boxCollider2D)
+        {
+            defaultBoxColOffset = boxCollider2D.offset;
+            reverseBoxColOffset = new Vector2(-boxCollider2D.offset.x, boxCollider2D.offset.y);
+        }
+        
+        circleCollider2D = GetComponent<CircleCollider2D>();
+        if (circleCollider2D)
+        {
+            defaultCircleColOffset = circleCollider2D.offset;
+            reverseCircleColOffset = new Vector2(-circleCollider2D.offset.x, circleCollider2D.offset.y);
+        }
+
         defaultScale = transform.localScale;
     }
 
@@ -41,6 +66,13 @@ public class SpawnedObject : MonoBehaviour
         spawnObjectInfo.yFlip = objectData.yFlip;
         spawnObjectInfo.zFlip = objectData.zFlip;
         spawnObjectInfo.tracePos = objectData.tracePos;
+        
+        var basicAngle = objectData.basicAngle.Split(',');
+        spawnObjectInfo.basicAngle = new Vector3(float.Parse(basicAngle[0]), float.Parse(basicAngle[1]), float.Parse(basicAngle[2]));
+        
+        var flipAngle = objectData.flipAngle.Split(',');
+        spawnObjectInfo.flipAngle = new Vector3(float.Parse(flipAngle[0]), float.Parse(flipAngle[1]), float.Parse(flipAngle[2]));
+        
         spawnObjectInfo.objectTime = objectData.objectTime;
 
         var soundArray = objectData.sound.Split(',');
@@ -65,6 +97,28 @@ public class SpawnedObject : MonoBehaviour
         
         if (spawnObjectInfo.zFlip && dir < 0)
             zScale = -defaultScale.z;
+
+        if (spawnObjectInfo.flipAngle != Vector3.zero)
+        {
+            Transform firstChildTransform = transform.GetChild(0);
+
+            if (dir > 0)
+            {
+                firstChildTransform.eulerAngles = spawnObjectInfo.basicAngle;
+                if (boxCollider2D)
+                    boxCollider2D.offset = defaultBoxColOffset;
+                if (circleCollider2D)
+                    circleCollider2D.offset = defaultCircleColOffset;
+            }
+            else
+            {
+                firstChildTransform.eulerAngles = spawnObjectInfo.flipAngle;
+                if (boxCollider2D)
+                    boxCollider2D.offset = reverseBoxColOffset;
+                if (circleCollider2D)
+                    circleCollider2D.offset = reverseCircleColOffset;
+            }
+        }
 
         transform.localScale = new Vector3(xScale, yScale, zScale);
 

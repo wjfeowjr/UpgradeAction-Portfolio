@@ -147,6 +147,11 @@ public abstract class Character : MonoBehaviour
         ColSizeSetting();
     }
 
+    protected virtual void Update()
+    {
+        VelocityControl();
+    }
+
     private void ScaleSetting()
     {
         defaultScale = transform.localScale;
@@ -193,6 +198,14 @@ public abstract class Character : MonoBehaviour
                 StateRecovery();
             }
         }
+    }
+    
+    // 몬스터 중력가속도 조정
+    private void VelocityControl()
+    {
+        // 최대 중력가속도 조정
+        if (myRigidbody.bodyType == RigidbodyType2D.Dynamic && myRigidbody.linearVelocity.y < -30)
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -30);
     }
 
     public bool GetAirborneState()
@@ -359,6 +372,19 @@ public abstract class Character : MonoBehaviour
                 trace = obj.AddComponent<Trace>();
             
             trace.SetTarget(attackTransform);
+        }
+        
+        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
+        if (missileData != null)
+        {
+            var missile = obj.GetComponent<Missile>();
+            if (!missile)
+                missile = obj.AddComponent<Missile>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            missile.SetupData(missileData, dir, SpawnAttack);
         }
 
         return obj;
@@ -610,9 +636,9 @@ public abstract class Character : MonoBehaviour
             // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
             if (rightRay.collider != null)
                 return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
+            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) 만큼 벡터가 정해진다
             else
-                return new Vector2(transform.position.x + absLengthX - (myBoxCollider.size.x / 2), transform.position.y);
+                return new Vector2(transform.position.x + absLengthX, transform.position.y);
         }
         // 왼쪽
         else
@@ -623,9 +649,9 @@ public abstract class Character : MonoBehaviour
             // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
             if (leftRay.collider != null)
                 return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) + (자신의 콜라이더/2) 만큼 벡터가 정해진다
+            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) 만큼 벡터가 정해진다
             else
-                return new Vector2(transform.position.x - absLengthX + (myBoxCollider.size.x / 2), transform.position.y);
+                return new Vector2(transform.position.x - absLengthX, transform.position.y);
         }
     }
     
