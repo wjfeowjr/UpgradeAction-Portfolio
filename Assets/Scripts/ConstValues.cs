@@ -60,6 +60,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Attack1 = "Attack1";
     public const string Attack2 = "Attack2";
     public const string Attack3 = "Attack3";
+    public const string Attack3Ready = "Attack3_Ready";
     public const string JumpAttack1 = "JumpAttack1";
     public const string JumpAttack2 = "JumpAttack2";
     public const string JumpAttack2Start = "JumpAttack2_Start";
@@ -73,6 +74,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string AppearEnd = "AppearEnd";
     
     public const string Missile = "Missile";
+    public const string Grenade = "Grenade";
     public const string Wall = "Wall";
     public const string Player = "Player";
     public const string Monster = "Monster";
@@ -133,6 +135,7 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string GunnerDash = "Gunner_Dash";
     public const string GunnerGrenade = "Gunner_Grenade";
+    public const string GunnerGrenadeObject = "Gunner_Grenade_Object";
     public const string GunnerKnockBackShot = "Gunner_KnockBackShot";
     public const string GunnerCrazyShot = "Gunner_CrazyShot";
     public const string GunnerBigShot = "Gunner_BigShot";

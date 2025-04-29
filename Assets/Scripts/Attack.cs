@@ -163,7 +163,8 @@ public class Attack : MonoBehaviour
             }
 
             // 피격이팩트 생성
-            hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
+            if(attackInfo.hitEffectId != ConstValues.None)
+                hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
             
             // 대상이 피해를 입는다(치명타 피해인지 확인)
             bool critical = GetCritical();

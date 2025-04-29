@@ -78,6 +78,21 @@ public class MissileDataList
 }
 
 [Serializable]
+public class GrenadeData
+{
+    public string id;
+    public string minForce;
+    public string maxForce;
+    public string hitLayer;
+    public string spawnObject;
+}
+[Serializable]
+public class GrenadeDataList
+{
+    public List<GrenadeData> Grenade;
+}
+
+[Serializable]
 public class PlayerData
 {
     // 공통 데이터
@@ -173,6 +188,7 @@ public class TableManager : SingletonMono<TableManager>
     public AnimationsDataList animationsTable;
     public AttackDataList attackTable;
     public MissileDataList missileTable;
+    public GrenadeDataList grenadeTable;
     public PlayerDataList playerTable;
     public MonsterDataList monsterTable;
     public SkillDataList skillTable;
@@ -183,6 +199,7 @@ public class TableManager : SingletonMono<TableManager>
         animationsTable = LoadDataFromJson<AnimationsDataList>(ConstValues.Animations);
         attackTable = LoadDataFromJson<AttackDataList>(ConstValues.Attack);
         missileTable = LoadDataFromJson<MissileDataList>(ConstValues.Missile);
+        grenadeTable = LoadDataFromJson<GrenadeDataList>(ConstValues.Grenade);
         playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
         monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
         skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);

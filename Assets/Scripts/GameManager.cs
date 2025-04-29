@@ -146,7 +146,7 @@ public class GameManager : Singleton<GameManager>
     private string secondPlayer = default;
 
     // 등록된 스킬 목록
-    public SkillKeyCollection playerSkillKeyCollection;
+    [SerializeField] private SkillKeyCollection playerSkillKeyCollection;
 
     // 매니저들
     public TableManager tableManager;
@@ -165,6 +165,8 @@ public class GameManager : Singleton<GameManager>
         get => firstPlayer;
         set => firstPlayer = value;
     }
+
+    public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
 
     protected override void Awake()
     {
@@ -324,11 +326,6 @@ public class GameManager : Singleton<GameManager>
         }
 
         return settingSkillList;
-    }
-
-    public List<SkillKey> GetBerserkerSkillKeyList()
-    {
-        return playerSkillKeyCollection.berserkerSkillKeyList;
     }
 
     private void InitAtlas()

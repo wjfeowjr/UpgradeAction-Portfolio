@@ -342,6 +342,20 @@ public abstract class Character : MonoBehaviour
                 dir = Vector2.left;
             missile.SetupData(missileData, dir, SpawnAttack);
         }
+        
+        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
+        if (grenadeData != null)
+        {
+            var grenade = obj.GetComponent<Grenade>();
+            if (!grenade)
+                grenade = obj.AddComponent<Grenade>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            grenade.SetupData(grenadeData, dir, SpawnAttack);
+            grenade.Throw();
+        }
     }
     protected GameObject SpawnObject(string id, Transform attackTransform, bool isBuff = false)
     {
@@ -386,7 +400,20 @@ public abstract class Character : MonoBehaviour
                 dir = Vector2.left;
             missile.SetupData(missileData, dir, SpawnAttack);
         }
-
+        
+        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
+        if (grenadeData != null)
+        {
+            var grenade = obj.GetComponent<Grenade>();
+            if (!grenade)
+                grenade = obj.AddComponent<Grenade>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            grenade.SetupData(grenadeData, dir, SpawnAttack);
+            grenade.Throw();
+        }
         return obj;
     }
     protected GameObject SpawnObject(string id, Vector2 pos)

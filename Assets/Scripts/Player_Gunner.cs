@@ -6,7 +6,8 @@ public class Player_Gunner : Player
 {
     [SerializeField] private Transform attack1Pos;
     [SerializeField] private Transform attack2Pos;
-
+    [SerializeField] private Transform grenadePos;
+    
     public override async void Attack()
     {
         if(!GetGlobalCoolTime())
@@ -95,10 +96,11 @@ public class Player_Gunner : Player
         // 막타
         if (bullet == 1)
         {
+            StateSetting(ENormalState.Attack, ConstValues.FinalAttack, ConstValues.Attack3Ready);
             if (await AttackDelay(delay3).SuppressCancellationThrow())
                 return false;
             
-            StateSetting(ENormalState.Attack, ConstValues.FinalAttack, ConstValues.Attack3);
+            StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack3);
             if (await AttackDelay(delay2).SuppressCancellationThrow())
                 return false;
         
@@ -121,7 +123,7 @@ public class Player_Gunner : Player
             return;
         }
         
-        var skillId = GameManager.Instance.GetBerserkerSkillKeyList().Find(x => x.keyCode == skillKey).skillId;
+        var skillId = GameManager.Instance.PlayerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
         
@@ -140,19 +142,19 @@ public class Player_Gunner : Player
             finishSuccess = await Dash();
         }
         
-        if (skillId == ConstValues.BerserkerUpperSlash)
+        if (skillId == ConstValues.GunnerGrenade)
         {
-            //finishSuccess = await UpperSlash();
+            finishSuccess = await Grenade();
         }
-        else if (skillId == ConstValues.BerserkerCrash)
+        else if (skillId == ConstValues.GunnerKnockBackShot)
         {
             //finishSuccess = await Crash();
         }
-        else if (skillId == ConstValues.BerserkerFireStrike)
+        else if (skillId == ConstValues.GunnerCrazyShot)
         {
             //finishSuccess = await FireStrike();
         }
-        else if (skillId == ConstValues.BerserkerChargeCrash)
+        else if (skillId == ConstValues.GunnerBigShot)
         {
             //finishSuccess = await ChargeCrash();
         }
@@ -167,5 +169,22 @@ public class Player_Gunner : Player
         GravityChange(ConstValues.BasicGravity);
         // 동작이 끝날때 반환하는 트리거
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+    }
+    
+    private async UniTask<bool> Grenade()
+    {
+        var delay1 = 0.12f;
+        var delay2 = 0.08f;
+        
+        StateSetting(ENormalState.Skill, ConstValues.GunnerGrenade, ConstValues.GunnerGrenade);
+
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+
+        SpawnObject(ConstValues.GunnerGrenadeObject, grenadePos);
+        if (await AttackDelay(delay2).SuppressCancellationThrow())
+            return false;
+
+        return true;
     }
 }

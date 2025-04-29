@@ -1,10 +1,22 @@
 using System;
+using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
+[Serializable]
+public class GrenadeInfo
+{
+    public string id;
+    public Vector2 minForce;
+    public Vector2 maxForce;
+    public List<string> hitLayerList;
+    public string spawnObject;
+    public Action<string, Transform> explosionAction;
+}
 public class Grenade : MonoBehaviour
 {
-    [SerializeField] private float launchSpeedX;
-    [SerializeField] private float launchSpeedY;
+    [SerializeField] private Vector2 throwForce;
     [SerializeField] private float angular;
 
     // 땅에 닿았을 때 적용할 선형 Drag
@@ -13,28 +25,31 @@ public class Grenade : MonoBehaviour
     [SerializeField] private float groundAngularDrag;
     // 정지로 간주할 속도 임계치
     [SerializeField] private float stopThreshold;
-
     // 지면 레이어
-    [SerializeField] private LayerMask groundLayer;
+    private LayerMask groundLayer;
+    
+    // 수류탄 정보
+    [SerializeField] private GrenadeInfo grenadeInfo;
 
     private Rigidbody2D myRigidbody;
+    private Collider2D myCollider;
     private bool isGrounded;
 
-    void Awake()
+    private void Awake()
     {
         myRigidbody  = GetComponent<Rigidbody2D>();
+        myCollider = GetComponent<Collider2D>();
+
+        angular = 720f;
+        groundDrag = 1.0f;
+        groundAngularDrag = 2.0f;
+        stopThreshold = 0.1f;
+        groundLayer = LayerMask.NameToLayer(ConstValues.Ground);
     }
 
-    void OnEnable()
+    private void OnEnable()
     {
-        // 상태 초기화
-        isGrounded = false;
-        myRigidbody.linearDamping = ConstValues.DefaultLinearDamping;
-        myRigidbody.angularDamping = ConstValues.DefaultAngularDamping;
-
-        // 발사
-        myRigidbody.linearVelocity = new Vector2(launchSpeedX, launchSpeedY);
-        myRigidbody.angularVelocity = (myRigidbody.linearVelocity.x >= 0) ? -angular : angular;
+        myCollider.enabled = true;
     }
 
     private void Update()
@@ -58,6 +73,49 @@ public class Grenade : MonoBehaviour
             myRigidbody.angularVelocity = 0f;
     }
     
+    public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform> action)
+    {
+        if (grenadeInfo == null)
+        {
+            grenadeInfo = new GrenadeInfo();
+            grenadeInfo.id = grenadeData.id;
+
+            var minForceSplit = grenadeData.minForce.Split(';');
+            grenadeInfo.minForce = new Vector2(float.Parse(minForceSplit[0]), float.Parse(minForceSplit[1]));
+            
+            var maxForceSplit = grenadeData.maxForce.Split(';');
+            grenadeInfo.maxForce = new Vector2(float.Parse(maxForceSplit[0]), float.Parse(maxForceSplit[1]));
+
+            var hitLayerSplit = grenadeData.hitLayer.Split(',');
+            grenadeInfo.hitLayerList = new List<string>();
+            foreach (var hitLayer in hitLayerSplit)
+                grenadeInfo.hitLayerList.Add(hitLayer);
+            
+            grenadeInfo.spawnObject = grenadeData.spawnObject;
+            grenadeInfo.explosionAction = action;
+        }
+
+        float xForce = Random.Range(grenadeInfo.minForce.x, grenadeInfo.maxForce.x);
+        float yForce = Random.Range(grenadeInfo.minForce.y, grenadeInfo.maxForce.y);
+        
+        if (dir == Vector2.left)
+            xForce = -Random.Range(grenadeInfo.minForce.x, grenadeInfo.maxForce.x);
+
+        throwForce = new Vector2(xForce, yForce);
+    }
+
+    public void Throw()
+    {
+        // 상태 초기화
+        isGrounded = false;
+        myRigidbody.linearDamping = ConstValues.DefaultLinearDamping;
+        myRigidbody.angularDamping = ConstValues.DefaultAngularDamping;
+
+        // 발사
+        myRigidbody.linearVelocity = new Vector2(throwForce.x, throwForce.y);
+        myRigidbody.angularVelocity = (myRigidbody.linearVelocity.x >= 0) ? -angular : angular;
+    }
+    
     // 최대 중력가속도 조정
     private void VelocityControl()
     {
@@ -74,6 +132,15 @@ public class Grenade : MonoBehaviour
 
         // 회전 방향도 반대로
         myRigidbody.angularVelocity = -myRigidbody.angularVelocity;
+    }
+    
+    private void Delete()
+    {
+        if (grenadeInfo.spawnObject != ConstValues.None)
+            grenadeInfo.explosionAction(grenadeInfo.spawnObject, transform);
+
+        myCollider.enabled = false;
+        gameObject.SetActive(false);
     }
     
     private void OnCollisionEnter2D(Collision2D collision)
@@ -97,4 +164,28 @@ public class Grenade : MonoBehaviour
     //         myRigidbody.angularDrag   = DefaultAngularDamping;
     //     }
     // }
+    
+    // 수류탄 소멸에만 관여(공격판정은 여기서 정하지 않는다)
+    private void OnTriggerEnter2D(Collider2D col)
+    {
+        foreach (var hitTag in grenadeInfo.hitLayerList)
+        {
+            if (col.gameObject.layer != LayerMask.NameToLayer(hitTag))
+                continue;
+
+            // 캐릭터들이 무적상태라면 무시한다
+            if (hitTag is ConstValues.Player or ConstValues.Monster)
+            {
+                var character = col.GetComponent<Character>();
+                if (character != null)
+                {
+                    if (character.Immortal)
+                        return;
+                }
+            }
+
+            Delete();
+            return;
+        }
+    }
 }

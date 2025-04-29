@@ -182,7 +182,7 @@ public class Player_Berserker : Player
             return;
         }
         
-        var skillId = GameManager.Instance.GetBerserkerSkillKeyList().Find(x => x.keyCode == skillKey).skillId;
+        var skillId = GameManager.Instance.PlayerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
         
