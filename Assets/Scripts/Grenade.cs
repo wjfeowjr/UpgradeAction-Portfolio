@@ -12,7 +12,7 @@ public class GrenadeInfo
     public Vector2 maxForce;
     public List<string> hitLayerList;
     public string spawnObject;
-    public Action<string, Transform> explosionAction;
+    public Action<string, Transform, int> explosionAction;
 }
 public class Grenade : MonoBehaviour
 {
@@ -73,7 +73,7 @@ public class Grenade : MonoBehaviour
             myRigidbody.angularVelocity = 0f;
     }
     
-    public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform> action)
+    public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform, int> action)
     {
         if (grenadeInfo == null)
         {
@@ -137,7 +137,7 @@ public class Grenade : MonoBehaviour
     private void Delete()
     {
         if (grenadeInfo.spawnObject != ConstValues.None)
-            grenadeInfo.explosionAction(grenadeInfo.spawnObject, transform);
+            grenadeInfo.explosionAction(grenadeInfo.spawnObject, transform, 0);
 
         myCollider.enabled = false;
         gameObject.SetActive(false);

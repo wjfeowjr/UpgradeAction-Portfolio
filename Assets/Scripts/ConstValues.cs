@@ -127,19 +127,22 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerChargeCrashSmash = "Berserker_ChargeCrash_Smash";
     public const string BerserkerChargeCrashSmashEffect = "Berserker_ChargeCrash_SmashEffect";
     
-    public const string GunnerFlash = "Berserker_Flash";
+    public const string GunnerFlash = "Gunner_Flash";
     public const string GunnerAttack1Object = "Gunner_Attack1Object";
     public const string GunnerAttackEffect1 = "Gunner_AttackEffect1";
     public const string GunnerAttack2Object = "Gunner_Attack2Object";
     public const string GunnerAttackEffect2 = "Gunner_AttackEffect2";
 
     public const string GunnerDash = "Gunner_Dash";
+    public const string GunnerDashShot = "Gunner_DashShot";
     public const string GunnerGrenade = "Gunner_Grenade";
     public const string GunnerGrenadeObject = "Gunner_Grenade_Object";
     public const string GunnerKnockBackShot = "Gunner_KnockBackShot";
+    public const string GunnerKnockBackShotReady = "Gunner_KnockBackShot_Ready";
     public const string GunnerCrazyShot = "Gunner_CrazyShot";
+    public const string GunnerCrazyShotEffect = "Gunner_CrazyShot_Effect";
     public const string GunnerBigShot = "Gunner_BigShot";
-    public const string GunnerBigShotShooting = "Gunner_BigShot_Shooting";
+    public const string GunnerBigShotReady = "Gunner_BigShot_Ready";
 
     public const string UIPool = "UIPool";
     public const string PopupPool = "PopupPool";
@@ -155,4 +158,7 @@ public class ConstValues : Singleton<ConstValues>
     public static readonly Color GreenColor = Color.green;
     public static readonly Color BlueColor = Color.blue;
     public static readonly Color CyanColor = Color.cyan;
+    
+    // 사운드
+    public const string GunnerLaugh = "Gunner_Laugh";
 }

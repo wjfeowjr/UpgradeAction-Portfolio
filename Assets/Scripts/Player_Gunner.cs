@@ -1,23 +1,33 @@
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class Player_Gunner : Player
 {
-    [SerializeField] private Transform attack1Pos;
-    [SerializeField] private Transform attack2Pos;
+    [SerializeField] private Transform dashShotPos;
+    [SerializeField] private Transform landingAttackPos;
+    [SerializeField] private Transform jumpAttackPos;
     [SerializeField] private Transform grenadePos;
+    [SerializeField] private Transform knockBackShotPos;
+    [SerializeField] private Transform crazyShotPos;
+    [SerializeField] private Transform bigShotPos;
+    
+    private void Scream()
+    {
+        SoundManager.Instance.PlaySound(ConstValues.GunnerLaugh);
+    }
     
     public override async void Attack()
     {
+        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged())
+            return;
+        
         if(!GetGlobalCoolTime())
         {
             Debug.Log("글로벌 쿨타임이 지나지 않음");
             return;
         }
-        
-        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged())
-            return;
 
         Debug.Log("공격 시작");
         curGlobalCoolTime = 0;
@@ -35,7 +45,7 @@ public class Player_Gunner : Player
             // 점프공격
             case ELandingState.Air:
                 type = "점프";
-                //finishSuccess = await BerserkerJumpAttack();
+                finishSuccess = await GunnerJumpAttack();
                 break;
         }
 
@@ -56,8 +66,9 @@ public class Player_Gunner : Player
             MoveStateSetting(EMoveState.Stopping);
 
         float delay1 = 0.066f;
-        float delay2 = 0.1f;
-        float delay3 = 0.3f;
+        float delay2 = 0.016f;
+        float delay3 = 0.1f;
+        float delay4 = 0.3f;
 
         float afterDelay = 0.2f;
 
@@ -79,14 +90,14 @@ public class Player_Gunner : Player
             if (await AttackDelay(delay1).SuppressCancellationThrow())
                 return false;
 
-            SpawnObject(ConstValues.GunnerAttackEffect1, attack1Pos);
-            SpawnObject(ConstValues.GunnerAttack1Object, attack1Pos);
+            SpawnObject(ConstValues.GunnerAttackEffect1, landingAttackPos);
+            SpawnObject(ConstValues.GunnerAttack1Object, landingAttackPos);
             bullet--;
             
             if (bullet == 1)
                 break;
         
-            if (await NextAttackDelay(delay1, afterDelay).SuppressCancellationThrow())
+            if (await NextAttackDelay(delay2, afterDelay).SuppressCancellationThrow())
                 return false;
             
             if (!nextAttack)
@@ -97,19 +108,63 @@ public class Player_Gunner : Player
         if (bullet == 1)
         {
             StateSetting(ENormalState.Attack, ConstValues.FinalAttack, ConstValues.Attack3Ready);
-            if (await AttackDelay(delay3).SuppressCancellationThrow())
+            if (await AttackDelay(delay4).SuppressCancellationThrow())
                 return false;
             
             StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack3);
-            if (await AttackDelay(delay2).SuppressCancellationThrow())
-                return false;
-        
-            SpawnObject(ConstValues.GunnerAttackEffect2, attack1Pos);
-            SpawnObject(ConstValues.GunnerAttack2Object, attack1Pos);
-            bullet--;
-            
             if (await AttackDelay(delay3).SuppressCancellationThrow())
                 return false;
+        
+            SpawnObject(ConstValues.GunnerAttackEffect2, landingAttackPos);
+            SpawnObject(ConstValues.GunnerAttack2Object, landingAttackPos);
+            bullet--;
+            Rebound(4.0f);
+            
+            if (await AttackDelay(delay4).SuppressCancellationThrow())
+                return false;
+        }
+
+        return true;
+    }
+    
+    private async UniTask<bool> GunnerJumpAttack()
+    {
+        ResetTriggerAnimator(ConstValues.JumpDown);
+
+        float delay1 = 0.066f;
+        float delay2 = 0.016f;
+        float delay3 = 0.1f;
+        float delay4 = 0.3f;
+
+        float afterDelay = 0.2f;
+
+        int bulletCount = 0;
+        
+        // 그냥 계속 쏜다 ㅋㅋ
+        while (GetJumpState())
+        { 
+            if(bulletCount == 0)
+                StateSetting(ENormalState.Attack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
+            else if(bulletCount % 2 == 0)
+                StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.JumpAttack2);
+            else if(bulletCount % 2 == 1)
+                StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.JumpAttack1);
+            
+            nextAttack = false;
+
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return false;
+
+            myRigidbody.linearVelocity = new Vector2(0, 0.1f);
+            SpawnObject(ConstValues.GunnerAttackEffect1, jumpAttackPos, -45);
+            SpawnObject(ConstValues.GunnerAttack1Object, jumpAttackPos, -45);
+            bulletCount++;
+            
+            if (await NextAttackDelay(delay2, afterDelay).SuppressCancellationThrow())
+                return false;
+            
+            if (!nextAttack)
+                break;
         }
 
         return true;
@@ -117,15 +172,15 @@ public class Player_Gunner : Player
     
     public override async void Skill(KeyCode skillKey)
     {
+        var skillId = GameManager.Instance.PlayerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
+        if (!IsCanSkill(skillId))
+            return;
+        
         if(!GetGlobalCoolTime())
         {
             Debug.Log("글로벌 쿨타임이 지나지 않음");
             return;
         }
-        
-        var skillId = GameManager.Instance.PlayerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
-        if (!IsCanSkill(skillId))
-            return;
         
         Debug.Log("스킬 시작");
         curGlobalCoolTime = 0;
@@ -139,6 +194,7 @@ public class Player_Gunner : Player
         bool finishSuccess = true;
         if (skillKey == GameManager.Instance.dashKey)
         {
+            SpawnAttack(ConstValues.GunnerDashShot, dashShotPos);
             finishSuccess = await Dash();
         }
         
@@ -148,15 +204,15 @@ public class Player_Gunner : Player
         }
         else if (skillId == ConstValues.GunnerKnockBackShot)
         {
-            //finishSuccess = await Crash();
+            finishSuccess = await KnockBackShot();
         }
         else if (skillId == ConstValues.GunnerCrazyShot)
         {
-            //finishSuccess = await FireStrike();
+            finishSuccess = await CrazyShot();
         }
         else if (skillId == ConstValues.GunnerBigShot)
         {
-            //finishSuccess = await ChargeCrash();
+            finishSuccess = await BigShot();
         }
 
         if (!finishSuccess)
@@ -171,6 +227,7 @@ public class Player_Gunner : Player
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
     
+    // 수류탄
     private async UniTask<bool> Grenade()
     {
         var delay1 = 0.12f;
@@ -185,6 +242,75 @@ public class Player_Gunner : Player
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
 
+        return true;
+    }
+    
+    // 넉백샷
+    private async UniTask<bool> KnockBackShot()
+    {
+        var delay1 = 0.1f;
+        var delay2 = 0.2f;
+        
+        StateSetting(ENormalState.Skill, ConstValues.GunnerKnockBackShot, ConstValues.GunnerKnockBackShotReady);
+        
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
+        SpawnAttack(ConstValues.GunnerKnockBackShot, knockBackShotPos);
+        Rebound(4.0f);
+        
+        if (await AttackDelay(delay2).SuppressCancellationThrow())
+            return false;
+
+        return true;
+    }
+    
+    // 개난사
+    private async UniTask<bool> CrazyShot()
+    {
+        int bulletCount = 14;
+        float delay1 = 0.1f;
+
+        StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot, ConstValues.GunnerCrazyShot);
+
+        Scream();
+        SpawnObject(ConstValues.GunnerFlash, centerPos);
+
+        for (int i = 0; i < bulletCount; i++)
+        {
+            // 총알
+            float randPos = Random.Range(-0.5f, 0.5f);
+            Vector2 randVector = new Vector2(crazyShotPos.position.x + randPos, crazyShotPos.position.y + randPos);
+            SpawnAttack(ConstValues.GunnerCrazyShot, randVector);
+
+            // 이팩트
+            SpawnObject(ConstValues.GunnerCrazyShotEffect, randVector);
+            Rebound(2.0f);
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return false;
+        }
+        return true;
+    }
+    
+    // 거너 빅샷
+    private async UniTask<bool> BigShot()
+    {
+        float delay1 = 0.5f;
+
+        StateSetting(ENormalState.Skill, ConstValues.GunnerBigShot, ConstValues.GunnerBigShotReady);
+        
+        Scream();
+        SpawnObject(ConstValues.GunnerFlash, centerPos);
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+        
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerBigShot);
+        SpawnAttack(ConstValues.GunnerBigShot, bigShotPos);
+        Rebound(6.0f);
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+        
         return true;
     }
 }

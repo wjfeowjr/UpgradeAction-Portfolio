@@ -61,7 +61,7 @@ public class Controller : Singleton<Controller>
 
     private void PlayerControl()
     {
-        if (Input.GetKeyDown(GameManager.Instance.attackKey))
+        if (Input.GetKey(GameManager.Instance.attackKey))
             player.Attack();
         if (Input.GetKeyDown(GameManager.Instance.jumpKey))
             player.Jump();

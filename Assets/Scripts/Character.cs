@@ -200,12 +200,20 @@ public abstract class Character : MonoBehaviour
         }
     }
     
-    // 몬스터 중력가속도 조정
+    // 최대 중력가속도 조정
     private void VelocityControl()
     {
-        // 최대 중력가속도 조정
         if (myRigidbody.bodyType == RigidbodyType2D.Dynamic && myRigidbody.linearVelocity.y < -30)
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -30);
+    }
+    
+    // 반동
+    protected void Rebound(float force)
+    {
+        if(transform.localScale.x > 0)
+            myRigidbody.linearVelocity = new Vector2(-force, myRigidbody.linearVelocity.y);
+        else
+            myRigidbody.linearVelocity = new Vector2(force, myRigidbody.linearVelocity.y);
     }
 
     public bool GetAirborneState()
@@ -291,7 +299,7 @@ public abstract class Character : MonoBehaviour
     }
     
     // 공격 소환
-    protected void SpawnAttack(string id, Transform attackTransform)
+    protected void SpawnAttack(string id, Transform attackTransform, int zAngle = 0)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform); 
         
@@ -304,6 +312,16 @@ public abstract class Character : MonoBehaviour
             
             spawnedObject.SetupData(objectData, transform.localScale.x);
             spawnedObject.EnableSetting();
+            if (zAngle != 0)
+            {
+                var finalAngle = zAngle;
+                if (transform.localScale.x < 0)
+                    finalAngle = -zAngle;
+            
+                var objectAngle = spawnedObject.transform.eulerAngles;
+                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+            }
+            
             if(spawnedObject.GetObjectTime() == 0)
                 AddObjectList(controlObject, obj);
 
@@ -357,7 +375,76 @@ public abstract class Character : MonoBehaviour
             grenade.Throw();
         }
     }
-    protected GameObject SpawnObject(string id, Transform attackTransform, bool isBuff = false)
+    protected void SpawnAttack(string id, Vector2 pos, int zAngle = 0)
+    {
+        var obj = GameManager.Instance.SpawnToObjectPool(id, pos); 
+        
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        if (objectData != null)
+        {
+            var spawnedObject = obj.GetComponent<SpawnedObject>();
+            if (!spawnedObject)
+                spawnedObject = obj.AddComponent<SpawnedObject>();
+            
+            spawnedObject.SetupData(objectData, transform.localScale.x);
+            spawnedObject.EnableSetting();
+            if (zAngle != 0)
+            {
+                var finalAngle = zAngle;
+                if (transform.localScale.x < 0)
+                    finalAngle = -zAngle;
+            
+                var objectAngle = spawnedObject.transform.eulerAngles;
+                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+            }
+            
+            if(spawnedObject.GetObjectTime() == 0)
+                AddObjectList(controlObject, obj);
+        }
+
+        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
+        if (attackData != null)
+        {
+            var attack = obj.GetComponent<Attack>();
+            if (!attack)
+            {
+                attack = obj.AddComponent<Attack>();
+                attack.SetupData(this, attackData);
+            }
+
+            attack.EnableSetting();
+        }
+        
+        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
+        if (missileData != null)
+        {
+            var missile = obj.GetComponent<Missile>();
+            if (!missile)
+                missile = obj.AddComponent<Missile>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            missile.SetupData(missileData, dir, SpawnAttack);
+        }
+        
+        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
+        if (grenadeData != null)
+        {
+            var grenade = obj.GetComponent<Grenade>();
+            if (!grenade)
+                grenade = obj.AddComponent<Grenade>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            grenade.SetupData(grenadeData, dir, SpawnAttack);
+            grenade.Throw();
+        }
+    }
+    
+    // 공격판정이 없는 오브젝트 소환
+    protected GameObject SpawnObject(string id, Transform attackTransform, int zAngle = 0, bool isBuff = false)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
         
@@ -371,6 +458,16 @@ public abstract class Character : MonoBehaviour
             
         spawnedObject.SetupData(objectData, transform.localScale.x);
         spawnedObject.EnableSetting();
+        if (zAngle != 0)
+        {
+            var finalAngle = zAngle;
+            if (transform.localScale.x < 0)
+                finalAngle = -zAngle;
+            
+            var objectAngle = spawnedObject.transform.eulerAngles;
+            spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+        }
+        
         if (spawnedObject.GetObjectTime() == 0)
         {
             if(isBuff)
@@ -416,7 +513,7 @@ public abstract class Character : MonoBehaviour
         }
         return obj;
     }
-    protected GameObject SpawnObject(string id, Vector2 pos)
+    protected GameObject SpawnObject(string id, Vector2 pos, int zAngle = 0)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
         
@@ -430,6 +527,15 @@ public abstract class Character : MonoBehaviour
             
         spawnedObject.SetupData(objectData, transform.localScale.x);
         spawnedObject.EnableSetting();
+        if (zAngle != 0)
+        {
+            var finalAngle = zAngle;
+            if (transform.localScale.x < 0)
+                finalAngle = -zAngle;
+            
+            var objectAngle = spawnedObject.transform.eulerAngles;
+            spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+        }
 
         return obj;
     }
@@ -481,6 +587,7 @@ public abstract class Character : MonoBehaviour
         ClearObjectList(controlObject);
         ClearObjectList(normalObject);
         GravityChange(ConstValues.BasicGravity);
+        myRigidbody.linearVelocity = Vector2.zero;
     }
 
     private void AddObjectList(List<GameObject> list, GameObject obj)
@@ -783,7 +890,7 @@ public abstract class Character : MonoBehaviour
                     break;
             }
             
-            SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, true);
+            SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, 0, true);
         }
         // 해당 디버프가 적용되어 있음
         else

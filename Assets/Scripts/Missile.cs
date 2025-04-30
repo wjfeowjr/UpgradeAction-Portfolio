@@ -14,7 +14,7 @@ public class MissileInfo
     public List<string> hitLayerList;
     public string spawnObject;
     public bool hitSpawn;
-    public Action<string, Transform> explosionAction;
+    public Action<string, Transform, int> explosionAction;
 }
 public class Missile : MonoBehaviour
 {
@@ -40,7 +40,7 @@ public class Missile : MonoBehaviour
         Move();
     }
 
-    public void SetupData(MissileData missileData, Vector2 missileDir, Action<string, Transform> action)
+    public void SetupData(MissileData missileData, Vector2 missileDir, Action<string, Transform, int> action)
     {
         if (missileInfo == null)
         {
@@ -111,12 +111,12 @@ public class Missile : MonoBehaviour
         {
             if (isCollision)
             {
-                missileInfo.explosionAction(missileInfo.spawnObject, transform);
+                missileInfo.explosionAction(missileInfo.spawnObject, transform, 0);
             }
             else
             {
                 if (!missileInfo.hitSpawn)
-                    missileInfo.explosionAction(missileInfo.spawnObject, transform);
+                    missileInfo.explosionAction(missileInfo.spawnObject, transform, 0);
             }
         }
 

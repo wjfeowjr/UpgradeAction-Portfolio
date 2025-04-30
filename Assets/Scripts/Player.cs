@@ -425,14 +425,14 @@ public abstract class Player : Character
     // 점프
     public async void Jump()
     {
-        if(!GetGlobalCoolTime())
-        {
-            Debug.Log("글로벌 쿨타임이 지나지 않음");
-            return;
-        }
-        
         if (landingState == ELandingState.Ground && normalState is ENormalState.Idle or ENormalState.Move or ENormalState.Attack)
         {
+            if(!GetGlobalCoolTime())
+            {
+                Debug.Log("글로벌 쿨타임이 지나지 않음");
+                return;
+            }
+            
             Debug.Log("점프");
             curGlobalCoolTime = 0;
             jumpAttackCount = 0;
@@ -440,8 +440,8 @@ public abstract class Player : Character
             StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
             LandingStateSetting(ELandingState.Air);
 
-            float jumpPosY = transform.position.y + 1.5f;
-            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 12.0f); 
+            float jumpPosY = transform.position.y + myStat.jumpHeight;
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, myStat.jumpForce); 
             stateCancellation = new CancellationTokenSource();
             while (transform.position.y < jumpPosY)
             {

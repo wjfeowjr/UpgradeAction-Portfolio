@@ -86,6 +86,8 @@ public class Attack : MonoBehaviour
         TargetColReset();
         
         dir = castChar.transform.localScale.x > 0 ? 1 : -1;
+        if(attackInfo.upperPower.x < 0)
+            dir = castChar.transform.localScale.x > 0 ? -1 : 1;
     }
     
     private void ColliderTimer()

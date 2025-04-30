@@ -30,6 +30,7 @@ public class SpawnedObject : MonoBehaviour
     private Vector2 reverseCircleColOffset;
     
     private Vector3 defaultScale;
+    private Vector3 defaultAngle;
     
     private float dir;
     private float leftObjectTime;
@@ -51,6 +52,7 @@ public class SpawnedObject : MonoBehaviour
         }
 
         defaultScale = transform.localScale;
+        defaultAngle = transform.eulerAngles;
     }
 
     private void Update()
@@ -121,6 +123,7 @@ public class SpawnedObject : MonoBehaviour
         }
 
         transform.localScale = new Vector3(xScale, yScale, zScale);
+        transform.eulerAngles = defaultAngle;
 
         foreach (var sound in spawnObjectInfo.soundList)
             SoundManager.Instance.PlaySound(sound);

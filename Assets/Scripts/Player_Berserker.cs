@@ -21,14 +21,14 @@ public class Player_Berserker : Player
     
     public override async void Attack()
     {
+        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged())
+            return;
+        
         if(!GetGlobalCoolTime())
         {
             Debug.Log("글로벌 쿨타임이 지나지 않음");
             return;
         }
-        
-        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged())
-            return;
 
         Debug.Log("공격 시작");
         curGlobalCoolTime = 0;
@@ -176,15 +176,15 @@ public class Player_Berserker : Player
 
     public override async void Skill(KeyCode skillKey)
     {
+        var skillId = GameManager.Instance.PlayerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
+        if (!IsCanSkill(skillId))
+            return;
+        
         if(!GetGlobalCoolTime())
         {
             Debug.Log("글로벌 쿨타임이 지나지 않음");
             return;
         }
-        
-        var skillId = GameManager.Instance.PlayerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
-        if (!IsCanSkill(skillId))
-            return;
         
         Debug.Log("스킬 시작");
         curGlobalCoolTime = 0;

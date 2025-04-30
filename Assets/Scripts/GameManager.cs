@@ -366,6 +366,7 @@ public class GameManager : Singleton<GameManager>
     // 플레이어
     private void InitPlayer()
     {
+        //FirstPlayer = ConstValues.Berserker;
         FirstPlayer = ConstValues.Gunner;
         curPlayer = GetPlayer(FirstPlayer);
         foreach (var player in players)
