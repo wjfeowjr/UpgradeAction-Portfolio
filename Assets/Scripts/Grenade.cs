@@ -170,7 +170,7 @@ public class Grenade : MonoBehaviour
     {
         foreach (var hitTag in grenadeInfo.hitLayerList)
         {
-            if (col.gameObject.layer != LayerMask.NameToLayer(hitTag))
+            if (!col.gameObject.CompareTag(hitTag))
                 continue;
 
             // 캐릭터들이 무적상태라면 무시한다

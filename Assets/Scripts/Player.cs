@@ -89,6 +89,7 @@ public class PlayerStat
 
 public abstract class Player : Character
 {
+    private bool isChanging;
     protected int jumpAttackCount;
     
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
@@ -100,6 +101,9 @@ public abstract class Player : Character
 
     private float globalCoolTime;
     protected float curGlobalCoolTime;
+    
+    // 프로퍼티
+    public bool IsChanging => isChanging;
 
     // 스킬
     public abstract void Skill(KeyCode skillKey);
@@ -364,6 +368,29 @@ public abstract class Player : Character
             MoveStateSetting(EMoveState.Stopping);
     }
     
+    // 교체를 사용 할 수 있는가?
+    private async UniTask<bool> IsCanChange()
+    {
+        var targetSkill = GameManager.Instance.ChangeSkill.playerSkill;
+        if (targetSkill.IsOnCooldown)
+        {
+            var coolTimeList = targetSkill.GetRemainingCooldown();
+            Debug.Log($"{targetSkill.skillName} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
+            return false;
+        }
+
+        if (isChanging)
+        {
+            Debug.Log($"이미 교체가 진행중임");
+            return false;
+        }
+        
+        isChanging = true;
+        await UniTask.WaitUntil(()=> normalState is Idle or ENormalState.Move);
+        isChanging = false;
+        targetSkill.SetCoolTime();
+        return true;
+    }
 
     // 스킬을 사용 할 수 있는가?
     protected bool IsCanSkill(string id)
@@ -530,6 +557,22 @@ public abstract class Player : Character
     private PlayerSkill GetSkill(string id)
     {
         return skillList.Find(x => x.skillName == id);
+    }
+
+    public async void ChangeCharacter()
+    {
+        if(!GetGlobalCoolTime())
+        {
+            Debug.Log("글로벌 쿨타임이 지나지 않음");
+            return;
+        }
+        var changing = await IsCanChange();
+        
+        if (!changing)
+            return;
+
+        Debug.Log("교체!");
+        curGlobalCoolTime = 0;
     }
  
     // 대시

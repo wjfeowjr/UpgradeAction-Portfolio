@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.AddressableAssets;
@@ -75,6 +76,7 @@ public class SkillKey
 [Serializable]
 public class SkillKeyCollection
 {
+    public SkillKey changeKey;
     public List<SkillKey> berserkerSkillKeyList;
     public List<SkillKey> gunnerSkillKeyList;
 }
@@ -114,7 +116,8 @@ public class GameManager : Singleton<GameManager>
     public KeyCode rightMoveKey;
     public KeyCode attackKey;
     public KeyCode jumpKey;
-    
+
+    public KeyCode changeCharacterKey;
     public KeyCode dashKey;
     public KeyCode skillKey1;
     public KeyCode skillKey2;
@@ -146,12 +149,13 @@ public class GameManager : Singleton<GameManager>
     private string secondPlayer = default;
 
     // 등록된 스킬 목록
+    private SettingSkill changeSkill;
     [SerializeField] private SkillKeyCollection playerSkillKeyCollection;
 
     // 매니저들
     public TableManager tableManager;
     //public UIManager uiManager;
-    public ResourceManager resourceManager;
+    //public ResourceManager resourceManager;
     
     // 프로퍼티
     public Player CurPlayer
@@ -168,6 +172,8 @@ public class GameManager : Singleton<GameManager>
 
     public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
 
+    public SettingSkill ChangeSkill => changeSkill;
+
     protected override void Awake()
     {
         base.Awake();
@@ -176,6 +182,7 @@ public class GameManager : Singleton<GameManager>
         InitManager();
         InitAtlas();
         InitPlayer();
+        InitChangeSkill();
     }
     
     // private async void LoadAllPrefabsByLabel()
@@ -224,6 +231,8 @@ public class GameManager : Singleton<GameManager>
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
         jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
+        
+        changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
         dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
         optionKey = KeyBinding.LoadKey(ConstValues.OptionKey, KeyCode.Escape);
         
@@ -250,6 +259,8 @@ public class GameManager : Singleton<GameManager>
     }
     private void InitSkillCollection()
     {
+        playerSkillKeyCollection.changeKey = SetSkillKey(ConstValues.ChangeCharacterKey, changeCharacterKey);
+        
         List<SkillKey> berserkerSkillKeyList = new List<SkillKey>();
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey1));
@@ -520,11 +531,13 @@ public class GameManager : Singleton<GameManager>
                 {
                     var skillModel = new UISkillModel
                     {
+                        changeSkill = this.changeSkill,
                         settingSkillList = GetSettingSkillList()
                     };
                     // 뷰 리스트를 인터페이스로 변환
-                    var viewInterfaces = skillView.SkillViews.ConvertAll(v => (IUISkillView)v);
-                    var presenter = new UISkillPresenter(viewInterfaces, skillModel);
+                    var changeInterface = skillView.ChangeCharacter.ConvertTo<IUISkillView>();
+                    var skillInterfaces = skillView.SkillViews.ConvertAll(v => (IUISkillView)v);
+                    var presenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
                     skillView.SetPresenter(presenter);
                     presenter.SetSkillInfo();
                 }
@@ -538,5 +551,30 @@ public class GameManager : Singleton<GameManager>
         uiBase.Setup(uiType);
         if (uiBase != null)
             BindPresenter(uiType, uiBase);
+    }
+
+    private void InitChangeSkill()
+    {
+        changeSkill = new SettingSkill()
+        {
+            skillId = ConstValues.ChangeCharacter,
+            keyCode = changeCharacterKey,
+        };
+        
+        foreach (var skill in TableManager.Instance.skillTable.Skill)
+        {
+            if (skill.id != ConstValues.ChangeCharacter)
+                continue;
+            
+            PlayerSkill addedSkill = new PlayerSkill();
+            addedSkill.skillName = skill.id;
+            var coolTimeArray = skill.coolTime.Split(',');
+            foreach (var coolTime in coolTimeArray)
+                addedSkill.coolTime.Add(float.Parse(coolTime));
+
+            addedSkill.icon = skill.icon;
+            changeSkill.playerSkill = addedSkill;
+            break;
+        }
     }
 }

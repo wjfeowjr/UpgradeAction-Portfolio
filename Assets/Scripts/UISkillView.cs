@@ -16,24 +16,29 @@ public interface IUISkillView
 
 public class UISkillModel
 {
+    public SettingSkill changeSkill;
     public List<SettingSkill> settingSkillList = new List<SettingSkill>();
 }
 
 public class UISkillPresenter
 {
+    private readonly IUISkillView _changeView;
     private readonly List<IUISkillView> _views;
     private UISkillModel _model;
 
-    public UISkillPresenter(List<IUISkillView> views, UISkillModel model)
+    public UISkillPresenter(IUISkillView changeView, List<IUISkillView> views, UISkillModel model)
     {
+        _changeView = changeView;
         _views = views;
         _model = model;
         
+        _changeView.OnSkillDropped += OnSkillDropped;
         for (int i = 0; i < _views.Count; i++)
             _views[i].OnSkillDropped += OnSkillDropped;
     }
     public void OnSkillDroppedCleanUp()
     {
+        _changeView.OnSkillDropped -= OnSkillDropped;
         for (int i = 0; i < _views.Count; i++)
             _views[i].OnSkillDropped -= OnSkillDropped;
     }
@@ -45,16 +50,18 @@ public class UISkillPresenter
         SetSkillInfo();
     }
     
-    private async void RefreshModel()
+    private void RefreshModel()
     {
         _model = new UISkillModel
         {
+            changeSkill = GameManager.Instance.ChangeSkill,
             settingSkillList = GameManager.Instance.GetSettingSkillList()
         };
     }
 
     public void SetSkillInfo()
     {
+        _changeView.SetSkillInfo(_model.changeSkill.keyCode, _model.changeSkill.skillId, _model.changeSkill.playerSkill.coolTime);
         for (int i = 0; i < _model.settingSkillList.Count; i++)
         {
             var playerSkill = _model.settingSkillList[i].playerSkill;
@@ -75,6 +82,8 @@ public class UISkillPresenter
     /// </summary>
     public void UpdateSkillCoolTime()
     {
+        _changeView.UpdateCoolTimeText(_model.changeSkill.playerSkill.GetRemainingCooldown());
+        
         for (int i = 0; i < _model.settingSkillList.Count; i++)
         {
             var skill = _model.settingSkillList[i].playerSkill;
@@ -102,6 +111,11 @@ public class UISkillView : MonoBehaviour, IUISkillView
     
     public event Action OnSkillDropped;
 
+    public bool IsChangeCharacter()
+    {
+        return myKeyCode == GameManager.Instance.changeCharacterKey;
+    }
+    
     public bool IsDash()
     {
         return myKeyCode == GameManager.Instance.dashKey;
@@ -124,6 +138,9 @@ public class UISkillView : MonoBehaviour, IUISkillView
         maxCoolTime = coolTime;
         
         skillKey.text = keyCode.ToString();
+        if (keyCode == KeyCode.LeftShift)
+            skillKey.text = ConstValues.Shift;
+        
         skillImage.gameObject.SetActive(!string.IsNullOrEmpty(skillId));
         coolTimeText.gameObject.SetActive(!string.IsNullOrEmpty(skillId));
         coolTimeObject.SetActive(!string.IsNullOrEmpty(skillId));

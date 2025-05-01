@@ -7,7 +7,9 @@ public class Player_Gunner : Player
 {
     [SerializeField] private Transform dashShotPos;
     [SerializeField] private Transform landingAttackPos;
+    [SerializeField] private Transform landingEffectPos;
     [SerializeField] private Transform jumpAttackPos;
+    [SerializeField] private Transform jumpEffectPos;
     [SerializeField] private Transform grenadePos;
     [SerializeField] private Transform knockBackShotPos;
     [SerializeField] private Transform crazyShotPos;
@@ -90,7 +92,7 @@ public class Player_Gunner : Player
             if (await AttackDelay(delay1).SuppressCancellationThrow())
                 return false;
 
-            SpawnObject(ConstValues.GunnerAttackEffect1, landingAttackPos);
+            SpawnObject(ConstValues.GunnerAttackEffect1, landingEffectPos);
             SpawnObject(ConstValues.GunnerAttack1Object, landingAttackPos);
             bullet--;
             
@@ -115,7 +117,7 @@ public class Player_Gunner : Player
             if (await AttackDelay(delay3).SuppressCancellationThrow())
                 return false;
         
-            SpawnObject(ConstValues.GunnerAttackEffect2, landingAttackPos);
+            SpawnObject(ConstValues.GunnerAttackEffect2, landingEffectPos);
             SpawnObject(ConstValues.GunnerAttack2Object, landingAttackPos);
             bullet--;
             Rebound(4.0f);
@@ -156,7 +158,7 @@ public class Player_Gunner : Player
                 return false;
 
             myRigidbody.linearVelocity = new Vector2(0, 0.1f);
-            SpawnObject(ConstValues.GunnerAttackEffect1, jumpAttackPos, -45);
+            SpawnObject(ConstValues.GunnerAttackEffect1, jumpEffectPos, -45);
             SpawnObject(ConstValues.GunnerAttack1Object, jumpAttackPos, -45);
             bulletCount++;
             

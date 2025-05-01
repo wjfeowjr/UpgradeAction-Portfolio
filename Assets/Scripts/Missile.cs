@@ -132,7 +132,7 @@ public class Missile : MonoBehaviour
     {
         foreach (var hitTag in missileInfo.hitLayerList)
         {
-            if (col.gameObject.layer != LayerMask.NameToLayer(hitTag))
+            if (!col.gameObject.CompareTag(hitTag))
                 continue;
 
             // 캐릭터들이 무적상태라면 무시한다

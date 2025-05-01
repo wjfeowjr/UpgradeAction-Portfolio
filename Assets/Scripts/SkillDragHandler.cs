@@ -88,7 +88,7 @@ public class SkillDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         {
             // 떨어진 곳의 GameObject에서 UISkillView를 탐색
             var view = res.gameObject.GetComponentInParent<UISkillView>();
-            if (view != null && !view.IsDash())
+            if (view != null && !view.IsChangeCharacter() && !view.IsDash())
             {
                 return view;
                 //view.ExecuteSkillAction(ConstValues.BerserkerUpperSlash);

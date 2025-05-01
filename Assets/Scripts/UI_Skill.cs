@@ -6,10 +6,11 @@ using UnityEngine;
 public class UI_Skill : UIBase
 {
     // SkillViews를 외부에서 접근할 수 있게 public으로 변경
+    public UISkillView ChangeCharacter => changeCharacter;
     public List<UISkillView> SkillViews => skillViews;
 
-    [SerializeField]
-    private List<UISkillView> skillViews;
+    [SerializeField] private UISkillView changeCharacter;
+    [SerializeField] private List<UISkillView> skillViews;
 
     private UISkillPresenter uiSkillPresenter;
 

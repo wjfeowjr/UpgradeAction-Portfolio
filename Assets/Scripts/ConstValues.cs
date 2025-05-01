@@ -27,6 +27,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BattleScene = "Battle";
 
     public const string All = "All";
+    public const string Shift = "Shift";
     
     public const string LeftMoveKey = "LeftMoveKey";
     public const string RightMoveKey = "RightMoveKey";
@@ -107,6 +108,9 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string MoveSpeed = "MoveSpeed";
     public const string AttackSpeed = "AttackSpeed";
+
+    public const string ChangeCharacter = "ChangeCharacter";
+    public const string ChangeCharacterKey = "ChangeCharacter";
     
     public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";

@@ -66,6 +66,9 @@ public class Controller : Singleton<Controller>
         if (Input.GetKeyDown(GameManager.Instance.jumpKey))
             player.Jump();
         
+        if (Input.GetKeyDown(GameManager.Instance.changeCharacterKey))
+            player.ChangeCharacter();
+        
         if (Input.GetKeyDown(GameManager.Instance.dashKey))
             player.Skill(GameManager.Instance.dashKey);
         
