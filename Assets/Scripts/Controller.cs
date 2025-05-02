@@ -6,14 +6,12 @@ using UnityEngine;
 
 public class Controller : Singleton<Controller>
 {
-    private Player player;
     public bool isLeftMove;
     public bool isRightMove;
 
     private async void Start()
     {
         await UniTask.WaitUntil(() => GameManager.Instance.CurPlayer != null);
-        player = GameManager.Instance.CurPlayer;
     }
 
     private void Update()
@@ -62,32 +60,32 @@ public class Controller : Singleton<Controller>
     private void PlayerControl()
     {
         if (Input.GetKey(GameManager.Instance.attackKey))
-            player.Attack();
+            GameManager.Instance.CurPlayer.Attack();
         if (Input.GetKeyDown(GameManager.Instance.jumpKey))
-            player.Jump();
+            GameManager.Instance.CurPlayer.Jump();
         
         if (Input.GetKeyDown(GameManager.Instance.changeCharacterKey))
-            player.ChangeCharacter();
+            GameManager.Instance.CurPlayer.ChangeCharacter();
         
         if (Input.GetKeyDown(GameManager.Instance.dashKey))
-            player.Skill(GameManager.Instance.dashKey);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.dashKey);
         
         if (Input.GetKeyDown(GameManager.Instance.skillKey1))
-            player.Skill(GameManager.Instance.skillKey1);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey1);
         if (Input.GetKeyDown(GameManager.Instance.skillKey2))
-            player.Skill(GameManager.Instance.skillKey2);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey2);
         if (Input.GetKeyDown(GameManager.Instance.skillKey3))
-            player.Skill(GameManager.Instance.skillKey3);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey3);
         if (Input.GetKeyDown(GameManager.Instance.skillKey4))
-            player.Skill(GameManager.Instance.skillKey4);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey4);
         if (Input.GetKeyDown(GameManager.Instance.skillKey5))
-            player.Skill(GameManager.Instance.skillKey5);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey5);
         if (Input.GetKeyDown(GameManager.Instance.skillKey6))
-            player.Skill(GameManager.Instance.skillKey6);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey6);
         if (Input.GetKeyDown(GameManager.Instance.skillKey7))
-            player.Skill(GameManager.Instance.skillKey7);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey7);
         if (Input.GetKeyDown(GameManager.Instance.skillKey8))
-            player.Skill(GameManager.Instance.skillKey8);
+            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey8);
         
         // if (Input.GetKeyDown(KeyCode.Q))
         //     player.Grabbed(new Vector2(0, -2.0f));
@@ -105,14 +103,14 @@ public class Controller : Singleton<Controller>
         // }
 
         if(!isLeftMove && !isRightMove)
-            player.Stop();
+            GameManager.Instance.CurPlayer.Stop();
     }
      
     private void MovingControl()
     {
         if(isLeftMove)
-            player.Move(Vector2.left);
+            GameManager.Instance.CurPlayer.Move(Vector2.left);
         else if (isRightMove)
-            player.Move(Vector2.right); 
+            GameManager.Instance.CurPlayer.Move(Vector2.right); 
     }
 }

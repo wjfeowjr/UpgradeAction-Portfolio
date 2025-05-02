@@ -124,11 +124,15 @@ public abstract class Character : MonoBehaviour
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
-    
+
     // 프로퍼티
     public BasicStat BasicStat => basicStat;
     public bool Immortal => immortal;
     public bool ImmuneStagger => immuneStagger;
+    
+    public ENormalState NormalState => normalState;
+    public EMoveState MoveState => moveState;
+    public ELandingState LandingState => landingState;
     
     // 상태 설정
     protected abstract void StateSetting(ENormalState changeNormalState, string triggerName, string animId);
@@ -223,6 +227,11 @@ public abstract class Character : MonoBehaviour
     public bool GetJumpState()
     {
         return landingState == ELandingState.Air;
+    }
+
+    public Vector2 GetVelocity()
+    {
+        return myRigidbody.linearVelocity;
     }
 
     protected virtual void SetTriggerAnimator(string parameter)
@@ -1024,7 +1033,7 @@ public abstract class Character : MonoBehaviour
     protected void OnCollisionEnter2D(Collision2D col)
     {
         // 착지
-        if (col.gameObject.layer == LayerMask.NameToLayer("Ground") && landingState == ELandingState.Air)
+        if (col.gameObject.CompareTag(ConstValues.Ground) && landingState == ELandingState.Air)
         {
             LandingStateSetting(ELandingState.Ground);
             
@@ -1047,7 +1056,7 @@ public abstract class Character : MonoBehaviour
     protected void OnCollisionExit2D(Collision2D col)
     {
         // 점프
-        if (col.gameObject.layer == LayerMask.NameToLayer("Ground"))
+        if (col.gameObject.CompareTag(ConstValues.Ground))
         {
             LandingStateSetting(ELandingState.Air);
         }

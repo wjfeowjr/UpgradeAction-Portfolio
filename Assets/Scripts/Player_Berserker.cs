@@ -19,6 +19,34 @@ public class Player_Berserker : Player
     [SerializeField] private Transform chargeCrashSmashPos;
     [SerializeField] private Transform chargeCrashSmashEffectPos;
     
+    public override async void ChangeAttack()
+    {
+        Debug.Log("교체 공격 시작");
+        CancelMotion();
+        stateCancellation = new CancellationTokenSource();
+        
+        var finishSuccess = await BerserkerChangeAttack();
+        
+        if (!finishSuccess)
+        {
+            Debug.Log($"교체 공격 캔슬");
+            return;
+        }
+        
+        Debug.Log($"교체공격 끝");
+        // 동작이 끝날때 반환하는 트리거
+        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+    }
+    private async UniTask<bool> BerserkerChangeAttack()
+    {
+        var delay1 = 0.5f;
+        StateSetting(ENormalState.Attack, ConstValues.ChangeAttack, ConstValues.ChangeAttack);
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+        
+        return true;
+    }
+    
     public override async void Attack()
     {
         if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged())

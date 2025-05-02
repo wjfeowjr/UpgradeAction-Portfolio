@@ -100,6 +100,7 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string ComboAttack = "ComboAttack";
     public const string FinalAttack = "FinalAttack";
+    public const string ChangeAttack = "ChangeAttack";
     
     public const string Ground = "Ground";
     

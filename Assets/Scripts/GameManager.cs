@@ -377,8 +377,10 @@ public class GameManager : Singleton<GameManager>
     // 플레이어
     private void InitPlayer()
     {
-        //FirstPlayer = ConstValues.Berserker;
-        FirstPlayer = ConstValues.Gunner;
+        //firstPlayer = ConstValues.Gunner;
+        firstPlayer = ConstValues.Berserker;
+        secondPlayer = ConstValues.Gunner;
+        
         curPlayer = GetPlayer(FirstPlayer);
         foreach (var player in players)
         {
@@ -438,6 +440,21 @@ public class GameManager : Singleton<GameManager>
         SetUI(type, go);
         return go;
     }
+    private void SetSkillUI(eUIType uiType)
+    {
+        UIBase uiBase = null;
+        foreach (var list in objectList)
+        {
+            if (list.GetComponent<UIBase>() && list.GetComponent<UIBase>().GetUIType() == uiType)
+            {
+                uiBase = list.GetComponent<UIBase>();
+                break;
+            }
+        }
+        if (uiBase != null)
+            BindPresenter(uiType, uiBase); 
+    }
+    
     // UI팝업화면
     public GameObject SpawnToPopupPool(eUIType type, Transform objTransform)
     {
@@ -550,7 +567,7 @@ public class GameManager : Singleton<GameManager>
         var uiBase = uiObject.GetComponent<UIBase>();
         uiBase.Setup(uiType);
         if (uiBase != null)
-            BindPresenter(uiType, uiBase);
+            BindPresenter(uiType, uiBase); 
     }
 
     private void InitChangeSkill()
@@ -576,5 +593,30 @@ public class GameManager : Singleton<GameManager>
             changeSkill.playerSkill = addedSkill;
             break;
         }
+    }
+
+    public void CharacterChange()
+    {
+        var pastPlayer = curPlayer;
+        var pastVelocity = pastPlayer.GetVelocity();
+        var changePos = curPlayer.transform.position;
+        var nextPlayerId = secondPlayer;
+        if (curPlayer.BasicStat.id == secondPlayer)
+            nextPlayerId = firstPlayer;
+        
+        ActivePlayer(nextPlayerId);
+        curPlayer = GetPlayer(nextPlayerId);
+        curPlayer.transform.position = changePos;
+        curPlayer.transform.localScale = pastPlayer.transform.localScale;
+        curPlayer.JumpAttackCount = 0;
+        
+        if(pastPlayer.NormalState == ENormalState.Jump)
+            curPlayer.JumpChange(pastVelocity);
+        else if(pastPlayer.MoveState == EMoveState.Moving)
+            curPlayer.MoveChange();
+        else
+            curPlayer.ChangeAttack();
+
+        SetSkillUI(eUIType.UI_Skill);
     }
 }

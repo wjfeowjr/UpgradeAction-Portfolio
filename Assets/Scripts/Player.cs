@@ -90,6 +90,7 @@ public class PlayerStat
 public abstract class Player : Character
 {
     private bool isChanging;
+    private float jumpLimitY;
     protected int jumpAttackCount;
     
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
@@ -102,18 +103,29 @@ public abstract class Player : Character
     private float globalCoolTime;
     protected float curGlobalCoolTime;
     
+    private float changeGlobalCoolTime;
+    private float curChangeGlobalCoolTime;
+    
     // 프로퍼티
     public bool IsChanging => isChanging;
+    public int JumpAttackCount
+    {
+        get => jumpAttackCount;
+        set => jumpAttackCount = value;
+    }
 
     // 스킬
     public abstract void Skill(KeyCode skillKey);
     // 공격
     public abstract void Attack();
+    // 교체공격
+    public abstract void ChangeAttack();
     
     protected override void Awake()
     {
         base.Awake();
         globalCoolTime = 0.1f;
+        changeGlobalCoolTime = 0.1f;
     }
 
     protected void OnEnable()
@@ -131,6 +143,7 @@ public abstract class Player : Character
         UpdateJumpDown();
         UpdateAirborneDown();
         UpdateGlobalCoolTime();
+        UpdateChangeGlobalCoolTime();
         UpdateBuff();
     }
 
@@ -191,12 +204,36 @@ public abstract class Player : Character
             };
         }
     }
+
     private void InitAdditionalStat()
     {
         var finalHp = basicStat.hp;
         basicStat.maxHp = finalHp;
         basicStat.hp = finalHp;
-        
+    }
+
+    public void MoveChange()
+    {
+        var changeAttackId = TableManager.Instance.animationsTable.Animations.Find(x => x.id == ConstValues.ChangeAttack && x.caster == basicStat.id);
+        if(changeAttackId == null)
+            StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+        else
+            ChangeAttack();
+    }
+    public void JumpChange(Vector2 velocity)
+    {
+        var changeAttackId = TableManager.Instance.animationsTable.Animations.Find(x => x.id == ConstValues.ChangeAttack && x.caster == basicStat.id);
+        if (changeAttackId == null)
+        {
+            myRigidbody.linearVelocity = velocity;
+            JumpToChange();
+            StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+        }
+        else
+        {
+            ChangeAttack();
+        }
+        LandingStateSetting(ELandingState.Air);
     }
 
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
@@ -335,6 +372,15 @@ public abstract class Player : Character
         bool isFill = curGlobalCoolTime >= globalCoolTime;
         return isFill;
     }
+    
+    private void UpdateChangeGlobalCoolTime()
+    {
+        if (curChangeGlobalCoolTime < changeGlobalCoolTime)
+            curChangeGlobalCoolTime += Time.deltaTime;
+
+        if (curChangeGlobalCoolTime >= changeGlobalCoolTime)
+            curChangeGlobalCoolTime = changeGlobalCoolTime;
+    }
 
     public void Move(Vector2 dir)
     {
@@ -384,9 +430,11 @@ public abstract class Player : Character
             Debug.Log($"이미 교체가 진행중임");
             return false;
         }
-        
+
+        curChangeGlobalCoolTime = 0;
         isChanging = true;
-        await UniTask.WaitUntil(()=> normalState is Idle or ENormalState.Move);
+        // 점프 도중에만 글로벌 쿨타임을 준다
+        await UniTask.WaitUntil(()=> normalState is Idle or ENormalState.Move || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime));
         isChanging = false;
         targetSkill.SetCoolTime();
         return true;
@@ -466,17 +514,29 @@ public abstract class Player : Character
             CancelMotion();
             StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
             LandingStateSetting(ELandingState.Air);
-
-            float jumpPosY = transform.position.y + myStat.jumpHeight;
-            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, myStat.jumpForce); 
+            
+            jumpLimitY = transform.position.y + myStat.jumpHeight;
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 20); 
+            
             stateCancellation = new CancellationTokenSource();
-            while (transform.position.y < jumpPosY)
+            while (transform.position.y < jumpLimitY)
             {
                 if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                     return;
             }
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
         }
+    }
+
+    public async void JumpToChange()
+    {
+        stateCancellation = new CancellationTokenSource();
+        while (transform.position.y < jumpLimitY)
+        {
+            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
     }
     // 도약
     protected async void Leap(float xVelocity, float yVelocity, float leapHeight)
@@ -559,20 +619,16 @@ public abstract class Player : Character
         return skillList.Find(x => x.skillName == id);
     }
 
+    // 캐릭터 교체
     public async void ChangeCharacter()
     {
-        if(!GetGlobalCoolTime())
-        {
-            Debug.Log("글로벌 쿨타임이 지나지 않음");
-            return;
-        }
         var changing = await IsCanChange();
         
         if (!changing)
             return;
 
         Debug.Log("교체!");
-        curGlobalCoolTime = 0;
+        GameManager.Instance.CharacterChange();
     }
  
     // 대시
