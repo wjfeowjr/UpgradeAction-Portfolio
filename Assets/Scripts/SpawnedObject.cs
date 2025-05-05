@@ -15,6 +15,7 @@ public class SpawnObjectInfo
     public Vector3 flipAngle;
     public float objectTime;
     public List<string> soundList = new List<string>();
+    public Vector2 cameraShake;
 }
 
 public class SpawnedObject : MonoBehaviour
@@ -81,6 +82,9 @@ public class SpawnedObject : MonoBehaviour
         foreach (var sound in soundArray)
             spawnObjectInfo.soundList.Add(sound);
         
+        var cameraShakeArray = objectData.cameraShake.Split(';');
+        spawnObjectInfo.cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
+
         dir = dirX;
     }
     
@@ -125,10 +129,13 @@ public class SpawnedObject : MonoBehaviour
         transform.localScale = new Vector3(xScale, yScale, zScale);
         transform.eulerAngles = defaultAngle;
 
-        foreach (var sound in spawnObjectInfo.soundList)
+        foreach (var sound  in spawnObjectInfo.soundList)
             SoundManager.Instance.PlaySound(sound);
+        
+        if(spawnObjectInfo.cameraShake != Vector2.zero)
+            GameManager.Instance.CameraShake(spawnObjectInfo.cameraShake.x, spawnObjectInfo.cameraShake.y);
     }
-    
+     
     private void ObjectTimer()
     {
         if (spawnObjectInfo.objectTime == 0)

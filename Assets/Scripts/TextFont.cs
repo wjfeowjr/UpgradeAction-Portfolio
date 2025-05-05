@@ -115,5 +115,6 @@ public class TextFont : MonoBehaviour
         myText.DOFade(0, fadeSecond);
         transform.DOMove(startVector, downSecond);
         await UniTask.Delay(TimeSpan.FromSeconds(downSecond), cancellationToken: myCancellationToken);
+        gameObject.SetActive(false);
     }
 }

@@ -91,6 +91,7 @@ public abstract class Character : MonoBehaviour
     
     protected Rigidbody2D myRigidbody;
     protected BoxCollider2D myBoxCollider;
+    protected BoxCollider2D physicsCollider;
     protected Animator myAnimator;
     protected SpriteRenderer[] mySpriteRenderers;
     
@@ -119,8 +120,10 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected Vector2 downOffset;
     
     protected Vector2 chargeVector;
+    protected int jumpAttackCount;
     private int airborneCount;     // 에어본 카운트
     private int moveLayerMask;
+    private int platformLayerMask;
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
@@ -132,8 +135,7 @@ public abstract class Character : MonoBehaviour
     
     public ENormalState NormalState => normalState;
     public EMoveState MoveState => moveState;
-    public ELandingState LandingState => landingState;
-    
+
     // 상태 설정
     protected abstract void StateSetting(ENormalState changeNormalState, string triggerName, string animId);
 
@@ -143,17 +145,27 @@ public abstract class Character : MonoBehaviour
     {
         myRigidbody = GetComponent<Rigidbody2D>();
         myBoxCollider = GetComponent<BoxCollider2D>();
+        foreach (var component in GetComponentsInChildren<BoxCollider2D>())
+        {
+            if (!component.isTrigger)
+            {
+                physicsCollider = component;
+                break;
+            }
+        }
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         moveLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
+        platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         
         ScaleSetting();
         ColSizeSetting();
     }
 
-    protected virtual void Update()
+    private void FixedUpdate()
     {
-        VelocityControl();
+        UpdateVelocity();
+        JumpIgnorePlatform();
     }
 
     private void ScaleSetting()
@@ -205,12 +217,63 @@ public abstract class Character : MonoBehaviour
     }
     
     // 최대 중력가속도 조정
-    private void VelocityControl()
+    private void UpdateVelocity()
     {
         if (myRigidbody.bodyType == RigidbodyType2D.Dynamic && myRigidbody.linearVelocity.y < -30)
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -30);
     }
-    
+
+    public void IgnorePlatform(bool value)
+    {
+        foreach (var platform in GameManager.Instance.PlatformColliderList)
+        {
+            if (Physics2D.GetIgnoreCollision(physicsCollider, platform) == !value)
+            {
+                Physics2D.IgnoreCollision(physicsCollider, platform, value);
+            }
+        }
+    }
+
+    // 콜라이더 무시 설정
+    private void JumpIgnorePlatform()
+    {
+        // if (landingState != ELandingState.Air)
+        //     return;
+        
+        if (myRigidbody.linearVelocityY > 0)
+        {
+            IgnorePlatform(true);
+        }
+        else if (myRigidbody.linearVelocityY < 0)
+        {
+            var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+            var rayVector2 = new Vector2(transform.position.x, transform.position.y);
+            var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+
+            PlatformRay(rayVector1);
+            PlatformRay(rayVector2);
+            PlatformRay(rayVector3);
+        }
+        // 대시하는 경우 사용, 특수
+        else if  (normalState == ENormalState.Dash)
+        {
+            IgnorePlatform(true);
+        }
+    }
+
+    private void PlatformRay(Vector2 rayVector)
+    {
+        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 3.0f, platformLayerMask);
+        Debug.DrawRay(rayVector, Vector2.down * 3.0f, ConstValues.BlueColor, 0.025f);
+        if (downRay.collider != null)
+        {
+            if (Physics2D.GetIgnoreCollision(physicsCollider, downRay.collider))
+            {
+                Physics2D.IgnoreCollision(physicsCollider, downRay.collider, false);
+            }
+        }
+    }
+
     // 반동
     protected void Rebound(float force)
     {
@@ -306,7 +369,7 @@ public abstract class Character : MonoBehaviour
         }
         effectObj.transform.localScale = randomVector;
     }
-    
+
     // 공격 소환
     protected void SpawnAttack(string id, Transform attackTransform, int zAngle = 0)
     {
@@ -1033,12 +1096,14 @@ public abstract class Character : MonoBehaviour
     protected void OnCollisionEnter2D(Collision2D col)
     {
         // 착지
-        if (col.gameObject.CompareTag(ConstValues.Ground) && landingState == ELandingState.Air)
+        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
         {
             LandingStateSetting(ELandingState.Ground);
             
             myRigidbody.bodyType = RigidbodyType2D.Dynamic;
             myRigidbody.linearVelocity = Vector2.zero;
+
+            jumpAttackCount = 0;
 
             // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
             switch (normalState)
@@ -1056,9 +1121,17 @@ public abstract class Character : MonoBehaviour
     protected void OnCollisionExit2D(Collision2D col)
     {
         // 점프
-        if (col.gameObject.CompareTag(ConstValues.Ground))
+        if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
         {
             LandingStateSetting(ELandingState.Air);
+            
+            if (col.gameObject.CompareTag(ConstValues.Platform))
+            {
+                IgnorePlatform(true);
+                
+                if(normalState == ENormalState.Move)
+                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+            }
         }
     }
 }

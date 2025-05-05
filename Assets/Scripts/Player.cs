@@ -91,8 +91,7 @@ public abstract class Player : Character
 {
     private bool isChanging;
     private float jumpLimitY;
-    protected int jumpAttackCount;
-    
+
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
     [SerializeField] protected bool nextAttack;
@@ -133,12 +132,10 @@ public abstract class Player : Character
         InitAdditionalStat();
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-        GameManager.Instance.CurPlayer = this;
     }
 
-    protected override void Update()
+    private void Update()
     {
-        base.Update();
         UpdateFlip();
         UpdateJumpDown();
         UpdateAirborneDown();

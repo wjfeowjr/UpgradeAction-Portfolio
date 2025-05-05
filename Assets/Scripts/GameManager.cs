@@ -144,6 +144,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private Player[] players;
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
+    [SerializeField] private List<Collider2D> platformColliderList = new List<Collider2D>();
 
     private string firstPlayer;
     private string secondPlayer = default;
@@ -156,6 +157,9 @@ public class GameManager : Singleton<GameManager>
     public TableManager tableManager;
     //public UIManager uiManager;
     //public ResourceManager resourceManager;
+    
+    // 카메라
+    private FollowCamera mainCamera;
     
     // 프로퍼티
     public Player CurPlayer
@@ -173,6 +177,12 @@ public class GameManager : Singleton<GameManager>
     public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
 
     public SettingSkill ChangeSkill => changeSkill;
+
+    public List<Collider2D> PlatformColliderList
+    {
+        get => platformColliderList;
+        set => platformColliderList = value;
+    }
 
     protected override void Awake()
     {
@@ -294,14 +304,19 @@ public class GameManager : Singleton<GameManager>
     }
     public void SetSkillId(KeyCode keyCode, string skillId)
     {
-        var berserkerSkillKey = playerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == keyCode);
-        if (berserkerSkillKey != null)
-            berserkerSkillKey.skillId = skillId;
+        if (curPlayer.BasicStat.id == ConstValues.Berserker)
+        {
+            var berserkerSkillKey = playerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == keyCode);
+            if (berserkerSkillKey != null)
+                berserkerSkillKey.skillId = skillId;
+        }
+        else if (curPlayer.BasicStat.id == ConstValues.Gunner)
+        {
+            var gunnerSkillKey = playerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == keyCode);
+            if (gunnerSkillKey != null)
+                gunnerSkillKey.skillId = skillId;
+        }
         
-        var gunnerSkillKey = playerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == keyCode);
-        if (gunnerSkillKey != null)
-            gunnerSkillKey.skillId = skillId;
-
         // 저장
         string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
         SkillBinding.SaveKey(json);
@@ -393,7 +408,6 @@ public class GameManager : Singleton<GameManager>
         ActivePlayer(playerName);
         curPlayer.transform.position = playerPos.position;
     }
-
     private Player GetPlayer(string playerName)
     {
         foreach (var player in players)
@@ -407,6 +421,16 @@ public class GameManager : Singleton<GameManager>
     {
         foreach (var player in players)
             player.gameObject.SetActive(player.name == playerName);
+    }
+
+    public void InitCamera(FollowCamera targetCamera)
+    {
+        mainCamera = targetCamera;
+    }
+
+    public void CameraShake(float amount, float time)
+    {
+        mainCamera.Shake(amount, time);
     }
     
     // 일반 오브젝트
@@ -454,7 +478,7 @@ public class GameManager : Singleton<GameManager>
         if (uiBase != null)
             BindPresenter(uiType, uiBase); 
     }
-    
+
     // UI팝업화면
     public GameObject SpawnToPopupPool(eUIType type, Transform objTransform)
     {
@@ -616,7 +640,7 @@ public class GameManager : Singleton<GameManager>
             curPlayer.MoveChange();
         else
             curPlayer.ChangeAttack();
-
+        
         SetSkillUI(eUIType.UI_Skill);
     }
 }

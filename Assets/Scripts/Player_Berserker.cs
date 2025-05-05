@@ -12,6 +12,8 @@ public class Player_Berserker : Player
     [SerializeField] private Transform attack3Pos;
     [SerializeField] private Transform jumpAttack1Pos;
     [SerializeField] private Transform jumpAttack2Pos;
+    [SerializeField] private Transform changeAttackPos;
+    
     [SerializeField] private Transform upperSlashPos;
     [SerializeField] private Transform crashPos;
     [SerializeField] private Transform crashExplosionPos;
@@ -39,11 +41,15 @@ public class Player_Berserker : Player
     }
     private async UniTask<bool> BerserkerChangeAttack()
     {
-        var delay1 = 0.5f;
+        var delay1 = 0.14f;
         StateSetting(ENormalState.Attack, ConstValues.ChangeAttack, ConstValues.ChangeAttack);
-        if (await AttackDelay(delay1).SuppressCancellationThrow())
-            return false;
-        
+
+        for (int i = 0; i < 3; i++)
+        {
+            SpawnAttack($"{ConstValues.Berserker}_{ConstValues.ChangeAttack}", changeAttackPos);
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return false;
+        }
         return true;
     }
     

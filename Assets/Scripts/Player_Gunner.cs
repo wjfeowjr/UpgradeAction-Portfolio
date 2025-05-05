@@ -10,11 +10,13 @@ public class Player_Gunner : Player
     [SerializeField] private Transform landingEffectPos;
     [SerializeField] private Transform jumpAttackPos;
     [SerializeField] private Transform jumpEffectPos;
+    [SerializeField] private Transform changeAttackPos;
+    
     [SerializeField] private Transform grenadePos;
     [SerializeField] private Transform knockBackShotPos;
     [SerializeField] private Transform crazyShotPos;
     [SerializeField] private Transform bigShotPos;
-    
+
     private void Scream()
     {
         SoundManager.Instance.PlaySound(ConstValues.GunnerLaugh);
@@ -40,10 +42,14 @@ public class Player_Gunner : Player
     }
     private async UniTask<bool> GunnerChangeAttack()
     {
-        var delay1 = 0.5f;
+        var delay1 = 0.05f;
         StateSetting(ENormalState.Attack, ConstValues.ChangeAttack, ConstValues.ChangeAttack);
-        if (await AttackDelay(delay1).SuppressCancellationThrow())
-            return false;
+        for (int i = 0; i < 10; i++)
+        {
+            SpawnAttack($"{ConstValues.Gunner}_{ConstValues.ChangeAttack}", changeAttackPos);
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return false;
+        }
         
         return true;
     }

@@ -103,6 +103,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string ChangeAttack = "ChangeAttack";
     
     public const string Ground = "Ground";
+    public const string Platform = "Platform";
     
     public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";

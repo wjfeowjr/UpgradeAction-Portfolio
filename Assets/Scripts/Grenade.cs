@@ -25,9 +25,6 @@ public class Grenade : MonoBehaviour
     [SerializeField] private float groundAngularDrag;
     // 정지로 간주할 속도 임계치
     [SerializeField] private float stopThreshold;
-    // 지면 레이어
-    private LayerMask groundLayer;
-    
     // 수류탄 정보
     [SerializeField] private GrenadeInfo grenadeInfo;
 
@@ -44,7 +41,6 @@ public class Grenade : MonoBehaviour
         groundDrag = 1.0f;
         groundAngularDrag = 2.0f;
         stopThreshold = 0.1f;
-        groundLayer = LayerMask.NameToLayer(ConstValues.Ground);
     }
 
     private void OnEnable()
@@ -143,10 +139,10 @@ public class Grenade : MonoBehaviour
         gameObject.SetActive(false);
     }
     
-    private void OnCollisionEnter2D(Collision2D collision)
+    private void OnCollisionEnter2D(Collision2D col)
     {
         // 충돌한 오브젝트가 groundLayer에 포함되면 접지 상태로 전환
-        if (((1 << collision.gameObject.layer) & groundLayer) != 0)
+        if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
         {
             isGrounded = true;
             myRigidbody.linearDamping = groundDrag;

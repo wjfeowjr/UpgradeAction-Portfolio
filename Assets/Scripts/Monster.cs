@@ -68,9 +68,8 @@ public class Monster : Character
         Appear();
     }
 
-    protected override void Update()
+    private void Update()
     {
-        base.Update();
         if (basicStat.hp <= 0)
             return;
         
