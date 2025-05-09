@@ -15,6 +15,9 @@ public class ConstValues : Singleton<ConstValues>
     public const float WhiteSecond = 0.05f;
     public const float GaugeReduce = 0.3f;
     public const float GaugeFillSpeed = 0.02f;
+
+    public const float JumpCoolTime = 1.0f;
+    public const float DownJumpCoolTime = 1.0f;
     
     public const float DefaultLinearDamping = 0f;
     public const float DefaultAngularDamping = 0.05f;
@@ -33,6 +36,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string RightMoveKey = "RightMoveKey";
     public const string AttackKey = "AttackKey";
     public const string JumpKey = "JumpKey";
+    public const string DownKey = "DownKey";
     public const string DashKey = "DashKey";
     public const string SkillKey1 = "SkillKey1";
     public const string SkillKey2 = "SkillKey2";
@@ -164,6 +168,7 @@ public class ConstValues : Singleton<ConstValues>
     public static readonly Color GreenColor = Color.green;
     public static readonly Color BlueColor = Color.blue;
     public static readonly Color CyanColor = Color.cyan;
+    public static readonly Color MagentaColor = Color.magenta;
     
     // 사운드
     public const string GunnerLaugh = "Gunner_Laugh";

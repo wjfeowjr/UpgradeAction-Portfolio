@@ -116,6 +116,7 @@ public class GameManager : Singleton<GameManager>
     public KeyCode rightMoveKey;
     public KeyCode attackKey;
     public KeyCode jumpKey;
+    public KeyCode downKey;
 
     public KeyCode changeCharacterKey;
     public KeyCode dashKey;
@@ -241,6 +242,7 @@ public class GameManager : Singleton<GameManager>
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
         jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
+        downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
         
         changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
         dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);

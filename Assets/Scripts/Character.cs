@@ -21,6 +21,7 @@ public enum ENormalState
     Idle,
     Move,
     Jump,
+    Landing,
     Attack,
     JumpAttack,
     Dash,
@@ -94,6 +95,7 @@ public abstract class Character : MonoBehaviour
     protected BoxCollider2D physicsCollider;
     protected Animator myAnimator;
     protected SpriteRenderer[] mySpriteRenderers;
+    [SerializeField] protected GameObject groundObject;
     
     protected Vector3 defaultScale;
     protected Vector3 reverseScale;
@@ -124,12 +126,14 @@ public abstract class Character : MonoBehaviour
     private int airborneCount;     // 에어본 카운트
     private int moveLayerMask;
     private int platformLayerMask;
+    private bool downJumping;
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
 
     // 프로퍼티
     public BasicStat BasicStat => basicStat;
+    public GameObject GroundObject => groundObject;
     public bool Immortal => immortal;
     public bool ImmuneStagger => immuneStagger;
     
@@ -162,7 +166,7 @@ public abstract class Character : MonoBehaviour
         ColSizeSetting();
     }
 
-    private void FixedUpdate()
+    protected virtual void FixedUpdate()
     {
         UpdateVelocity();
         JumpIgnorePlatform();
@@ -237,8 +241,8 @@ public abstract class Character : MonoBehaviour
     // 콜라이더 무시 설정
     private void JumpIgnorePlatform()
     {
-        // if (landingState != ELandingState.Air)
-        //     return;
+        if (downJumping)
+            return;
         
         if (myRigidbody.linearVelocityY > 0)
         {
@@ -655,6 +659,7 @@ public abstract class Character : MonoBehaviour
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
         immortal = false;
+        downJumping = false;
         
         ClearObjectList(controlObject);
         ClearObjectList(normalObject);
@@ -902,6 +907,7 @@ public abstract class Character : MonoBehaviour
         airborneCount = 1;
         LandingStateSetting(ELandingState.Air);
         MoveStateSetting(EMoveState.Stopping);
+        ResetTriggerAnimator(ConstValues.Jump);
         
         stateCancellation = new CancellationTokenSource();
         Bound(xVelocity, yVelocity);
@@ -1080,6 +1086,31 @@ public abstract class Character : MonoBehaviour
         SpriteRendererMaterialChange(GameManager.Instance.defaultMaterial);
     }
 
+    // 아랫점프
+    public async void DownJump()
+    {
+        // 플랫폼 위에서만 작동함
+        if(!groundObject.CompareTag(ConstValues.Platform))
+            return;
+        
+        downJumping = true;
+        IgnorePlatform(true);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
+
+        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+        LandingStateSetting(ELandingState.Air);
+        
+        stateCancellation = new CancellationTokenSource();
+
+        while (transform.position.y >= groundObject.transform.position.y)
+        {
+            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+        
+        downJumping = false;
+    }
+
     protected void SpriteRendererMaterialChange(Material material)
     {
         foreach (var mySpriteRenderer in mySpriteRenderers)
@@ -1091,47 +1122,5 @@ public abstract class Character : MonoBehaviour
     {
         foreach (var mySpriteRenderer in mySpriteRenderers)
             mySpriteRenderer.enabled = active;
-    }
-    
-    protected void OnCollisionEnter2D(Collision2D col)
-    {
-        // 착지
-        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
-        {
-            LandingStateSetting(ELandingState.Ground);
-            
-            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            myRigidbody.linearVelocity = Vector2.zero;
-
-            jumpAttackCount = 0;
-
-            // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
-            switch (normalState)
-            {
-                case ENormalState.Jump:
-                    StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-                    break;
-                case ENormalState.Airborne:
-                    DownAndStand();
-                    break;
-            }
-        }
-    }
-
-    protected void OnCollisionExit2D(Collision2D col)
-    {
-        // 점프
-        if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
-        {
-            LandingStateSetting(ELandingState.Air);
-            
-            if (col.gameObject.CompareTag(ConstValues.Platform))
-            {
-                IgnorePlatform(true);
-                
-                if(normalState == ENormalState.Move)
-                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-            }
-        }
     }
 }

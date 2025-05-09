@@ -149,6 +149,8 @@ public class MonsterData
     public float firstCoolTime;
     public float globalCoolTime;
     public string attackRange;
+    public string jumpRange;
+    public string dropRange;
     public string coolTime;
     public string priority;
     public string pageHp;

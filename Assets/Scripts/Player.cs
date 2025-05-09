@@ -369,6 +369,23 @@ public abstract class Player : Character
         bool isFill = curGlobalCoolTime >= globalCoolTime;
         return isFill;
     }
+
+    public float GetRightPosX()
+    {
+        return transform.position.x + physicsCollider.size.x * 0.5f;
+    }
+    public float GetLeftPosX()
+    {
+        return transform.position.x - physicsCollider.size.x * 0.5f;
+    }
+    public float GetUpPosY()
+    {
+        return transform.position.y + physicsCollider.size.y;
+    }
+    public float GetDownPosY()
+    {
+        return transform.position.y;
+    }
     
     private void UpdateChangeGlobalCoolTime()
     {
@@ -661,5 +678,48 @@ public abstract class Player : Character
         // 대시 끝
         immortal = false;
         return chargeFinish;
+    }
+    
+    protected void OnCollisionEnter2D(Collision2D col)
+    {
+        // 착지
+        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
+        {
+            LandingStateSetting(ELandingState.Ground);
+            
+            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            myRigidbody.linearVelocity = Vector2.zero;
+            groundObject = col.gameObject;
+            jumpAttackCount = 0;
+
+            // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
+            switch (normalState)
+            {
+                case ENormalState.Jump:
+                    StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+                    break;
+                case ENormalState.Airborne:
+                    DownAndStand();
+                    break;
+            }
+            
+        }
+    }
+
+    protected void OnCollisionExit2D(Collision2D col)
+    {
+        // 점프
+        if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
+        {
+            LandingStateSetting(ELandingState.Air);
+            
+            if (col.gameObject.CompareTag(ConstValues.Platform))
+            {
+                IgnorePlatform(true);
+                
+                if(normalState == ENormalState.Move)
+                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+            }
+        }
     }
 }
