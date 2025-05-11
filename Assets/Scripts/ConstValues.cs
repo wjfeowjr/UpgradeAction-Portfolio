@@ -52,6 +52,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";
     public const string SkillImage = "SkillImage";
+    public const string SpeechFrame = "SpeechFrame";
     public const string Effect = "Effect";
 
     public const string Berserker = "Berserker";
@@ -71,6 +72,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string JumpAttack2Start = "JumpAttack2_Start";
     public const string JumpAttack2Drop = "JumpAttack2_Drop";
     public const string JumpAttack2End = "JumpAttack2_End";
+    
+    // 대화 애니메이션
+    public const string DialogJump = "DialogJump";
 
     public const string None = "None";
     public const string Normal = "Normal";

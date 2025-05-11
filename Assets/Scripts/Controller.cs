@@ -16,6 +16,9 @@ public class Controller : Singleton<Controller>
 
     private void Update()
     {
+        if (!GameManager.Instance.ControlStart)
+            return;
+        
         DirControl();
         PlayerControl();
     }

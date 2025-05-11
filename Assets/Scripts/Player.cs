@@ -680,6 +680,17 @@ public abstract class Player : Character
         return chargeFinish;
     }
     
+    // 커스텀
+    public void CustomJump(Vector2 jumpVelocity)
+    {
+        myRigidbody.linearVelocity = jumpVelocity;
+    }
+
+    public void CustomAnimTrigger(ENormalState state, string triggerName)
+    {
+        StateSetting(state, triggerName, null);
+    }
+    
     protected void OnCollisionEnter2D(Collision2D col)
     {
         // 착지
@@ -702,7 +713,6 @@ public abstract class Player : Character
                     DownAndStand();
                     break;
             }
-            
         }
     }
 

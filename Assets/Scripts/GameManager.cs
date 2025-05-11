@@ -149,6 +149,7 @@ public class GameManager : Singleton<GameManager>
 
     private string firstPlayer;
     private string secondPlayer = default;
+    private bool controlStart;
 
     // 등록된 스킬 목록
     private SettingSkill changeSkill;
@@ -173,6 +174,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => firstPlayer;
         set => firstPlayer = value;
+    }
+
+    public bool ControlStart
+    {
+        get => controlStart;
+        set => controlStart = value;
     }
 
     public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
@@ -588,6 +595,21 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    public GameObject GetUI(eUIType type)
+    {
+        GameObject result = null;
+        foreach (var go in objectList)
+        {
+            if (go.GetComponent<UIBase>() && go.GetComponent<UIBase>().GetUIType() == type)
+            {
+                result = go;
+                break;
+            }
+        }
+
+        return result;
+    }
+
     private void SetUI(eUIType uiType, GameObject uiObject)
     {
         var uiBase = uiObject.GetComponent<UIBase>();
@@ -644,5 +666,13 @@ public class GameManager : Singleton<GameManager>
             curPlayer.ChangeAttack();
         
         SetSkillUI(eUIType.UI_Skill);
+    }
+
+    public SpeechFrame SpawnSpeechFrame(Vector2 speechVector, string dialog)
+    {
+        var speechFrame = SpawnToUIObjectPool(ConstValues.SpeechFrame, speechVector);
+        var frameClass = speechFrame.GetComponent<SpeechFrame>();
+        frameClass.Speech(dialog);
+        return frameClass;
     }
 }

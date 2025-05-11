@@ -136,6 +136,7 @@ public abstract class Character : MonoBehaviour
     public GameObject GroundObject => groundObject;
     public bool Immortal => immortal;
     public bool ImmuneStagger => immuneStagger;
+    public Transform FontPos => fontPos;
     
     public ENormalState NormalState => normalState;
     public EMoveState MoveState => moveState;
@@ -342,7 +343,7 @@ public abstract class Character : MonoBehaviour
     }
 
     public void SpawnDamageFont(int damage, bool critical)
-    {
+    { 
         var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, fontPos).GetComponent<TextFont>();
 
         if (critical)
@@ -1090,7 +1091,7 @@ public abstract class Character : MonoBehaviour
     public async void DownJump()
     {
         // 플랫폼 위에서만 작동함
-        if(!groundObject.CompareTag(ConstValues.Platform))
+        if(groundObject == null || !groundObject.CompareTag(ConstValues.Platform))
             return;
         
         downJumping = true;
