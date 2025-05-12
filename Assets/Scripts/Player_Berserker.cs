@@ -120,6 +120,14 @@ public class Player_Berserker : Player
         if (await NextAttackDelay(delay2, afterDelay).SuppressCancellationThrow())
             return false;
 
+        if (landingState == ELandingState.Air)
+        {
+            CancelMotion();
+            StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+            LandingStateSetting(ELandingState.Air);
+            return false;
+        }
+
         if (nextAttack)
         {
             nextAttack = false;
@@ -133,6 +141,14 @@ public class Player_Berserker : Player
             SpawnAttack(ConstValues.BerserkerAttack2, attack2Pos);
             if (await NextAttackDelay(delay4, afterDelay).SuppressCancellationThrow())
                 return false;
+            
+            if (landingState == ELandingState.Air)
+            {
+                CancelMotion();
+                StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+                LandingStateSetting(ELandingState.Air);
+                return false;
+            }
 
             if (nextAttack)
             {
@@ -360,9 +376,14 @@ public class Player_Berserker : Player
         var dashSpeed = 16;
         var dashLength = 5;
         // 대시 레이캐스트 체크
-        chargeVector = RayCheckLength(dashLength, 0);
+        //chargeVector = RayCheckLength(dashLength, 0);
+        if(transform.localScale.x > 0)
+            chargeVector = new Vector2(transform.position.x + dashLength, transform.position.y);
+        else
+            chargeVector = new Vector2(transform.position.x - dashLength, transform.position.y);
+        
         // 돌진
-        await Charge(dashSpeed, 1.0f, dashLength, 0.0f);
+        await Charge(dashSpeed, 1.0f, dashLength, 1.0f);
         
         SetTriggerAnimator(ConstValues.ComboAttack);
         SpawnAttack(ConstValues.BerserkerChargeCrashSlash, centerPos);       

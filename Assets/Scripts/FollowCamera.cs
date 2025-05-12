@@ -65,24 +65,24 @@ public class FollowCamera : MonoBehaviour
             shakeTime = 0.0f;
         }
         
-        // // 기본적으로 카메라의 목표 x 및 y 좌표는 현재 x 및 y 좌표입니다.
-        // targetX = transform.position.x;
-        // targetY = transform.position.y;
-        //
-        // // 플레이어가 x 마진을 넘어서 움직 였다면
-        // if (CheckXMargin())
-        //     // 대상 x 좌표는 카메라의 현재 x 위치와 플레이어의 현재 x 위치 사이의 Lerp 여야합니다.
-        //     targetX = Mathf.Lerp(transform.position.x, GameManager.Instance.CurPlayer.transform.position.x, xSmooth * Time.deltaTime); 
-        //
-        // // 플레이어가 y 마진을 넘어서 움직 였다면
-        // if(CheckYMargin())
-        //     // 대상 y 좌표는 카메라의 현재 y 위치와 플레이어의 현재 y 위치 사이의 Lerp 여야합니다.
-        //     targetY = Mathf.Lerp(transform.position.y, GameManager.Instance.CurPlayer.transform.position.y, ySmooth * Time.deltaTime);
-        //
-        // // 목표 x 및 y 좌표는 최소값보다 크거나 작아야합니다.
-        // targetX = Mathf.Clamp(targetX, minXAndY.x, maxXAndY.x);
-        // targetY = Mathf.Clamp(targetY, minXAndY.y, maxXAndY.y);
-        //
+        // 기본적으로 카메라의 목표 x 및 y 좌표는 현재 x 및 y 좌표입니다.
+        targetX = transform.position.x;
+        targetY = transform.position.y;
+        
+        // 플레이어가 x 마진을 넘어서 움직 였다면
+        if (CheckXMargin())
+            // 대상 x 좌표는 카메라의 현재 x 위치와 플레이어의 현재 x 위치 사이의 Lerp 여야합니다.
+            targetX = Mathf.Lerp(transform.position.x, GameManager.Instance.CurPlayer.transform.position.x, xSmooth * Time.deltaTime); 
+        
+        // 플레이어가 y 마진을 넘어서 움직 였다면
+        if(CheckYMargin())
+            // 대상 y 좌표는 카메라의 현재 y 위치와 플레이어의 현재 y 위치 사이의 Lerp 여야합니다.
+            targetY = Mathf.Lerp(transform.position.y, GameManager.Instance.CurPlayer.transform.position.y, ySmooth * Time.deltaTime);
+        
+        // 목표 x 및 y 좌표는 최소값보다 크거나 작아야합니다.
+        targetX = Mathf.Clamp(targetX, minXAndY.x, maxXAndY.x);
+        targetY = Mathf.Clamp(targetY, minXAndY.y, maxXAndY.y);
+        
         // 동일한 z 구성 요소를 사용하여 카메라의 위치를 ​​목표 위치로 설정하십시오.
         transform.position = new Vector3(targetX + shakeVector.x, targetY + shakeVector.y, transform.position.z);
     }

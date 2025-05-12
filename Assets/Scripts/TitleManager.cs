@@ -9,6 +9,8 @@ public class TitleManager : MonoBehaviour
     private void Start()
     {
         ButtonSetting();
+        if (SceneChanger.Instance)
+            SceneChanger.Instance.TitleScene = true;
     }
 
     private void ButtonSetting()

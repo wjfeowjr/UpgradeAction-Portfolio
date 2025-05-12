@@ -133,11 +133,12 @@ public abstract class Character : MonoBehaviour
 
     // 프로퍼티
     public BasicStat BasicStat => basicStat;
+    public Rigidbody2D MyRigidbody => myRigidbody;
     public GameObject GroundObject => groundObject;
+    public Transform FontPos => fontPos;
     public bool Immortal => immortal;
     public bool ImmuneStagger => immuneStagger;
-    public Transform FontPos => fontPos;
-    
+
     public ENormalState NormalState => normalState;
     public EMoveState MoveState => moveState;
 
@@ -160,7 +161,7 @@ public abstract class Character : MonoBehaviour
         }
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
-        moveLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
+        moveLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         
         ScaleSetting();
@@ -171,6 +172,7 @@ public abstract class Character : MonoBehaviour
     {
         UpdateVelocity();
         JumpIgnorePlatform();
+        FindGroundObject();
     }
 
     private void ScaleSetting()
@@ -266,10 +268,24 @@ public abstract class Character : MonoBehaviour
         }
     }
 
+    private void FindGroundObject()
+    {
+        if (groundObject)
+            return;
+        
+        var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+        var rayVector2 = new Vector2(transform.position.x, transform.position.y);
+        var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+
+        GroundRay(rayVector1);
+        GroundRay(rayVector2);
+        GroundRay(rayVector3);
+    }
+
     private void PlatformRay(Vector2 rayVector)
     {
-        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 3.0f, platformLayerMask);
-        Debug.DrawRay(rayVector, Vector2.down * 3.0f, ConstValues.BlueColor, 0.025f);
+        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, platformLayerMask);
+        Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.02f);
         if (downRay.collider != null)
         {
             if (Physics2D.GetIgnoreCollision(physicsCollider, downRay.collider))
@@ -277,6 +293,13 @@ public abstract class Character : MonoBehaviour
                 Physics2D.IgnoreCollision(physicsCollider, downRay.collider, false);
             }
         }
+    }
+    private void GroundRay(Vector2 rayVector)
+    {
+        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, moveLayerMask);
+        Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.025f);
+        if (downRay.collider != null)
+            groundObject = downRay.collider.gameObject;
     }
 
     // 반동
@@ -648,6 +671,10 @@ public abstract class Character : MonoBehaviour
     {
         await UniTask.Yield(cancellationToken: tokenSource.Token);
     }
+    protected async UniTask FixedYieldDelay(CancellationTokenSource tokenSource)
+    {
+        await UniTask.Yield(PlayerLoopTiming.FixedUpdate, cancellationToken: tokenSource.Token);
+    }
     // 일반 딜레이
     protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
@@ -757,116 +784,52 @@ public abstract class Character : MonoBehaviour
         return buffList.Find(x => x.buffType == buffType) != null;
     }
     
-    // 돌진 (기본스피드, 제한스피드 배율, 돌진거리, 가속도)
-    protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float acceleration)
+    // 돌진 (기본스피드, 가속 배율, 돌진거리, 가속되는 시점)
+    protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float accelPercent)
     {
+        // 1) 초기 계산
         float realDashSpeed = basicSpeed;
-        float limitDashSpeed = basicSpeed * limitMag;
-        float finalSpeed = basicSpeed + limitDashSpeed * 0.5f;
-        float finalTime = chargeLength / finalSpeed;
-        
-        float accelerationTime = finalTime + finalTime * 0.5f;
-        float finalAcceleration = 0.0f;
-        float time = 0.0f;
+        float targetSpeed   = basicSpeed * limitMag;  
+        Vector2 startPos    = transform.position;
+        Vector2 direction   = (chargeVector - startPos).normalized;
+        float totalDist     = chargeLength;
+        if (totalDist <= 0f)
+            return false;
 
-        Vector2 startVector = transform.position;
-        
-        while (time < accelerationTime)
+        // 2) 전체 돌진 시간 계산 (평균 속도 = (basic + target) / 2)
+        float duration = totalDist / ((basicSpeed + targetSpeed) * 0.5f);
+        float elapsed  = 0f;
+
+        // 3) FixedUpdate 루프: elapsed < duration 동안 실행
+        while (elapsed < duration)
         {
-            time += Time.deltaTime;
-            transform.position = Vector2.MoveTowards(transform.position, chargeVector, realDashSpeed * Time.deltaTime);
+            // 시간 누적
+            elapsed += Time.fixedDeltaTime;
 
-            if (Vector2.Distance(transform.position, chargeVector) * 2 < Vector2.Distance(startVector, chargeVector))
+            // 전체 시간 대비 현재 위치한 비율 (0→1)
+            float normTime = Mathf.Clamp01(elapsed / duration);
+
+            // accelPercent 이후부터 속도 보간
+            if (normTime > accelPercent)
             {
-                finalAcceleration += acceleration;
-
-                if (acceleration > 0)
-                    finalAcceleration = Mathf.Abs(finalAcceleration);
-                else
-                    finalAcceleration = -Mathf.Abs(finalAcceleration);
-                
-                realDashSpeed += finalAcceleration;
+                // t = 0 (accelPercent 지점) → 1 (끝)
+                float t = (normTime - accelPercent) / (1f - accelPercent);
+                realDashSpeed = Mathf.Lerp(basicSpeed, targetSpeed, t);
             }
 
-            if (limitMag >= 1)
-            {
-                if (realDashSpeed > limitDashSpeed)
-                    realDashSpeed = limitDashSpeed;
-            }
-            else
-            {
-                if (realDashSpeed < limitDashSpeed)
-                    realDashSpeed = limitDashSpeed;
-            }
+            // Rigidbody2D에 속도 적용
+            myRigidbody.linearVelocity = direction * realDashSpeed;
 
-            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+            // FixedYieldDelay 대기, 취소 시 false 반환
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
         }
 
+        // 4) 돌진 종료 후 정지
+        myRigidbody.linearVelocity = Vector2.zero;
         return true;
     }
-    
-    // 레이체크(벽 등을 판정하여 최종적으로 도착하는 지점 확인용도)
-    protected Vector2 RayCheckLength(float chargeLengthX, float chargeLengthY)
-    {
-        // 왼쪽
-        if (transform.localScale.x < 0)
-        {
-            var leftRay = Physics2D.Raycast(centerPos.position, Vector2.left, chargeLengthX, moveLayerMask);
-            Debug.DrawRay(centerPos.position, Vector2.left * chargeLengthX, ConstValues.RedColor, 0.1f);
-            
-            // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            if (leftRay.collider != null)
-                return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) + (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            else
-                return new Vector2(transform.position.x - chargeLengthX + (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
-        }
-        // 오른쪽
-        else
-        {
-            var rightRay = Physics2D.Raycast(centerPos.position, Vector2.right, chargeLengthX, moveLayerMask);
-            Debug.DrawRay(centerPos.position, Vector2.right * chargeLengthX, ConstValues.RedColor, 0.1f);
 
-            // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
-            if (rightRay.collider != null)
-                return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            else
-                return new Vector2(transform.position.x + chargeLengthX - (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
-        }
-    }
-    private Vector2 RayCheckLength(float chargeLengthX)
-    {
-        var absLengthX = Mathf.Abs(chargeLengthX);
-        // 오른쪽
-        if (chargeLengthX > 0)
-        {
-            var rightRay = Physics2D.Raycast(centerPos.position, Vector2.right, absLengthX, moveLayerMask);
-            Debug.DrawRay(centerPos.position, Vector2.right * absLengthX, ConstValues.RedColor, 0.1f);
-
-            // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
-            if (rightRay.collider != null)
-                return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) 만큼 벡터가 정해진다
-            else
-                return new Vector2(transform.position.x + absLengthX, transform.position.y);
-        }
-        // 왼쪽
-        else
-        {
-            var leftRay = Physics2D.Raycast(centerPos.position, Vector2.left, absLengthX, moveLayerMask);
-            Debug.DrawRay(centerPos.position, Vector2.left * absLengthX, ConstValues.RedColor, 0.1f);
-            
-            // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-            if (leftRay.collider != null)
-                return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y);
-            // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) 만큼 벡터가 정해진다
-            else
-                return new Vector2(transform.position.x - absLengthX, transform.position.y);
-        }
-    }
-    
     public virtual void Die()
     {
         CancelMotion();
@@ -1022,25 +985,38 @@ public abstract class Character : MonoBehaviour
     // 넉백
     public async void KnockBack(float knockBackLength)
     {
-        if(normalState == ENormalState.Down)
+        // 넉백 중 다운 상태라면 무시
+        if (normalState == ENormalState.Down)
             return;
-        
-        var knockPosX = RayCheckLength(knockBackLength).x;
-        var startDir = transform.position;
-        var endDir = new Vector2(knockPosX, transform.position.y);
+
+        // 방향 결정 (knockBackLength 양수→오른쪽, 음수→왼쪽)
+        Vector2 dir = (knockBackLength >= 0) ? Vector2.right : Vector2.left;
         float duration = ConstValues.KnockBackTime;
-        float elapsed = 0f;
+
+        // 시작 속도: 거리 / 시간
+        float speed  = Mathf.Abs(knockBackLength) / duration;
+        Vector2 constantVelocity  = dir * speed ;
         
+        // 넉백 시작—바로 초기 속도 설정
+        myRigidbody.linearVelocity = constantVelocity;
+
         anotherCancellation = new CancellationTokenSource();
-        while (elapsed < duration)
+        int steps = Mathf.CeilToInt(duration / Time.fixedDeltaTime);
+        for (int i = 0; i < steps; i++)
         {
-            transform.position = Vector3.Lerp(startDir, endDir, elapsed / duration);
-            elapsed += Time.deltaTime;
-            if (await YieldDelay(anotherCancellation).SuppressCancellationThrow())
+            // FixedUpdate 타이밍 대기 및 취소 체크
+            if (await FixedYieldDelay(anotherCancellation).SuppressCancellationThrow())
+            {
+                // 취소되면 속도 리셋 후 종료
+                myRigidbody.linearVelocity = Vector2.zero;
                 return;
+            }
         }
+
+        // 넉백 끝나면 속도 0으로
+        myRigidbody.linearVelocity = Vector2.zero;
     }
-    
+
     // 바라보기
     public virtual void LookAt(float xPos)
     {
@@ -1093,7 +1069,10 @@ public abstract class Character : MonoBehaviour
         // 플랫폼 위에서만 작동함
         if(groundObject == null || !groundObject.CompareTag(ConstValues.Platform))
             return;
-        
+
+        if (IsDamaged())
+            return;
+
         downJumping = true;
         IgnorePlatform(true);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
@@ -1124,4 +1103,161 @@ public abstract class Character : MonoBehaviour
         foreach (var mySpriteRenderer in mySpriteRenderers)
             mySpriteRenderer.enabled = active;
     }
+    
+    // protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float acceleration)
+    // {
+    //     float realDashSpeed = basicSpeed;
+    //     float limitDashSpeed = basicSpeed * limitMag;
+    //     float finalSpeed = basicSpeed + limitDashSpeed * 0.5f;
+    //     float finalTime = chargeLength / finalSpeed;
+    //     
+    //     float accelerationTime = finalTime + finalTime * 0.5f;
+    //     float finalAcceleration = 0.0f;
+    //     float time = 0.0f;
+    //
+    //     Vector2 startVector = transform.position;
+    //     
+    //     while (time < accelerationTime)
+    //     {
+    //         time += Time.deltaTime;
+    //         transform.position = Vector2.MoveTowards(transform.position, chargeVector, realDashSpeed * Time.deltaTime);
+    //
+    //         if (Vector2.Distance(transform.position, chargeVector) * 2 < Vector2.Distance(startVector, chargeVector))
+    //         {
+    //             finalAcceleration += acceleration;
+    //
+    //             if (acceleration > 0)
+    //                 finalAcceleration = Mathf.Abs(finalAcceleration);
+    //             else
+    //                 finalAcceleration = -Mathf.Abs(finalAcceleration);
+    //             
+    //             realDashSpeed += finalAcceleration;
+    //         }
+    //
+    //         if (limitMag >= 1)
+    //         {
+    //             if (realDashSpeed > limitDashSpeed)
+    //                 realDashSpeed = limitDashSpeed;
+    //         }
+    //         else
+    //         {
+    //             if (realDashSpeed < limitDashSpeed)
+    //                 realDashSpeed = limitDashSpeed;
+    //         }
+    //
+    //         if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+    //             return false;
+    //     }
+    //
+    //     return true;
+    // }
+    
+    // 레이체크(벽 등을 판정하여 최종적으로 도착하는 지점 확인용도)
+    // protected Vector2 RayCheckLength(float chargeLengthX, float chargeLengthY)
+    // {
+    //     var rayVector = transform.position;
+    //     
+    //     // 왼쪽
+    //     if (transform.localScale.x < 0)
+    //     {
+    //         var leftRay = Physics2D.Raycast(rayVector, Vector2.left, chargeLengthX, moveLayerMask);
+    //         Debug.DrawRay(rayVector, Vector2.left * chargeLengthX, ConstValues.RedColor, 0.1f);
+    //         
+    //         // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
+    //         if (leftRay.collider != null)
+    //             return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
+    //         // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) + (자신의 콜라이더/2) 만큼 벡터가 정해진다
+    //         else
+    //             return new Vector2(transform.position.x - chargeLengthX + (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
+    //     }
+    //     // 오른쪽
+    //     else
+    //     {
+    //         var rightRay = Physics2D.Raycast(rayVector, Vector2.right, chargeLengthX, moveLayerMask);
+    //         Debug.DrawRay(rayVector, Vector2.right * chargeLengthX, ConstValues.RedColor, 0.1f);
+    //
+    //         // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
+    //         if (rightRay.collider != null)
+    //             return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
+    //         // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
+    //         else
+    //             return new Vector2(transform.position.x + chargeLengthX - (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
+    //     }
+    // }
+    
+    // public async void KnockBack(float knockBackLength)
+    // {
+    //     if(normalState == ENormalState.Down)
+    //         return;
+    //     
+    //     var knockPosX = RayCheckLength(knockBackLength).x;
+    //     var startDir = transform.position;
+    //     var endDir = new Vector2(knockPosX, transform.position.y);
+    //     float duration = ConstValues.KnockBackTime;
+    //     float elapsed = 0f;
+    //     
+    //     anotherCancellation = new CancellationTokenSource();
+    //     while (elapsed < duration)
+    //     {
+    //         transform.position = Vector3.Lerp(startDir, endDir, elapsed / duration);
+    //         elapsed += Time.deltaTime;
+    //         if (await YieldDelay(anotherCancellation).SuppressCancellationThrow())
+    //             return;
+    //     }
+    // }
+    
+    // private Vector2 RayCheckLength(float chargeLengthX)
+    // {
+    //     var absLengthX = Mathf.Abs(chargeLengthX);
+    //     // 오른쪽
+    //     if (chargeLengthX > 0)
+    //     {
+    //         var rightRay = Physics2D.Raycast(centerPos.position, Vector2.right, absLengthX, moveLayerMask);
+    //         Debug.DrawRay(centerPos.position, Vector2.right * absLengthX, ConstValues.RedColor, 0.1f);
+    //
+    //         // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
+    //         if (rightRay.collider != null)
+    //             return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y);
+    //         // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) 만큼 벡터가 정해진다
+    //         else
+    //             return new Vector2(transform.position.x + absLengthX, transform.position.y);
+    //     }
+    //     // 왼쪽
+    //     else
+    //     {
+    //         var leftRay = Physics2D.Raycast(centerPos.position, Vector2.left, absLengthX, moveLayerMask);
+    //         Debug.DrawRay(centerPos.position, Vector2.left * absLengthX, ConstValues.RedColor, 0.1f);
+    //         
+    //         // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
+    //         if (leftRay.collider != null)
+    //             return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y);
+    //         // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) 만큼 벡터가 정해진다
+    //         else
+    //             return new Vector2(transform.position.x - absLengthX, transform.position.y);
+    //     }
+    // }
+    
+    // public async void KnockBack(float knockBackLength)
+    // {
+    //     if(normalState == ENormalState.Down)
+    //         return;
+    //
+    //     var knockPosX = transform.position.x + knockBackLength;
+    //     if(knockBackLength < 0)
+    //         knockPosX = transform.position.x - knockBackLength;
+    //     
+    //     var startDir = transform.position;
+    //     var endDir = new Vector2(knockPosX, transform.position.y);
+    //     float duration = ConstValues.KnockBackTime;
+    //     float elapsed = 0f;
+    //     
+    //     anotherCancellation = new CancellationTokenSource();
+    //     while (elapsed < duration)
+    //     {
+    //         transform.position = Vector3.Lerp(startDir, endDir, elapsed / duration);
+    //         elapsed += Time.deltaTime;
+    //         if (await FixedYieldDelay(anotherCancellation).SuppressCancellationThrow())
+    //             return;
+    //     }
+    // }
 }

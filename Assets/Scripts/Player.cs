@@ -238,6 +238,7 @@ public abstract class Player : Character
         myAnimator.ResetTrigger(ConstValues.ComboAttack);
         myAnimator.ResetTrigger(ConstValues.Airborne);
         myAnimator.ResetTrigger(ConstValues.Down);
+        myAnimator.ResetTrigger(ConstValues.JumpDown);
         
         if (changeNormalState == ENormalState.Normal)
         {
@@ -343,9 +344,7 @@ public abstract class Player : Character
             return;
         
         if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Jump) && myRigidbody.linearVelocity.y < 0)
-        {
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-        }
     }
     
     private void UpdateAirborneDown()
@@ -396,23 +395,42 @@ public abstract class Player : Character
             curChangeGlobalCoolTime = changeGlobalCoolTime;
     }
 
+    public void MoveSetting(Vector2 dir)
+    {
+        if (!canMove)
+            return;
+        
+        // 서 있는 상태에서 걷기 상태로 전환
+        if (dir.x != 0f && normalState == ENormalState.Idle && landingState == ELandingState.Ground)
+            StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+        
+        // 멈추는 중이었다면 다시 걷기 상태로
+        if (moveState == EMoveState.Stopping && Mathf.Abs(dir.x) > 0f)
+            MoveStateSetting(EMoveState.Moving);
+
+        // // 서 있는 상태에선 움직이는 모션으로 변경
+        // if (dir == Vector2.left || dir == Vector2.right)
+        // {
+        //     if (normalState == ENormalState.Idle && landingState == ELandingState.Ground)
+        //         StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+        //     
+        //     if(moveState == EMoveState.Stopping)
+        //         MoveStateSetting(EMoveState.Moving);
+        // }
+        //
+        // transform.Translate(dir * (basicStat.moveSpeed * (moveRatio * 0.01f) * Time.deltaTime));
+    }
+
     public void Move(Vector2 dir)
     {
         if (!canMove)
             return;
-
-        // 서 있는 상태에선 움직이는 모션으로 변경
-        if (dir == Vector2.left || dir == Vector2.right)
-        {
-            if (normalState == ENormalState.Idle && landingState == ELandingState.Ground)
-                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-            
-            if(moveState == EMoveState.Stopping)
-                MoveStateSetting(EMoveState.Moving);
-        }
         
-        //myRigidbody.velocity = new Vector3(dir * stat.speed, myRigidbody.velocity.y);
-        transform.Translate(dir * (basicStat.moveSpeed * (moveRatio * 0.01f) * Time.deltaTime));
+        // 2) 물리 속도 적용 (Time.fixedDeltaTime 필요 없음)
+        float targetSpeedX = canMove ? dir.x * basicStat.moveSpeed * (moveRatio * 0.01f) : 0f;
+
+        // Y축 속도(중력/점프)는 그대로 보존
+        myRigidbody.linearVelocity = new Vector2(targetSpeedX, myRigidbody.linearVelocity.y);
     }
 
     // 정지
@@ -426,6 +444,11 @@ public abstract class Player : Character
         
         if(moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
+    }
+
+    public void StopVelocity()
+    {
+        myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
     }
     
     // 교체를 사용 할 수 있는가?
@@ -535,7 +558,7 @@ public abstract class Player : Character
             stateCancellation = new CancellationTokenSource();
             while (transform.position.y < jumpLimitY)
             {
-                if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                     return;
             }
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
@@ -547,7 +570,7 @@ public abstract class Player : Character
         stateCancellation = new CancellationTokenSource();
         while (transform.position.y < jumpLimitY)
         {
-            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
@@ -655,10 +678,15 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = Vector2.zero;
 
         var dashSpeed = 15;
-        var dashLength = 5;
+        var dashLength = 4.5f;
         
         // 대시 레이캐스트 체크
-        chargeVector = RayCheckLength(dashLength, 0);
+        //chargeVector = RayCheckLength(dashLength, 0);
+        if(transform.localScale.x > 0)
+            chargeVector = new Vector2(transform.position.x + dashLength, transform.position.y);
+        else
+            chargeVector = new Vector2(transform.position.x - dashLength, transform.position.y);
+        
         // 대시 이팩트 소환
         var dashEffect = SpawnObject($"{name}_{ConstValues.DashEffect}", transform);
         if (transform.localScale.x > 0)
@@ -670,7 +698,7 @@ public abstract class Player : Character
         trace.enabled = true;
 
         // 돌진
-        bool chargeFinish = await Charge(dashSpeed, 0.5f, dashLength, -0.2f);
+        bool chargeFinish = await Charge(dashSpeed, 0.5f, dashLength, 0.5f);
 
         trace.enabled = false;
         ClearObjectList(normalObject, 0.3f);
@@ -693,13 +721,16 @@ public abstract class Player : Character
     
     protected void OnCollisionEnter2D(Collision2D col)
     {
-        // 착지
+        // 착지 col.gameObject == groundObject (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform) || col.gameObject.CompareTag(ConstValues.Wall))
         if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
         {
-            LandingStateSetting(ELandingState.Ground);
+            if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)
+                return;
             
+            LandingStateSetting(ELandingState.Ground);
             myRigidbody.bodyType = RigidbodyType2D.Dynamic;
             myRigidbody.linearVelocity = Vector2.zero;
+
             groundObject = col.gameObject;
             jumpAttackCount = 0;
 
@@ -723,13 +754,11 @@ public abstract class Player : Character
         {
             LandingStateSetting(ELandingState.Air);
             
+            if(normalState == ENormalState.Move)
+                StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+            
             if (col.gameObject.CompareTag(ConstValues.Platform))
-            {
                 IgnorePlatform(true);
-                
-                if(normalState == ENormalState.Move)
-                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-            }
         }
     }
 }

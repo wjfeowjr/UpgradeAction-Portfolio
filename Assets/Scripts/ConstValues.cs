@@ -84,7 +84,6 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Missile = "Missile";
     public const string Grenade = "Grenade";
-    public const string Wall = "Wall";
     public const string Player = "Player";
     public const string Monster = "Monster";
 
@@ -111,6 +110,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string ChangeAttack = "ChangeAttack";
     
     public const string Ground = "Ground";
+    public const string Wall = "Wall";
     public const string Platform = "Platform";
     
     public const string SpawnedObject = "SpawnedObject";

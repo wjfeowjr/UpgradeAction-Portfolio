@@ -11,56 +11,61 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private Transform playerPos;
     [SerializeField] private List<Collider2D> platformColliderList;
     private CancellationTokenSource dialogCancellation;
-    
+
+    private void Awake()
+    {
+        if (SceneChanger.Instance)
+            SceneChanger.Instance.SceneControl();
+    }
+
     private void Start()
     {
         GameManager.Instance.InitCamera(mainCamera);
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Skill, Vector2.zero);
         GameManager.Instance.PlatformColliderList = platformColliderList;
-        
         Test();
     }
 
     private async void Test()
     {
-        string dialog1 = "날씨 참 좋네...";
-        string dialog2 = "저 거지같은 태양만 없다면 말이지!";
-        string dialog3 = "부숴버릴테다!!!";
-
-        float dialogDelay1 = 2.0f;
-        float dialogDelay2 = 1.0f;
-
-        dialogCancellation = new CancellationTokenSource();
-        GameManager.Instance.GetUI(eUIType.UI_Skill).SetActive(false);
-
-        var speechPosition = GameManager.Instance.CurPlayer.FontPos.position;
-        var speechFrame = GameManager.Instance.SpawnSpeechFrame(speechPosition, dialog1);
-        
-        if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-            return;
-        
-        speechFrame.Speech(dialog2);
-
-        if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-            return;
-
-        speechFrame.transform.position = new Vector2(speechPosition.x, speechPosition.y + 0.5f);
-        speechFrame.Speech(dialog3);
-        
-        for (int i = 0; i < 2; i++)
-        {
-            GameManager.Instance.CurPlayer.CustomJump(new Vector2(0, 6.0f));
-            GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
-        
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
-        }
-        
-        if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-            return;
-        
-        speechFrame.gameObject.SetActive(false);
+        // string dialog1 = "날씨 참 좋네...";
+        // string dialog2 = "저 거지같은 태양만 없다면 말이지!";
+        // string dialog3 = "부숴버릴테다!!!";
+        //
+        // float dialogDelay1 = 2.0f;
+        // float dialogDelay2 = 1.0f;
+        //
+        // dialogCancellation = new CancellationTokenSource();
+        // GameManager.Instance.GetUI(eUIType.UI_Skill).SetActive(false);
+        //
+        // var speechPosition = GameManager.Instance.CurPlayer.FontPos.position;
+        // var speechFrame = GameManager.Instance.SpawnSpeechFrame(speechPosition, dialog1);
+        //
+        // if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+        //     return;
+        //
+        // speechFrame.Speech(dialog2);
+        //
+        // if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+        //     return;
+        //
+        // speechFrame.transform.position = new Vector2(speechPosition.x, speechPosition.y + 0.5f);
+        // speechFrame.Speech(dialog3);
+        //
+        // for (int i = 0; i < 2; i++)
+        // {
+        //     GameManager.Instance.CurPlayer.CustomJump(new Vector2(0, 6.0f));
+        //     GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
+        //
+        //     if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+        //         return;
+        // }
+        //
+        // if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+        //     return;
+        //
+        // speechFrame.gameObject.SetActive(false);
 
         // 게임 시작
         GameManager.Instance.ControlStart = true;

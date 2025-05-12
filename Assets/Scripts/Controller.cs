@@ -21,11 +21,12 @@ public class Controller : Singleton<Controller>
         
         DirControl();
         PlayerControl();
+        MovingControl();
     }
 
-    void FixedUpdate()
+    private void FixedUpdate()
     {
-        MovingControl();
+        PlayerMove();
     }
 
     // 방향 컨트롤(좌,우 동시입력 방지)
@@ -48,8 +49,10 @@ public class Controller : Singleton<Controller>
         if (Input.GetKeyUp(GameManager.Instance.leftMoveKey))
         {
             isLeftMove = false;
-            if(Input.GetKey(GameManager.Instance.rightMoveKey))
+            if (Input.GetKey(GameManager.Instance.rightMoveKey))
                 isRightMove = true;
+            else
+                GameManager.Instance.CurPlayer.StopVelocity();
         }
 
         if (Input.GetKeyUp(GameManager.Instance.rightMoveKey))
@@ -57,6 +60,8 @@ public class Controller : Singleton<Controller>
             isRightMove = false;
             if(Input.GetKey(GameManager.Instance.leftMoveKey))
                 isLeftMove = true;
+            else
+                GameManager.Instance.CurPlayer.StopVelocity();
         }
     }
 
@@ -67,7 +72,7 @@ public class Controller : Singleton<Controller>
 
         if (Input.GetKey(GameManager.Instance.downKey))
         {
-            if (Input.GetKeyDown(GameManager.Instance.jumpKey))
+            if (Input.GetKeyDown(GameManager.Instance.jumpKey) && GameManager.Instance.CurPlayer.MyRigidbody.linearVelocityY == 0)
                 GameManager.Instance.CurPlayer.DownJump();
         }
         else
@@ -121,8 +126,16 @@ public class Controller : Singleton<Controller>
     private void MovingControl()
     {
         if(isLeftMove)
+            GameManager.Instance.CurPlayer.MoveSetting(Vector2.left);
+        else if (isRightMove)
+            GameManager.Instance.CurPlayer.MoveSetting(Vector2.right); 
+    }
+
+    private void PlayerMove()
+    {
+        if(isLeftMove)
             GameManager.Instance.CurPlayer.Move(Vector2.left);
         else if (isRightMove)
-            GameManager.Instance.CurPlayer.Move(Vector2.right); 
+            GameManager.Instance.CurPlayer.Move(Vector2.right);
     }
 }

@@ -33,6 +33,12 @@ public class Missile : MonoBehaviour
     {
         isDelete = false;
         myCollider.enabled = true;
+        
+        // var leftRay = Physics2D.Raycast(transform.position, Vector2.left, missileInfo.limitLength, moveLayerMask);
+        // Debug.DrawRay(transform.position, Vector2.left * missileInfo.limitLength, ConstValues.RedColor, 0.1f);
+        //
+        // if (leftRay.collider != null)
+        //     Debug.Log(leftRay.point);
     }
 
     private void FixedUpdate()
@@ -147,15 +153,19 @@ public class Missile : MonoBehaviour
             }
             
             // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
-            if (hitTag == ConstValues.Wall)
+            if (missileInfo.piercingBullet && hitTag == ConstValues.Wall)
             {
                 Vector2 contactPoint = col.ClosestPoint(transform.position);
                 Vector2 myPoint = transform.position;
-                
+
                 if (dir == Vector2.right && myPoint.x > contactPoint.x)
                     return;
                 
                 if (dir == Vector2.left && myPoint.x < contactPoint.x)
+                    return;
+                
+                // 수정될 수 있음. 벽 위에서 투사체를 날린 경우
+                if(Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
                     return;
             }
 

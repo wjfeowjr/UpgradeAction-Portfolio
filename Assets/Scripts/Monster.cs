@@ -739,12 +739,13 @@ public class Monster : Character
     {
         if (IsCanJump() && jumpInfo.playerInRange && jumpInfo.coolTime >= ConstValues.JumpCoolTime)
         {
-            // 점프의 조건, 플레이어의 위치가 나보다 위에 있고, 밟고 있는 지면이 나와 다른 게임 오브젝트다
-            if (GameManager.Instance.CurPlayer.GetDownPosY() > transform.position.y && GameManager.Instance.CurPlayer.GroundObject != GroundObject)
+            float minY = 0.2f;
+            // 점프의 조건, 플레이어의 위치가 나보다 위에 있고, 캐릭터가 점프중이 아니다
+            if (GameManager.Instance.CurPlayer.GetDownPosY() > transform.position.y + minY && !GameManager.Instance.CurPlayer.GetJumpState())
             {
                 Vector2 start = transform.position;
                 var playerPos = GameManager.Instance.CurPlayer.transform.position;
-                Vector2 end = new Vector2(playerPos.x, GameManager.Instance.CurPlayer.GroundObject.transform.position.y);
+                Vector2 end = new Vector2(playerPos.x, playerPos.y);
         
                 if (Vector2.Distance(start, end) < 0.01f)
                     return;

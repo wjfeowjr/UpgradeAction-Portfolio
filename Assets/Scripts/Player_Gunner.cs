@@ -180,11 +180,11 @@ public class Player_Gunner : Player
         while (GetJumpState())
         { 
             if(bulletCount == 0)
-                StateSetting(ENormalState.Attack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
+                StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
             else if(bulletCount % 2 == 0)
-                StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.JumpAttack2);
+                StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2);
             else if(bulletCount % 2 == 1)
-                StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.JumpAttack1);
+                StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack1);
             
             nextAttack = false;
 
