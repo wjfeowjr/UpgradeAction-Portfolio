@@ -76,10 +76,8 @@ public class UISkillPresenter
             }
         }
     }
-    
-    /// <summary>
-    /// 모델의 스킬 리스트(최대 9개)만큼 순회하며 각 뷰를 업데이트
-    /// </summary>
+
+    // 모델의 스킬 리스트만큼 순회하며 각 뷰를 업데이트
     public void UpdateSkillCoolTime()
     {
         _changeView.UpdateCoolTimeText(_model.changeSkill.playerSkill.GetRemainingCooldown());
@@ -152,6 +150,9 @@ public class UISkillView : MonoBehaviour, IUISkillView
             return;
 
         skillImage.sprite = GameManager.Instance.GetUISprite(skillId);
+        
+        if(skillId == ConstValues.ChangeCharacter)
+            gameObject.SetActive(!string.IsNullOrEmpty(GameManager.Instance.SecondPlayer));
     }
 
     public void UpdateCoolTimeText(List<float> coolTime)

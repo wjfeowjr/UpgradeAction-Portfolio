@@ -451,6 +451,22 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
     }
     
+    public override void TakeDamage(int damage)
+    {
+        base.TakeDamage(damage);
+        
+        if (damage == 0)
+            return;
+        
+        var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
+        if (uiInterfaceObj == null)
+            return;
+        
+        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        uiInterface.HpPresenter.SetHpText();
+        uiInterface.HpPresenter.HpReduce();
+    }
+    
     // 교체를 사용 할 수 있는가?
     private async UniTask<bool> IsCanChange()
     {
@@ -752,9 +768,11 @@ public abstract class Player : Character
         // 점프
         if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
         {
-            LandingStateSetting(ELandingState.Air);
+            if (myRigidbody.linearVelocityY is <= 0.1f and >= -0.1f)
+                return;
             
-            if(normalState == ENormalState.Move)
+            LandingStateSetting(ELandingState.Air);
+            if (normalState is ENormalState.Idle or ENormalState.Move)
                 StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
             
             if (col.gameObject.CompareTag(ConstValues.Platform))

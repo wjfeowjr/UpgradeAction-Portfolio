@@ -3,19 +3,30 @@ using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-public class UI_Skill : UIBase
+public class UI_Interface : UIBase
 {
-    // SkillViews를 외부에서 접근할 수 있게 public으로 변경
+    // 체력
+    public UIHpView HpView => hpView;
+    
+    [SerializeField] private UIHpView hpView;
+    private UIHpPresenter uiHpPresenter;
+    public UIHpPresenter HpPresenter => uiHpPresenter;
+    
+    // 스킬
     public UISkillView ChangeCharacter => changeCharacter;
     public List<UISkillView> SkillViews => skillViews;
 
     [SerializeField] private UISkillView changeCharacter;
     [SerializeField] private List<UISkillView> skillViews;
-
+    
     private UISkillPresenter uiSkillPresenter;
-
-    // UIManager.BindPresenter에서 호출됨
-    public void SetPresenter(UISkillPresenter presenter)
+    
+    public void SetHpPresenter(UIHpPresenter presenter)
+    {
+        uiHpPresenter = presenter;
+    }
+    
+    public void SetSkillPresenter(UISkillPresenter presenter)
     {
         uiSkillPresenter = presenter;
     }

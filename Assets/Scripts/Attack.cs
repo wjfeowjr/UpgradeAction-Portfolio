@@ -171,6 +171,8 @@ public class Attack : MonoBehaviour
             // 대상이 피해를 입는다(치명타 피해인지 확인)
             bool critical = GetCritical();
             int damage = GetDamage(critical);
+            float randDmg = Random.Range(0.95f, 1.05f);
+            damage = (int)(damage * randDmg);
             
             // 피해입기
             hitTarget.TakeDamage(damage);

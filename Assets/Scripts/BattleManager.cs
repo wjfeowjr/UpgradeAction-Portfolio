@@ -16,22 +16,24 @@ public class BattleManager : MonoBehaviour
     {
         if (SceneChanger.Instance)
             SceneChanger.Instance.SceneControl();
+        
+        if(GameManager.Instance)
+            GameManager.Instance.InitCamera(mainCamera); 
     }
 
     private void Start()
     {
-        GameManager.Instance.InitCamera(mainCamera);
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos);
-        GameManager.Instance.SpawnToUIPool(eUIType.UI_Skill, Vector2.zero);
+        GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
         GameManager.Instance.PlatformColliderList = platformColliderList;
         Test();
     }
 
     private async void Test()
     {
-        // string dialog1 = "날씨 참 좋네...";
-        // string dialog2 = "저 거지같은 태양만 없다면 말이지!";
-        // string dialog3 = "부숴버릴테다!!!";
+        // string dialog1 = "날씨 참 좋다...";
+        // string dialog2 = "저 거지같은\n태양만 빼고\n말이야!";
+        // string dialog3 = "뿌셔버릴거야!!!";
         //
         // float dialogDelay1 = 2.0f;
         // float dialogDelay2 = 1.0f;
@@ -69,7 +71,7 @@ public class BattleManager : MonoBehaviour
 
         // 게임 시작
         GameManager.Instance.ControlStart = true;
-        GameManager.Instance.GetUI(eUIType.UI_Skill).SetActive(true);
+        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
     }
     
     private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)

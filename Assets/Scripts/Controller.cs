@@ -80,9 +80,12 @@ public class Controller : Singleton<Controller>
             if (Input.GetKeyDown(GameManager.Instance.jumpKey))
                 GameManager.Instance.CurPlayer.Jump();
         }
-        
+
         if (Input.GetKeyDown(GameManager.Instance.changeCharacterKey))
-            GameManager.Instance.CurPlayer.ChangeCharacter();
+        {
+            if(!string.IsNullOrEmpty(GameManager.Instance.SecondPlayer))
+                GameManager.Instance.CurPlayer.ChangeCharacter();
+        }
         
         if (Input.GetKeyDown(GameManager.Instance.dashKey))
             GameManager.Instance.CurPlayer.Skill(GameManager.Instance.dashKey);

@@ -8,7 +8,6 @@ public class Trace : MonoBehaviour
 {
     [SerializeField] private Transform target;       // 타겟 위치  
     public bool angleTrace;
-    public bool lateTrace;
 
     public float xPos;
     public float yPos;
@@ -16,29 +15,11 @@ public class Trace : MonoBehaviour
 
     private void Update()
     {
-        if(lateTrace)
+        if (!target)
             return;
         
-        if (target)
-        {
-            var targetPosition = target.position;
-            transform.position = new Vector3(targetPosition.x + xPos, targetPosition.y + yPos, targetPosition.z + zPos);
-        }
-
-        if (angleTrace)
-            transform.eulerAngles = target.eulerAngles;
-    }
-
-    private void LateUpdate()
-    {
-        if(!lateTrace)
-            return;
-        
-        if (target)
-        {
-            var targetPosition = target.position;
-            transform.position = new Vector3(targetPosition.x + xPos, targetPosition.y + yPos, targetPosition.z + zPos);
-        }
+        var targetPosition = target.position;
+        transform.position = new Vector3(targetPosition.x + xPos, targetPosition.y + yPos, targetPosition.z + zPos);
 
         if (angleTrace)
             transform.eulerAngles = target.eulerAngles;

@@ -101,7 +101,7 @@ public enum eUIType
     None,
     
     // UI
-    UI_Skill,
+    UI_Interface,
     
     // 팝업
     Popup_Common,
@@ -162,7 +162,8 @@ public class GameManager : Singleton<GameManager>
     
     // 카메라
     private FollowCamera mainCamera;
-    
+    [SerializeField] private Canvas uiObjectCanvas;
+
     // 프로퍼티
     public Player CurPlayer
     {
@@ -174,6 +175,11 @@ public class GameManager : Singleton<GameManager>
     {
         get => firstPlayer;
         set => firstPlayer = value;
+    }
+    
+    public string SecondPlayer
+    {
+        get => secondPlayer;
     }
 
     public bool ControlStart
@@ -401,9 +407,8 @@ public class GameManager : Singleton<GameManager>
     // 플레이어
     private void InitPlayer()
     {
-        //firstPlayer = ConstValues.Gunner;
         firstPlayer = ConstValues.Berserker;
-        secondPlayer = ConstValues.Gunner;
+        //secondPlayer = ConstValues.Gunner;
         
         curPlayer = GetPlayer(FirstPlayer);
         foreach (var player in players)
@@ -435,6 +440,7 @@ public class GameManager : Singleton<GameManager>
     public void InitCamera(FollowCamera targetCamera)
     {
         mainCamera = targetCamera;
+        uiObjectCanvas.worldCamera = targetCamera.GetComponent<Camera>();
     }
 
     public void CameraShake(float amount, float time)
@@ -576,20 +582,30 @@ public class GameManager : Singleton<GameManager>
     {
         switch (type)
         {
-            case eUIType.UI_Skill:
-                if (uiBase is UI_Skill skillView)
+            case eUIType.UI_Interface:
+                if (uiBase is UI_Interface interfaceView)
                 {
+                    var hpInterface = interfaceView.HpView.ConvertTo<IUIHpView>();
+                    var hpModel = new UIHpModel()
+                    {
+                        character = CurPlayer
+                    };
+                    var hpPresenter = new UIHpPresenter(hpInterface, hpModel);
+                    interfaceView.SetHpPresenter(hpPresenter);
+                    hpPresenter.SetHp();
+                    hpPresenter.SetHpText();
+                    
+                    // 뷰 리스트를 인터페이스로 변환
+                    var changeInterface = interfaceView.ChangeCharacter.ConvertTo<IUISkillView>();
+                    var skillInterfaces = interfaceView.SkillViews.ConvertAll(v => (IUISkillView)v);
                     var skillModel = new UISkillModel
                     {
                         changeSkill = this.changeSkill,
                         settingSkillList = GetSettingSkillList()
                     };
-                    // 뷰 리스트를 인터페이스로 변환
-                    var changeInterface = skillView.ChangeCharacter.ConvertTo<IUISkillView>();
-                    var skillInterfaces = skillView.SkillViews.ConvertAll(v => (IUISkillView)v);
-                    var presenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
-                    skillView.SetPresenter(presenter);
-                    presenter.SetSkillInfo();
+                    var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
+                    interfaceView.SetSkillPresenter(skillPresenter);
+                    skillPresenter.SetSkillInfo();
                 }
                 break;
         }
@@ -665,7 +681,7 @@ public class GameManager : Singleton<GameManager>
         else
             curPlayer.ChangeAttack();
         
-        SetSkillUI(eUIType.UI_Skill);
+        SetSkillUI(eUIType.UI_Interface);
     }
 
     public SpeechFrame SpawnSpeechFrame(Vector2 speechVector, string dialog)

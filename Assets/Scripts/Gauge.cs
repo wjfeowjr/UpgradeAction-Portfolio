@@ -13,16 +13,6 @@ public class Gauge : MonoBehaviour
     [SerializeField] protected Image reduceGauge;
     [SerializeField] protected TextMeshProUGUI gaugeText;
 
-    // private void Start()
-    // {
-    //     if(emptyGauge)
-    //         emptyGauge.color = new Color(emptyGauge.color.r, emptyGauge.color.g, emptyGauge.color.b, 0);
-    //     if(mainGauge)
-    //         mainGauge.color = new Color(mainGauge.color.r, mainGauge.color.g, mainGauge.color.b, 0);
-    //     if(reduceGauge)
-    //         reduceGauge.color = new Color(mainGauge.color.r, mainGauge.color.g, mainGauge.color.b, 0);
-    // }
-    
     // 딜레이
     private async UniTask GaugeDelay(float second)
     {
