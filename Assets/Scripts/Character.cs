@@ -105,7 +105,7 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected List<GameObject> controlObject = new List<GameObject>(); // 직접 시간을 관리하는 '공격판정'
     [SerializeField] protected List<GameObject> normalObject = new List<GameObject>(); // 직접 시간을 관리하는 '일반 오브젝트'
     [SerializeField] protected List<GameObject> buffObject = new List<GameObject>(); // 직접 시간을 관리하는 '버프 오브젝트'
-    
+
     [SerializeField] protected ENormalState normalState;
     [SerializeField] protected EMoveState moveState;
     [SerializeField] protected ELandingState landingState;
@@ -127,6 +127,7 @@ public abstract class Character : MonoBehaviour
     private int moveLayerMask;
     private int platformLayerMask;
     private bool downJumping;
+    private bool isDie;
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
@@ -138,6 +139,7 @@ public abstract class Character : MonoBehaviour
     public Transform FontPos => fontPos;
     public bool Immortal => immortal;
     public bool ImmuneStagger => immuneStagger;
+    public bool IsDie => isDie;
 
     public ENormalState NormalState => normalState;
     public EMoveState MoveState => moveState;
@@ -166,6 +168,11 @@ public abstract class Character : MonoBehaviour
         
         ScaleSetting();
         ColSizeSetting();
+    }
+
+    protected virtual void OnEnable()
+    {
+        isDie = false;
     }
 
     protected virtual void FixedUpdate()
@@ -247,16 +254,12 @@ public abstract class Character : MonoBehaviour
         if (downJumping)
             return;
         
-        if (myRigidbody.linearVelocityY > 0)
-        {
-            IgnorePlatform(true);
-        }
-        else if (myRigidbody.linearVelocityY < 0)
+        if (myRigidbody.linearVelocityY < 0)
         {
             var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
             var rayVector2 = new Vector2(transform.position.x, transform.position.y);
             var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-
+        
             PlatformRay(rayVector1);
             PlatformRay(rayVector2);
             PlatformRay(rayVector3);
@@ -266,6 +269,26 @@ public abstract class Character : MonoBehaviour
         {
             IgnorePlatform(true);
         }
+        
+        // if (myRigidbody.linearVelocityY > 0)
+        // {
+        //     IgnorePlatform(true);
+        // }
+        // else if (myRigidbody.linearVelocityY < 0)
+        // {
+        //     var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+        //     var rayVector2 = new Vector2(transform.position.x, transform.position.y);
+        //     var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+        //
+        //     PlatformRay(rayVector1);
+        //     PlatformRay(rayVector2);
+        //     PlatformRay(rayVector3);
+        // }
+        // // 대시하는 경우 사용, 특수
+        // else if  (normalState == ENormalState.Dash)
+        // {
+        //     IgnorePlatform(true);
+        // }
     }
 
     private void FindGroundObject()
@@ -286,6 +309,7 @@ public abstract class Character : MonoBehaviour
     {
         var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, platformLayerMask);
         Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.02f);
+        
         if (downRay.collider != null)
         {
             if (Physics2D.GetIgnoreCollision(physicsCollider, downRay.collider))
@@ -363,6 +387,8 @@ public abstract class Character : MonoBehaviour
         
         // 체력 다는 알고리즘 삽입
         basicStat.hp -= damage;
+        if (basicStat.hp < 0)
+            basicStat.hp = 0;
     }
 
     public void SpawnDamageFont(int damage, bool critical)
@@ -839,6 +865,7 @@ public abstract class Character : MonoBehaviour
         MoveStateSetting(EMoveState.Stopping);
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
         gameObject.SetActive(false);
+        isDie = true;
     }
     public async void Grabbed(Vector3 grabVector)
     {
@@ -1080,8 +1107,15 @@ public abstract class Character : MonoBehaviour
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         LandingStateSetting(ELandingState.Air);
         
-        stateCancellation = new CancellationTokenSource();
+        var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+        var rayVector2 = new Vector2(transform.position.x, transform.position.y);
+        var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
 
+        PlatformRay(rayVector1);
+        PlatformRay(rayVector2);
+        PlatformRay(rayVector3);
+
+        stateCancellation = new CancellationTokenSource();
         while (transform.position.y >= groundObject.transform.position.y)
         {
             if (await YieldDelay(stateCancellation).SuppressCancellationThrow())

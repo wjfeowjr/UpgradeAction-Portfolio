@@ -127,8 +127,9 @@ public abstract class Player : Character
         changeGlobalCoolTime = 0.1f;
     }
 
-    protected void OnEnable()
+    protected override void OnEnable()
     {
+        base.OnEnable();
         InitAdditionalStat();
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
@@ -730,6 +731,46 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = jumpVelocity;
     }
 
+    public async UniTask CustomMove(Vector2 movePos, int finishDir)
+    {
+        Controller.Instance.isLeftMove = false;
+        Controller.Instance.isRightMove = false;
+        Stop();
+        await UniTask.WaitUntil(() => normalState == Idle);
+        
+        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+        
+        Vector2 dir = Vector2.left;
+        transform.localScale = reverseScale;
+        if (transform.position.x < movePos.x)
+        {
+            dir = Vector2.right;
+            transform.localScale = defaultScale;
+        }
+
+        stateCancellation = new CancellationTokenSource();
+        while (Math.Abs(transform.position.x - movePos.x) > 0.1f)
+        {
+            // basicStat.moveSpeed
+            
+            Move(dir);
+            await FixedYieldDelay(stateCancellation);
+        }
+
+        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        switch (finishDir)
+        {
+            case -1:
+                transform.localScale = reverseScale;
+                break;
+            case 1:
+                transform.localScale = defaultScale;
+                break;
+        }
+        Stop();
+        StopVelocity();
+    }
+
     public void CustomAnimTrigger(ENormalState state, string triggerName)
     {
         StateSetting(state, triggerName, null);
@@ -768,15 +809,17 @@ public abstract class Player : Character
         // 점프
         if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
         {
-            if (myRigidbody.linearVelocityY is <= 0.1f and >= -0.1f)
+            if (myRigidbody.gravityScale != 0 && myRigidbody.linearVelocityY is <= 0.1f and >= -0.1f)
                 return;
             
             LandingStateSetting(ELandingState.Air);
             if (normalState is ENormalState.Idle or ENormalState.Move)
                 StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-            
+
             if (col.gameObject.CompareTag(ConstValues.Platform))
+            {
                 IgnorePlatform(true);
+            }
         }
     }
 }

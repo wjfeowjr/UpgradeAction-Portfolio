@@ -32,18 +32,21 @@ public class Controller : Singleton<Controller>
     // 방향 컨트롤(좌,우 동시입력 방지)
     private void DirControl()
     {
-        if (Input.GetKeyDown(GameManager.Instance.leftMoveKey))
+        if (GameManager.Instance.ControlStart)
         {
-            isLeftMove = true;
-            if(isRightMove)
-                isRightMove = false;
-        }
+            if (Input.GetKeyDown(GameManager.Instance.leftMoveKey))
+            {
+                isLeftMove = true;
+                if(isRightMove)
+                    isRightMove = false;
+            }
         
-        if (Input.GetKeyDown(GameManager.Instance.rightMoveKey))
-        {
-            if(isLeftMove)
-                isLeftMove = false;
-            isRightMove = true;
+            if (Input.GetKeyDown(GameManager.Instance.rightMoveKey))
+            {
+                if(isLeftMove)
+                    isLeftMove = false;
+                isRightMove = true;
+            }
         }
 
         if (Input.GetKeyUp(GameManager.Instance.leftMoveKey))

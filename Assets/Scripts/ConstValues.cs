@@ -160,8 +160,10 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string UIPool = "UIPool";
     public const string PopupPool = "PopupPool";
-    
     public const string Prefab = ".prefab";
+    
+    // 몬스터
+    public const string MonsterSpinach = "Monster_Spinach";
     
     public static readonly Color WhiteColor = Color.white;
     public static readonly Color BlackColor = Color.black;
@@ -174,6 +176,9 @@ public class ConstValues : Singleton<ConstValues>
     public static readonly Color CyanColor = Color.cyan;
     public static readonly Color MagentaColor = Color.magenta;
     
+    public const string Step = "Step";
+    public const string Dialog = "Dialog";
+
     // 사운드
     public const string GunnerLaugh = "Gunner_Laugh";
 }

@@ -208,7 +208,7 @@ public class Player_Berserker : Player
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
             while (myRigidbody.linearVelocity.y < 0)
             {
-                if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                     return false;
             }
             jumpAttackCount = 0;

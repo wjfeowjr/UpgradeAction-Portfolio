@@ -104,7 +104,7 @@ public enum eUIType
     UI_Interface,
     
     // 팝업
-    Popup_Common,
+    Popup_GameOver,
 }
 
 public class GameManager : Singleton<GameManager>
@@ -146,6 +146,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Collider2D> platformColliderList = new List<Collider2D>();
+    [SerializeField] private List<Monster> monsterList = new List<Monster>();
 
     private string firstPlayer;
     private string secondPlayer = default;
@@ -196,6 +197,18 @@ public class GameManager : Singleton<GameManager>
     {
         get => platformColliderList;
         set => platformColliderList = value;
+    }
+    
+    public List<Monster> MonsterList
+    {
+        get => monsterList;
+        set => monsterList = value;
+    }
+
+    public FollowCamera MainCamera
+    {
+        get => mainCamera;
+        set => mainCamera = value;
     }
 
     protected override void Awake()
@@ -417,6 +430,11 @@ public class GameManager : Singleton<GameManager>
             player.InitSkill();
         }
     }
+    public void InitPlayerStat()
+    {
+        foreach (var player in players)
+            player.InitBasicStat();
+    }
     public void SpawnPlayer(string playerName, Transform playerPos)
     {
         ActivePlayer(playerName);
@@ -447,7 +465,25 @@ public class GameManager : Singleton<GameManager>
     {
         mainCamera.Shake(amount, time);
     }
-    
+
+    public void SpawnMonster(string id, Vector2 monsterVector)
+    {
+        var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
+        monster.SpawnHpBar();
+        monsterList.Add(monster);
+    }
+    public void RemoveMonster(Monster monster)
+    {
+        monsterList.Remove(monster);
+    }
+    public void ClearMonsterList()
+    {
+        foreach (var monster in monsterList)
+            monster.gameObject.SetActive(false);
+        
+        monsterList.Clear();
+    }
+
     // 일반 오브젝트
     public GameObject SpawnToObjectPool(string id, Transform objTransform)
     {
@@ -479,7 +515,30 @@ public class GameManager : Singleton<GameManager>
         SetUI(type, go);
         return go;
     }
-    private void SetSkillUI(eUIType uiType)
+    // UI팝업화면
+    public GameObject SpawnToPopupPool(eUIType type, Transform objTransform)
+    {
+        var go = SpawnToPool(type.ToString(), popupPool, objTransform);
+        SetUI(type, go);
+        return go;
+    }
+    public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector)
+    {
+        var go = SpawnToPool(type.ToString(), popupPool, objVector);
+        SetUI(type, go);
+        return go;
+    }
+    // 최상위 UI오브젝트
+    public GameObject SpawnToHighestPool(string id, Transform objTransform)
+    {
+        return SpawnToPool(id, highestPool, objTransform);
+    }
+    public GameObject SpawnToHighestPool(string id, Vector2 objVector)
+    {
+        return SpawnToPool(id, highestPool, objVector);
+    }
+
+    private void SetUIorPopup(eUIType uiType)
     {
         UIBase uiBase = null;
         foreach (var list in objectList)
@@ -492,25 +551,6 @@ public class GameManager : Singleton<GameManager>
         }
         if (uiBase != null)
             BindPresenter(uiType, uiBase); 
-    }
-
-    // UI팝업화면
-    public GameObject SpawnToPopupPool(eUIType type, Transform objTransform)
-    {
-        return SpawnToPool(type.ToString(), popupPool, objTransform);
-    }
-    public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector)
-    {
-        return SpawnToPool(type.ToString(), popupPool, objVector);
-    }
-    // 최상위 UI오브젝트
-    public GameObject SpawnToHighestPool(string id, Transform objTransform)
-    {
-        return SpawnToPool(id, highestPool, objTransform);
-    }
-    public GameObject SpawnToHighestPool(string id, Vector2 objVector)
-    {
-        return SpawnToPool(id, highestPool, objVector);
     }
 
     private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)
@@ -538,10 +578,17 @@ public class GameManager : Singleton<GameManager>
             }
         }
         
+        if (TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id) == null)
+        {
+            go.transform.position = objTransform.position;
+        }
         // 미사일의 잔상버그를 막기 위한 조치
-        go.SetActive(false);
-        go.transform.position = objTransform.position;
-        go.SetActive(true);
+        else
+        {
+            go.SetActive(false);
+            go.transform.position = objTransform.position;
+            go.SetActive(true);
+        }
         return go;
     }
     private GameObject SpawnToPool(string id, Transform pool, Vector2 objVector)
@@ -569,9 +616,16 @@ public class GameManager : Singleton<GameManager>
             }
         }
         
+        if (TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id) == null)
+        {
+            go.transform.position = objVector;
+        }
         // 미사일의 잔상버그를 막기 위한 조치
-        go.SetActive(false);
-        go.transform.position = objVector;
+        else
+        {
+            go.SetActive(false);
+            go.transform.position = objVector;
+        }
         go.SetActive(true);
         return go;
     }
@@ -606,6 +660,29 @@ public class GameManager : Singleton<GameManager>
                     var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
                     interfaceView.SetSkillPresenter(skillPresenter);
                     skillPresenter.SetSkillInfo();
+                }
+                break;
+            
+            case eUIType.Popup_GameOver:
+                if (uiBase is Popup_GameOver gameOverPopup)
+                {
+                    var gameOverInterface = gameOverPopup.GameOverView.ConvertTo<IUIGameOverView>();
+                    var hpModel = new PopupGameOverModel()
+                    {
+                        title = "게임 오버",
+                        message = "다시 하기",
+                        confirmAction = () =>
+                        {
+                            GoScene(ConstValues.BattleScene);
+                            uiBase.Close();
+                            InitPlayerStat();
+                            controlStart = true;
+                            Time.timeScale = 1;
+                        }
+                    };
+                    var gameOverPresenter = new PopupGameOverPresenter(gameOverInterface, hpModel);
+                    gameOverPopup.SetGameOverPresenter(gameOverPresenter);
+                    gameOverPresenter.SetPopup();
                 }
                 break;
         }
@@ -681,7 +758,7 @@ public class GameManager : Singleton<GameManager>
         else
             curPlayer.ChangeAttack();
         
-        SetSkillUI(eUIType.UI_Interface);
+        SetUIorPopup(eUIType.UI_Interface);
     }
 
     public SpeechFrame SpawnSpeechFrame(Vector2 speechVector, string dialog)

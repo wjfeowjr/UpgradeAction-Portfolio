@@ -71,11 +71,11 @@ public class Monster : Character
     [SerializeField] private TotalBar totalBar;
     [SerializeField] private SpriteRenderer[] appearMotions;      // 등장 연출 이미지
 
-    protected void OnEnable()
+    protected override void OnEnable()
     {
+        base.OnEnable();
         InitBasicStat();
         InitAdditionalStat();
-        SpawnHpBar();
         // 등장
         Appear();
     }
@@ -104,7 +104,16 @@ public class Monster : Character
         PlayerInJumpRangeCheck();
         PlayerInDropRangeCheck();
     }
-    
+
+    private void OnDisable()
+    {
+        if (!totalBar)
+            return;
+        
+        totalBar.gameObject.SetActive(false);
+        totalBar = null;
+    }
+
     protected void OnDrawGizmos()
     {
         var myPosition = transform.position;
@@ -294,11 +303,12 @@ public class Monster : Character
         var finalStagger = basicStat.stagger;
         basicStat.maxStagger = finalStagger;
         basicStat.stagger = finalStagger;
+        
+        curGlobalCoolTime = 0;
     }
 
-    private async void SpawnHpBar()
+    public void SpawnHpBar()
     {
-        await UniTask.WaitUntil(() => basicStat.hp > 0);
         totalBar = SpawnUI(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
         totalBar.SetCastCharacter(this);
     }
@@ -359,6 +369,8 @@ public class Monster : Character
                 FirstCoolTimeReduce();
                 return;
             }
+            
+            await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
             // Hovering();
             // AppearShake();
             
@@ -478,6 +490,10 @@ public class Monster : Character
     public override void Die()
     {
         base.Die();
+        GameManager.Instance.RemoveMonster(this);
+        
+        if (!totalBar)
+            return;
         
         totalBar.gameObject.SetActive(false);
         totalBar = null;
@@ -556,7 +572,6 @@ public class Monster : Character
             }
         }
         ResetTriggerAnimator(ConstValues.Pattern);
-        
         SetTriggerAnimator($"{ConstValues.Attack}_{idx}");
     }
     
