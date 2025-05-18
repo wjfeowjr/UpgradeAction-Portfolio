@@ -57,7 +57,7 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string Berserker = "Berserker";
     public const string Gunner = "Gunner";
-
+    
     public const string Idle = "Idle";
     public const string Move = "Move";
     public const string Jump = "Jump";
@@ -111,8 +111,9 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Ground = "Ground";
     public const string Wall = "Wall";
+    public const string StageWall = "StageWall";
     public const string Platform = "Platform";
-    
+
     public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";
 
@@ -176,8 +177,10 @@ public class ConstValues : Singleton<ConstValues>
     public static readonly Color CyanColor = Color.cyan;
     public static readonly Color MagentaColor = Color.magenta;
     
+    public const string Episode = "Episode";
     public const string Step = "Step";
     public const string Dialog = "Dialog";
+    public const string Combo = "Combo";
 
     // 사운드
     public const string GunnerLaugh = "Gunner_Laugh";

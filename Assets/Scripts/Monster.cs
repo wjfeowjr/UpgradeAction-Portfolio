@@ -307,8 +307,9 @@ public class Monster : Character
         curGlobalCoolTime = 0;
     }
 
-    public void SpawnHpBar()
+    public async void SpawnHpBar()
     {
+        await UniTask.WaitUntil(() => basicStat.hp > 0);
         totalBar = SpawnUI(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
         totalBar.SetCastCharacter(this);
     }
@@ -485,6 +486,14 @@ public class Monster : Character
         if (damage == 0)
             return;
         totalBar.ReduceHpBar(basicStat.hp, basicStat.maxHp, 1.5f);
+        
+        var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
+        if (uiInterfaceObj == null)
+            return;
+
+        GameManager.Instance.ComboCount += 1;
+        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        uiInterface.ComboPresenter.ComboProduct();
     }
 
     public override void Die()

@@ -151,6 +151,7 @@ public class GameManager : Singleton<GameManager>
     private string firstPlayer;
     private string secondPlayer = default;
     private bool controlStart;
+    private int comboCount;
 
     // 등록된 스킬 목록
     private SettingSkill changeSkill;
@@ -187,6 +188,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => controlStart;
         set => controlStart = value;
+    }
+
+    public int ComboCount
+    {
+        get => comboCount;
+        set => comboCount = value;
     }
 
     public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
@@ -639,6 +646,16 @@ public class GameManager : Singleton<GameManager>
             case eUIType.UI_Interface:
                 if (uiBase is UI_Interface interfaceView)
                 {
+                    //SetComboPresenter
+                    var comboInterface = interfaceView.ComboView.ConvertTo<IUIComboView>();
+                    var comboModel = new UIComboModel()
+                    {
+                        comboCount = 0
+                    };
+                    var comboPresenter = new UIComboPresenter(comboInterface, comboModel);
+                    interfaceView.SetComboPresenter(comboPresenter);
+                    comboPresenter.SetCombo();
+                    
                     var hpInterface = interfaceView.HpView.ConvertTo<IUIHpView>();
                     var hpModel = new UIHpModel()
                     {
@@ -660,6 +677,15 @@ public class GameManager : Singleton<GameManager>
                     var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
                     interfaceView.SetSkillPresenter(skillPresenter);
                     skillPresenter.SetSkillInfo();
+                    
+                    var episodeInterface = interfaceView.EpisodeView.ConvertTo<IUIEpisodeView>();
+                    var episodeModel = new UIEpisodeModel()
+                    {
+                        episodeName = "에피소드1: 날씨 좋은 날"
+                    };
+                    var episodePresenter = new UIEpisodePresenter(episodeInterface, episodeModel);
+                    interfaceView.SetEpisodePresenter(episodePresenter);
+                    episodePresenter.SetEpisode();
                 }
                 break;
             

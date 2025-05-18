@@ -12,16 +12,18 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private Transform[] playerPos;
     [SerializeField] private Transform[] chapterPos;
     [SerializeField] private Transform[] producePos;
+    [SerializeField] private Transform[] stageWallPos;
     
     [SerializeField] private List<Collider2D> platformColliderList;
     private CancellationTokenSource dialogCancellation;
     private CancellationTokenSource dieCancellation;
-    
+
+    [SerializeField] private int episodeTitle = 0;
     [SerializeField] private int step = 0;
     [SerializeField] private int dialog = 0;
-
     [SerializeField] private int curStep = 0;
-    
+
+    private GameObject stageWall;
     private Player curPlayer;
     
     private void Awake()
@@ -39,6 +41,7 @@ public class BattleManager : MonoBehaviour
 
     private void Start()
     {
+        episodeTitle = GetKey(ConstValues.Episode);
         step = GetKey(ConstValues.Step);
         dialog = GetKey(ConstValues.Dialog);
 
@@ -50,11 +53,29 @@ public class BattleManager : MonoBehaviour
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
         GameManager.Instance.PlatformColliderList = platformColliderList;
         GameOverCycle();
+        ProductChapter();
     }
 
     private void Update()
     {
         ChapterCycle();
+    }
+
+    private void ProductChapter()
+    {
+        var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
+        if (uiInterfaceObj == null)
+            return;
+        
+        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        uiInterface.EpisodePresenter.HandelEpisodeEnd(EpisodeEnd);
+        uiInterface.EpisodePresenter.EpisodeProduct();
+    }
+
+    private void EpisodeEnd()
+    {
+        SetKey(ConstValues.Episode, 1);
+        episodeTitle = GetKey(ConstValues.Episode);
     }
 
     private async void GameOverCycle()
@@ -69,6 +90,9 @@ public class BattleManager : MonoBehaviour
     
     private void ChapterCycle()
     {
+        if (episodeTitle == 0)
+            return;
+        
         if (step > chapterPos.Length - 1)
             return;
         
@@ -118,13 +142,13 @@ public class BattleManager : MonoBehaviour
                 string dialog1 = "날씨 참 좋다...";
                 string dialog2 = "저 거지같은\n태양만 빼고\n말이야!";
                 string dialog3 = "뿌셔버릴거야!!!";
-        
-                float dialogDelay1 = 2.0f;
+                
+                float dialogDelay1 = 2.5f;
                 float dialogDelay2 = 1.0f;
-        
+                
                 dialogCancellation = new CancellationTokenSource();
                 GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-
+                
                 if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                     return;
                 
@@ -133,37 +157,42 @@ public class BattleManager : MonoBehaviour
                 
                 if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                     return;
-        
+                
                 speechFrame.Speech(dialog2);
-        
+                
                 if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                     return;
-        
+                
                 speechFrame.transform.position = new Vector2(speechPosition.x, speechPosition.y + 0.5f);
                 speechFrame.Speech(dialog3);
-        
+                
                 for (int i = 0; i < 2; i++)
                 {
                     curPlayer.CustomJump(new Vector2(0, 6.0f));
                     curPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
-        
+                
                     if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                         return;
                 }
-        
+                
                 if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                     return;
-        
+                
                 speechFrame.gameObject.SetActive(false);
 
                 // 게임 시작
                 GameManager.Instance.ControlStart = true;
                 GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+                // 몹 소환
+                GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, playerPos[0].position);
                 break;
             
             case 1:
                 GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
                 GameManager.Instance.ControlStart = false;
+
+                stageWall = GameManager.Instance.SpawnToObjectPool(ConstValues.StageWall, stageWallPos[0]); 
+                
                 await curPlayer.CustomMove(producePos[0].position, 1);
                 
                 // 몹 소환
