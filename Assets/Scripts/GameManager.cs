@@ -102,6 +102,7 @@ public enum eUIType
     
     // UI
     UI_Interface,
+    UI_Episode,
     
     // 팝업
     Popup_GameOver,
@@ -146,6 +147,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Collider2D> platformColliderList = new List<Collider2D>();
+    
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
 
     private string firstPlayer;
@@ -311,11 +313,14 @@ public class GameManager : Singleton<GameManager>
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey1));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey2));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey3));
-        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey4));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey5));
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerUpperSlash, skillKey6));
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey7));
-        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey8));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey8));
+        
+        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
+        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey8));
         playerSkillKeyCollection.berserkerSkillKeyList = berserkerSkillKeyList;
         
         List<SkillKey> gunnerSkillKeyList = new List<SkillKey>();
@@ -323,11 +328,14 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey1));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey2));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey3));
-        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey4));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey5));
         gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey6));
         gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
-        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey8));
+        
+        //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
+        //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
         playerSkillKeyCollection.gunnerSkillKeyList = gunnerSkillKeyList;
         
         // json화
@@ -442,10 +450,10 @@ public class GameManager : Singleton<GameManager>
         foreach (var player in players)
             player.InitBasicStat();
     }
-    public void SpawnPlayer(string playerName, Transform playerPos)
+    public void SpawnPlayer(string playerName, Vector2 playerPos)
     {
         ActivePlayer(playerName);
-        curPlayer.transform.position = playerPos.position;
+        curPlayer.transform.position = playerPos;
     }
     private Player GetPlayer(string playerName)
     {
@@ -490,7 +498,40 @@ public class GameManager : Singleton<GameManager>
         
         monsterList.Clear();
     }
+    
+    public void SpawnTrap(string id, Vector2 pos)
+    {
+        var trap = SpawnToObjectPool(id, pos); 
+        
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        if (objectData != null)
+        {
+            var spawnedObject = trap.GetComponent<SpawnedObject>();
+            if (!spawnedObject)
+                spawnedObject = trap.AddComponent<SpawnedObject>();
+            
+            spawnedObject.SetupData(objectData, transform.localScale.x);
+            spawnedObject.EnableSetting();
+        }
 
+        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
+        if (attackData != null)
+        {
+            var attack = trap.GetComponent<Attack>();
+            if (!attack)
+            {
+                attack = trap.AddComponent<Attack>();
+                attack.SetupData(null, attackData);
+            }
+
+            attack.EnableSetting();
+        }
+    }
+    public void DisActiveObjectList()
+    {
+        foreach (var obj in objectList)
+            obj.SetActive(false);
+    }
     // 일반 오브젝트
     public GameObject SpawnToObjectPool(string id, Transform objTransform)
     {
@@ -677,18 +718,23 @@ public class GameManager : Singleton<GameManager>
                     var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
                     interfaceView.SetSkillPresenter(skillPresenter);
                     skillPresenter.SetSkillInfo();
-                    
-                    var episodeInterface = interfaceView.EpisodeView.ConvertTo<IUIEpisodeView>();
+                }
+                break;
+            
+            case eUIType.UI_Episode:
+                if (uiBase is UI_Episode episodeView)
+                {
+                    var episodeInterface = episodeView.EpisodeView.ConvertTo<IUIEpisodeView>();
                     var episodeModel = new UIEpisodeModel()
                     {
                         episodeName = "에피소드1: 날씨 좋은 날"
                     };
                     var episodePresenter = new UIEpisodePresenter(episodeInterface, episodeModel);
-                    interfaceView.SetEpisodePresenter(episodePresenter);
+                    episodeView.SetEpisodePresenter(episodePresenter);
                     episodePresenter.SetEpisode();
                 }
                 break;
-            
+
             case eUIType.Popup_GameOver:
                 if (uiBase is Popup_GameOver gameOverPopup)
                 {

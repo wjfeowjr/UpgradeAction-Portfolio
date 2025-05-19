@@ -426,12 +426,25 @@ public abstract class Player : Character
     {
         if (!canMove)
             return;
-        
-        // 2) 물리 속도 적용 (Time.fixedDeltaTime 필요 없음)
-        float targetSpeedX = canMove ? dir.x * basicStat.moveSpeed * (moveRatio * 0.01f) : 0f;
 
-        // Y축 속도(중력/점프)는 그대로 보존
-        myRigidbody.linearVelocity = new Vector2(targetSpeedX, myRigidbody.linearVelocity.y);
+        float targetSpeedX = dir.x * basicStat.moveSpeed * (moveRatio * 0.01f);
+        float targetSpeedY = myRigidbody.linearVelocity.y;
+
+        // 카메라 좌/우 화면 경계 계산 (0 = 왼쪽, 1 = 오른쪽)
+        float leftLimit = GameManager.Instance.MainCamera.MyCamera.ViewportToWorldPoint(new Vector3(0, 0, 0)).x;
+        float rightLimit = GameManager.Instance.MainCamera.MyCamera.ViewportToWorldPoint(new Vector3(1, 0, 0)).x;
+
+        // 플레이어의 반 너비 고려
+        float halfWidth = physicsCollider.size.x * 0.5f;
+
+        // 현재 위치 + 이동 반영 예측
+        float nextX = transform.position.x + targetSpeedX * Time.fixedDeltaTime;
+
+        // 카메라 화면 안에서만 이동하도록 제한
+        if (nextX - halfWidth < leftLimit || nextX + halfWidth > rightLimit)
+            targetSpeedX = 0;
+
+        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
 
     // 정지
@@ -466,6 +479,12 @@ public abstract class Player : Character
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
         uiInterface.HpPresenter.SetHpText();
         uiInterface.HpPresenter.HpReduce();
+    }
+
+    public override void Die()
+    {
+        base.Die();
+        Controller.Instance.StopMove();
     }
     
     // 교체를 사용 할 수 있는가?

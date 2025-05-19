@@ -24,6 +24,8 @@ public class AttackInfo
     public string id;
     public EEffectType effectType;
     public float effectTime;
+    public bool ignoreSuperArmor;
+    public bool continuous;
     public EDirectionType directionType;
     public int coefficient;
     public int stagger;
@@ -47,6 +49,7 @@ public class Attack : MonoBehaviour
     {
         myCollider = GetComponent<Collider2D>();
     }
+
     private void Update()
     {
         ColliderTimer();
@@ -60,6 +63,8 @@ public class Attack : MonoBehaviour
         attackInfo.id = attackData.id;
         attackInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
         attackInfo.effectTime = attackData.effectTime;
+        attackInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
+        attackInfo.continuous = attackData.continuous;
         attackInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
         attackInfo.coefficient = attackData.coefficient;
         attackInfo.stagger = attackData.stagger;
@@ -84,10 +89,15 @@ public class Attack : MonoBehaviour
         myCollider.enabled = true;
         leftColliderTime = 0;
         TargetColReset();
+
+        if (castChar)
+        {
+            dir = castChar.transform.localScale.x > 0 ? 1 : -1;
+            if(attackInfo.upperPower.x < 0)
+                dir = castChar.transform.localScale.x > 0 ? -1 : 1;
+        }
         
-        dir = castChar.transform.localScale.x > 0 ? 1 : -1;
-        if(attackInfo.upperPower.x < 0)
-            dir = castChar.transform.localScale.x > 0 ? -1 : 1;
+        ContinuousCollider();
     }
     
     private void ColliderTimer()
@@ -99,6 +109,20 @@ public class Attack : MonoBehaviour
 
         if (leftColliderTime >= attackInfo.colliderTime)
             myCollider.enabled = false;
+    }
+
+    private async void ContinuousCollider()
+    {
+        if (!attackInfo.continuous)
+            return;
+        
+        while (gameObject.activeSelf)
+        {
+            myCollider.enabled = true;
+            await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
+            myCollider.enabled = false;
+            await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
+        }
     }
     
     // 충돌한 콜라이더 무시
@@ -119,11 +143,18 @@ public class Attack : MonoBehaviour
     private bool GetCritical()
     {
         var critPercent = Random.Range(0, 100);
-        return critPercent < castChar.BasicStat.criticalChance;
+        if(castChar)
+            return critPercent < castChar.BasicStat.criticalChance;
+        
+        return false;
     }
     
     private int GetDamage(bool isCrit)
     {
+        // 캐스터가 없다면(함정 등) 표기된 대미지 그대로
+        if (castChar == null)
+            return attackInfo.coefficient;
+        
         // 원래 주는 피해량
         float originDamage = castChar.BasicStat.power * attackInfo.coefficient * 0.01f;
         // 룬, 특성에 따라서 최종적인 대미지의 피해량이 높아짐
@@ -149,16 +180,24 @@ public class Attack : MonoBehaviour
                 return;
             
             // 플레이어의 공격
-            if (castChar.GetComponent<Player>())
+            if (castChar)
             {
-                if (col.GetComponent<Monster>() == null)
-                    return;
+                if (castChar.GetComponent<Player>())
+                {
+                    if (col.GetComponent<Monster>() == null)
+                        return;
                 
-                // 스프라이트가 점멸한다
-                hitTarget.HitMaterial();
+                    // 스프라이트가 점멸한다
+                    hitTarget.HitMaterial();
+                }
+                // 몬스터의 공격
+                if (castChar.GetComponent<Monster>())
+                {
+                    if (col.GetComponent<Player>() == null)
+                        return;
+                }
             }
-            // 몬스터의 공격
-            if (castChar.GetComponent<Monster>())
+            else
             {
                 if (col.GetComponent<Player>() == null)
                     return;
@@ -214,7 +253,7 @@ public class Attack : MonoBehaviour
             
             if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
             {
-                if(hitTarget.BasicStat.bodyType == EBodyType.Normal)
+                if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                     hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                 
                 switch (attackInfo.effectType)
@@ -230,7 +269,7 @@ public class Attack : MonoBehaviour
                 switch (attackInfo.effectType)
                 {
                     case EEffectType.Airborne:
-                        if(hitTarget.BasicStat.bodyType == EBodyType.Normal)
+                        if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                             hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                         break;
             
@@ -240,7 +279,7 @@ public class Attack : MonoBehaviour
                         break;
             
                     case EEffectType.Damaged:
-                        if (hitTarget.BasicStat.bodyType == EBodyType.Normal)
+                        if (hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                         {
                             hitTarget.Damaged(attackInfo.effectTime);
                             hitTarget.KnockBack(knockBackX);

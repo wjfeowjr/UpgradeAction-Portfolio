@@ -23,13 +23,7 @@ public class UI_Interface : UIBase
     [SerializeField] private UISkillView changeCharacter;
     [SerializeField] private List<UISkillView> skillViews;
     private UISkillPresenter uiSkillPresenter;
-    
-    // 에피소드
-    public UIEpisodeView EpisodeView => episodeView;
-    [SerializeField] private UIEpisodeView episodeView;
-    private UIEpisodePresenter uiEpisodePresenter;
-    public UIEpisodePresenter EpisodePresenter => uiEpisodePresenter;
-    
+
     public void SetComboPresenter(UIComboPresenter presenter)
     {
         uiComboPresenter = presenter;
@@ -43,11 +37,6 @@ public class UI_Interface : UIBase
     public void SetSkillPresenter(UISkillPresenter presenter)
     {
         uiSkillPresenter = presenter;
-    }
-
-    public void SetEpisodePresenter(UIEpisodePresenter presenter)
-    {
-        uiEpisodePresenter = presenter;
     }
 
     private void Update()

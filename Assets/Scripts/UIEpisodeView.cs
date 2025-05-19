@@ -81,11 +81,13 @@ public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
         
         // 페이드 인
         fadeImage.DOFade(0.7f, fadeTime).SetEase(Ease.Linear);
+        Debug.Log("이야1");
         if (await EpisodeDelay(fadeTime).SuppressCancellationThrow())
             return;
         
         // 텍스트 이동 후 정지
         episodeText.transform.DOMove(stopTransform.position, moveSecond);
+        Debug.Log("이야2");
         if (await EpisodeDelay(moveSecond).SuppressCancellationThrow())
             return;
         
@@ -94,10 +96,12 @@ public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
         
         // 텍스트 화면 바깥으로 이동
         episodeText.transform.DOMove(endTransform.position, moveSecond);
+        Debug.Log("이야3");
         if (await EpisodeDelay(moveSecond).SuppressCancellationThrow())
             return;
         
         fadeImage.DOFade(0, fadeTime).SetEase(Ease.Linear);
+        Debug.Log("이야4");
         if (await EpisodeDelay(fadeTime).SuppressCancellationThrow())
             return;
         

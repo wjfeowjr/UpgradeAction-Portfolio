@@ -29,6 +29,12 @@ public class Controller : Singleton<Controller>
         PlayerMove();
     }
 
+    public void StopMove()
+    {
+        isLeftMove = false;
+        isRightMove = false;
+    }
+
     // 방향 컨트롤(좌,우 동시입력 방지)
     private void DirControl()
     {

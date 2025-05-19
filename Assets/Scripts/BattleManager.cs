@@ -13,6 +13,7 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private Transform[] chapterPos;
     [SerializeField] private Transform[] producePos;
     [SerializeField] private Transform[] stageWallPos;
+    [SerializeField] private Transform[] trapPos;
     
     [SerializeField] private List<Collider2D> platformColliderList;
     private CancellationTokenSource dialogCancellation;
@@ -22,6 +23,9 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private int step = 0;
     [SerializeField] private int dialog = 0;
     [SerializeField] private int curStep = 0;
+    
+    private float dialogDelay1 = 2.5f;
+    private float dialogDelay2 = 1.0f;
 
     private GameObject stageWall;
     private Player curPlayer;
@@ -35,6 +39,7 @@ public class BattleManager : MonoBehaviour
         {
             GameManager.Instance.InitCamera(mainCamera);
             GameManager.Instance.ClearMonsterList();
+            GameManager.Instance.DisActiveObjectList();
             curPlayer = GameManager.Instance.CurPlayer;
         }
     }
@@ -49,11 +54,14 @@ public class BattleManager : MonoBehaviour
         if (curStep < 0)
             curStep = 0;
         
-        GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[curStep]);
+        GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[curStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
+        GameManager.Instance.SpawnToUIPool(eUIType.UI_Episode, Vector2.zero);
         GameManager.Instance.PlatformColliderList = platformColliderList;
         GameOverCycle();
-        ProductChapter();
+        ProductEpisode();
+        // 누적된 연출 진행
+        AccumulatedStep();
     }
 
     private void Update()
@@ -61,15 +69,19 @@ public class BattleManager : MonoBehaviour
         ChapterCycle();
     }
 
-    private void ProductChapter()
+    private void ProductEpisode()
     {
-        var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
-        if (uiInterfaceObj == null)
+        if (episodeTitle != 0)
             return;
         
-        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        var uiEpisodeObj = GameManager.Instance.GetUI(eUIType.UI_Episode);
+        if (uiEpisodeObj == null)
+            return;
+        
+        var uiInterface = uiEpisodeObj.GetComponent<UI_Episode>();
         uiInterface.EpisodePresenter.HandelEpisodeEnd(EpisodeEnd);
         uiInterface.EpisodePresenter.EpisodeProduct();
+        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
     }
 
     private void EpisodeEnd()
@@ -100,9 +112,7 @@ public class BattleManager : MonoBehaviour
         {
             // 대화 진행
             DialogStep();
-            // 연출 진행
-            ProduceStep();
-            
+
             dialog++;
             SetKey(ConstValues.Dialog, dialog);
 
@@ -136,94 +146,108 @@ public class BattleManager : MonoBehaviour
     private async void DialogStep()
     {
         // 대화 진행
-        switch (dialog)
+        switch (dialog) 
         {
             case 0:
-                string dialog1 = "날씨 참 좋다...";
-                string dialog2 = "저 거지같은\n태양만 빼고\n말이야!";
-                string dialog3 = "뿌셔버릴거야!!!";
-                
-                float dialogDelay1 = 2.5f;
-                float dialogDelay2 = 1.0f;
-                
-                dialogCancellation = new CancellationTokenSource();
-                GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-                
-                if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
-                    return;
-                
-                var speechPosition = curPlayer.FontPos.position;
-                var speechFrame = GameManager.Instance.SpawnSpeechFrame(speechPosition, dialog1);
-                
-                if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                    return;
-                
-                speechFrame.Speech(dialog2);
-                
-                if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                    return;
-                
-                speechFrame.transform.position = new Vector2(speechPosition.x, speechPosition.y + 0.5f);
-                speechFrame.Speech(dialog3);
-                
-                for (int i = 0; i < 2; i++)
-                {
-                    curPlayer.CustomJump(new Vector2(0, 6.0f));
-                    curPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
-                
-                    if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                        return;
-                }
-                
-                if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                    return;
-                
-                speechFrame.gameObject.SetActive(false);
-
-                // 게임 시작
-                GameManager.Instance.ControlStart = true;
-                GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
-                // 몹 소환
-                GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, playerPos[0].position);
+                await Product1();
                 break;
             
             case 1:
-                GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-                GameManager.Instance.ControlStart = false;
-
-                stageWall = GameManager.Instance.SpawnToObjectPool(ConstValues.StageWall, stageWallPos[0]); 
-                
-                await curPlayer.CustomMove(producePos[0].position, 1);
-                
-                // 몹 소환
-                GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, playerPos[1].position);
-                
-                string dialog4 = "이건 테스트 글이다";
-                float dialogDelay3 = 2.0f;
-                dialogCancellation = new CancellationTokenSource();
-
-                var speechPosition2 = curPlayer.FontPos.position;
-                var speechFrame2 = GameManager.Instance.SpawnSpeechFrame(speechPosition2, dialog4);
-                
-                if (await NormalDelay(dialogDelay3, dialogCancellation).SuppressCancellationThrow())
-                    return;
-                
-                speechFrame2.gameObject.SetActive(false);
-                // 게임 시작
-                GameManager.Instance.ControlStart = true;
-                GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+                await Product2();
                 break;
         }
     }
 
-    private void ProduceStep()
+    private async UniTask Product1()
     {
-        // 단계 연출 진행
-        switch (step)
+        string dialog1 = "날씨 참 좋다...";
+        string dialog2 = "저 거지같은\n태양만 빼고\n말이야!";
+        string dialog3 = "뿌셔버릴거야!!!";
+
+        dialogCancellation = new CancellationTokenSource();
+        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+
+        if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+            return;
+
+        var speechPosition = curPlayer.FontPos.position;
+        var speechFrame = GameManager.Instance.SpawnSpeechFrame(speechPosition, dialog1);
+
+        if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            return;
+
+        speechFrame.Speech(dialog2);
+
+        if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            return;
+
+        speechFrame.transform.position = new Vector2(speechPosition.x, speechPosition.y + 0.5f);
+        speechFrame.Speech(dialog3);
+
+        for (int i = 0; i < 2; i++)
         {
-            case 1:
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(40.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-                break;
+            curPlayer.CustomJump(new Vector2(0, 6.0f));
+            curPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
+
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                return;
+        }
+
+        if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+            return;
+
+        speechFrame.gameObject.SetActive(false);
+
+        // 게임 시작
+        GameManager.Instance.ControlStart = true;
+        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+    }
+
+    private async UniTask Product2()
+    {
+        string dialog1 = "저기에 닿으면 쌔까맣게 타 죽을거야";
+        string dialog2 = "Z키로 저 함정을 돌파해 보자!";
+
+        GameManager.Instance.ControlStart = false;
+        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+        
+        // 카메라 제한
+        GameManager.Instance.MainCamera.MinXAndY = new Vector2(40.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+
+        await curPlayer.CustomMove(producePos[0].position, 1);
+        
+        // 함정 설치
+        GameManager.Instance.SpawnTrap(ConstValues.TrapPillar, trapPos[0].position);
+        
+        dialogCancellation = new CancellationTokenSource();
+        var speechPosition = curPlayer.FontPos.position;
+        var speechFrame = GameManager.Instance.SpawnSpeechFrame(speechPosition, dialog1);
+                
+        if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            return;
+        
+        speechFrame.Speech(dialog2);
+                
+        if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            return;
+                
+        speechFrame.gameObject.SetActive(false);
+        // 게임 시작
+        GameManager.Instance.ControlStart = true;
+        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+    }
+    
+    // GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, chapterPos[1].position);
+    //stageWall = GameManager.Instance.SpawnToObjectPool(ConstValues.StageWall, stageWallPos[0]);
+
+    private void AccumulatedStep()
+    {
+        if (step >= 1)
+        {
+            // 카메라 제한
+            GameManager.Instance.MainCamera.MinXAndY = new Vector2(40.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+            // 함정 설치
+            GameManager.Instance.SpawnTrap(ConstValues.TrapPillar, trapPos[0].position);
         }
     }
     
@@ -231,4 +255,6 @@ public class BattleManager : MonoBehaviour
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
+    
+    
 }

@@ -47,6 +47,8 @@ public class AttackData
     public string id;
     public string effectType;
     public float effectTime;
+    public bool ignoreSuperArmor;
+    public bool continuous;
     public string directionType;
     public int coefficient;
     public int stagger;

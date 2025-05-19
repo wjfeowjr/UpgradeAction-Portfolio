@@ -166,6 +166,9 @@ public class ConstValues : Singleton<ConstValues>
     // 몬스터
     public const string MonsterSpinach = "Monster_Spinach";
     
+    // 함정
+    public const string TrapPillar = "Trap_Pillar";
+    
     public static readonly Color WhiteColor = Color.white;
     public static readonly Color BlackColor = Color.black;
     public static readonly Color GrayColor = Color.gray;
@@ -176,7 +179,7 @@ public class ConstValues : Singleton<ConstValues>
     public static readonly Color BlueColor = Color.blue;
     public static readonly Color CyanColor = Color.cyan;
     public static readonly Color MagentaColor = Color.magenta;
-    
+
     public const string Episode = "Episode";
     public const string Step = "Step";
     public const string Dialog = "Dialog";

@@ -1,7 +1,10 @@
+using System;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class FollowCamera : MonoBehaviour
 {
+    private Camera myCamera;
     private float shakeAmount;
     private float shakeTime;
     private Vector2 shakeVector;
@@ -29,6 +32,19 @@ public class FollowCamera : MonoBehaviour
         set => minXAndY = value;
     }
 
+    public Camera MyCamera => myCamera;
+    
+    private void Awake()
+    {
+        myCamera = GetComponent<Camera>();
+    }
+
+    private void LateUpdate()
+    {
+        // 카메라 제약이 있을때만 플레이어를 따라다닌다(X축)
+        TrackPlayer();
+    }
+
     bool CheckXMargin()
     {
         // x 축의 카메라와 플레이어 사이의 거리가 x 여백보다 큰 경우 true를 반환합니다.
@@ -41,12 +57,6 @@ public class FollowCamera : MonoBehaviour
         return Mathf.Abs(transform.position.y - GameManager.Instance.CurPlayer.transform.position.y) > yMargin;
     }
 
-    private void LateUpdate()
-    {
-        // 카메라 제약이 있을때만 플레이어를 따라다닌다(X축)
-        TrackPlayer();
-    }
-    
     public void Shake(float amount, float time)
     {
         shakeAmount = amount;
