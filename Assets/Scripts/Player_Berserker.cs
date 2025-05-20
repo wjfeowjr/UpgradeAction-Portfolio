@@ -206,7 +206,7 @@ public class Player_Berserker : Player
             SpawnAttack(ConstValues.BerserkerJumpAttack2, jumpAttack2Pos);
             float dropForce = 30.0f;
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
-            while (myRigidbody.linearVelocity.y < 0)
+            while (GetJumpState())
             {
                 if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                     return false;
@@ -315,7 +315,7 @@ public class Player_Berserker : Player
         
         float dropForce = 20.0f;
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
-        while (myRigidbody.linearVelocity.y < 0)
+        while (GetJumpState())
         {
             if(await YieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
@@ -383,7 +383,7 @@ public class Player_Berserker : Player
             chargeVector = new Vector2(transform.position.x - dashLength, transform.position.y);
         
         // 돌진
-        await Charge(dashSpeed, 1.0f, dashLength, 1.0f);
+        await AirCharge(dashSpeed, 1.0f, dashLength, 1.0f);
         
         SetTriggerAnimator(ConstValues.ComboAttack);
         SpawnAttack(ConstValues.BerserkerChargeCrashSlash, centerPos);       

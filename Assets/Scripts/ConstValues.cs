@@ -21,6 +21,8 @@ public class ConstValues : Singleton<ConstValues>
     
     public const float DefaultLinearDamping = 0f;
     public const float DefaultAngularDamping = 0.05f;
+
+    public const float BungeePosY = -8.0f;
     
     public const string PrefabFolder = "Assets/Prefab";
 

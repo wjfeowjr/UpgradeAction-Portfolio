@@ -454,6 +454,7 @@ public class GameManager : Singleton<GameManager>
     {
         ActivePlayer(playerName);
         curPlayer.transform.position = playerPos;
+        curPlayer.transform.localScale = Vector3.one;
     }
     private Player GetPlayer(string playerName)
     {

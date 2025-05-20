@@ -123,11 +123,13 @@ public abstract class Character : MonoBehaviour
     
     protected Vector2 chargeVector;
     protected int jumpAttackCount;
+    protected bool isDie;
+    protected int groundLayerMask;
+
     private int airborneCount;     // 에어본 카운트
-    private int moveLayerMask;
     private int platformLayerMask;
+    private int groundAndPlatformLayerMask;
     private bool downJumping;
-    private bool isDie;
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
@@ -163,8 +165,9 @@ public abstract class Character : MonoBehaviour
         }
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
-        moveLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
+        groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
+        groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
         
         ScaleSetting();
         ColSizeSetting();
@@ -264,11 +267,11 @@ public abstract class Character : MonoBehaviour
             PlatformRay(rayVector2);
             PlatformRay(rayVector3);
         }
-        // 대시하는 경우 사용, 특수
-        else if  (normalState == ENormalState.Dash)
-        {
-            IgnorePlatform(true);
-        }
+        // // 대시하는 경우 사용, 특수
+        // else if  (normalState == ENormalState.Dash)
+        // {
+        //     IgnorePlatform(true);
+        // }
         
         // if (myRigidbody.linearVelocityY > 0)
         // {
@@ -305,6 +308,14 @@ public abstract class Character : MonoBehaviour
         GroundRay(rayVector3);
     }
 
+    private void GroundRay(Vector2 rayVector)
+    {
+        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, groundLayerMask);
+        Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.025f);
+        if (downRay.collider != null)
+            groundObject = downRay.collider.gameObject;
+    }
+    
     private void PlatformRay(Vector2 rayVector)
     {
         var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, platformLayerMask);
@@ -318,12 +329,30 @@ public abstract class Character : MonoBehaviour
             }
         }
     }
-    private void GroundRay(Vector2 rayVector)
+
+    private bool GroundAndPlatformRay(Vector2 rayVector)
     {
-        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, moveLayerMask);
-        Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.025f);
-        if (downRay.collider != null)
-            groundObject = downRay.collider.gameObject;
+        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 0.1f, groundAndPlatformLayerMask);
+        Debug.DrawRay(rayVector, Vector2.down * 0.1f, ConstValues.GreenColor, 0.02f);
+
+        if (downRay.collider == null)
+        {
+            if (!GetJumpState())
+            {
+                LandingStateSetting(ELandingState.Air);
+            }
+            return false;
+        }
+        else
+        {
+            if (GetJumpState())
+            {
+                LandingStateSetting(ELandingState.Ground);
+                // if (transform.position.y > downRay.point.y)
+                //     transform.position = new Vector2(transform.position.x, downRay.point.y);
+            }
+            return true;
+        }
     }
 
     // 반동
@@ -699,7 +728,7 @@ public abstract class Character : MonoBehaviour
     }
     protected async UniTask FixedYieldDelay(CancellationTokenSource tokenSource)
     {
-        await UniTask.Yield(PlayerLoopTiming.FixedUpdate, cancellationToken: tokenSource.Token);
+        await UniTask.WaitForFixedUpdate(cancellationToken: tokenSource.Token);
     }
     // 일반 딜레이
     protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
@@ -810,8 +839,8 @@ public abstract class Character : MonoBehaviour
         return buffList.Find(x => x.buffType == buffType) != null;
     }
     
-    // 돌진 (기본스피드, 가속 배율, 돌진거리, 가속되는 시점)
-    protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float accelPercent)
+    // 지형을 무시하는 돌진 (기본스피드, 가속 배율, 돌진거리, 가속되는 시점)
+    protected async UniTask<bool> AirCharge(float basicSpeed, float limitMag, float chargeLength, float accelPercent)
     {
         // 1) 초기 계산
         float realDashSpeed = basicSpeed;
@@ -849,6 +878,19 @@ public abstract class Character : MonoBehaviour
             // FixedYieldDelay 대기, 취소 시 false 반환
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
+            
+            // 대시 레이체크
+            var rayVector1 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+            var rayVector2 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+            if (transform.localScale.x < 0)
+            {
+                rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+                rayVector2 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+            }
+            if(!GroundAndPlatformRay(rayVector1))
+                GroundAndPlatformRay(rayVector2);
+            
+            Debug.Log($"{transform.position.x}, {rayVector1.x}, {rayVector2.x}");
         }
 
         // 4) 돌진 종료 후 정지

@@ -139,6 +139,7 @@ public abstract class Player : Character
     {
         UpdateFlip();
         UpdateJumpDown();
+        UpdateBungee();
         UpdateAirborneDown();
         UpdateGlobalCoolTime();
         UpdateChangeGlobalCoolTime();
@@ -346,6 +347,12 @@ public abstract class Player : Character
         
         if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Jump) && myRigidbody.linearVelocity.y < 0)
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+    }
+
+    private void UpdateBungee()
+    {
+        if(!isDie && transform.position.y < ConstValues.BungeePosY)
+            Die();
     }
     
     private void UpdateAirborneDown()
@@ -734,7 +741,7 @@ public abstract class Player : Character
         trace.enabled = true;
 
         // 돌진
-        bool chargeFinish = await Charge(dashSpeed, 0.5f, dashLength, 0.5f);
+        bool chargeFinish = await AirCharge(dashSpeed, 0.5f, dashLength, 0.5f);
 
         trace.enabled = false;
         ClearObjectList(normalObject, 0.3f);
@@ -828,7 +835,7 @@ public abstract class Player : Character
         // 점프
         if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
         {
-            if (myRigidbody.gravityScale != 0 && myRigidbody.linearVelocityY is <= 0.1f and >= -0.1f)
+            if (myRigidbody.gravityScale != 0 && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
                 return;
             
             LandingStateSetting(ELandingState.Air);
