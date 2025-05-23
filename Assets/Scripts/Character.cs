@@ -125,11 +125,11 @@ public abstract class Character : MonoBehaviour
     protected int jumpAttackCount;
     protected bool isDie;
     protected int groundLayerMask;
-
+    protected bool downJumping;
+    
     private int airborneCount;     // 에어본 카운트
     private int platformLayerMask;
     private int groundAndPlatformLayerMask;
-    private bool downJumping;
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
@@ -138,6 +138,7 @@ public abstract class Character : MonoBehaviour
     public BasicStat BasicStat => basicStat;
     public Rigidbody2D MyRigidbody => myRigidbody;
     public GameObject GroundObject => groundObject;
+    public Transform CenterPos => centerPos;
     public Transform FontPos => fontPos;
     public bool Immortal => immortal;
     public bool ImmuneStagger => immuneStagger;
@@ -232,7 +233,7 @@ public abstract class Character : MonoBehaviour
             }
         }
     }
-    
+
     // 최대 중력가속도 조정
     private void UpdateVelocity()
     {
@@ -294,9 +295,9 @@ public abstract class Character : MonoBehaviour
         // }
     }
 
-    private void FindGroundObject()
+    protected virtual void FindGroundObject()
     {
-        if (groundObject)
+        if (groundObject && !downJumping)
             return;
         
         var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
@@ -310,7 +311,7 @@ public abstract class Character : MonoBehaviour
 
     private void GroundRay(Vector2 rayVector)
     {
-        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, groundLayerMask);
+        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, groundAndPlatformLayerMask);
         Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.025f);
         if (downRay.collider != null)
             groundObject = downRay.collider.gameObject;
@@ -407,6 +408,11 @@ public abstract class Character : MonoBehaviour
         // 최종적으로 도출되는 공격속도 계수
         basicStat.moveSpeed = originStat.moveSpeed * value;
         myAnimator.SetFloat(ConstValues.MoveSpeed, value);
+    }
+    
+    public void StopVelocity()
+    {
+        myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
     }
 
     public virtual void TakeDamage(int damage)
@@ -773,7 +779,7 @@ public abstract class Character : MonoBehaviour
         list.Clear();
     }
     
-    protected void Flip(int dir)
+    public void Flip(int dir)
     {
         switch (dir)
         {
@@ -889,8 +895,6 @@ public abstract class Character : MonoBehaviour
             }
             if(!GroundAndPlatformRay(rayVector1))
                 GroundAndPlatformRay(rayVector2);
-            
-            Debug.Log($"{transform.position.x}, {rayVector1.x}, {rayVector2.x}");
         }
 
         // 4) 돌진 종료 후 정지
@@ -944,6 +948,8 @@ public abstract class Character : MonoBehaviour
         
         stateCancellation = new CancellationTokenSource();
         Bound(xVelocity, yVelocity);
+        // 이 부분을 기억
+        IgnorePlatform(true);
         DownHitBox();
     }
     private void Bound(float xVelocity, float yVelocity)
@@ -956,6 +962,7 @@ public abstract class Character : MonoBehaviour
     {
         StateSetting(ENormalState.Down, ConstValues.Down, ConstValues.Down);
         MoveStateSetting(EMoveState.Stopping);
+        SpawnObject(ConstValues.DownDust, transform.position);
         
         // 최초 공중에 떴을 때는, 땅에 닿자마자 다시 공중으로 고정높이만큼 뜬다
         if (airborneCount > 0)
@@ -1136,34 +1143,42 @@ public abstract class Character : MonoBehaviour
     public async void DownJump()
     {
         // 플랫폼 위에서만 작동함
-        if(groundObject == null || !groundObject.CompareTag(ConstValues.Platform))
+        if(downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform))
             return;
 
         if (IsDamaged())
             return;
 
+        var pastGround = groundObject;
+        
+        PlaySound(ConstValues.Jump1);
         downJumping = true;
         IgnorePlatform(true);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
 
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         LandingStateSetting(ELandingState.Air);
-        
-        var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
-        var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-        var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-
-        PlatformRay(rayVector1);
-        PlatformRay(rayVector2);
-        PlatformRay(rayVector3);
 
         stateCancellation = new CancellationTokenSource();
         while (transform.position.y >= groundObject.transform.position.y)
         {
-            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
         
+        while (pastGround == groundObject)
+        {
+            var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+            var rayVector2 = new Vector2(transform.position.x, transform.position.y);
+            var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+
+            PlatformRay(rayVector1);
+            PlatformRay(rayVector2);
+            PlatformRay(rayVector3);
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+
         downJumping = false;
     }
 
@@ -1179,7 +1194,12 @@ public abstract class Character : MonoBehaviour
         foreach (var mySpriteRenderer in mySpriteRenderers)
             mySpriteRenderer.enabled = active;
     }
-    
+
+    protected void PlaySound(string soundId)
+    {
+        SoundManager.Instance.PlaySound(soundId);
+    }
+
     // protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float acceleration)
     // {
     //     float realDashSpeed = basicSpeed;

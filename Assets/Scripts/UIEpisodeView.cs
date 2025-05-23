@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public interface IUIEpisodeView
 {
     void SetEpisode(string episodeName);
-    void EpisodeProduct();
+    void EpisodeProduct(Action soundAction);
     event Action EpisodeEnd;
 }
 
@@ -34,9 +34,9 @@ public class UIEpisodePresenter
         _episodeview.SetEpisode(_model.episodeName);
     }
 
-    public void EpisodeProduct()
+    public void EpisodeProduct(Action soundAction)
     {
-        _episodeview.EpisodeProduct();
+        _episodeview.EpisodeProduct(soundAction);
     }
 
     public void HandelEpisodeEnd(Action action)
@@ -75,19 +75,18 @@ public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
         fadeImage.color = new Color(fadeImage.color.r, fadeImage.color.g, fadeImage.color.b, 0);
     }
     
-    public async void EpisodeProduct()
+    public async void EpisodeProduct(Action soundAction)
     {
         episodeCancellation = new CancellationTokenSource();
         
         // 페이드 인
         fadeImage.DOFade(0.7f, fadeTime).SetEase(Ease.Linear);
-        Debug.Log("이야1");
         if (await EpisodeDelay(fadeTime).SuppressCancellationThrow())
             return;
         
         // 텍스트 이동 후 정지
+        soundAction?.Invoke();
         episodeText.transform.DOMove(stopTransform.position, moveSecond);
-        Debug.Log("이야2");
         if (await EpisodeDelay(moveSecond).SuppressCancellationThrow())
             return;
         
@@ -96,12 +95,10 @@ public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
         
         // 텍스트 화면 바깥으로 이동
         episodeText.transform.DOMove(endTransform.position, moveSecond);
-        Debug.Log("이야3");
         if (await EpisodeDelay(moveSecond).SuppressCancellationThrow())
             return;
         
         fadeImage.DOFade(0, fadeTime).SetEase(Ease.Linear);
-        Debug.Log("이야4");
         if (await EpisodeDelay(fadeTime).SuppressCancellationThrow())
             return;
         

@@ -174,21 +174,26 @@ public class Player_Berserker : Player
         ResetTriggerAnimator(ConstValues.JumpDown);
         if (jumpAttackCount <= 0)
         {
-            jumpAttackCount += 1;
             float jumpAttackDelay1 = 0.16f;
             float jumpAttackDelay2 = 0.2f;
             float jumpAttackForce = 6;
+            
             StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
             if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
                 return false;
+            
+            jumpAttackCount += 1;
+            
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
             SpawnAttack(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
             if (await AttackDelay(jumpAttackDelay2).SuppressCancellationThrow())
                 return false;
+            
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
             SpawnAttack(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
             if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
                 return false;
+            
         }
         else
         {
@@ -309,7 +314,7 @@ public class Player_Berserker : Player
         StateSetting(ENormalState.Skill, ConstValues.BerserkerCrash, ConstValues.BerserkerCrash);
         
         // 도움닫기
-        myRigidbody.linearVelocity = new Vector2(0, 12.0f);
+        myRigidbody.linearVelocity = new Vector2(0, 8.0f);
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
         

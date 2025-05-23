@@ -1,9 +1,13 @@
+using System;
+using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using UnityEngine;
 
 public class UIBase : MonoBehaviour
 {
     [SerializeField] private eUIType uiType;
-
+    [SerializeField] private GameObject uiObject;
+    
     public eUIType GetUIType()
     {
         return uiType;
@@ -13,8 +17,35 @@ public class UIBase : MonoBehaviour
         uiType = type;
     }
 
-    public void Close()
+    public async void Close()
     {
         gameObject.SetActive(false);
+    }
+    public void ExpansionOpen(bool timeStop)
+    {
+        if (timeStop)
+            Time.timeScale = 0;
+
+        PlaySound(ConstValues.Popup);
+        uiObject.transform.localScale = Vector3.zero;
+        var endVector = Vector3.one;
+        var time = 0.2f;
+        uiObject.transform.DOScale(endVector, time).SetUpdate(true);
+    }
+    public async void ReductionClose(bool timeReset)
+    {
+        PlaySound(ConstValues.NormalButton2);
+        var endVector = Vector3.zero;
+        var time = 0.2f;
+        uiObject.transform.DOScale(endVector, time).SetUpdate(true);
+        await UniTask.Delay(TimeSpan.FromSeconds(time), ignoreTimeScale: true);
+        if (timeReset)
+            Time.timeScale = 1;
+        gameObject.SetActive(false);
+    }
+
+    private void PlaySound(string soundId)
+    {
+        SoundManager.Instance.PlaySound(soundId);
     }
 }

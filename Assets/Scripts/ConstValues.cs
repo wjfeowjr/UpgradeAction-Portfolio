@@ -25,6 +25,7 @@ public class ConstValues : Singleton<ConstValues>
     public const float BungeePosY = -8.0f;
     
     public const string PrefabFolder = "Assets/Prefab";
+    public const string SoundFolder = "Assets/Sound";
 
     public const string AtlasClone = "(Clone)";
 
@@ -54,7 +55,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";
     public const string SkillImage = "SkillImage";
-    public const string SpeechFrame = "SpeechFrame";
+    public const string SpeechFrame1 = "SpeechFrame1";
+    public const string SpeechFrame2 = "SpeechFrame2";
     public const string Effect = "Effect";
 
     public const string Berserker = "Berserker";
@@ -113,7 +115,8 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Ground = "Ground";
     public const string Wall = "Wall";
-    public const string StageWall = "StageWall";
+    public const string StageWallLeft = "StageWallLeft";
+    public const string StageWallRight = "StageWallRight";
     public const string Platform = "Platform";
 
     public const string SpawnedObject = "SpawnedObject";
@@ -125,6 +128,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string ChangeCharacter = "ChangeCharacter";
     public const string ChangeCharacterKey = "ChangeCharacter";
     
+    // 직업 공용
+    public const string DownDust = "DownDust";
+
     public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";
     public const string BerserkerAttack2 = "Berserker_Attack2";
@@ -167,7 +173,10 @@ public class ConstValues : Singleton<ConstValues>
     
     // 몬스터
     public const string MonsterSpinach = "Monster_Spinach";
-    
+    public const string MonsterSpinachAppear = "Monster_Spinach_Appear";
+    public const string MonsterSun = "Monster_Sun";
+    public const string MonsterSunLaugh = "Monster_Sun_Laugh";
+
     // 함정
     public const string TrapPillar = "Trap_Pillar";
     
@@ -183,10 +192,27 @@ public class ConstValues : Singleton<ConstValues>
     public static readonly Color MagentaColor = Color.magenta;
 
     public const string Episode = "Episode";
-    public const string Step = "Step";
-    public const string Dialog = "Dialog";
+    public const string DialogStep = "DialogStep";
+    public const string CustomMoveStep = "CustomMoveStep";
+    public const string PlayerStep = "PlayerStep";
+    public const string CurStep = "CurStep";
     public const string Combo = "Combo";
+    
+    // BGM
+    public const string BGMTitle = "BGM_Title";
+    public const string BGMEpisodeStart = "BGM_EpisodeStart";
+    public const string BGMEpisode1 = "BGM_Episode1";
 
     // 사운드
     public const string GunnerLaugh = "Gunner_Laugh";
+    public const string PlayerDamaged1 = "Player_Damaged1";
+    public const string PlayerScream = "Player_Scream";
+    public const string Upgrade = "Upgrade";
+    public const string Jump1 = "Jump1";
+    public const string Jump2 = "Jump2";
+    public const string NormalButton1 = "NormalButton_1";
+    public const string NormalButton2 = "NormalButton_2";
+    public const string Popup = "Popup";
+    public const string RewardPage = "RewardPage";
+    public const string SpeechFrame = "SpeechFrame";
 }

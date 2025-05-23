@@ -106,6 +106,7 @@ public enum eUIType
     
     // 팝업
     Popup_GameOver,
+    Popup_Guide,
 }
 
 public class GameManager : Singleton<GameManager>
@@ -486,6 +487,7 @@ public class GameManager : Singleton<GameManager>
     {
         var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
         monster.SpawnHpBar();
+        monster.Appear();
         monsterList.Add(monster);
     }
     public void RemoveMonster(Monster monster)
@@ -555,26 +557,26 @@ public class GameManager : Singleton<GameManager>
     public GameObject SpawnToUIPool(eUIType type, Transform objTransform)
     {
         var go = SpawnToPool(type.ToString(), uiPool, objTransform);
-        SetUI(type, go);
+        SetUIorPopup(type, go);
         return go;
     }
     public GameObject SpawnToUIPool(eUIType type, Vector2 objVector)
     {
         var go = SpawnToPool(type.ToString(), uiPool, objVector);
-        SetUI(type, go);
+        SetUIorPopup(type, go);
         return go;
     }
     // UI팝업화면
     public GameObject SpawnToPopupPool(eUIType type, Transform objTransform)
     {
         var go = SpawnToPool(type.ToString(), popupPool, objTransform);
-        SetUI(type, go);
+        SetUIorPopup(type, go);
         return go;
     }
     public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector)
     {
         var go = SpawnToPool(type.ToString(), popupPool, objVector);
-        SetUI(type, go);
+        SetUIorPopup(type, go);
         return go;
     }
     // 최상위 UI오브젝트
@@ -585,21 +587,6 @@ public class GameManager : Singleton<GameManager>
     public GameObject SpawnToHighestPool(string id, Vector2 objVector)
     {
         return SpawnToPool(id, highestPool, objVector);
-    }
-
-    private void SetUIorPopup(eUIType uiType)
-    {
-        UIBase uiBase = null;
-        foreach (var list in objectList)
-        {
-            if (list.GetComponent<UIBase>() && list.GetComponent<UIBase>().GetUIType() == uiType)
-            {
-                uiBase = list.GetComponent<UIBase>();
-                break;
-            }
-        }
-        if (uiBase != null)
-            BindPresenter(uiType, uiBase); 
     }
 
     private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)
@@ -636,8 +623,8 @@ public class GameManager : Singleton<GameManager>
         {
             go.SetActive(false);
             go.transform.position = objTransform.position;
-            go.SetActive(true);
         }
+        go.SetActive(true);
         return go;
     }
     private GameObject SpawnToPool(string id, Transform pool, Vector2 objVector)
@@ -680,7 +667,7 @@ public class GameManager : Singleton<GameManager>
     }
 
     // UI관련 코드
-    // 바인딩
+    // 바인딩(변하지 않는 UI만)
     private async void BindPresenter(eUIType type, UIBase uiBase)
     {
         switch (type)
@@ -721,20 +708,6 @@ public class GameManager : Singleton<GameManager>
                     skillPresenter.SetSkillInfo();
                 }
                 break;
-            
-            case eUIType.UI_Episode:
-                if (uiBase is UI_Episode episodeView)
-                {
-                    var episodeInterface = episodeView.EpisodeView.ConvertTo<IUIEpisodeView>();
-                    var episodeModel = new UIEpisodeModel()
-                    {
-                        episodeName = "에피소드1: 날씨 좋은 날"
-                    };
-                    var episodePresenter = new UIEpisodePresenter(episodeInterface, episodeModel);
-                    episodeView.SetEpisodePresenter(episodePresenter);
-                    episodePresenter.SetEpisode();
-                }
-                break;
 
             case eUIType.Popup_GameOver:
                 if (uiBase is Popup_GameOver gameOverPopup)
@@ -751,10 +724,10 @@ public class GameManager : Singleton<GameManager>
                             InitPlayerStat();
                             controlStart = true;
                             Time.timeScale = 1;
+                            BgmManager.Instance.ReplayBgm();
                         }
                     };
                     var gameOverPresenter = new PopupGameOverPresenter(gameOverInterface, hpModel);
-                    gameOverPopup.SetGameOverPresenter(gameOverPresenter);
                     gameOverPresenter.SetPopup();
                 }
                 break;
@@ -776,10 +749,26 @@ public class GameManager : Singleton<GameManager>
         return result;
     }
 
-    private void SetUI(eUIType uiType, GameObject uiObject)
+    // 비활성화 된 UI나 Popup을 활성화 후, 바인딩
+    private void SetUIorPopup(eUIType uiType, GameObject uiObject)
     {
         var uiBase = uiObject.GetComponent<UIBase>();
         uiBase.Setup(uiType);
+        if (uiBase != null)
+            BindPresenter(uiType, uiBase); 
+    }
+    // 활성화 된 UI나 Popup을 바인딩
+    private void SetUIorPopup(eUIType uiType)
+    {
+        UIBase uiBase = null;
+        foreach (var list in objectList)
+        {
+            if (list.GetComponent<UIBase>() && list.GetComponent<UIBase>().GetUIType() == uiType)
+            {
+                uiBase = list.GetComponent<UIBase>();
+                break;
+            }
+        }
         if (uiBase != null)
             BindPresenter(uiType, uiBase); 
     }
@@ -834,9 +823,9 @@ public class GameManager : Singleton<GameManager>
         SetUIorPopup(eUIType.UI_Interface);
     }
 
-    public SpeechFrame SpawnSpeechFrame(Vector2 speechVector, string dialog)
+    public SpeechFrame SpawnSpeechFrame(string frameName, Vector2 speechVector, string dialog)
     {
-        var speechFrame = SpawnToUIObjectPool(ConstValues.SpeechFrame, speechVector);
+        var speechFrame = SpawnToUIObjectPool(frameName, speechVector);
         var frameClass = speechFrame.GetComponent<SpeechFrame>();
         frameClass.Speech(dialog);
         return frameClass;

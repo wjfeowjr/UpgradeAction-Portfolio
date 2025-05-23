@@ -146,6 +146,12 @@ public abstract class Player : Character
         UpdateBuff();
     }
 
+    protected override void FixedUpdate()
+    {
+        base.FixedUpdate();
+        UpdateCameraLimit();
+    }
+
     private void OnDisable()
     {
         stateCancellation?.Cancel();
@@ -351,8 +357,11 @@ public abstract class Player : Character
 
     private void UpdateBungee()
     {
-        if(!isDie && transform.position.y < ConstValues.BungeePosY)
+        if (!isDie && transform.position.y < ConstValues.BungeePosY)
+        {
+            TakeDamage(9999);
             Die();
+        }
     }
     
     private void UpdateAirborneDown()
@@ -402,6 +411,48 @@ public abstract class Player : Character
         if (curChangeGlobalCoolTime >= changeGlobalCoolTime)
             curChangeGlobalCoolTime = changeGlobalCoolTime;
     }
+    
+    private void UpdateCameraLimit()
+    {
+        // 1) 플레이어 절반 크기
+        float halfWidth  = physicsCollider.size.x * 0.5f;
+        float halfHeight = physicsCollider.size.y * 0.5f;
+
+        // 2) 카메라 뷰 포인트를 월드 좌표로 변환
+        Camera cam = GameManager.Instance.MainCamera.MyCamera;
+        Vector3 bottomLeft = cam.ViewportToWorldPoint(new Vector3(0, 0, 0));
+        Vector3 topRight = cam.ViewportToWorldPoint(new Vector3(1, 1, 0));
+
+        // 3) 플레이어 센터 기준으로 클램프 경계 계산
+        float leftLimit  = bottomLeft.x + halfWidth;
+        float rightLimit = topRight.x - halfWidth;
+        float upLimit = topRight.y - halfHeight;
+        
+        Vector3 pos = transform.position;
+        Vector2 vel = myRigidbody.linearVelocity;
+        
+        if (pos.x < leftLimit)
+        {
+            pos.x = leftLimit;
+            if (vel.x < 0)
+                vel.x = 0;
+        }
+        else if (pos.x > rightLimit)
+        {
+            pos.x = rightLimit;
+            if (vel.x > 0)
+                vel.x = 0;
+        }
+        
+        if (pos.y > upLimit)
+        {
+            pos.y = upLimit;
+            if (vel.y > 0) vel.y = 0;
+        }
+        
+        //transform.position = pos;
+        myRigidbody.linearVelocity = vel;
+    }
 
     public void MoveSetting(Vector2 dir)
     {
@@ -436,21 +487,6 @@ public abstract class Player : Character
 
         float targetSpeedX = dir.x * basicStat.moveSpeed * (moveRatio * 0.01f);
         float targetSpeedY = myRigidbody.linearVelocity.y;
-
-        // 카메라 좌/우 화면 경계 계산 (0 = 왼쪽, 1 = 오른쪽)
-        float leftLimit = GameManager.Instance.MainCamera.MyCamera.ViewportToWorldPoint(new Vector3(0, 0, 0)).x;
-        float rightLimit = GameManager.Instance.MainCamera.MyCamera.ViewportToWorldPoint(new Vector3(1, 0, 0)).x;
-
-        // 플레이어의 반 너비 고려
-        float halfWidth = physicsCollider.size.x * 0.5f;
-
-        // 현재 위치 + 이동 반영 예측
-        float nextX = transform.position.x + targetSpeedX * Time.fixedDeltaTime;
-
-        // 카메라 화면 안에서만 이동하도록 제한
-        if (nextX - halfWidth < leftLimit || nextX + halfWidth > rightLimit)
-            targetSpeedX = 0;
-
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
 
@@ -467,11 +503,6 @@ public abstract class Player : Character
             MoveStateSetting(EMoveState.Stopping);
     }
 
-    public void StopVelocity()
-    {
-        myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
-    }
-    
     public override void TakeDamage(int damage)
     {
         base.TakeDamage(damage);
@@ -486,6 +517,10 @@ public abstract class Player : Character
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
         uiInterface.HpPresenter.SetHpText();
         uiInterface.HpPresenter.HpReduce();
+        
+        // 즉사는 엌 소리 안냄
+        if(basicStat.hp > 0)
+            PlaySound(ConstValues.PlayerDamaged1);
     }
 
     public override void Die()
@@ -589,6 +624,7 @@ public abstract class Player : Character
             }
             
             Debug.Log("점프");
+            PlaySound(ConstValues.Jump1);
             curGlobalCoolTime = 0;
             jumpAttackCount = 0;
             CancelMotion();
@@ -778,6 +814,8 @@ public abstract class Player : Character
         while (Math.Abs(transform.position.x - movePos.x) > 0.1f)
         {
             // basicStat.moveSpeed
+            if(normalState == ENormalState.Idle)
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
             
             Move(dir);
             await FixedYieldDelay(stateCancellation);
@@ -801,7 +839,7 @@ public abstract class Player : Character
     {
         StateSetting(state, triggerName, null);
     }
-    
+
     protected void OnCollisionEnter2D(Collision2D col)
     {
         // 착지 col.gameObject == groundObject (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform) || col.gameObject.CompareTag(ConstValues.Wall))
@@ -843,9 +881,7 @@ public abstract class Player : Character
                 StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
 
             if (col.gameObject.CompareTag(ConstValues.Platform))
-            {
                 IgnorePlatform(true);
-            }
         }
     }
 }

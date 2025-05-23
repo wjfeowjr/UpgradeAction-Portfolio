@@ -76,29 +76,32 @@ public class Monster : Character
         base.OnEnable();
         InitBasicStat();
         InitAdditionalStat();
-        // 등장
-        Appear();
     }
 
     private void Update()
     {
-        if (basicStat.hp <= 0)
+        if (basicStat.hp <= 0 || !GameManager.Instance.ControlStart)
             return;
         
         Trace();
         Move();
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
-        JumpCoolTimeReduce();
-        DropCoolTimeReduce();
         UpdateBuff();
         PatternCycle();
+        
+        // 점프 관련
         MonsterJump();
         MonsterDownJump();
+        JumpCoolTimeReduce();
+        DownJumpCoolTimeReduce();
     }
 
     protected override void FixedUpdate()
     {
+        if(!GameManager.Instance.ControlStart)
+            return;
+        
         base.FixedUpdate();
         PlayerInAttackRangeCheck();
         PlayerInJumpRangeCheck();
@@ -305,11 +308,23 @@ public class Monster : Character
         basicStat.stagger = finalStagger;
         
         curGlobalCoolTime = 0;
+
+        if (myStat.hovering)
+            landingState = ELandingState.Air;
+    }
+
+    protected override void FindGroundObject()
+    {
+        if (myStat.hovering)
+            return;
+        
+        base.FindGroundObject();
     }
 
     public async void SpawnHpBar()
     {
         await UniTask.WaitUntil(() => basicStat.hp > 0);
+        await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
         totalBar = SpawnUI(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
         totalBar.SetCastCharacter(this);
     }
@@ -318,6 +333,7 @@ public class Monster : Character
     {
         normalState = changeNormalState;
         SetTriggerAnimator(triggerName);
+        StopVelocity();
     }
     
     protected override void StateRecovery()
@@ -339,7 +355,7 @@ public class Monster : Character
     }
 
     // 등장
-    private async void Appear()
+    public async void Appear()
     {
         await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
         StandHitBox();
@@ -347,11 +363,11 @@ public class Monster : Character
         MoveStateSetting(EMoveState.Stopping);
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         
-        stateCancellation = new CancellationTokenSource();
-        await AppearProduction();
+        AppearProduction();
     }
-    protected virtual async UniTask AppearProduction()
+    protected virtual async void AppearProduction()
     {
+        stateCancellation = new CancellationTokenSource();
         myBoxCollider.enabled = true;
         
         if(!myStat.hovering) 
@@ -364,6 +380,7 @@ public class Monster : Character
 
         if (finishSuccess)
         {
+            SpawnObject(ConstValues.MonsterSpinachAppear, transform);
             StateSetting(ENormalState.AppearEnd, ConstValues.AppearEnd, ConstValues.AppearEnd);
             if (await NormalDelay(myStat.appearDelay, stateCancellation).SuppressCancellationThrow())
             {
@@ -416,7 +433,6 @@ public class Monster : Character
         DeleteAppearObject();
         return true;
     }
-
     private void DeleteAppearObject()
     {
         myAnimator.transform.localScale = defaultScale;
@@ -434,7 +450,7 @@ public class Monster : Character
     }
 
     // 이동
-    private void Move()
+    protected virtual void Move()
     {
         // 호버링몹 위아래로 움직이게 하기
         // if (myStat.hovering && normalState == ENormalState.Idle)
@@ -446,10 +462,12 @@ public class Monster : Character
         if (moveState != EMoveState.Moving)
             return;
         
-        if (transform.localScale.x > 0)
-            transform.Translate(Vector2.right * (basicStat.moveSpeed * Time.deltaTime), Space.World);
-        else
-            transform.Translate(Vector2.left * (basicStat.moveSpeed * Time.deltaTime), Space.World);
+        float targetSpeedX = basicStat.moveSpeed;
+        if (transform.localScale.x < 0)
+            targetSpeedX = -basicStat.moveSpeed;
+        
+        float targetSpeedY = myRigidbody.linearVelocity.y;
+        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
     // 추적
     private void Trace()
@@ -485,7 +503,9 @@ public class Monster : Character
         
         if (damage == 0)
             return;
-        totalBar.ReduceHpBar(basicStat.hp, basicStat.maxHp, 1.5f);
+        
+        if(totalBar)
+            totalBar.ReduceHpBar(basicStat.hp, basicStat.maxHp, 1.5f);
         
         var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
         if (uiInterfaceObj == null)
@@ -629,7 +649,7 @@ public class Monster : Character
             jumpInfo.coolTime = 2.0f;
         }
     }
-    private void DropCoolTimeReduce()
+    private void DownJumpCoolTimeReduce()
     {
         if (downJumpInfo.coolTime < 2.0f)
         {
@@ -784,11 +804,14 @@ public class Monster : Character
                 if(await AttackDelay(delay1).SuppressCancellationThrow())
                     return;
                 
+                PlaySound(ConstValues.Jump1);
                 LookAt(playerPos.x);
                 StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
                 float travelTime = 0.6f;
                 Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
                 myRigidbody.linearVelocity = velocity;
+                
+                IgnorePlatform(true);
             }
         }
     }
@@ -829,6 +852,75 @@ public class Monster : Character
         float vy   = (dy + 0.5f * g * t * t) / t;
 
         return new Vector2(vx, vy);
+    }
+    
+    public async UniTask CustomMove(Vector2 movePos, int finishDir, bool horizontal)
+    {
+        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+        
+        transform.localScale = reverseScale;
+        if (transform.position.x < movePos.x)
+            transform.localScale = defaultScale;
+
+        stateCancellation = new CancellationTokenSource();
+
+        if (horizontal)
+        {
+            while (Math.Abs(transform.position.x - movePos.x) > 0.1f)
+            {
+                // basicStat.moveSpeed
+                if(normalState == ENormalState.Idle)
+                    StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+            
+                EpisodeMoveHorizontal();
+                await FixedYieldDelay(stateCancellation);
+            }
+            switch (finishDir)
+            {
+                case -1:
+                    transform.localScale = reverseScale;
+                    break;
+                case 1:
+                    transform.localScale = defaultScale;
+                    break;
+            }
+        }
+        else
+        {
+            while (Math.Abs(transform.position.y - movePos.y) > 0.1f)
+            {
+                // basicStat.moveSpeed
+                if(normalState == ENormalState.Idle)
+                    StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+            
+                EpisodeMoveVertical(movePos.y);
+                await FixedYieldDelay(stateCancellation);
+            }
+        }
+        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+    }
+    private void EpisodeMoveHorizontal()
+    {
+        if (moveState != EMoveState.Moving)
+            return;
+        
+        float targetSpeedX = basicStat.moveSpeed;
+        if (transform.localScale.x < 0)
+            targetSpeedX = -basicStat.moveSpeed;
+        
+        float targetSpeedY = myRigidbody.linearVelocity.y;
+        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+    }
+    private void EpisodeMoveVertical(float movePosY)
+    {
+        if (moveState != EMoveState.Moving)
+            return;
+        
+        float targetSpeedX = myRigidbody.linearVelocity.x;
+        float targetSpeedY = basicStat.moveSpeed;
+        if(transform.position.y > movePosY)
+            targetSpeedY = -basicStat.moveSpeed;
+        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
     
     protected async void OnCollisionEnter2D(Collision2D col)
@@ -874,11 +966,11 @@ public class Monster : Character
         {
             LandingStateSetting(ELandingState.Air);
 
-            if (col.gameObject.CompareTag(ConstValues.Platform))
-                IgnorePlatform(true);
-            
             if(normalState == ENormalState.Idle)
                 StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+            
+            if (col.gameObject.CompareTag(ConstValues.Platform))
+                IgnorePlatform(true);
         }
     }
 }

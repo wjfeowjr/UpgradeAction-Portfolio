@@ -7,7 +7,12 @@ public class Monster_Spinach : Monster
     protected override void MonsterPattern(int idx)
     {
         base.MonsterPattern(idx);
-        Punch();
+        switch (idx)
+        {
+            case 0:
+                Punch();
+                break;
+        }
     }
     
     // 패턴1. 주먹질

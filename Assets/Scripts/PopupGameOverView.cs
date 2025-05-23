@@ -43,6 +43,8 @@ public class PopupGameOverView : MonoBehaviour, IUIGameOverView
     {
         titleText.text = title;
         messageText.text = message;
+        
+        confirmButton.onClick.RemoveAllListeners();
         confirmButton.onClick.AddListener(() =>
         {
             confirmAction();
