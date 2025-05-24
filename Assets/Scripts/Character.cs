@@ -56,7 +56,8 @@ public enum EBodyType
     Normal,
     SuperArmor,
     StrongArmor,
-    HyperArmor
+    HyperArmor,
+    UnChange
 }
 
 // 버프 타입
@@ -124,7 +125,6 @@ public abstract class Character : MonoBehaviour
     protected Vector2 chargeVector;
     protected int jumpAttackCount;
     protected bool isDie;
-    protected int groundLayerMask;
     protected bool downJumping;
     
     private int airborneCount;     // 에어본 카운트
@@ -166,7 +166,6 @@ public abstract class Character : MonoBehaviour
         }
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
-        groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
         
@@ -413,6 +412,10 @@ public abstract class Character : MonoBehaviour
     public void StopVelocity()
     {
         myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
+    }
+    protected void ZeroVelocity()
+    {
+        myRigidbody.linearVelocity = new Vector2(0, 0);
     }
 
     public virtual void TakeDamage(int damage)
@@ -674,7 +677,7 @@ public abstract class Character : MonoBehaviour
         }
         return obj;
     }
-    protected GameObject SpawnObject(string id, Vector2 pos, int zAngle = 0)
+    public GameObject SpawnObject(string id, Vector2 pos, int zAngle = 0)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
         

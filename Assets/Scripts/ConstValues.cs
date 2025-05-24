@@ -130,7 +130,10 @@ public class ConstValues : Singleton<ConstValues>
     
     // 직업 공용
     public const string DownDust = "DownDust";
-
+    public const string FireFlash = "FireFlash";
+    public const string WarningArea = "WarningArea";
+    
+    public const string Berserker_Slash = "Berserker_Slash";
     public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";
     public const string BerserkerAttack2 = "Berserker_Attack2";
@@ -174,7 +177,13 @@ public class ConstValues : Singleton<ConstValues>
     // 몬스터
     public const string MonsterSpinach = "Monster_Spinach";
     public const string MonsterSpinachAppear = "Monster_Spinach_Appear";
+    
     public const string MonsterSun = "Monster_Sun";
+    public const string MonsterSunAttack1 = "Monster_Sun_Attack1";
+    public const string MonsterSunAttack2SpinObject = "Monster_Sun_Attack2_SpinObject";
+    public const string MonsterSunAttackHit = "Monster_Sun_Attack_Hit";
+    public const string MonsterSunPillar = "Monster_Sun_Pillar";
+    public const string MonsterSunDie = "Monster_Sun_Die";
     public const string MonsterSunLaugh = "Monster_Sun_Laugh";
 
     // 함정

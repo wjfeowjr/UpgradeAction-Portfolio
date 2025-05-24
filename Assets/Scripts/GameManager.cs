@@ -155,6 +155,8 @@ public class GameManager : Singleton<GameManager>
     private string secondPlayer = default;
     private bool controlStart;
     private int comboCount;
+    private int groundLayerMask;
+    private float groundPosY;
 
     // 등록된 스킬 목록
     private SettingSkill changeSkill;
@@ -199,6 +201,12 @@ public class GameManager : Singleton<GameManager>
         set => comboCount = value;
     }
 
+    public float GroundPosY
+    {
+        get => groundPosY;
+        set => groundPosY = value;
+    }
+
     public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
 
     public SettingSkill ChangeSkill => changeSkill;
@@ -225,49 +233,29 @@ public class GameManager : Singleton<GameManager>
     {
         base.Awake();
         Application.targetFrameRate = 60;
+        groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         DefaultKeySetting();
         InitManager();
         InitAtlas();
         InitPlayer();
         InitChangeSkill();
     }
-    
-    // private async void LoadAllPrefabsByLabel()
-    // {
-    //     await Addressables.InitializeAsync();
-    //     
-    //     var handle = Addressables.LoadAssetsAsync<GameObject>(
-    //         "AllPrefabs",
-    //         prefab => objectList.Add(prefab)
-    //     );
-    //     handle.Completed += OnAllPrefabsLoaded;
-    // }
-    // private void OnAllPrefabsLoaded(AsyncOperationHandle<IList<GameObject>> handle)
-    // {
-    //     if (handle.Status == AsyncOperationStatus.Succeeded)
-    //         Debug.Log($"총 {objectList.Count}개 프리팹 로드 완료");
-    //     else
-    //         Debug.LogError("프리팹 일괄 로드 실패");
-    // }
 
     public List<GameObject> GetPrefabList()
     {
         return prefabList;
     }
 
-    // 재귀 순회하여 모든 자식 GameObject 추가
-    private static void CollectRecursive(Transform parent, List<GameObject> list)
-    {
-        foreach (Transform child in parent)
-        {
-            list.Add(child.gameObject);
-            CollectRecursive(child, list);
-        }
-    }
-
     public void GoScene(string sceneName)
     {
         SceneManager.LoadScene(sceneName);
+    }
+
+    public void SetGroundVector()
+    {
+        var downRay = Physics2D.Raycast(transform.position, Vector2.down, 1.0f, groundLayerMask);
+        if (downRay.collider != null)
+            groundPosY = downRay.point.x;
     }
 
     private void DefaultKeySetting()
@@ -483,12 +471,14 @@ public class GameManager : Singleton<GameManager>
         mainCamera.Shake(amount, time);
     }
 
-    public void SpawnMonster(string id, Vector2 monsterVector)
+    public Monster SpawnMonster(string id, Vector2 monsterVector, bool isBoss = false)
     {
         var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
+        monster.IsBoss = isBoss;
         monster.SpawnHpBar();
         monster.Appear();
         monsterList.Add(monster);
+        return monster;
     }
     public void RemoveMonster(Monster monster)
     {
@@ -675,7 +665,6 @@ public class GameManager : Singleton<GameManager>
             case eUIType.UI_Interface:
                 if (uiBase is UI_Interface interfaceView)
                 {
-                    //SetComboPresenter
                     var comboInterface = interfaceView.ComboView.ConvertTo<IUIComboView>();
                     var comboModel = new UIComboModel()
                     {
@@ -695,6 +684,11 @@ public class GameManager : Singleton<GameManager>
                     hpPresenter.SetHp();
                     hpPresenter.SetHpText();
                     
+                    var bossHpInterface = interfaceView.BossHpView.ConvertTo<IUIBossHpView>();
+                    var bossHpPresenter = new UIBossHpPresenter(bossHpInterface);
+                    interfaceView.SetBossHpPresenter(bossHpPresenter);
+                    bossHpPresenter.HideHp();
+
                     // 뷰 리스트를 인터페이스로 변환
                     var changeInterface = interfaceView.ChangeCharacter.ConvertTo<IUISkillView>();
                     var skillInterfaces = interfaceView.SkillViews.ConvertAll(v => (IUISkillView)v);

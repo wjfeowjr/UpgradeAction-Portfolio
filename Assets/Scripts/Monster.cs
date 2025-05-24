@@ -57,6 +57,7 @@ public class JumpAndDropClass
 
 public class Monster : Character
 {
+    [SerializeField] private bool isBoss; // 보스인가?
     [SerializeField] protected MonsterStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] public List<MonsterPatternClass> patternInfo; // 스킬의 우선도와 스킬 사용 가능 여부
     [SerializeField] private JumpAndDropClass jumpInfo;
@@ -70,6 +71,13 @@ public class Monster : Character
     [SerializeField] private Transform hpBarPos;
     [SerializeField] private TotalBar totalBar;
     [SerializeField] private SpriteRenderer[] appearMotions;      // 등장 연출 이미지
+    
+    // 프로퍼티
+    public bool IsBoss
+    {
+        get => isBoss;
+        set => isBoss = value;
+    }
 
     protected override void OnEnable()
     {
@@ -325,8 +333,27 @@ public class Monster : Character
     {
         await UniTask.WaitUntil(() => basicStat.hp > 0);
         await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
-        totalBar = SpawnUI(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
-        totalBar.SetCastCharacter(this);
+
+        if (isBoss)
+        {
+            var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
+            if (uiInterfaceObj == null)
+                return;
+            
+            var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+            var bossHpModel = new UIBossHpModel()
+            {
+                character = this
+            };
+            uiInterface.BossHpPresenter.SetModel(bossHpModel);
+            uiInterface.BossHpPresenter.SetHp();
+            uiInterface.BossHpPresenter.SetHpText();
+        }
+        else
+        {
+            totalBar = SpawnUI(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
+            totalBar.SetCastCharacter(this);
+        }
     }
 
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
@@ -504,9 +531,6 @@ public class Monster : Character
         if (damage == 0)
             return;
         
-        if(totalBar)
-            totalBar.ReduceHpBar(basicStat.hp, basicStat.maxHp, 1.5f);
-        
         var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
         if (uiInterfaceObj == null)
             return;
@@ -514,6 +538,23 @@ public class Monster : Character
         GameManager.Instance.ComboCount += 1;
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
         uiInterface.ComboPresenter.ComboProduct();
+        
+        if (isBoss)
+        {
+            // 보스가 두 마리 이상일 때를 대비
+            var bossHpModel = new UIBossHpModel()
+            {
+                character = this
+            };
+            uiInterface.BossHpPresenter.SetModel(bossHpModel);
+            uiInterface.BossHpPresenter.SetHpText();
+            uiInterface.BossHpPresenter.HpReduce();
+        }
+        else
+        {
+            if(totalBar)
+                totalBar.ReduceHpBar(basicStat.hp, basicStat.maxHp, 1.5f);
+        }
     }
 
     public override void Die()
@@ -911,11 +952,8 @@ public class Monster : Character
         float targetSpeedY = myRigidbody.linearVelocity.y;
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
-    private void EpisodeMoveVertical(float movePosY)
+    protected void EpisodeMoveVertical(float movePosY)
     {
-        if (moveState != EMoveState.Moving)
-            return;
-        
         float targetSpeedX = myRigidbody.linearVelocity.x;
         float targetSpeedY = basicStat.moveSpeed;
         if(transform.position.y > movePosY)

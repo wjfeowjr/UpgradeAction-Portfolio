@@ -22,18 +22,22 @@ public class Missile : MonoBehaviour
     private float limitPosX;
     private bool isDelete;
     private Collider2D myCollider;
+    private SpriteRenderer missileSprite;
     [SerializeField] private MissileInfo missileInfo;
 
     private void Awake()
     {
         myCollider = GetComponent<Collider2D>();
+        missileSprite = GetComponentInChildren<SpriteRenderer>();
     }
 
     private void OnEnable()
     {
         isDelete = false;
         myCollider.enabled = true;
-        
+        if (missileSprite)
+            missileSprite.enabled = true;
+
         // var leftRay = Physics2D.Raycast(transform.position, Vector2.left, missileInfo.limitLength, moveLayerMask);
         // Debug.DrawRay(transform.position, Vector2.left * missileInfo.limitLength, ConstValues.RedColor, 0.1f);
         //
@@ -76,9 +80,17 @@ public class Missile : MonoBehaviour
 
         limitPosX = transform.position.x;
         if (dir == Vector2.left)
+        {
             limitPosX -= missileInfo.limitLength;
+            if(missileSprite)
+                missileSprite.flipX = true;
+        }
         else if (dir == Vector2.right)
+        {
             limitPosX += missileInfo.limitLength;
+            if(missileSprite)
+                missileSprite.flipX = false;
+        }
     }
     
     private void Move()
@@ -127,7 +139,9 @@ public class Missile : MonoBehaviour
         }
 
         myCollider.enabled = false;
-
+        if(missileSprite)
+            missileSprite.enabled = false;
+        
         // 잔상 남기기 용도
         await UniTask.WaitForSeconds(1.0f);
         gameObject.SetActive(false);

@@ -8,7 +8,8 @@ public class Spin : MonoBehaviour
 {
     private float angleZ;
     private float firstSpeed;
-    public float spinSpeed;
+    [SerializeField] private float spinSpeed;
+    [SerializeField] private GameObject[] spinObjects;
 
     private void Awake()
     {
@@ -18,6 +19,8 @@ public class Spin : MonoBehaviour
     private void OnEnable()
     {
         angleZ = 0;
+        foreach (var spinObject in spinObjects)
+            spinObject.SetActive(true);
     }
 
     private void OnDisable()
@@ -39,5 +42,10 @@ public class Spin : MonoBehaviour
             angleZ += spinSpeed * Time.timeScale;
 
         transform.eulerAngles = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, angleZ);
+    }
+
+    public void DeleteSpinObject(int idx)
+    {
+        spinObjects[idx].SetActive(false);
     }
 }

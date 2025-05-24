@@ -17,6 +17,12 @@ public class UI_Interface : UIBase
     private UIHpPresenter uiHpPresenter;
     public UIHpPresenter HpPresenter => uiHpPresenter;
     
+    // 보스체력
+    public UIBossHpView BossHpView => bossHpView;
+    [SerializeField] private UIBossHpView bossHpView;
+    private UIBossHpPresenter uiBossHpPresenter;
+    public UIBossHpPresenter BossHpPresenter => uiBossHpPresenter;
+    
     // 스킬
     public UISkillView ChangeCharacter => changeCharacter;
     public List<UISkillView> SkillViews => skillViews;
@@ -32,6 +38,11 @@ public class UI_Interface : UIBase
     public void SetHpPresenter(UIHpPresenter presenter)
     {
         uiHpPresenter = presenter;
+    }
+    
+    public void SetBossHpPresenter(UIBossHpPresenter presenter)
+    {
+        uiBossHpPresenter = presenter;
     }
     
     public void SetSkillPresenter(UISkillPresenter presenter)

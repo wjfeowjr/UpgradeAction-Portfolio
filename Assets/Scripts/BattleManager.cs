@@ -60,21 +60,26 @@ public class BattleManager : MonoBehaviour
 
     private void Start()
     {
-        episodeTitle = GetKey(ConstValues.Episode);
-        dialogStep = GetKey(ConstValues.DialogStep);
-        customMoveStep = GetKey(ConstValues.CustomMoveStep);
-        playerStep = GetKey(ConstValues.PlayerStep);
-        curStep = GetKey(ConstValues.CurStep);
+        // episodeTitle = GetKey(ConstValues.Episode);
+        // dialogStep = GetKey(ConstValues.DialogStep);
+        // customMoveStep = GetKey(ConstValues.CustomMoveStep);
+        // playerStep = GetKey(ConstValues.PlayerStep);
+        // curStep = GetKey(ConstValues.CurStep);
         
-        // episodeTitle = 1;
-        // dialogStep = 3;
-        // GameManager.Instance.ControlStart = true;
+        episodeTitle = 1;
+        dialogStep = 3;
+        customMoveStep = 2;
+        playerStep = 3;
+        curStep = 3;
+        GameManager.Instance.ControlStart = true;
 
         dialogSwitch = true;
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
-        SpawnEpisode();
         GameManager.Instance.PlatformColliderList = platformColliderList;
+        GameManager.Instance.SetGroundVector();
+        
+        SpawnEpisode();
         GameOverCycle();
         ProductEpisode();
         AccumulatedStep();
@@ -124,7 +129,7 @@ public class BattleManager : MonoBehaviour
     {
         var guideModel = new PopupGuideModel()
         {
-            guideMessage = "<color=#F36B6B>'Z'</color>키를 입력하여 회피 할 수 있습니다.\n회피 도중에는 <color=#F36B6B>'무적'</color>입니다.",
+            guideMessage = "<color=#F36B6B>'Z'</color>키를 입력하여 회피 할 수 있습니다.\n회피 도중에는 <color=#F36B6B>'무적'</color>입니다.\n피격, 넘어짐 상태에서도 사용할 수 있습니다.",
             imgName = "Guide1",
         };
         SpawnGuide(guideModel);
@@ -329,6 +334,9 @@ public class BattleManager : MonoBehaviour
         if (dialogStep == 1)
         {
             dialogSwitch = false;
+            string dialog1 = "ㅋㅋㅋㅋㅋㅋㅋ";
+            string dialog2 = "이거나\n먹어랏~!";
+            
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
             await curPlayer.CustomMove(customMovePos[customMoveStep].position, 1);
@@ -337,10 +345,7 @@ public class BattleManager : MonoBehaviour
             sunObject.gameObject.transform.position = new Vector2(bossPos[1].transform.position.x + 3.5f, bossPos[1].transform.position.y);
             sunObject.gameObject.SetActive(true);
             await sunObject.CustomMove(bossPos[1].transform.position, -1, true);
-            string dialog1 = "ㅋㅋㅋㅋㅋㅋㅋ";
-            string dialog2 = "이거나 먹어랏~!";
-            string dialog3 = "잘 돌파 해보라고";
-            
+
             var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
             var speechFrame2 = GameManager.Instance.SpawnSpeechFrame(ConstValues.SpeechFrame2, speechPosition2, dialog1);
             var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
@@ -350,15 +355,21 @@ public class BattleManager : MonoBehaviour
                 return;
             
             speechFrame2.Speech(dialog2);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
+            sunObject.SpawnObject(ConstValues.FireFlash, sunObject.CenterPos.position);
+            if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            var pillarVector = new Vector2(trapPos[0].position.x, GameManager.Instance.GroundPosY);
+            sunObject.SpawnObject(ConstValues.MonsterSunPillar, pillarVector);
+
             AccumulatedStep();
             
-            speechFrame2.Speech(dialog3);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
-            
+
             speechFrame2.gameObject.SetActive(false);
             
             PlaySound(ConstValues.MonsterSunLaugh);
@@ -373,8 +384,8 @@ public class BattleManager : MonoBehaviour
 
         if (dialogStep == 1)
         {
-            string dialog1 = "저기 스치면 원자 단위로 쪼개지겠지?";
-            string dialog2 = "Z키로 불기둥을 돌파해야겠어";
+            string dialog1 = "불기둥이 너무 뜨거워!";
+            string dialog2 = "회피를 사용해야겠어!";
             
             dialogCancellation = new CancellationTokenSource();
             var speechPosition = curPlayer.FontPos.position;
@@ -429,9 +440,9 @@ public class BattleManager : MonoBehaviour
         if (dialogStep == 2)
         {
             string dialog1 = "뭐야 이 시금치들은!!";
-            string dialog2 = "여긴 우리 구역이다.";
-            string dialog3 = "그래, 당장 꺼져!";
-            string dialog4 = "뭐라는거야! 그냥 나랑 싸우자!!";
+            string dialog2 = "여긴 우리\n구역이다.";
+            string dialog3 = "그래\n당장 꺼져!";
+            string dialog4 = "악!!!!!!!!";
 
             var speechPosition = curPlayer.FontPos.position;
             var speechFrame = GameManager.Instance.SpawnSpeechFrame(ConstValues.SpeechFrame1,speechPosition, dialog1);
@@ -498,12 +509,19 @@ public class BattleManager : MonoBehaviour
         if (dialogStep == 4)
         {
             dialogSwitch = false;
+            string dialog1 = "널 뿌셔버리려고\n여기까지 왔다!";
+
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
             await curPlayer.CustomMove(customMovePos[customMoveStep].position, 1);
-        
-            string dialog1 = "태양이군!";
+            
+            var sunPos = new Vector2(bossPos[2].transform.position.x, bossPos[2].transform.position.y + 3.5f);
+            sunObject = GameManager.Instance.SpawnMonster(ConstValues.MonsterSun, sunPos, true);
+            
             dialogCancellation = new CancellationTokenSource();
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
             var speechPosition = curPlayer.FontPos.position;
             var speechFrame = GameManager.Instance.SpawnSpeechFrame(ConstValues.SpeechFrame1,speechPosition, dialog1);
                 
