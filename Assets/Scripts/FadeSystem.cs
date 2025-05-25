@@ -9,7 +9,7 @@ using UnityEngine.Serialization;
 
 public class FadeSystem : MonoBehaviour
 {
-    private CancellationToken myCancellationToken;
+    private CancellationTokenSource fadeCancellation;
     [SerializeField] private Ease myEase;
     [SerializeField] private Image[] myImages;
     [SerializeField] private TextMeshProUGUI[] myTexts;
@@ -24,21 +24,15 @@ public class FadeSystem : MonoBehaviour
 
     private void Awake()
     {
-        myCancellationToken = this.GetCancellationTokenOnDestroy();
+        fadeCancellation = new CancellationTokenSource();
     }
 
-    private void OnEnable()
+    public void SetParameter(float setStart, float setEnd, float setDuration, bool delete)
     {
-        Fade().Forget();
-    }
-
-    public void AreaSetting(float settingDuration, Color color, int orderLayer)
-    {
-        duration = settingDuration;
-        endDelay = settingDuration;
-        ColorInput(color);
-        foreach (var mySpriteRenderer in mySpriteRenderers)
-            mySpriteRenderer.sortingOrder = orderLayer;
+        startAlpha = setStart;
+        endAlpha = setEnd;
+        duration = setDuration;
+        endDelete = delete;
     }
 
     public void ColorInput(Color color)
@@ -51,7 +45,7 @@ public class FadeSystem : MonoBehaviour
             mySpriteRenderer.color = color;
     }
 
-    private async UniTaskVoid Fade()
+    public async UniTask Fade()
     {
         foreach (var myImage in myImages)
         {
@@ -72,7 +66,7 @@ public class FadeSystem : MonoBehaviour
             mySpriteRenderer.color = spriteRendererColor;
         }
         
-        await UniTask.Delay(TimeSpan.FromSeconds(startDelay), cancellationToken: myCancellationToken);
+        await UniTask.Delay(TimeSpan.FromSeconds(startDelay), cancellationToken: fadeCancellation.Token);
 
         if (loopCount == -1)
         {
@@ -95,8 +89,8 @@ public class FadeSystem : MonoBehaviour
                 foreach (var mySpriteRenderer in mySpriteRenderers)
                     mySpriteRenderer.DOFade(endAlpha, duration).SetEase(myEase);
                 
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: myCancellationToken);
-                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), cancellationToken: myCancellationToken);
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), cancellationToken: fadeCancellation.Token);
                 // 반복횟수를 넘어가면 즉시 빠져나옴
                 currentLoop += 1;
                 if (currentLoop >= loopCount)
@@ -109,8 +103,8 @@ public class FadeSystem : MonoBehaviour
                 foreach (var mySpriteRenderer in mySpriteRenderers)
                     mySpriteRenderer.DOFade(startAlpha, duration).SetEase(myEase);
                 
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: myCancellationToken);
-                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), cancellationToken: myCancellationToken);
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), cancellationToken: fadeCancellation.Token);
                 // 반복횟수를 넘어가면 즉시 빠져나옴
                 currentLoop += 1;
                 if (currentLoop >= loopCount)
@@ -118,7 +112,7 @@ public class FadeSystem : MonoBehaviour
             }
         }
 
-        await UniTask.WaitUntil(() => loopCount > -1, cancellationToken: myCancellationToken);
+        await UniTask.WaitUntil(() => loopCount > -1, cancellationToken: fadeCancellation.Token);
         if (endDelete)
             gameObject.SetActive(false);
     }

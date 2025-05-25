@@ -87,7 +87,7 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
         if(!nameText.gameObject.activeSelf)
             nameText.gameObject.SetActive(true);
 
-        nameText.text = character.name;
+        nameText.text = character.BasicStat.name;
     }
 
     // 체력

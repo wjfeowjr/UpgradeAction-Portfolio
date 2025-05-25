@@ -70,7 +70,7 @@ public enum EBuffType
 public class BasicStat
 {
     public string id;
-    public int name;
+    public string name;
     public EBodyType bodyType;
     public int hp;
     public int maxHp;
@@ -112,7 +112,7 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected ELandingState landingState;
     [SerializeField] protected List<Buff> buffList = new List<Buff>();
     
-    [SerializeField] private Transform diePos;
+    [SerializeField] protected Transform diePos;
     [SerializeField] protected Transform buffEffectPos;
     [SerializeField] protected Transform centerPos;
     [SerializeField] protected Transform fontPos;
@@ -125,11 +125,14 @@ public abstract class Character : MonoBehaviour
     protected Vector2 chargeVector;
     protected int jumpAttackCount;
     protected bool isDie;
+    protected float myGravity;
+    protected bool lockJumpAttack;
     protected bool downJumping;
     
     private int airborneCount;     // 에어본 카운트
     private int platformLayerMask;
     private int groundAndPlatformLayerMask;
+    protected int wallLayerMask;
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
@@ -140,7 +143,12 @@ public abstract class Character : MonoBehaviour
     public GameObject GroundObject => groundObject;
     public Transform CenterPos => centerPos;
     public Transform FontPos => fontPos;
-    public bool Immortal => immortal;
+
+    public bool Immortal
+    {
+        get => immortal;
+        set => immortal = value;
+    }
     public bool ImmuneStagger => immuneStagger;
     public bool IsDie => isDie;
 
@@ -166,9 +174,11 @@ public abstract class Character : MonoBehaviour
         }
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        myGravity = myRigidbody.gravityScale;
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
-        
+        wallLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
+
         ScaleSetting();
         ColSizeSetting();
     }
@@ -441,7 +451,7 @@ public abstract class Character : MonoBehaviour
         textFont.DisplayFont(55, damage.ToString());
     }
 
-    public void SpawnHitEffect(string id, float minScale = 1.0f)
+    public void SpawnHitEffect(string id, float minScale = 1.0f, float maxScale = 1.0f)
     {
         var randomVector = Vector3.one;
         
@@ -456,13 +466,161 @@ public abstract class Character : MonoBehaviour
         
         if (minScale < 1.0f)
         {
-            var randomScale = Random.Range(minScale, 1.0f);
+            var randomScale = Random.Range(minScale, maxScale);
             randomVector = new Vector3(randomScale, randomScale, randomScale);
         }
         effectObj.transform.localScale = randomVector;
     }
+    
+    // 공격 소환(데이터 삽입용)
+    protected GameObject SpawnAttackObject(string id, Transform attackTransform, int zAngle = 0)
+    {
+        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform); 
+        
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        if (objectData != null)
+        {
+            var spawnedObject = obj.GetComponent<SpawnedObject>();
+            if (!spawnedObject)
+                spawnedObject = obj.AddComponent<SpawnedObject>();
+            
+            spawnedObject.SetupData(objectData, transform.localScale.x);
+            spawnedObject.EnableSetting();
+            if (zAngle != 0)
+            {
+                var finalAngle = zAngle;
+                if (transform.localScale.x < 0)
+                    finalAngle = -zAngle;
+            
+                var objectAngle = spawnedObject.transform.eulerAngles;
+                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+            }
+            
+            if(spawnedObject.GetObjectTime() == 0)
+                AddObjectList(controlObject, obj);
 
-    // 공격 소환
+            if (spawnedObject.GetTrace())
+            {
+                var trace = obj.GetComponent<Trace>();
+                if(!trace)
+                    trace = obj.AddComponent<Trace>();
+                
+                trace.SetTarget(attackTransform);
+            }
+        }
+
+        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
+        if (attackData != null)
+        {
+            var attack = obj.GetComponent<Attack>();
+            if (!attack)
+            {
+                attack = obj.AddComponent<Attack>();
+                attack.SetupData(this, attackData);
+            }
+
+            attack.EnableSetting();
+        }
+        
+        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
+        if (missileData != null)
+        {
+            var missile = obj.GetComponent<Missile>();
+            if (!missile)
+                missile = obj.AddComponent<Missile>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            missile.SetupData(missileData, dir, SpawnAttack);
+        }
+        
+        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
+        if (grenadeData != null)
+        {
+            var grenade = obj.GetComponent<Grenade>();
+            if (!grenade)
+                grenade = obj.AddComponent<Grenade>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            grenade.SetupData(grenadeData, dir, SpawnAttack);
+            grenade.Throw();
+        }
+
+        return obj;
+    }
+    protected GameObject SpawnAttackObject(string id, Vector2 pos, int zAngle = 0)
+    {
+        var obj = GameManager.Instance.SpawnToObjectPool(id, pos); 
+        
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        if (objectData != null)
+        {
+            var spawnedObject = obj.GetComponent<SpawnedObject>();
+            if (!spawnedObject)
+                spawnedObject = obj.AddComponent<SpawnedObject>();
+            
+            spawnedObject.SetupData(objectData, transform.localScale.x);
+            spawnedObject.EnableSetting();
+            if (zAngle != 0)
+            {
+                var finalAngle = zAngle;
+                if (transform.localScale.x < 0)
+                    finalAngle = -zAngle;
+            
+                var objectAngle = spawnedObject.transform.eulerAngles;
+                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+            }
+            
+            if(spawnedObject.GetObjectTime() == 0)
+                AddObjectList(controlObject, obj);
+        }
+
+        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
+        if (attackData != null)
+        {
+            var attack = obj.GetComponent<Attack>();
+            if (!attack)
+            {
+                attack = obj.AddComponent<Attack>();
+                attack.SetupData(this, attackData);
+            }
+
+            attack.EnableSetting();
+        }
+        
+        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
+        if (missileData != null)
+        {
+            var missile = obj.GetComponent<Missile>();
+            if (!missile)
+                missile = obj.AddComponent<Missile>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            missile.SetupData(missileData, dir, SpawnAttack);
+        }
+        
+        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
+        if (grenadeData != null)
+        {
+            var grenade = obj.GetComponent<Grenade>();
+            if (!grenade)
+                grenade = obj.AddComponent<Grenade>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            grenade.SetupData(grenadeData, dir, SpawnAttack);
+            grenade.Throw();
+        }
+        return obj;
+    }
+
+    // 공격 소환(데이터 삽입용)
     protected void SpawnAttack(string id, Transform attackTransform, int zAngle = 0)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform); 
@@ -744,19 +902,31 @@ public abstract class Character : MonoBehaviour
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
-
+    
     // 행동 캔슬
     protected void CancelMotion()
     {
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
-        immortal = false;
         downJumping = false;
-        
+
         ClearObjectList(controlObject);
         ClearObjectList(normalObject);
-        GravityChange(ConstValues.BasicGravity);
+        GravityChange(myGravity);
         myRigidbody.linearVelocity = Vector2.zero;
+
+        switch (normalState)
+        {
+            case ENormalState.Dash:
+                immortal = false;
+                break;
+        }
+    }
+    // 특수한 행동을 추가로 끊는 캔슬모션
+    protected void CancelMotionAddition()
+    {
+        CancelMotion();
+        lockJumpAttack = false;
     }
 
     private void AddObjectList(List<GameObject> list, GameObject obj)
@@ -907,7 +1077,7 @@ public abstract class Character : MonoBehaviour
 
     public virtual void Die()
     {
-        CancelMotion();
+        CancelMotionAddition();
         ClearObjectList(buffObject);
         
         StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
@@ -918,7 +1088,7 @@ public abstract class Character : MonoBehaviour
     }
     public async void Grabbed(Vector3 grabVector)
     {
-        CancelMotion();
+        CancelMotionAddition();
         StateSetting(ENormalState.Grabbed, ConstValues.Grabbed, ConstValues.Grabbed);
         MoveStateSetting(EMoveState.Stopping);
         
@@ -942,8 +1112,8 @@ public abstract class Character : MonoBehaviour
     }
     public void Airborne(float xVelocity, float yVelocity)
     {
-        CancelMotion();
-        
+        CancelMotionAddition();
+
         airborneCount = 1;
         LandingStateSetting(ELandingState.Air);
         MoveStateSetting(EMoveState.Stopping);
@@ -958,6 +1128,7 @@ public abstract class Character : MonoBehaviour
     private void Bound(float xVelocity, float yVelocity)
     {
         StateSetting(ENormalState.Airborne, ConstValues.Airborne, ConstValues.Airborne);
+        // 공중몹도 떴다 떨어지기 때문에 기본 중력값으로 변환
         GravityChange(ConstValues.BasicGravity);
         myRigidbody.linearVelocity = new Vector2(xVelocity, yVelocity);
     }
@@ -1038,7 +1209,7 @@ public abstract class Character : MonoBehaviour
             return;
         }
         
-        CancelMotion();
+        CancelMotionAddition();
         stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
     }
@@ -1051,7 +1222,7 @@ public abstract class Character : MonoBehaviour
             return;
         }
         
-        CancelMotion();
+        CancelMotionAddition();
         stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Damaged, ConstValues.Damaged, ConstValues.Damaged);
         MoveStateSetting(EMoveState.Stopping);
@@ -1156,6 +1327,7 @@ public abstract class Character : MonoBehaviour
         
         PlaySound(ConstValues.Jump1);
         downJumping = true;
+        lockJumpAttack = true;
         IgnorePlatform(true);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
 
@@ -1168,7 +1340,8 @@ public abstract class Character : MonoBehaviour
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
-        
+        lockJumpAttack = false;
+
         while (pastGround == groundObject)
         {
             var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
@@ -1181,7 +1354,7 @@ public abstract class Character : MonoBehaviour
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
-
+        
         downJumping = false;
     }
 

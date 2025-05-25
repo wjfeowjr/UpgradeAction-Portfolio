@@ -11,6 +11,9 @@ public class SpeechFrame : MonoBehaviour
     }
     public void Speech(string dialog)
     {
+        if(!gameObject.activeSelf)
+            gameObject.SetActive(true);
+        
         PlaySound();
         dialogText.text = dialog;
     }

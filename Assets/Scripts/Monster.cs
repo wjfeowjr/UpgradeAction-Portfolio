@@ -382,7 +382,7 @@ public class Monster : Character
     }
 
     // 등장
-    public async void Appear()
+    public async void Appear(Action bossProduct)
     {
         await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
         StandHitBox();
@@ -390,15 +390,13 @@ public class Monster : Character
         MoveStateSetting(EMoveState.Stopping);
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         
-        AppearProduction();
+        AppearProduction(bossProduct);
     }
-    protected virtual async void AppearProduction()
+    protected virtual async void AppearProduction(Action bossProduct)
     {
         stateCancellation = new CancellationTokenSource();
         myBoxCollider.enabled = true;
-        
-        if(!myStat.hovering) 
-            GravityChange(ConstValues.BasicGravity);
+        GravityChange(myGravity);
         
         myAnimator.transform.localScale = new Vector3(myAnimator.transform.localScale.x, myAnimator.transform.localScale.y * 2.6f, myAnimator.transform.localScale.z);
         bool finishSuccess = true;
@@ -422,6 +420,7 @@ public class Monster : Character
             MoveStateSetting(EMoveState.Moving);
             StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         }
+        bossProduct?.Invoke();
         FirstCoolTimeReduce();
     }
     // 등장모션
@@ -567,6 +566,23 @@ public class Monster : Character
         
         totalBar.gameObject.SetActive(false);
         totalBar = null;
+    }
+    public async void DieShake()
+    {
+        stateCancellation = new CancellationTokenSource();
+        Vector2 myVector = transform.position;
+        
+        while(gameObject.activeSelf)
+        {
+            var randPos = Random.Range(-0.05f, 0.05f);
+            transform.position = new Vector2(myVector.x + randPos, myVector.y + randPos);
+            await YieldDelay(stateCancellation);
+        }
+    }
+    public void DieExplosion()
+    {
+        SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
+        gameObject.SetActive(false);
     }
     
     // 공격 딜레이
@@ -895,6 +911,37 @@ public class Monster : Character
         return new Vector2(vx, vy);
     }
     
+    // 위험영역 소환
+    private FadeSystem WarningAreaSpawn(float duration, Color color, Vector2 pos, Vector3 angle, Vector2 scale)
+    {
+        GameObject warningArea = SpawnObject(ConstValues.WarningArea, pos);
+        warningArea.transform.eulerAngles = angle;
+        warningArea.transform.localScale = scale;
+        warningArea.SetActive(true);
+        
+        var fadeSystem = warningArea.GetComponent<FadeSystem>();
+        fadeSystem.SetParameter(1.0f, 0f, duration, true);
+        fadeSystem.ColorInput(color);
+        return fadeSystem;
+    }
+    
+    // 위험영역 표시(콜라이더)
+    protected async UniTask WarningAreaSpawnCollider(Vector2 pos, Vector3 angle, BoxCollider2D targetCollider, float duration, Color color)
+    {
+        float scaleX = Mathf.Abs(targetCollider.gameObject.transform.localScale.x);
+        float scaleY = Mathf.Abs(targetCollider.gameObject.transform.localScale.y);
+
+        float posX = targetCollider.offset.x * scaleX;
+        float posY = targetCollider.offset.y * scaleY;
+
+        Vector2 finalPos = new Vector2(pos.x + posX, pos.y + posY);
+        Vector2 finalScale = new Vector2(scaleX * targetCollider.size.x,scaleY * targetCollider.size.y);
+
+        FadeSystem warningArea = WarningAreaSpawn(duration, color, finalPos, angle, finalScale);
+        await warningArea.Fade();
+    }
+    
+    // 스토리 연출
     public async UniTask CustomMove(Vector2 movePos, int finishDir, bool horizontal)
     {
         StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);

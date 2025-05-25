@@ -23,12 +23,21 @@ public class SkillDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         canvasCamera = canvas.worldCamera;
     }
 
+    private void Update()
+    {
+        if (!GameManager.Instance.ControlStart && skillImageTransform)
+        {
+            skillImageTransform.gameObject.SetActive(false);
+            skillImageTransform = null;
+        }
+    }
+
     public void OnBeginDrag(PointerEventData eventData)
     {
         //Debug.Log("드래그 시작");
         
         mySkillView = GetSkillView(eventData);
-        if (mySkillView == null || string.IsNullOrEmpty(mySkillView.GetSkillId()))
+        if (mySkillView == null || string.IsNullOrEmpty(mySkillView.GetSkillId()) || !GameManager.Instance.ControlStart)
             return;
         
         skillImageTransform = GameManager.Instance.SpawnToHighestPool(ConstValues.SkillImage, eventData.position).GetComponent<RectTransform>();
@@ -45,7 +54,7 @@ public class SkillDragHandler : MonoBehaviour, IBeginDragHandler, IDragHandler, 
         // Canvas 스케일에 맞춰 이동
         //Debug.Log("드래그 중");
 
-        if (mySkillView == null || string.IsNullOrEmpty(mySkillView.GetSkillId()))
+        if (mySkillView == null || string.IsNullOrEmpty(mySkillView.GetSkillId()) || !GameManager.Instance.ControlStart)
             return;
 
         Vector2 screenPoint = eventData.position;

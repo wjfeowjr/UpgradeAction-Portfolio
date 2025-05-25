@@ -44,6 +44,12 @@ public class PopupGuidePresenter
         _model.closeAction = action;
         guideView.SetAction(_model.closeAction);
     }
+    
+    public void EscClose()
+    {
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
+            _model.closeAction?.Invoke();
+    }
 }
 
 public class PopupGuideView : MonoBehaviour, IUIGuideView

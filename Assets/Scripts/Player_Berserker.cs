@@ -55,7 +55,7 @@ public class Player_Berserker : Player
     
     public override async void Attack()
     {
-        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged())
+        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged() || lockJumpAttack)
             return;
         
         if(!GetGlobalCoolTime())
@@ -63,7 +63,7 @@ public class Player_Berserker : Player
             Debug.Log("글로벌 쿨타임이 지나지 않음");
             return;
         }
-
+        
         Debug.Log("공격 시작");
         curGlobalCoolTime = 0;
         CancelMotion();
@@ -202,7 +202,7 @@ public class Player_Berserker : Player
             float jumpAttackDelay4 = 0.6f;
 
             MotionFlip();
-            GravityChange(ConstValues.BasicGravity);
+            GravityChange(myGravity);
             StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack2, ConstValues.JumpAttack2Start);
             if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow())
                 return false;
@@ -231,6 +231,11 @@ public class Player_Berserker : Player
 
     public override async void Skill(KeyCode skillKey)
     {
+        if (Time.timeScale == 0)
+            return;
+        
+        lockJumpAttack = false;
+        
         var skillId = GameManager.Instance.PlayerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
@@ -246,7 +251,7 @@ public class Player_Berserker : Player
         if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
 
-        CancelMotion();
+        CancelMotionAddition();
         MotionFlip();
         
         stateCancellation = new CancellationTokenSource();
@@ -280,7 +285,7 @@ public class Player_Berserker : Player
         }
         
         Debug.Log($"{skillKey} 스킬 끝");
-        GravityChange(ConstValues.BasicGravity);
+        GravityChange(myGravity);
         // 동작이 끝날때 반환하는 트리거
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
@@ -405,7 +410,7 @@ public class Player_Berserker : Player
         
         SpawnAttack(ConstValues.BerserkerChargeCrashSmash, chargeCrashSmashPos);
         SpawnObject(ConstValues.BerserkerChargeCrashSmashEffect, chargeCrashSmashEffectPos);
-        GravityChange(ConstValues.BasicGravity); 
+        GravityChange(myGravity);
         
         if (await AttackDelay(delay3).SuppressCancellationThrow())
             return false;

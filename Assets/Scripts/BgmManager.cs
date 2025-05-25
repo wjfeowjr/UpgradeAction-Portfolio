@@ -37,10 +37,20 @@ public class BgmManager : Singleton<BgmManager>
         myAudioSource.resource = bgmDic[uniqueId];
         myAudioSource.Play();
     }
+    
+    public void Play()
+    {
+        myAudioSource.Play();
+    }
+    
+    public void Stop()
+    {
+        myAudioSource.Stop();
+    }
 
     public void ReplayBgm()
     {
-        myAudioSource.Stop();
-        myAudioSource.Play();
+        Stop();
+        Play();
     }
 }

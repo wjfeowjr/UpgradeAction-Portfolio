@@ -100,7 +100,7 @@ public class PlayerData
 {
     // 공통 데이터
     public string id;
-    public int name;
+    public string name;
     public string bodyType;
     public int hp;
     public int power;
@@ -132,7 +132,7 @@ public class MonsterData
 {
     // 공통 데이터
     public string id;
-    public int name;
+    public string name;
     public string bodyType;
     public int hp;
     public int power;

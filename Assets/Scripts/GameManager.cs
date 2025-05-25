@@ -103,6 +103,8 @@ public enum eUIType
     // UI
     UI_Interface,
     UI_Episode,
+    UI_BossMessage,
+    UI_StageClear,
     
     // 팝업
     Popup_GameOver,
@@ -113,6 +115,8 @@ public class GameManager : Singleton<GameManager>
 {
     public Material defaultMaterial;
     public Material hitMaterial;
+    
+    public KeyCode escKey;
     
     public KeyCode leftMoveKey;
     public KeyCode rightMoveKey;
@@ -253,14 +257,16 @@ public class GameManager : Singleton<GameManager>
 
     public void SetGroundVector()
     {
-        var downRay = Physics2D.Raycast(transform.position, Vector2.down, 1.0f, groundLayerMask);
+        var downRay = Physics2D.Raycast(transform.position, Vector2.down, 100f, groundLayerMask);
         if (downRay.collider != null)
-            groundPosY = downRay.point.x;
+            groundPosY = downRay.point.y;
     }
 
     private void DefaultKeySetting()
     {
         PlayerPrefs.DeleteAll();
+
+        escKey = KeyCode.Escape;
         
         leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
@@ -471,12 +477,12 @@ public class GameManager : Singleton<GameManager>
         mainCamera.Shake(amount, time);
     }
 
-    public Monster SpawnMonster(string id, Vector2 monsterVector, bool isBoss = false)
+    public Monster SpawnMonster(string id, Vector2 monsterVector, bool isBoss = false, Action bossProduct = null)
     {
         var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
         monster.IsBoss = isBoss;
         monster.SpawnHpBar();
-        monster.Appear();
+        monster.Appear(bossProduct);
         monsterList.Add(monster);
         return monster;
     }
@@ -577,6 +583,17 @@ public class GameManager : Singleton<GameManager>
     public GameObject SpawnToHighestPool(string id, Vector2 objVector)
     {
         return SpawnToPool(id, highestPool, objVector);
+    }
+
+    public BoxCollider2D ObjectCollider(string id)
+    {
+        var go = prefabList.Find(x => x.name == id).gameObject;
+        if (go != null)
+        {
+            var targetCollider = go.GetComponent<BoxCollider2D>();
+            return targetCollider;
+        }
+        return null;
     }
 
     private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)

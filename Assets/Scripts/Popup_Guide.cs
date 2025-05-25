@@ -7,12 +7,14 @@ public class Popup_Guide : UIBase
     
     [SerializeField] private PopupGuideView guideView;
     private PopupGuidePresenter popupGuidePresenter;
-    
-    // 프로퍼티
-    public PopupGuidePresenter PopupGameOverPresenter => popupGuidePresenter;
-    
+
     public void SetGuidePresenter(PopupGuidePresenter presenter)
     {
         popupGuidePresenter = presenter;
+    }
+    
+    private void Update()
+    {
+        popupGuidePresenter?.EscClose();
     }
 }

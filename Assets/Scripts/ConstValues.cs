@@ -57,6 +57,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string SkillImage = "SkillImage";
     public const string SpeechFrame1 = "SpeechFrame1";
     public const string SpeechFrame2 = "SpeechFrame2";
+    public const string SpeechFrameTitle = "SpeechFrame_Title";
+    
     public const string Effect = "Effect";
 
     public const string Berserker = "Berserker";
@@ -132,8 +134,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string DownDust = "DownDust";
     public const string FireFlash = "FireFlash";
     public const string WarningArea = "WarningArea";
+    public const string FadeBg = "FadeBg";
     
-    public const string Berserker_Slash = "Berserker_Slash";
+    public const string BerserkerSlash = "Berserker_Slash";
     public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";
     public const string BerserkerAttack2 = "Berserker_Attack2";
@@ -141,6 +144,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerJumpAttack1 = "Berserker_JumpAttack1";
     public const string BerserkerJumpAttack2 = "Berserker_JumpAttack2";
     public const string BerserkerJumpAttack2Effect = "Berserker_JumpAttack2_Effect";
+    public const string BerserkerAttackHitCrit = "Berserker_Attack_Hit_Crit";
 
     public const string BerserkerDash = "Berserker_Dash";
     public const string BerserkerUpperSlash = "Berserker_UpperSlash";
@@ -180,6 +184,7 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string MonsterSun = "Monster_Sun";
     public const string MonsterSunAttack1 = "Monster_Sun_Attack1";
+    public const string MonsterSunAttack2 = "Monster_Sun_Attack2";
     public const string MonsterSunAttack2SpinObject = "Monster_Sun_Attack2_SpinObject";
     public const string MonsterSunAttackHit = "Monster_Sun_Attack_Hit";
     public const string MonsterSunPillar = "Monster_Sun_Pillar";
@@ -224,4 +229,6 @@ public class ConstValues : Singleton<ConstValues>
     public const string Popup = "Popup";
     public const string RewardPage = "RewardPage";
     public const string SpeechFrame = "SpeechFrame";
+    public const string WarningSound = "WarningSound";
+    public const string ChickenCock = "ChickenCock";
 }

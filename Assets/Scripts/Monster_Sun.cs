@@ -2,10 +2,15 @@ using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 public class Monster_Sun : Monster
 {
     [SerializeField] private Transform attackPos;
+
+    private float pointA;
+    private float pointB;
+    private Vector2 dir;
 
     protected override void OnEnable()
     {
@@ -14,13 +19,11 @@ public class Monster_Sun : Monster
     }
     
     // 등장
-    protected override async void AppearProduction()
+    protected override async void AppearProduction(Action bossProduct)
     {
         myBoxCollider.enabled = false;
-        
-        if(!myStat.hovering) 
-            GravityChange(ConstValues.BasicGravity);
-        
+        MoveStateSetting(EMoveState.Stopping);
+        GravityChange(myGravity);
         PlaySound(ConstValues.RewardPage);
         var movePos = new Vector2(transform.position.x, transform.position.y - 3.5f);
         
@@ -31,12 +34,14 @@ public class Monster_Sun : Monster
             await FixedYieldDelay(stateCancellation);
         }
         ZeroVelocity();
+        await UniTask.WaitUntil(() => GameManager.Instance.ControlStart && Time.timeScale > 0);
         
-        await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
         MoveStateSetting(EMoveState.Moving);
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         FirstCoolTimeReduce();
         myBoxCollider.enabled = true;
+        PatrolRay();
+        bossProduct?.Invoke();
     }
 
     protected override void MonsterPattern(int idx)
@@ -45,9 +50,25 @@ public class Monster_Sun : Monster
         switch (idx)
         {
             case 0:
-                ShotFire();
+                RisingFire();
+                break;
+            case 1:
+                FireBall();
                 break;
         }
+    }
+
+    private void PatrolRay()
+    {
+        var leftRay = Physics2D.Raycast(CenterPos.position, Vector2.left, 20f, wallLayerMask);
+        Debug.DrawRay(CenterPos.position, Vector2.left * 20f, ConstValues.RedColor, 0.1f);
+        pointA = leftRay.point.x + physicsCollider.size.x;
+        
+        var rightRay = Physics2D.Raycast(CenterPos.position, Vector2.right, 20f, wallLayerMask);
+        Debug.DrawRay(CenterPos.position, Vector2.right * 20f, ConstValues.BlueColor, 0.1f);
+        pointB = rightRay.point.x - physicsCollider.size.x;
+        
+        dir = Vector2.left;
     }
     
     protected override void Move()
@@ -56,12 +77,88 @@ public class Monster_Sun : Monster
         if (moveState != EMoveState.Moving)
             return;
         
+        float targetSpeedX = basicStat.moveSpeed * dir.x;
+        float targetSpeedY = myRigidbody.linearVelocity.y;
+
+        if (dir == Vector2.left)
+        {
+            if (Vector2.Distance(transform.position, new Vector2(pointA, transform.position.y)) < 0.1f)
+            {
+                dir = Vector2.right;
+                StopVelocity();
+            }
+        }
+        else if (dir == Vector2.right)
+        {
+            if (Vector2.Distance(transform.position, new Vector2(pointB, transform.position.y)) < 0.1f)
+            {
+                dir = Vector2.left;
+                StopVelocity();
+            }
+        }
         
+        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
     
-    // 불꽃발사
-    private async void ShotFire()
+    // 불기둥
+    private async void RisingFire()
     {
-        Debug.Log("불꽃발사!");
+        float delay1 = 0.2f;
+        float delay2 = 0.5f;
+        float fadeSpeed = 0.4f;
+        
+        var firePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, GameManager.Instance.GroundPosY);
+        var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterSunAttack1);
+        SpawnObject(ConstValues.FireFlash, CenterPos);
+        
+        await WarningAreaSpawnCollider(firePos, Vector3.zero, targetCollider, fadeSpeed, ConstValues.RedColor);
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        
+        SpawnAttack(ConstValues.MonsterSunAttack1, firePos);
+        
+        if(await AttackDelay(delay2).SuppressCancellationThrow())
+            return;
+        
+        PatternEnd();
+    }
+    
+    // 파이어볼
+    private async void FireBall()
+    {
+        float delay1 = 1.0f;
+        float delay2 = 0.5f;
+        float delay3 = 1.0f;
+
+        var spinObject = SpawnObject(ConstValues.MonsterSunAttack2SpinObject, CenterPos).GetComponent<Spin>();
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+
+        for (int i = 0; i < 3; i++)
+        {
+            spinObject.DeleteSpinObject(i);
+            
+            var attackObject = SpawnAttackObject(ConstValues.MonsterSunAttack2, CenterPos).GetComponent<Missile>();
+            attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
+            if(await AttackDelay(delay2).SuppressCancellationThrow())
+                return;
+        }
+        
+        if(await AttackDelay(delay3).SuppressCancellationThrow())
+            return;
+        spinObject.gameObject.SetActive(false);
+        PatternEnd();
+    }
+    
+    public override void Die()
+    {
+        myBoxCollider.enabled = false;
+        
+        CancelMotion();
+        ClearObjectList(buffObject);
+        
+        MoveStateSetting(EMoveState.Stopping);
+        isDie = true;
+        GameManager.Instance.RemoveMonster(this);
     }
 }

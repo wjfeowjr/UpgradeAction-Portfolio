@@ -146,6 +146,14 @@ public class Missile : MonoBehaviour
         await UniTask.WaitForSeconds(1.0f);
         gameObject.SetActive(false);
     }
+    
+    public void LookAtTarget(Vector2 target)
+    {
+        if(dir == Vector2.left)
+            transform.LookAt2D(target, -180);
+        else if(dir == Vector2.right)
+            transform.LookAt2D(target); 
+    }
 
     // 미사일 소멸에만 관여(공격판정은 여기서 정하지 않는다)
     private void OnTriggerEnter2D(Collider2D col)
