@@ -35,6 +35,7 @@ public class Grenade : MonoBehaviour
     private void Awake()
     {
         myRigidbody  = GetComponent<Rigidbody2D>();
+        myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
         myCollider = GetComponent<Collider2D>();
 
         angular = 720f;

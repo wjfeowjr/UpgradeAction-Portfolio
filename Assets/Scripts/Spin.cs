@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -16,9 +17,11 @@ public class Spin : MonoBehaviour
         firstSpeed = spinSpeed;
     }
 
-    private void OnEnable()
+    private async void OnEnable()
     {
         angleZ = 0;
+
+        await UniTask.Yield();
         foreach (var spinObject in spinObjects)
             spinObject.SetActive(true);
     }
@@ -37,9 +40,9 @@ public class Spin : MonoBehaviour
     private void SpinAngle()
     {
         if (transform.localScale.x > 0)
-            angleZ -= spinSpeed * Time.timeScale;
+            angleZ -= spinSpeed * Time.deltaTime;
         else
-            angleZ += spinSpeed * Time.timeScale;
+            angleZ += spinSpeed * Time.deltaTime;
 
         transform.eulerAngles = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, angleZ);
     }

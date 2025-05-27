@@ -63,18 +63,18 @@ public class BattleManager : MonoBehaviour
 
     private void Start()
     {
-        episodeTitle = GetKey(ConstValues.Episode);
-        dialogStep = GetKey(ConstValues.DialogStep);
-        customMoveStep = GetKey(ConstValues.CustomMoveStep);
-        playerStep = GetKey(ConstValues.PlayerStep);
-        curStep = GetKey(ConstValues.CurStep);
+        // episodeTitle = GetKey(ConstValues.Episode);
+        // dialogStep = GetKey(ConstValues.DialogStep);
+        // customMoveStep = GetKey(ConstValues.CustomMoveStep);
+        // playerStep = GetKey(ConstValues.PlayerStep);
+        // curStep = GetKey(ConstValues.CurStep);
         
-        // episodeTitle = 1;
-        // dialogStep = 5;
-        // customMoveStep = 3;
-        // playerStep = 3;
-        // curStep = 4;
-        // GameManager.Instance.ControlStart = true;
+        episodeTitle = 1;
+        dialogStep = 5;
+        customMoveStep = 3;
+        playerStep = 3;
+        curStep = 4;
+        GameManager.Instance.ControlStart = true;
 
         dialogSwitch = true;
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[playerStep].position);
@@ -467,8 +467,8 @@ public class BattleManager : MonoBehaviour
 
         if (dialogStep == 1)
         {
-            string dialog1 = "불기둥이 너무 뜨거워!";
-            string dialog2 = "회피를 사용해야겠어!";
+            string dialog1 = "닿으면 죽겠지?";
+            string dialog2 = "회피를 사용하자!";
 
             dialogCancellation = new CancellationTokenSource();
             var speechPosition = curPlayer.FontPos.position;

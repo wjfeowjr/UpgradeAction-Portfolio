@@ -159,10 +159,14 @@ public abstract class Character : MonoBehaviour
     protected abstract void StateSetting(ENormalState changeNormalState, string triggerName, string animId);
 
     protected abstract void StateRecovery();
-    
+
+    public abstract void DownJump();
+
     protected virtual void Awake()
     {
         myRigidbody = GetComponent<Rigidbody2D>();
+        myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
+        
         myBoxCollider = GetComponent<BoxCollider2D>();
         foreach (var component in GetComponentsInChildren<BoxCollider2D>())
         {
@@ -277,31 +281,6 @@ public abstract class Character : MonoBehaviour
             PlatformRay(rayVector2);
             PlatformRay(rayVector3);
         }
-        // // 대시하는 경우 사용, 특수
-        // else if  (normalState == ENormalState.Dash)
-        // {
-        //     IgnorePlatform(true);
-        // }
-        
-        // if (myRigidbody.linearVelocityY > 0)
-        // {
-        //     IgnorePlatform(true);
-        // }
-        // else if (myRigidbody.linearVelocityY < 0)
-        // {
-        //     var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
-        //     var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-        //     var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-        //
-        //     PlatformRay(rayVector1);
-        //     PlatformRay(rayVector2);
-        //     PlatformRay(rayVector3);
-        // }
-        // // 대시하는 경우 사용, 특수
-        // else if  (normalState == ENormalState.Dash)
-        // {
-        //     IgnorePlatform(true);
-        // }
     }
 
     protected virtual void FindGroundObject()
@@ -326,7 +305,7 @@ public abstract class Character : MonoBehaviour
             groundObject = downRay.collider.gameObject;
     }
     
-    private void PlatformRay(Vector2 rayVector)
+    protected void PlatformRay(Vector2 rayVector)
     {
         var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, platformLayerMask);
         Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.02f);
@@ -909,7 +888,8 @@ public abstract class Character : MonoBehaviour
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
         downJumping = false;
-
+        lockJumpAttack = false;
+        
         ClearObjectList(controlObject);
         ClearObjectList(normalObject);
         GravityChange(myGravity);
@@ -926,7 +906,6 @@ public abstract class Character : MonoBehaviour
     protected void CancelMotionAddition()
     {
         CancelMotion();
-        lockJumpAttack = false;
     }
 
     private void AddObjectList(List<GameObject> list, GameObject obj)
@@ -972,6 +951,12 @@ public abstract class Character : MonoBehaviour
     }
     protected void LandingStateSetting(ELandingState changeState)
     {
+        if (changeState == ELandingState.Ground)
+        {
+            downJumping = false;
+            lockJumpAttack = false;
+        }
+        
         landingState = changeState;
     }
     protected void BodyTypeSetting(string bodyTypeName)
@@ -1311,51 +1296,6 @@ public abstract class Character : MonoBehaviour
         SpriteRendererMaterialChange(GameManager.Instance.hitMaterial);
         await UniTask.Delay(TimeSpan.FromSeconds(ConstValues.WhiteSecond));
         SpriteRendererMaterialChange(GameManager.Instance.defaultMaterial);
-    }
-
-    // 아랫점프
-    public async void DownJump()
-    {
-        // 플랫폼 위에서만 작동함
-        if(downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform))
-            return;
-
-        if (IsDamaged())
-            return;
-
-        var pastGround = groundObject;
-        
-        PlaySound(ConstValues.Jump1);
-        downJumping = true;
-        lockJumpAttack = true;
-        IgnorePlatform(true);
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
-
-        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
-        LandingStateSetting(ELandingState.Air);
-
-        stateCancellation = new CancellationTokenSource();
-        while (transform.position.y >= groundObject.transform.position.y)
-        {
-            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-                return;
-        }
-        lockJumpAttack = false;
-
-        while (pastGround == groundObject)
-        {
-            var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
-            var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-            var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-
-            PlatformRay(rayVector1);
-            PlatformRay(rayVector2);
-            PlatformRay(rayVector3);
-            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-                return;
-        }
-        
-        downJumping = false;
     }
 
     protected void SpriteRendererMaterialChange(Material material)

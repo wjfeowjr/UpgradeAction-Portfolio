@@ -210,9 +210,7 @@ public class Player_Gunner : Player
     {
         if (Time.timeScale == 0)
             return;
-        
-        lockJumpAttack = false;
-        
+
         var skillId = GameManager.Instance.PlayerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;

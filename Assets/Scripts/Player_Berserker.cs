@@ -233,19 +233,11 @@ public class Player_Berserker : Player
     {
         if (Time.timeScale == 0)
             return;
-        
-        lockJumpAttack = false;
-        
+
         var skillId = GameManager.Instance.PlayerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
-        
-        if(!GetGlobalCoolTime())
-        {
-            Debug.Log("글로벌 쿨타임이 지나지 않음");
-            return;
-        }
-        
+
         Debug.Log("스킬 시작");
         curGlobalCoolTime = 0;
         if (moveState == EMoveState.Moving)

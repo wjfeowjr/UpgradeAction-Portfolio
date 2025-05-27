@@ -21,12 +21,16 @@ public class Missile : MonoBehaviour
     private Vector2 dir;
     private float limitPosX;
     private bool isDelete;
+    private Rigidbody2D myRigidbody;
     private Collider2D myCollider;
     private SpriteRenderer missileSprite;
     [SerializeField] private MissileInfo missileInfo;
 
     private void Awake()
     {
+        myRigidbody = GetComponent<Rigidbody2D>();
+        myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
+
         myCollider = GetComponent<Collider2D>();
         missileSprite = GetComponentInChildren<SpriteRenderer>();
     }
@@ -37,18 +41,17 @@ public class Missile : MonoBehaviour
         myCollider.enabled = true;
         if (missileSprite)
             missileSprite.enabled = true;
-
-        // var leftRay = Physics2D.Raycast(transform.position, Vector2.left, missileInfo.limitLength, moveLayerMask);
-        // Debug.DrawRay(transform.position, Vector2.left * missileInfo.limitLength, ConstValues.RedColor, 0.1f);
-        //
-        // if (leftRay.collider != null)
-        //     Debug.Log(leftRay.point);
     }
 
-    private void FixedUpdate()
+    private void Update()
     {
-        Move();
+        Move1();
     }
+
+    // private void FixedUpdate()
+    // {
+    //     Move2();
+    // }
 
     public void SetupData(MissileData missileData, Vector2 missileDir, Action<string, Transform, int> action)
     {
@@ -93,7 +96,8 @@ public class Missile : MonoBehaviour
         }
     }
     
-    private void Move()
+    // 좌표값 이동(Update에서 사용)
+    private void Move1()
     {
         if (isDelete)
             return;
@@ -118,6 +122,42 @@ public class Missile : MonoBehaviour
             }
         }
     }
+    
+    // 물리값 이동(FixedUpdate에서 사용)
+    private void Move2()
+    {
+        if (isDelete)
+            return;
+        
+        float targetSpeedX = missileInfo.speed * dir.x;
+        float targetSpeedY = myRigidbody.linearVelocity.y;
+    
+        if (limitPosX == 0)
+            return;
+        
+        if (dir == Vector2.left)
+        {
+            if (transform.position.x <= limitPosX)
+            {
+                Delete(false);
+            }
+            else
+            {
+                myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+            }
+        }
+        else if (dir == Vector2.right)
+        {
+            if (transform.position.x >= limitPosX)
+            {
+                Delete(false);
+            }
+            else
+            {
+                myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+            }
+        }
+    }
 
     private async void Delete(bool isCollision)
     {
@@ -138,6 +178,7 @@ public class Missile : MonoBehaviour
             }
         }
 
+        //myRigidbody.linearVelocity = Vector2.zero;
         myCollider.enabled = false;
         if(missileSprite)
             missileSprite.enabled = false;
@@ -172,6 +213,10 @@ public class Missile : MonoBehaviour
                     if (character.Immortal)
                         return;
                 }
+                
+                // 이 부분 기억 (플레이어의 물리 판정)
+                if (!col.isTrigger)
+                    return;
             }
             
             // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
@@ -190,7 +235,7 @@ public class Missile : MonoBehaviour
                 if(Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
                     return;
             }
-
+            
             Delete(true);
             return;
         }

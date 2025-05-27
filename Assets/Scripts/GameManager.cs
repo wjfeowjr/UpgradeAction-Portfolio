@@ -236,6 +236,7 @@ public class GameManager : Singleton<GameManager>
     protected override void Awake()
     {
         base.Awake();
+        //QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
         groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         DefaultKeySetting();
@@ -243,6 +244,21 @@ public class GameManager : Singleton<GameManager>
         InitAtlas();
         InitPlayer();
         InitChangeSkill();
+        SetPrefabActive(false);
+    }
+
+    private void OnDestroy()
+    {
+        SetPrefabActive(true);
+    }
+
+    private void SetPrefabActive(bool active)
+    {
+        foreach (var prefab in prefabList)
+            prefab.SetActive(active);
+
+        string text = active ? "활성화" : "비활성화";
+        Debug.Log($"{prefabList}개의 프리팹 {text}완료");
     }
 
     public List<GameObject> GetPrefabList()
@@ -621,16 +637,7 @@ public class GameManager : Singleton<GameManager>
             }
         }
         
-        if (TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id) == null)
-        {
-            go.transform.position = objTransform.position;
-        }
-        // 미사일의 잔상버그를 막기 위한 조치
-        else
-        {
-            go.SetActive(false);
-            go.transform.position = objTransform.position;
-        }
+        go.transform.position = objTransform.position;
         go.SetActive(true);
         return go;
     }
@@ -659,16 +666,7 @@ public class GameManager : Singleton<GameManager>
             }
         }
         
-        if (TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id) == null)
-        {
-            go.transform.position = objVector;
-        }
-        // 미사일의 잔상버그를 막기 위한 조치
-        else
-        {
-            go.SetActive(false);
-            go.transform.position = objVector;
-        }
+        go.transform.position = objVector;
         go.SetActive(true);
         return go;
     }

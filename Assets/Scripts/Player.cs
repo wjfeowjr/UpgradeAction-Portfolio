@@ -99,11 +99,15 @@ public abstract class Player : Character
     [SerializeField] private bool canMove;
     [SerializeField] private float moveRatio;
 
+    private bool lockJumpAttack;
     private float globalCoolTime;
     protected float curGlobalCoolTime;
     
     private float changeGlobalCoolTime;
     private float curChangeGlobalCoolTime;
+    
+    private float skillGlobalCoolTime;
+    private float curSkillGlobalCoolTime;
     
     // 프로퍼티
     public bool IsChanging => isChanging;
@@ -125,6 +129,7 @@ public abstract class Player : Character
         base.Awake();
         globalCoolTime = 0.1f;
         changeGlobalCoolTime = 0.1f;
+        skillGlobalCoolTime = 0.02f;
     }
 
     protected override void OnEnable()
@@ -143,6 +148,7 @@ public abstract class Player : Character
         UpdateAirborneDown();
         UpdateGlobalCoolTime();
         UpdateChangeGlobalCoolTime();
+        UpdateSkillGlobalCoolTime();
         UpdateBuff();
     }
 
@@ -386,6 +392,28 @@ public abstract class Player : Character
         return isFill;
     }
 
+    private void UpdateChangeGlobalCoolTime()
+    {
+        if (curChangeGlobalCoolTime < changeGlobalCoolTime)
+            curChangeGlobalCoolTime += Time.deltaTime;
+
+        if (curChangeGlobalCoolTime >= changeGlobalCoolTime)
+            curChangeGlobalCoolTime = changeGlobalCoolTime;
+    }
+    private void UpdateSkillGlobalCoolTime()
+    {
+        if (curSkillGlobalCoolTime < skillGlobalCoolTime)
+            curSkillGlobalCoolTime += Time.deltaTime;
+
+        if (curSkillGlobalCoolTime >= skillGlobalCoolTime)
+            curSkillGlobalCoolTime = skillGlobalCoolTime;
+    }
+    protected bool GetSkillGlobalCoolTime()
+    {
+        bool isFill = curSkillGlobalCoolTime >= skillGlobalCoolTime;
+        return isFill;
+    }
+    
     public float GetRightPosX()
     {
         return transform.position.x + physicsCollider.size.x * 0.5f;
@@ -402,16 +430,7 @@ public abstract class Player : Character
     {
         return transform.position.y;
     }
-    
-    private void UpdateChangeGlobalCoolTime()
-    {
-        if (curChangeGlobalCoolTime < changeGlobalCoolTime)
-            curChangeGlobalCoolTime += Time.deltaTime;
 
-        if (curChangeGlobalCoolTime >= changeGlobalCoolTime)
-            curChangeGlobalCoolTime = changeGlobalCoolTime;
-    }
-    
     private void UpdateCameraLimit()
     {
         // 1) 플레이어 절반 크기
@@ -591,6 +610,12 @@ public abstract class Player : Character
             return false;
         }
         
+        if(!GetSkillGlobalCoolTime())
+        {
+            Debug.Log("스킬 글로벌 쿨타임이 지나지 않음");
+            return false;
+        }
+        
         Debug.Log($"{targetSkill.skillName} 사용!");
         targetSkill.SetCoolTime();
         return true;
@@ -643,7 +668,58 @@ public abstract class Player : Character
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
         }
     }
+    // 아랫점프
+    public override async void DownJump()
+    {
+        if(!GetGlobalCoolTime())
+        {
+            Debug.Log("글로벌 쿨타임이 지나지 않음");
+            return;
+        }
+        
+        // 플랫폼 위에서만 작동함
+        if(downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged() || normalState == ENormalState.JumpAttack)
+            return;
 
+        var pastGround = groundObject;
+        
+        PlaySound(ConstValues.Jump1);
+        CancelMotion();
+        
+        curGlobalCoolTime = 0;
+        lockJumpAttack = true;
+        downJumping = true;
+
+        IgnorePlatform(true);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
+        
+        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+        LandingStateSetting(ELandingState.Air);
+
+        stateCancellation = new CancellationTokenSource();
+        while (transform.position.y >= groundObject.transform.position.y)
+        {
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+        lockJumpAttack = false;
+
+        while (pastGround == groundObject)
+        {
+            var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+            var rayVector2 = new Vector2(transform.position.x, transform.position.y);
+            var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+
+            PlatformRay(rayVector1);
+            PlatformRay(rayVector2);
+            PlatformRay(rayVector3);
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+        
+        downJumping = false;
+    }
+    
     public async void JumpToChange()
     {
         stateCancellation = new CancellationTokenSource();
