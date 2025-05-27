@@ -20,8 +20,7 @@ public class BattleManager : MonoBehaviour
     [SerializeField] private Transform[] stageWallPos;
     [SerializeField] private Transform[] trapPos;
     [SerializeField] private Transform[] bossPos;
-
-    [SerializeField] private List<Collider2D> platformColliderList;
+    
     private CancellationTokenSource dialogCancellation;
     private CancellationTokenSource productCancellation;
     private CancellationTokenSource dieCancellation;
@@ -70,16 +69,22 @@ public class BattleManager : MonoBehaviour
         // curStep = GetKey(ConstValues.CurStep);
         
         episodeTitle = 1;
-        dialogStep = 5;
-        customMoveStep = 3;
-        playerStep = 3;
-        curStep = 4;
+        dialogStep = 4;
+        customMoveStep = 2;
+        playerStep = 2;
+        curStep = 2;
         GameManager.Instance.ControlStart = true;
+        
+        // episodeTitle = 1;
+        // dialogStep = 5;
+        // customMoveStep = 3;
+        // playerStep = 3;
+        // curStep = 4;
+        // GameManager.Instance.ControlStart = true;
 
         dialogSwitch = true;
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
-        GameManager.Instance.PlatformColliderList = platformColliderList;
         GameManager.Instance.SetGroundVector();
         
         SpawnEpisode();

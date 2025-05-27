@@ -98,8 +98,7 @@ public abstract class Player : Character
     [SerializeField] private bool canFlip;
     [SerializeField] private bool canMove;
     [SerializeField] private float moveRatio;
-
-    private bool lockJumpAttack;
+    
     private float globalCoolTime;
     protected float curGlobalCoolTime;
     
@@ -669,7 +668,7 @@ public abstract class Player : Character
         }
     }
     // 아랫점프
-    public override async void DownJump()
+    public async void DownJump()
     {
         if(!GetGlobalCoolTime())
         {
@@ -681,16 +680,13 @@ public abstract class Player : Character
         if(downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged() || normalState == ENormalState.JumpAttack)
             return;
 
-        var pastGround = groundObject;
-        
         PlaySound(ConstValues.Jump1);
         CancelMotion();
         
         curGlobalCoolTime = 0;
-        lockJumpAttack = true;
         downJumping = true;
 
-        IgnorePlatform(true);
+        IgnorePlatform(Vector2.down, 1.0f);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
         
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
@@ -702,21 +698,6 @@ public abstract class Player : Character
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
-        lockJumpAttack = false;
-
-        while (pastGround == groundObject)
-        {
-            var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
-            var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-            var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-
-            PlatformRay(rayVector1);
-            PlatformRay(rayVector2);
-            PlatformRay(rayVector3);
-            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-                return;
-        }
-        
         downJumping = false;
     }
     
@@ -956,8 +937,8 @@ public abstract class Player : Character
             if (normalState is ENormalState.Idle or ENormalState.Move)
                 StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
 
-            if (col.gameObject.CompareTag(ConstValues.Platform))
-                IgnorePlatform(true);
+            // if (col.gameObject.CompareTag(ConstValues.Platform))
+            //     IgnorePlatform();
         }
     }
 }

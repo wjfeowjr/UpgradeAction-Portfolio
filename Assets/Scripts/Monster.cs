@@ -382,17 +382,18 @@ public class Monster : Character
     }
     
     // 아랫점프
-    public override async void DownJump()
+    private async void DownJump()
     {
         // 플랫폼 위에서만 작동함
         if(downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged())
             return;
 
-        var pastGround = groundObject;
-        
         PlaySound(ConstValues.Jump1);
+        CancelMotion();
+        
         downJumping = true;
-        IgnorePlatform(true);
+        
+        IgnorePlatform(Vector2.down, 1.0f);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
 
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
@@ -404,20 +405,6 @@ public class Monster : Character
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
-
-        while (pastGround == groundObject)
-        {
-            var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
-            var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-            var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-
-            PlatformRay(rayVector1);
-            PlatformRay(rayVector2);
-            PlatformRay(rayVector3);
-            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-                return;
-        }
-        
         downJumping = false;
     }
 
@@ -685,7 +672,7 @@ public class Monster : Character
             downJumpInfo.playerInRange = false;
         }
     }
-    
+
     // 적의 패턴
     protected virtual void MonsterPattern(int idx)
     {
@@ -907,8 +894,6 @@ public class Monster : Character
                 float travelTime = 0.6f;
                 Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
                 myRigidbody.linearVelocity = velocity;
-                
-                IgnorePlatform(true);
             }
         }
     }
@@ -1053,8 +1038,10 @@ public class Monster : Character
         // 착지
         if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
         {
-            LandingStateSetting(ELandingState.Ground);
+            if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)
+                return;
             
+            LandingStateSetting(ELandingState.Ground);
             myRigidbody.bodyType = RigidbodyType2D.Dynamic;
             myRigidbody.linearVelocity = Vector2.zero;
             groundObject = col.gameObject;
@@ -1094,8 +1081,8 @@ public class Monster : Character
             if(normalState == ENormalState.Idle)
                 StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
             
-            if (col.gameObject.CompareTag(ConstValues.Platform))
-                IgnorePlatform(true);
+            // if (col.gameObject.CompareTag(ConstValues.Platform))
+            //     IgnorePlatform();
         }
     }
 }

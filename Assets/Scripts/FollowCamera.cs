@@ -29,6 +29,8 @@ public class FollowCamera : MonoBehaviour
     [SerializeField] private float maxZoom = 5f;// 최대 줌아웃(클 수 있는 최대 orthographicSize)
 
     private float defaultSize = 5;
+    
+    private CancellationTokenSource delayCancellation;
     private CancellationTokenSource zoomCancellation;
     
     public Vector2 MaxXAndY
@@ -52,14 +54,24 @@ public class FollowCamera : MonoBehaviour
     private void Start()
     {
         SetTarget(GameManager.Instance.CurPlayer.transform);
+        SmoothDelay();
     }
 
     private void LateUpdate()
     {
-        // 카메라 제약이 있을때만 플레이어를 따라다닌다(X축)
         TrackTarget();
     }
 
+    private async void SmoothDelay()
+    {
+        delayCancellation = new CancellationTokenSource();
+        if (await NormalDelay(0.1f, delayCancellation).SuppressCancellationThrow())
+            return;
+        
+        xSmooth = 8;
+        ySmooth = 8;
+    }
+    
     private void SetTarget(Transform targetTransform)
     {
         target = targetTransform;

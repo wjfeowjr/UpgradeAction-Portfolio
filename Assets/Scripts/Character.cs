@@ -103,6 +103,8 @@ public abstract class Character : MonoBehaviour
     protected CancellationTokenSource stateCancellation;
     protected CancellationTokenSource anotherCancellation; // 우선 넉백에만사용되고 있음
 
+    [SerializeField] protected Collider2D ignorePlatformCollider;
+
     [SerializeField] protected List<GameObject> controlObject = new List<GameObject>(); // 직접 시간을 관리하는 '공격판정'
     [SerializeField] protected List<GameObject> normalObject = new List<GameObject>(); // 직접 시간을 관리하는 '일반 오브젝트'
     [SerializeField] protected List<GameObject> buffObject = new List<GameObject>(); // 직접 시간을 관리하는 '버프 오브젝트'
@@ -126,16 +128,15 @@ public abstract class Character : MonoBehaviour
     protected int jumpAttackCount;
     protected bool isDie;
     protected float myGravity;
-    protected bool lockJumpAttack;
-    protected bool downJumping;
+    [SerializeField] protected bool downJumping;
     
     private int airborneCount;     // 에어본 카운트
     private int platformLayerMask;
     private int groundAndPlatformLayerMask;
     protected int wallLayerMask;
 
-    [SerializeField] protected bool immortal;
-    [SerializeField] protected bool immuneStagger;
+    protected bool immortal;
+    protected bool immuneStagger;
 
     // 프로퍼티
     public BasicStat BasicStat => basicStat;
@@ -159,8 +160,6 @@ public abstract class Character : MonoBehaviour
     protected abstract void StateSetting(ENormalState changeNormalState, string triggerName, string animId);
 
     protected abstract void StateRecovery();
-
-    public abstract void DownJump();
 
     protected virtual void Awake()
     {
@@ -195,7 +194,6 @@ public abstract class Character : MonoBehaviour
     protected virtual void FixedUpdate()
     {
         UpdateVelocity();
-        JumpIgnorePlatform();
         FindGroundObject();
     }
 
@@ -254,35 +252,6 @@ public abstract class Character : MonoBehaviour
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -30);
     }
 
-    public void IgnorePlatform(bool value)
-    {
-        foreach (var platform in GameManager.Instance.PlatformColliderList)
-        {
-            if (Physics2D.GetIgnoreCollision(physicsCollider, platform) == !value)
-            {
-                Physics2D.IgnoreCollision(physicsCollider, platform, value);
-            }
-        }
-    }
-
-    // 콜라이더 무시 설정
-    private void JumpIgnorePlatform()
-    {
-        if (downJumping)
-            return;
-        
-        if (myRigidbody.linearVelocityY < 0)
-        {
-            var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
-            var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-            var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-        
-            PlatformRay(rayVector1);
-            PlatformRay(rayVector2);
-            PlatformRay(rayVector3);
-        }
-    }
-
     protected virtual void FindGroundObject()
     {
         if (groundObject && !downJumping)
@@ -305,17 +274,51 @@ public abstract class Character : MonoBehaviour
             groundObject = downRay.collider.gameObject;
     }
     
-    protected void PlatformRay(Vector2 rayVector)
+    protected void IgnorePlatform(Vector2 dir, float distance)
     {
-        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, platformLayerMask);
-        Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.02f);
-        
-        if (downRay.collider != null)
+        var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+        var downRay1 = Physics2D.Raycast(rayVector1, dir, distance, platformLayerMask);
+        Debug.DrawRay(rayVector1, dir * 1.0f, ConstValues.BlueColor, 0.02f);
+        if (downRay1.collider != null)
         {
-            if (Physics2D.GetIgnoreCollision(physicsCollider, downRay.collider))
+            if (!ignorePlatformCollider)
             {
-                Physics2D.IgnoreCollision(physicsCollider, downRay.collider, false);
+                ignorePlatformCollider = downRay1.collider;
+                Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
             }
+        }
+        
+        var rayVector2 = new Vector2(transform.position.x, transform.position.y);
+        var downRay2 = Physics2D.Raycast(rayVector2, dir, distance, platformLayerMask);
+        Debug.DrawRay(rayVector2, dir * distance, ConstValues.BlueColor, 0.02f);
+        if (downRay2.collider != null)
+        {
+            if (!ignorePlatformCollider)
+            {
+                ignorePlatformCollider = downRay2.collider;
+                Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
+            }
+        }
+        
+        var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+        var downRay3 = Physics2D.Raycast(rayVector3, dir, distance, platformLayerMask);
+        Debug.DrawRay(rayVector3, dir * distance, ConstValues.BlueColor, 0.02f);
+        if (downRay3.collider != null)
+        {
+            if (!ignorePlatformCollider)
+            {
+                ignorePlatformCollider = downRay3.collider;
+                Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
+            }
+        }
+    }
+
+    protected void ClearIgnorePlatform()
+    {
+        if (ignorePlatformCollider)
+        {
+            Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, false);
+            ignorePlatformCollider = null;
         }
     }
 
@@ -887,9 +890,9 @@ public abstract class Character : MonoBehaviour
     {
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
+
         downJumping = false;
-        lockJumpAttack = false;
-        
+        ClearIgnorePlatform();
         ClearObjectList(controlObject);
         ClearObjectList(normalObject);
         GravityChange(myGravity);
@@ -901,11 +904,6 @@ public abstract class Character : MonoBehaviour
                 immortal = false;
                 break;
         }
-    }
-    // 특수한 행동을 추가로 끊는 캔슬모션
-    protected void CancelMotionAddition()
-    {
-        CancelMotion();
     }
 
     private void AddObjectList(List<GameObject> list, GameObject obj)
@@ -952,10 +950,7 @@ public abstract class Character : MonoBehaviour
     protected void LandingStateSetting(ELandingState changeState)
     {
         if (changeState == ELandingState.Ground)
-        {
             downJumping = false;
-            lockJumpAttack = false;
-        }
         
         landingState = changeState;
     }
@@ -1062,7 +1057,7 @@ public abstract class Character : MonoBehaviour
 
     public virtual void Die()
     {
-        CancelMotionAddition();
+        CancelMotion();
         ClearObjectList(buffObject);
         
         StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
@@ -1073,7 +1068,7 @@ public abstract class Character : MonoBehaviour
     }
     public async void Grabbed(Vector3 grabVector)
     {
-        CancelMotionAddition();
+        CancelMotion();
         StateSetting(ENormalState.Grabbed, ConstValues.Grabbed, ConstValues.Grabbed);
         MoveStateSetting(EMoveState.Stopping);
         
@@ -1097,7 +1092,7 @@ public abstract class Character : MonoBehaviour
     }
     public void Airborne(float xVelocity, float yVelocity)
     {
-        CancelMotionAddition();
+        CancelMotion();
 
         airborneCount = 1;
         LandingStateSetting(ELandingState.Air);
@@ -1106,8 +1101,6 @@ public abstract class Character : MonoBehaviour
         
         stateCancellation = new CancellationTokenSource();
         Bound(xVelocity, yVelocity);
-        // 이 부분을 기억
-        IgnorePlatform(true);
         DownHitBox();
     }
     private void Bound(float xVelocity, float yVelocity)
@@ -1194,7 +1187,7 @@ public abstract class Character : MonoBehaviour
             return;
         }
         
-        CancelMotionAddition();
+        CancelMotion();
         stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
     }
@@ -1207,7 +1200,7 @@ public abstract class Character : MonoBehaviour
             return;
         }
         
-        CancelMotionAddition();
+        CancelMotion();
         stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Damaged, ConstValues.Damaged, ConstValues.Damaged);
         MoveStateSetting(EMoveState.Stopping);

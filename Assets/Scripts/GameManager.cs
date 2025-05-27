@@ -151,8 +151,6 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private Player[] players;
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
-    [SerializeField] private List<Collider2D> platformColliderList = new List<Collider2D>();
-    
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
 
     private string firstPlayer;
@@ -215,12 +213,6 @@ public class GameManager : Singleton<GameManager>
 
     public SettingSkill ChangeSkill => changeSkill;
 
-    public List<Collider2D> PlatformColliderList
-    {
-        get => platformColliderList;
-        set => platformColliderList = value;
-    }
-    
     public List<Monster> MonsterList
     {
         get => monsterList;

@@ -56,7 +56,7 @@ public class Player_Gunner : Player
     
     public override async void Attack()
     {
-        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged() || lockJumpAttack)
+        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged() || downJumping)
             return;
         
         if(!GetGlobalCoolTime())
@@ -226,7 +226,7 @@ public class Player_Gunner : Player
         if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
 
-        CancelMotionAddition();
+        CancelMotion();
         MotionFlip();
         
         stateCancellation = new CancellationTokenSource();
