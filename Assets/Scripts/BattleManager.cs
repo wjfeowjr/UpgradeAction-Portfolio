@@ -8,6 +8,21 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
+[Serializable]
+public class EpisodeStep
+{
+    // 에피소드 제목을 봤는가?
+    public int episodeTitle = 0;
+    // 대화 스탭
+    public int dialogStep = 0;
+    // 플레이어의 시작위치
+    public int playerStep = 0;
+    // 플레이어가 연출 상 이동하는 위치의 x값
+    public int customMoveStep = 0;
+    // 이벤트 스탭
+    public int eventStep = 0;
+}
+
 public class BattleManager : MonoBehaviour
 {
     [SerializeField] private FollowCamera mainCamera;
@@ -25,20 +40,9 @@ public class BattleManager : MonoBehaviour
     private CancellationTokenSource productCancellation;
     private CancellationTokenSource dieCancellation;
 
-    [SerializeField] private int episodeTitle = 0;
     [SerializeField] private bool dialogSwitch;
-
-    // 대화 스탭
-    [SerializeField] private int dialogStep = 0;
-
-    // 플레이어의 시작위치
-    [SerializeField] private int playerStep = 0;
-
-    // 플레이어가 연출 상 이동하는 위치의 x값
-    [SerializeField] private int customMoveStep = 0;
-
-    // 현재 스탭
-    [SerializeField] private int curStep = 0;
+    [SerializeField] private int myEventStep;
+    [SerializeField] private EpisodeStep episodeStep;
 
     private float dialogDelay1 = 2.5f;
     private float dialogDelay2 = 1.0f;
@@ -62,31 +66,36 @@ public class BattleManager : MonoBehaviour
 
     private void Start()
     {
-        // episodeTitle = GetKey(ConstValues.Episode);
-        // dialogStep = GetKey(ConstValues.DialogStep);
-        // customMoveStep = GetKey(ConstValues.CustomMoveStep);
-        // playerStep = GetKey(ConstValues.PlayerStep);
-        // curStep = GetKey(ConstValues.CurStep);
+        // 잡초맨 전투
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 3,
+        //     playerStep = 2,
+        //     customMoveStep = 2,
+        //     eventStep = 2,
+        // };
+        // GameManager.Instance.ControlStart = true;
         
-        episodeTitle = 1;
-        dialogStep = 4;
-        customMoveStep = 2;
-        playerStep = 2;
-        curStep = 2;
-        GameManager.Instance.ControlStart = true;
-        
-        // episodeTitle = 1;
-        // dialogStep = 5;
-        // customMoveStep = 3;
-        // playerStep = 3;
-        // curStep = 4;
+        // 태양 전투
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 3,
+        //     playerStep = 2,
+        //     customMoveStep = 2,
+        //     eventStep = 4,
+        // };
         // GameManager.Instance.ControlStart = true;
 
+        LoadEpisode();
+
         dialogSwitch = true;
-        GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[playerStep].position);
+        GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
         GameManager.Instance.SetGroundVector();
-        
+
+        CashingSunObject();
         SpawnEpisode();
         SpawnStageClear();
         GameOverCycle();
@@ -99,6 +108,35 @@ public class BattleManager : MonoBehaviour
         DialogCycle();
     }
 
+    private void CashingSunObject()
+    {
+        if (!sunObject)
+        {
+            sunObject = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSun, bossPos[0]).GetComponent<Monster>();
+            sunObject.gameObject.SetActive(false);
+        }
+    }
+    
+    // 에피소드 저장
+    private void SaveEpisode()
+    {
+        // json화
+        string json = JsonUtility.ToJson(episodeStep, true);
+        EpisodeBinding.SaveEpisode(ConstValues.Episode1, json);
+    }
+    // 에피소드 불러오기
+    private void LoadEpisode()
+    {
+        // json화
+        string json = JsonUtility.ToJson(episodeStep, true);
+        var loadJson = EpisodeBinding.LoadEpisode(ConstValues.Episode1, json);
+        // json 불러오기
+        var loadedEpisode = JsonUtility.FromJson<EpisodeStep>(loadJson);
+        episodeStep = loadedEpisode;
+        
+        myEventStep = episodeStep.eventStep;
+    }
+    
     private void SpawnEpisode()
     {
         var uiBase = GameManager.Instance.SpawnToUIPool(eUIType.UI_Episode, Vector3.zero).GetComponent<UIBase>();
@@ -117,7 +155,7 @@ public class BattleManager : MonoBehaviour
     }
     private void ProductEpisode()
     {
-        if (episodeTitle != 0)
+        if (episodeStep.episodeTitle != 0)
             return;
 
         PlayBGM(ConstValues.BGMEpisodeStart);
@@ -133,8 +171,8 @@ public class BattleManager : MonoBehaviour
     }
     private void EpisodeEnd()
     {
-        SetKey(ConstValues.Episode, 1);
-        episodeTitle = GetKey(ConstValues.Episode);
+        episodeStep.episodeTitle = 1;
+        SaveEpisode();
     }
     
     private void SpawnStageClear()
@@ -246,28 +284,6 @@ public class BattleManager : MonoBehaviour
         SpawnGuide(guideModel);
     }
 
-    private int GetKey(string key)
-    {
-        if (PlayerPrefs.HasKey(key))
-        {
-            Debug.Log($"저장된 {key}가 존재 = {PlayerPrefs.GetInt(key)}");
-            return PlayerPrefs.GetInt(key);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"{key} = 0");
-            PlayerPrefs.SetInt(key, 0);
-            return PlayerPrefs.GetInt(key);
-        }
-    }
-
-    private void SetKey(string key, int value)
-    {
-        PlayerPrefs.SetInt(key, value);
-        //return PlayerPrefs.GetInt(key);
-    }
-
     private async void GameOverCycle()
     {
         await UniTask.WaitUntil(() => curPlayer.IsDie);
@@ -282,14 +298,14 @@ public class BattleManager : MonoBehaviour
 
     private void DialogCycle()
     {
-        if (episodeTitle == 0)
+        if (episodeStep.episodeTitle == 0)
             return;
 
-        if (curStep > stepPos.Length - 1)
+        if (myEventStep > stepPos.Length - 1)
             return;
 
         if (dialogSwitch && !curPlayer.IsDie &&
-            curPlayer.transform.position.x >= stepPos[curStep].transform.position.x &&
+            curPlayer.transform.position.x >= stepPos[myEventStep].transform.position.x &&
             GameManager.Instance.MonsterList.Count == 0)
         {
             // 대화 진행
@@ -300,7 +316,7 @@ public class BattleManager : MonoBehaviour
     private async void DialogStep()
     {
         // 대화 진행
-        switch (curStep)
+        switch (myEventStep)
         {
             case 0:
                 await Product1();
@@ -315,7 +331,7 @@ public class BattleManager : MonoBehaviour
                 break;
 
             case 3:
-                await Product4();
+                Product4();
                 break;
 
             case 4:
@@ -330,9 +346,7 @@ public class BattleManager : MonoBehaviour
 
     private async UniTask Product1()
     {
-        curStep++;
-
-        if (dialogStep == 0)
+        if (episodeStep.dialogStep == 0)
         {
             dialogSwitch = false;
             string dialog1 = "날씨 참 좋다...";
@@ -408,26 +422,30 @@ public class BattleManager : MonoBehaviour
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
             DialogStepUp();
-            //GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, playerPos[0].position);
+            SaveEpisode();
             dialogSwitch = true;
         }
+        MyEventStepUp();
     }
 
     private async UniTask Product2()
     {
         // 카메라 제한
         GameManager.Instance.MainCamera.MinXAndY = new Vector2(40.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-        if (dialogStep == 1)
+        if (episodeStep.dialogStep == 1)
         {
             dialogSwitch = false;
             string dialog1 = "ㅋㅋㅋㅋㅋㅋㅋ";
             string dialog2 = "이거나\n먹어랏~!";
+            string dialog3 = "닿으면 죽겠지?";
+            string dialog4 = "회피를 사용하자!";
 
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-            await curPlayer.CustomMove(customMovePos[customMoveStep].position, 1);
+            await curPlayer.CustomMove(customMovePos[episodeStep.customMoveStep].position, 1);
 
             PlaySound(ConstValues.RewardPage);
+            
             sunObject.gameObject.transform.position = new Vector2(bossPos[1].transform.position.x + 3.5f, bossPos[1].transform.position.y);
             sunObject.gameObject.SetActive(true);
             await sunObject.CustomMove(bossPos[1].transform.position, -1, true);
@@ -438,6 +456,8 @@ public class BattleManager : MonoBehaviour
             var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
 
             speechFrame2.Speech(dialog1);
+            
+            dialogCancellation = new CancellationTokenSource();
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
@@ -458,31 +478,21 @@ public class BattleManager : MonoBehaviour
                 return;
 
             speechFrame2.gameObject.SetActive(false);
-
+            
             PlaySound(ConstValues.MonsterSunLaugh);
             sunObject.transform.DOMove(sunMoveVector, 2.0f);
             if (await NormalDelay(2.0f, dialogCancellation).SuppressCancellationThrow())
                 return;
 
             sunObject.gameObject.SetActive(false);
-        }
-
-        SetKey(ConstValues.CurStep, curStep);
-        curStep++;
-
-        if (dialogStep == 1)
-        {
-            string dialog1 = "닿으면 죽겠지?";
-            string dialog2 = "회피를 사용하자!";
-
-            dialogCancellation = new CancellationTokenSource();
+            
             var speechPosition = curPlayer.FontPos.position;
-            var speechFrame = GameManager.Instance.SpawnSpeechFrame(ConstValues.SpeechFrame1, speechPosition, dialog1);
+            var speechFrame = GameManager.Instance.SpawnSpeechFrame(ConstValues.SpeechFrame1, speechPosition, dialog3);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame.Speech(dialog2);
+            speechFrame.Speech(dialog4);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
@@ -491,26 +501,28 @@ public class BattleManager : MonoBehaviour
             // 게임 시작
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+            
+            SetEventStep();
             DialogStepUp();
             PlayerStepUp();
             CustomMoveStepUp();
+            SaveEpisode();
             dialogSwitch = true;
             Guide1();
         }
+        MyEventStepUp();
     }
 
     private async UniTask Product3()
     {
         AccumulatedStep();
-        SetKey(ConstValues.CurStep, curStep);
-        curStep++;
 
-        if (dialogStep == 2)
+        if (episodeStep.dialogStep == 2)
         {
             dialogSwitch = false;
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-            await curPlayer.CustomMove(customMovePos[customMoveStep].position, 1);
+            await curPlayer.CustomMove(customMovePos[episodeStep.customMoveStep].position, 1);
         }
 
         dialogCancellation = new CancellationTokenSource();
@@ -525,7 +537,7 @@ public class BattleManager : MonoBehaviour
         if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
             return;
 
-        if (dialogStep == 2)
+        if (episodeStep.dialogStep == 2)
         {
             string dialog1 = "뭐야 이 시금치들은!!";
             string dialog2 = "여긴 우리\n구역이다.";
@@ -560,45 +572,46 @@ public class BattleManager : MonoBehaviour
             // 게임 시작
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+            
             DialogStepUp();
             PlayerStepUp();
             CustomMoveStepUp();
+            SaveEpisode();
             dialogSwitch = true;
             Guide2();
         }
+        MyEventStepUp();
     }
 
-    private async UniTask Product4()
+    // 대화가 없는 연출은 UniTask형태가 아님
+    private void Product4()
     {
         AccumulatedStep();
-        curStep++;
-        SetKey(ConstValues.CurStep, curStep);
-
-        if (dialogStep == 3)
-            DialogStepUp();
+        MyEventStepUp();
+        SetEventStep();
+        SaveEpisode();
     }
 
     private async UniTask Product5()
     {
         AccumulatedStep();
-        SetKey(ConstValues.CurStep, curStep);
-        curStep++;
 
-        if (dialogStep == 4)
+        if (episodeStep.dialogStep == 3)
         {
             dialogSwitch = false;
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-            await curPlayer.CustomMove(customMovePos[customMoveStep].position, 1);
+            await curPlayer.CustomMove(customMovePos[episodeStep.customMoveStep].position, 1);
         }
 
         var sunPos = new Vector2(bossPos[2].transform.position.x, bossPos[2].transform.position.y + 3.5f);
         sunObject = GameManager.Instance.SpawnMonster(ConstValues.MonsterSun, sunPos, true, () => { SpawnBossMessage(sunObject.BasicStat.name); });
 
-        if (dialogStep == 4)
+        if (episodeStep.dialogStep == 3)
         {
-            string dialog1 = "이제 뿌셔주마!";
-            string dialog2 = "덤벼보던가ㅋㅋ";
+            string dialog1 = "넌 표정이 마음에 안 들었어!!";
+            string dialog2 = "이제 뿌셔주마!";
+            string dialog3 = "덤벼보던가ㅋㅋ";
             
             dialogCancellation = new CancellationTokenSource();
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
@@ -609,10 +622,15 @@ public class BattleManager : MonoBehaviour
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
+            
+            speechFrame.Speech(dialog2);
+            
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
             speechFrame.gameObject.SetActive(false);
             
             var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            var speechFrame2 = GameManager.Instance.SpawnSpeechFrame(ConstValues.SpeechFrame2, speechPosition2, dialog2);
+            var speechFrame2 = GameManager.Instance.SpawnSpeechFrame(ConstValues.SpeechFrame2, speechPosition2, dialog3);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             speechFrame2.gameObject.SetActive(false);
@@ -624,16 +642,15 @@ public class BattleManager : MonoBehaviour
             DialogStepUp();
             PlayerStepUp();
             CustomMoveStepUp();
+            SaveEpisode();
             dialogSwitch = true;
         }
+        MyEventStepUp();
     }
 
     private async UniTask Product6()
     {
-        SetKey(ConstValues.CurStep, curStep);
-        curStep++;
-
-        if (dialogStep == 5)
+        if (episodeStep.dialogStep == 4)
         {
             dialogSwitch = false;
             GameManager.Instance.ControlStart = false;
@@ -646,7 +663,7 @@ public class BattleManager : MonoBehaviour
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
                 return;
             sunObject.Flip(-1);
-            await curPlayer.CustomMove(customMovePos[customMoveStep].position, 1);
+            await curPlayer.CustomMove(customMovePos[episodeStep.customMoveStep].position, 1);
 
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
@@ -678,15 +695,15 @@ public class BattleManager : MonoBehaviour
             BgmManager.Instance.Stop();
             
             speechFrame2.Speech(dialog3);
-            await SunSlash(1, 0);
+            await SunBomb(1, 0);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
             speechFrame2.Speech(dialog4);
-            await SunSlash(2, 0.3f);
-            await SunSlash(2, 0.2f);
+            await SunBomb(2, 0.3f);
+            await SunBomb(2, 0.2f);
             sunObject.DieShake();
-            await SunSlash(10, 0.1f);
+            await SunBomb(10, 0.1f);
             
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
@@ -758,51 +775,61 @@ public class BattleManager : MonoBehaviour
             // 엔딩 연출
             ProductStageClear();
         }
+        SaveEpisode();
+        MyEventStepUp();
     }
-    private async UniTask SunSlash(int slashCount, float slashInterval)
+    private async UniTask SunBomb(int slashCount, float slashInterval)
     {
         for (int i = 0; i < slashCount; i++)
         {
             sunObject.HitMaterial();
-            sunObject.SpawnHitEffect(ConstValues.BerserkerAttackHitCrit, 0.5f);
-            sunObject.SpawnHitEffect(ConstValues.BerserkerSlash, 1.0f, 1.5f);
+            //sunObject.SpawnHitEffect(ConstValues.BerserkerAttackHitCrit, 0.5f);
+            sunObject.SpawnHitEffect(ConstValues.MonsterSunAttackHit, 1.0f, 1.5f);
             if (await NormalDelay(slashInterval, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
     }
 
-// 대화 단계 증가
+    // 대화 단계 증가
     private void DialogStepUp()
     {
-        dialogStep++;
-        SetKey(ConstValues.DialogStep, dialogStep);
+        episodeStep.dialogStep++;
     }
     // 플레이어 시작위치 다음 위치로 변경
     private void PlayerStepUp()
     {
-        playerStep++;
-        SetKey(ConstValues.PlayerStep, playerStep);
+        episodeStep.playerStep++;
     }
     // 연출 단계 증가
     private void CustomMoveStepUp()
     {
-        customMoveStep++;
-        SetKey(ConstValues.CustomMoveStep, customMoveStep);
+        episodeStep.customMoveStep++;
+    }
+    
+    // 현재 이벤트 단계 증가
+    private void MyEventStepUp()
+    {
+        myEventStep++;
+    }
+    // 저장되는 이벤트 단계를 현재 이벤트 단계와 일치시킴
+    private void SetEventStep()
+    {
+        episodeStep.eventStep = myEventStep;
     }
 
     private void AccumulatedStep()
     {
-        if(dialogStep > 0)
+        if(episodeStep.dialogStep > 0)
             PlayBGM(ConstValues.BGMEpisode1);
         
-        switch (curStep)
+        switch (myEventStep)
         {
             case 0:
                 // 카메라 제한
                 GameManager.Instance.MainCamera.MinXAndY = new Vector2(0, GameManager.Instance.MainCamera.MinXAndY.y);
-                if (dialogStep == 0)
+                if (episodeStep.dialogStep == 0)
                 {
-                    sunObject = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSun, bossPos[0]).GetComponent<Monster>();
+                    sunObject.gameObject.SetActive(true);
                     sunObject.Flip(-1);
                 }
                 break;

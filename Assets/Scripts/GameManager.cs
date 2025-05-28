@@ -89,6 +89,33 @@ public class SettingSkill
     public PlayerSkill playerSkill;
 }
 
+public static class EpisodeBinding
+{
+    // 저장할 때
+    public static void SaveEpisode(string episodeName, string episodeClass)
+    {
+        PlayerPrefs.SetString(episodeName, episodeClass);
+        PlayerPrefs.Save();
+    }
+
+    // 불러올 때
+    public static string LoadEpisode(string episodeName, string episodeClass)
+    {
+        if (PlayerPrefs.HasKey(episodeName))
+        {
+            Debug.Log($"저장된 에피소드 존재");
+            return PlayerPrefs.GetString(episodeName);
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"{episodeName}에피소드 최초 생성");
+            SaveEpisode(episodeName, episodeClass);
+            return episodeClass;
+        }
+    }
+}
+
 public enum ePoolType
 {
     None,
