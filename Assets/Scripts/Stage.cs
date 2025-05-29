@@ -1,0 +1,261 @@
+using System;
+using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
+using Unity.VisualScripting;
+using UnityEngine;
+
+[Serializable]
+public class EpisodeStep
+{
+    // 에피소드 제목을 봤는가?
+    public int episodeTitle = 0;
+    // 대화 스탭
+    public int dialogStep = 0;
+    // 플레이어의 시작위치
+    public int playerStep = 0;
+    // 플레이어가 연출 상 이동하는 위치의 x값
+    public int customMoveStep = 0;
+    // 이벤트 스탭
+    public int eventStep = 0;
+}
+
+public abstract class Stage : MonoBehaviour
+{
+    [SerializeField] protected string episodeName;
+    [SerializeField] protected EpisodeStep episodeStep;
+    
+    [SerializeField] protected Transform[] playerPos;
+    [SerializeField] protected Transform[] stepPos;
+    [SerializeField] protected Transform[] customMovePos;
+    [SerializeField] protected Transform[] monsterPos;
+    [SerializeField] protected Transform[] stageWallPos;
+    [SerializeField] protected Transform[] trapPos;
+    [SerializeField] protected Transform[] bossPos;
+    
+    protected CancellationTokenSource dialogCancellation;
+    private CancellationTokenSource dieCancellation;
+
+    [SerializeField] protected bool dialogSwitch;
+    [SerializeField] protected int myEventStep;
+
+    protected float dialogDelay1 = 2.5f;
+    protected float dialogDelay2 = 1.0f;
+
+    [SerializeField] protected List<GameObject> stageWalls = new List<GameObject>();
+    protected Player curPlayer;
+    
+    protected abstract void SetEpisodeName();
+    protected abstract void DialogStep();
+    protected abstract void StageClearButtonAction();
+
+    private void Awake()
+    {
+        if (GameManager.Instance)
+        {
+            GameManager.Instance.ClearMonsterList();
+            GameManager.Instance.DisActiveObjectList();
+            curPlayer = GameManager.Instance.CurPlayer;
+        }
+        SetEpisodeName();
+    }
+    
+    // 에피소드 저장
+    protected void SaveEpisode()
+    {
+        // json화
+        string json = JsonUtility.ToJson(episodeStep, true);
+        EpisodeBinding.SaveEpisode(episodeName, json);
+    }
+    // 에피소드 불러오기
+    protected void LoadEpisode()
+    {
+        // json화
+        string json = JsonUtility.ToJson(episodeStep, true);
+        var loadJson = EpisodeBinding.LoadEpisode(episodeName, json);
+        // json 불러오기
+        var loadedEpisode = JsonUtility.FromJson<EpisodeStep>(loadJson);
+        episodeStep = loadedEpisode;
+        
+        myEventStep = episodeStep.eventStep;
+    }
+    
+    protected void SpawnEpisode(string episodeName)
+    {
+        var uiBase = GameManager.Instance.SpawnToUIPool(eUIType.UI_Episode, Vector3.zero).GetComponent<UIBase>();
+        // 바인딩
+        if (uiBase is UI_Episode episodeView)
+        {
+            var episodeInterface = episodeView.EpisodeView.ConvertTo<IUIEpisodeView>();
+            var episodeModel = new UIEpisodeModel()
+            {
+                episodeName = episodeName,
+            };
+            var episodePresenter = new UIEpisodePresenter(episodeInterface, episodeModel);
+            episodeView.SetEpisodePresenter(episodePresenter);
+            episodePresenter.SetEpisode();
+        }
+    }
+    protected void ProductEpisode()
+    {
+        if (episodeStep.episodeTitle != 0)
+            return;
+        
+        var uiEpisodeObj = GameManager.Instance.GetUI(eUIType.UI_Episode);
+        if (uiEpisodeObj == null)
+            return;
+
+        var uiInterface = uiEpisodeObj.GetComponent<UI_Episode>();
+        uiInterface.EpisodePresenter.HandelEpisodeEnd(EpisodeEnd);
+        uiInterface.EpisodePresenter.EpisodeProduct(() => { SoundManager.Instance.PlaySound(ConstValues.Upgrade); });
+        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+    }
+    private void EpisodeEnd()
+    {
+        episodeStep.episodeTitle = 1;
+        SaveEpisode();
+    }
+
+    protected void SpawnStageClear()
+    {
+        var uiBase = GameManager.Instance.SpawnToUIPool(eUIType.UI_StageClear, Vector3.zero).GetComponent<UIBase>();
+        // 바인딩
+        if (uiBase is UI_StageClear stageClearView)
+        {
+            var stageClearInterface = stageClearView.StageClearView.ConvertTo<IUIStageClearView>();
+            var stageClearModel = new UIStageClearModel()
+            {
+                episodeName = "에피소드1: 날씨 좋은 날",
+                clearString = "클리어!!",
+                buttonString = "종료"
+            };
+            var stageClearPresenter = new UIStageClearPresenter(stageClearInterface, stageClearModel);
+            stageClearView.SetStageClearPresenter(stageClearPresenter);
+            stageClearView.StageClearPresenter.HandelStageClearEnd(StageClearButtonAction);
+            stageClearPresenter.SetStageClear();
+        }
+    }
+    protected void ProductStageClear()
+    {
+        var uiEpisodeObj = GameManager.Instance.GetUI(eUIType.UI_StageClear);
+        if (uiEpisodeObj == null)
+            return;
+        
+        var uiInterface = uiEpisodeObj.GetComponent<UI_StageClear>();
+        uiInterface.ViewActive();
+        uiInterface.StageClearPresenter.StageClearProduct(() =>
+        {
+            SoundManager.Instance.PlaySound(ConstValues.Upgrade);
+        });
+        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+    }
+
+    protected void SpawnBossMessage(string bossName)
+    {
+        var uiBase = GameManager.Instance.SpawnToUIPool(eUIType.UI_BossMessage, Vector3.zero).GetComponent<UIBase>();
+        // 바인딩
+        if (uiBase is UI_BossMessage bossMessageView)
+        {
+            var bossMessageInterface = bossMessageView.BossMessageView.ConvertTo<IUIBossMessageView>();
+            var bossMessageModel = new UIBossMessageModel()
+            {
+                bossName = bossName
+            };
+            var episodePresenter = new UIBossMessagePresenter(bossMessageInterface, bossMessageModel);
+            bossMessageView.SetEpisodePresenter(episodePresenter);
+            bossMessageView.ViewActive();
+            episodePresenter.SetBossMessage();
+            episodePresenter.BossMessageProduct(() => { SoundManager.Instance.PlaySound(ConstValues.WarningSound); });
+        }
+    }
+
+    protected void SpawnGuide(PopupGuideModel model)
+    {
+        var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero).GetComponent<UIBase>();
+        // 바인딩
+        if (uiBase is Popup_Guide guideView)
+        {
+            var guideInterface = guideView.GuideView.ConvertTo<IUIGuideView>();
+            var guideModel = new PopupGuideModel()
+            {
+                closeAction = () => { uiBase.ReductionClose(true); }
+            };
+            var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
+            guideView.SetGuidePresenter(guidePresenter);
+            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true); });
+            guidePresenter.SetModel(model.guideMessage, model.imgName);
+            guidePresenter.SetAction(guideModel.closeAction);
+        }
+    }
+    
+    protected async void GameOverCycle()
+    {
+        await UniTask.WaitUntil(() => curPlayer.IsDie);
+        GameManager.Instance.ControlStart = false;
+        dieCancellation = new CancellationTokenSource();
+        if (await NormalDelay(1.0f, dieCancellation).SuppressCancellationThrow())
+            return;
+
+        GameManager.Instance.SpawnToPopupPool(eUIType.Popup_GameOver, Vector2.zero);
+        Time.timeScale = 0;
+    }
+
+    protected void DialogCycle()
+    {
+        if (episodeStep.episodeTitle == 0)
+            return;
+
+        if (myEventStep > stepPos.Length - 1)
+            return;
+
+        if (dialogSwitch && !curPlayer.IsDie && curPlayer.transform.position.x >= stepPos[myEventStep].transform.position.x && GameManager.Instance.MonsterList.Count == 0)
+        {
+            // 대화 진행
+            DialogStep();
+        }
+    }
+    
+    // 대화 단계 증가
+    protected void DialogStepUp()
+    {
+        episodeStep.dialogStep++;
+    }
+    // 플레이어 시작위치 다음 위치로 변경
+    protected void PlayerStepUp()
+    {
+        episodeStep.playerStep++;
+    }
+    // 연출 단계 증가
+    protected void CustomMoveStepUp()
+    {
+        episodeStep.customMoveStep++;
+    }
+    
+    // 현재 이벤트 단계 증가
+    protected void MyEventStepUp()
+    {
+        myEventStep++;
+    }
+    // 저장되는 이벤트 단계를 현재 이벤트 단계와 일치시킴
+    protected void SetEventStep()
+    {
+        episodeStep.eventStep = myEventStep;
+    }
+    
+    protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+    }
+    protected void PlayBGM(string bgmName)
+    {
+        BgmManager.Instance.PlayBgm(bgmName);
+    }
+    protected void PlaySound(string bgmName)
+    {
+        SoundManager.Instance.PlaySound(bgmName);
+    }
+    protected void CameraShake(float amount, float time)
+    {
+        GameManager.Instance.CameraShake(amount, time);
+    }
+}

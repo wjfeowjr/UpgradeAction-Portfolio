@@ -214,7 +214,7 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Episode1 = "Episode1";
     public const string Episode2 = "Episode2";
-    
+
     // BGM
     public const string BGMTitle = "BGM_Title";
     public const string BGMEpisodeStart = "BGM_EpisodeStart";

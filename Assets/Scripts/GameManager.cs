@@ -619,6 +619,11 @@ public class GameManager : Singleton<GameManager>
     {
         return SpawnToPool(id, highestPool, objVector);
     }
+    
+    public GameObject SpawnToRaw(string id, Vector2 objVector)
+    {
+        return SpawnToPool(id, null, objVector);
+    }
 
     public BoxCollider2D ObjectCollider(string id)
     {

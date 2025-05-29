@@ -8,62 +8,10 @@ using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 
-[Serializable]
-public class EpisodeStep
+public class Stage1 : Stage
 {
-    // 에피소드 제목을 봤는가?
-    public int episodeTitle = 0;
-    // 대화 스탭
-    public int dialogStep = 0;
-    // 플레이어의 시작위치
-    public int playerStep = 0;
-    // 플레이어가 연출 상 이동하는 위치의 x값
-    public int customMoveStep = 0;
-    // 이벤트 스탭
-    public int eventStep = 0;
-}
-
-public class BattleManager : MonoBehaviour
-{
-    [SerializeField] private FollowCamera mainCamera;
     [SerializeField] private Monster sunObject;
-
-    [SerializeField] private Transform[] playerPos;
-    [SerializeField] private Transform[] stepPos;
-    [SerializeField] private Transform[] customMovePos;
-    [SerializeField] private Transform[] monsterPos;
-    [SerializeField] private Transform[] stageWallPos;
-    [SerializeField] private Transform[] trapPos;
-    [SerializeField] private Transform[] bossPos;
     
-    private CancellationTokenSource dialogCancellation;
-    private CancellationTokenSource productCancellation;
-    private CancellationTokenSource dieCancellation;
-
-    [SerializeField] private bool dialogSwitch;
-    [SerializeField] private int myEventStep;
-    [SerializeField] private EpisodeStep episodeStep;
-
-    private float dialogDelay1 = 2.5f;
-    private float dialogDelay2 = 1.0f;
-
-    [SerializeField] private List<GameObject> stageWalls = new List<GameObject>();
-    private Player curPlayer;
-
-    private void Awake()
-    {
-        if (SceneChanger.Instance)
-            SceneChanger.Instance.SceneControl();
-
-        if (GameManager.Instance)
-        {
-            GameManager.Instance.InitCamera(mainCamera);
-            GameManager.Instance.ClearMonsterList();
-            GameManager.Instance.DisActiveObjectList();
-            curPlayer = GameManager.Instance.CurPlayer;
-        }
-    }
-
     private void Start()
     {
         // 잡초맨 전투
@@ -96,7 +44,7 @@ public class BattleManager : MonoBehaviour
         GameManager.Instance.SetGroundVector();
 
         CashingSunObject();
-        SpawnEpisode();
+        SpawnEpisode("에피소드1: 날씨 좋은 날");
         SpawnStageClear();
         GameOverCycle();
         ProductEpisode();
@@ -108,212 +56,11 @@ public class BattleManager : MonoBehaviour
         DialogCycle();
     }
 
-    private void CashingSunObject()
+    protected override void SetEpisodeName()
     {
-        if (!sunObject)
-        {
-            sunObject = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSun, bossPos[0]).GetComponent<Monster>();
-            sunObject.gameObject.SetActive(false);
-        }
+        episodeName = ConstValues.Episode1;
     }
-    
-    // 에피소드 저장
-    private void SaveEpisode()
-    {
-        // json화
-        string json = JsonUtility.ToJson(episodeStep, true);
-        EpisodeBinding.SaveEpisode(ConstValues.Episode1, json);
-    }
-    // 에피소드 불러오기
-    private void LoadEpisode()
-    {
-        // json화
-        string json = JsonUtility.ToJson(episodeStep, true);
-        var loadJson = EpisodeBinding.LoadEpisode(ConstValues.Episode1, json);
-        // json 불러오기
-        var loadedEpisode = JsonUtility.FromJson<EpisodeStep>(loadJson);
-        episodeStep = loadedEpisode;
-        
-        myEventStep = episodeStep.eventStep;
-    }
-    
-    private void SpawnEpisode()
-    {
-        var uiBase = GameManager.Instance.SpawnToUIPool(eUIType.UI_Episode, Vector3.zero).GetComponent<UIBase>();
-        // 바인딩
-        if (uiBase is UI_Episode episodeView)
-        {
-            var episodeInterface = episodeView.EpisodeView.ConvertTo<IUIEpisodeView>();
-            var episodeModel = new UIEpisodeModel()
-            {
-                episodeName = "에피소드1: 날씨 좋은 날",
-            };
-            var episodePresenter = new UIEpisodePresenter(episodeInterface, episodeModel);
-            episodeView.SetEpisodePresenter(episodePresenter);
-            episodePresenter.SetEpisode();
-        }
-    }
-    private void ProductEpisode()
-    {
-        if (episodeStep.episodeTitle != 0)
-            return;
-
-        PlayBGM(ConstValues.BGMEpisodeStart);
-
-        var uiEpisodeObj = GameManager.Instance.GetUI(eUIType.UI_Episode);
-        if (uiEpisodeObj == null)
-            return;
-
-        var uiInterface = uiEpisodeObj.GetComponent<UI_Episode>();
-        uiInterface.EpisodePresenter.HandelEpisodeEnd(EpisodeEnd);
-        uiInterface.EpisodePresenter.EpisodeProduct(() => { SoundManager.Instance.PlaySound(ConstValues.Upgrade); });
-        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-    }
-    private void EpisodeEnd()
-    {
-        episodeStep.episodeTitle = 1;
-        SaveEpisode();
-    }
-    
-    private void SpawnStageClear()
-    {
-        var uiBase = GameManager.Instance.SpawnToUIPool(eUIType.UI_StageClear, Vector3.zero).GetComponent<UIBase>();
-        // 바인딩
-        if (uiBase is UI_StageClear stageClearView)
-        {
-            var stageClearInterface = stageClearView.StageClearView.ConvertTo<IUIStageClearView>();
-            var stageClearModel = new UIStageClearModel()
-            {
-                episodeName = "에피소드1: 날씨 좋은 날",
-                clearString = "클리어!!",
-                buttonString = "종료"
-            };
-            var stageClearPresenter = new UIStageClearPresenter(stageClearInterface, stageClearModel);
-            stageClearView.SetStageClearPresenter(stageClearPresenter);
-            stageClearView.StageClearPresenter.HandelStageClearEnd(StageClearButton);
-            stageClearPresenter.SetStageClear();
-        }
-    }
-    private void ProductStageClear()
-    {
-        var uiEpisodeObj = GameManager.Instance.GetUI(eUIType.UI_StageClear);
-        if (uiEpisodeObj == null)
-            return;
-        
-        var uiInterface = uiEpisodeObj.GetComponent<UI_StageClear>();
-        uiInterface.ViewActive();
-        uiInterface.StageClearPresenter.StageClearProduct(() =>
-        {
-            SoundManager.Instance.PlaySound(ConstValues.Upgrade);
-        });
-        GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-    }
-
-    private void StageClearButton()
-    {
-        Debug.Log("종료");
-        Application.Quit();
-    }
-
-    private void SpawnBossMessage(string bossName)
-    {
-        var uiBase = GameManager.Instance.SpawnToUIPool(eUIType.UI_BossMessage, Vector3.zero).GetComponent<UIBase>();
-        // 바인딩
-        if (uiBase is UI_BossMessage bossMessageView)
-        {
-            var bossMessageInterface = bossMessageView.BossMessageView.ConvertTo<IUIBossMessageView>();
-            var bossMessageModel = new UIBossMessageModel()
-            {
-                bossName = bossName
-            };
-            var episodePresenter = new UIBossMessagePresenter(bossMessageInterface, bossMessageModel);
-            bossMessageView.SetEpisodePresenter(episodePresenter);
-            bossMessageView.ViewActive();
-            episodePresenter.SetBossMessage();
-            episodePresenter.BossMessageProduct(() => { SoundManager.Instance.PlaySound(ConstValues.WarningSound); });
-        }
-    }
-
-    private void SpawnGuide(PopupGuideModel model)
-    {
-        var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero).GetComponent<UIBase>();
-        // 바인딩
-        if (uiBase is Popup_Guide guideView)
-        {
-            var guideInterface = guideView.GuideView.ConvertTo<IUIGuideView>();
-            var guideModel = new PopupGuideModel()
-            {
-                closeAction = () => { uiBase.ReductionClose(true); }
-            };
-            var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
-            guideView.SetGuidePresenter(guidePresenter);
-            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true); });
-            guidePresenter.SetModel(model.guideMessage, model.imgName);
-            guidePresenter.SetAction(guideModel.closeAction);
-        }
-    }
-
-    private void Guide1()
-    {
-        var guideModel = new PopupGuideModel()
-        {
-            guideMessage =
-                "<color=#F36B6B>'Z'</color>키를 입력하여 회피 할 수 있습니다.\n회피 도중에는 <color=#F36B6B>'무적'</color>입니다.\n<color=#F36B6B>피격, 넘어짐 상태에서도 사용할 수 있습니다.</color>",
-            imgName = "Guide1",
-        };
-        SpawnGuide(guideModel);
-    }
-
-    private void Guide2()
-    {
-        var guideModel = new PopupGuideModel()
-        {
-            guideMessage = "<color=#F36B6B>'X'</color>키와 우측 하단의 스킬들을 활용하여 전투를 해보세요!\n몬스터한테 맞아 체력이 다 깎이면 죽습니다.",
-            imgName = "Guide2",
-        };
-        SpawnGuide(guideModel);
-    }
-    
-    private void Guide3()
-    {
-        var guideModel = new PopupGuideModel()
-        {
-            guideMessage = "<color=#F36B6B>'보스'</color>는 일반 몬스터와 달리 강력한 패턴으로 무장하고 있습니다.\n공격과 스킬을 잘 활용하여 상대하세요!",
-            imgName = "Guide3",
-        };
-        SpawnGuide(guideModel);
-    }
-
-    private async void GameOverCycle()
-    {
-        await UniTask.WaitUntil(() => curPlayer.IsDie);
-        GameManager.Instance.ControlStart = false;
-        dieCancellation = new CancellationTokenSource();
-        if (await NormalDelay(1.0f, dieCancellation).SuppressCancellationThrow())
-            return;
-
-        GameManager.Instance.SpawnToPopupPool(eUIType.Popup_GameOver, Vector2.zero);
-        Time.timeScale = 0;
-    }
-
-    private void DialogCycle()
-    {
-        if (episodeStep.episodeTitle == 0)
-            return;
-
-        if (myEventStep > stepPos.Length - 1)
-            return;
-
-        if (dialogSwitch && !curPlayer.IsDie &&
-            curPlayer.transform.position.x >= stepPos[myEventStep].transform.position.x &&
-            GameManager.Instance.MonsterList.Count == 0)
-        {
-            // 대화 진행
-            DialogStep();
-        }
-    }
-
-    private async void DialogStep()
+    protected override async void DialogStep()
     {
         // 대화 진행
         switch (myEventStep)
@@ -341,6 +88,19 @@ public class BattleManager : MonoBehaviour
             case 5:
                 await Product6();
                 break;
+        }
+    }
+    protected override void StageClearButtonAction()
+    {
+        Application.Quit();
+    }
+    
+    private void CashingSunObject()
+    {
+        if (!sunObject)
+        {
+            sunObject = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSun, bossPos[0]).GetComponent<Monster>();
+            sunObject.gameObject.SetActive(false);
         }
     }
 
@@ -790,37 +550,12 @@ public class BattleManager : MonoBehaviour
         }
     }
 
-    // 대화 단계 증가
-    private void DialogStepUp()
-    {
-        episodeStep.dialogStep++;
-    }
-    // 플레이어 시작위치 다음 위치로 변경
-    private void PlayerStepUp()
-    {
-        episodeStep.playerStep++;
-    }
-    // 연출 단계 증가
-    private void CustomMoveStepUp()
-    {
-        episodeStep.customMoveStep++;
-    }
-    
-    // 현재 이벤트 단계 증가
-    private void MyEventStepUp()
-    {
-        myEventStep++;
-    }
-    // 저장되는 이벤트 단계를 현재 이벤트 단계와 일치시킴
-    private void SetEventStep()
-    {
-        episodeStep.eventStep = myEventStep;
-    }
-
     private void AccumulatedStep()
     {
         if(episodeStep.dialogStep > 0)
             PlayBGM(ConstValues.BGMEpisode1);
+        else
+            PlayBGM(ConstValues.BGMEpisodeStart);
         
         switch (myEventStep)
         {
@@ -864,21 +599,35 @@ public class BattleManager : MonoBehaviour
                 break;
         }
     }
+    
+    private void Guide1()
+    {
+        var guideModel = new PopupGuideModel()
+        {
+            guideMessage =
+                "<color=#F36B6B>'Z'</color>키를 입력하여 회피 할 수 있습니다.\n회피 도중에는 <color=#F36B6B>'무적'</color>입니다.\n<color=#F36B6B>피격, 넘어짐 상태에서도 사용할 수 있습니다.</color>",
+            imgName = "Guide1",
+        };
+        SpawnGuide(guideModel);
+    }
 
-    private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    private void Guide2()
     {
-        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+        var guideModel = new PopupGuideModel()
+        {
+            guideMessage = "<color=#F36B6B>'X'</color>키와 우측 하단의 스킬들을 활용하여 전투를 해보세요!\n몬스터한테 맞아 체력이 다 깎이면 죽습니다.",
+            imgName = "Guide2",
+        };
+        SpawnGuide(guideModel);
     }
-    private void PlayBGM(string bgmName)
+    
+    private void Guide3()
     {
-        BgmManager.Instance.PlayBgm(bgmName);
-    }
-    private void PlaySound(string bgmName)
-    {
-        SoundManager.Instance.PlaySound(bgmName);
-    }
-    private void CameraShake(float amount, float time)
-    {
-        GameManager.Instance.CameraShake(amount, time);
+        var guideModel = new PopupGuideModel()
+        {
+            guideMessage = "<color=#F36B6B>'보스'</color>는 일반 몬스터와 달리 강력한 패턴으로 무장하고 있습니다.\n공격과 스킬을 잘 활용하여 상대하세요!",
+            imgName = "Guide3",
+        };
+        SpawnGuide(guideModel);
     }
 }

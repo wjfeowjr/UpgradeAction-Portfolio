@@ -10,13 +10,4 @@ public class SceneChanger : Singleton<SceneChanger>
         get => titleScene;
         set => titleScene = value;
     }
-    
-    public void SceneControl()
-    {
-        if (!titleScene)
-        {
-            SceneManager.LoadScene(ConstValues.TitleScene);
-            titleScene = true;
-        }
-    }
 }
