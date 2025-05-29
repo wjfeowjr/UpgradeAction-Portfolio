@@ -51,8 +51,9 @@ public class FollowCamera : MonoBehaviour
         myCamera = GetComponent<Camera>();
     }
 
-    private void Start()
+    private async void Start()
     {
+        await UniTask.WaitUntil(() => GameManager.Instance.CurPlayer != null);
         SetTarget(GameManager.Instance.CurPlayer.transform);
         SmoothDelay();
     }
@@ -72,7 +73,7 @@ public class FollowCamera : MonoBehaviour
         ySmooth = 8;
     }
     
-    private void SetTarget(Transform targetTransform)
+    public void SetTarget(Transform targetTransform)
     {
         target = targetTransform;
     }

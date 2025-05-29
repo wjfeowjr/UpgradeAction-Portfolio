@@ -219,7 +219,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string BGMTitle = "BGM_Title";
     public const string BGMEpisodeStart = "BGM_EpisodeStart";
     public const string BGMEpisode1 = "BGM_Episode1";
-
+    public const string BGMEpisode2 = "BGM_Episode2";
+    
     // 사운드
     public const string GunnerLaugh = "Gunner_Laugh";
     public const string PlayerDamaged1 = "Player_Damaged1";

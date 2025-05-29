@@ -22,7 +22,11 @@ public class EpisodeStep
 
 public abstract class Stage : MonoBehaviour
 {
-    [SerializeField] protected string episodeName;
+    protected string episodeName;
+    protected string episodeTitle;
+    protected string clearString;
+    protected string buttonString;
+    
     [SerializeField] protected EpisodeStep episodeStep;
     
     [SerializeField] protected Transform[] playerPos;
@@ -45,7 +49,6 @@ public abstract class Stage : MonoBehaviour
     [SerializeField] protected List<GameObject> stageWalls = new List<GameObject>();
     protected Player curPlayer;
     
-    protected abstract void SetEpisodeName();
     protected abstract void DialogStep();
     protected abstract void StageClearButtonAction();
 
@@ -55,9 +58,14 @@ public abstract class Stage : MonoBehaviour
         {
             GameManager.Instance.ClearMonsterList();
             GameManager.Instance.DisActiveObjectList();
-            curPlayer = GameManager.Instance.CurPlayer;
         }
         SetEpisodeName();
+    }
+
+    protected virtual void SetEpisodeName()
+    {
+        clearString = "클리어!!";
+        buttonString = "종료";
     }
     
     // 에피소드 저장
@@ -125,7 +133,7 @@ public abstract class Stage : MonoBehaviour
             var stageClearInterface = stageClearView.StageClearView.ConvertTo<IUIStageClearView>();
             var stageClearModel = new UIStageClearModel()
             {
-                episodeName = "에피소드1: 날씨 좋은 날",
+                episodeName = episodeTitle,
                 clearString = "클리어!!",
                 buttonString = "종료"
             };
@@ -245,6 +253,10 @@ public abstract class Stage : MonoBehaviour
     protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+    }
+    protected void StopBGM()
+    {
+        BgmManager.Instance.Stop();
     }
     protected void PlayBGM(string bgmName)
     {

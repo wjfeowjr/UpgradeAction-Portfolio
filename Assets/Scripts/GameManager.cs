@@ -207,6 +207,8 @@ public class GameManager : Singleton<GameManager>
         set => curPlayer = value;
     }
 
+    public Player[] Players => players;
+
     public string FirstPlayer
     {
         get => firstPlayer;
@@ -465,17 +467,22 @@ public class GameManager : Singleton<GameManager>
     // 플레이어
     private void InitPlayer()
     {
-        firstPlayer = ConstValues.Berserker;
-        //secondPlayer = ConstValues.Gunner;
-        
-        curPlayer = GetPlayer(FirstPlayer);
+        SetPlayerOrder(ConstValues.Berserker, ConstValues.Gunner);
+
         foreach (var player in players)
         {
             player.InitBasicStat();
             player.InitSkill();
         }
     }
-    public void InitPlayerStat()
+    public void SetPlayerOrder(string first, string second)
+    {
+        firstPlayer = first;
+        secondPlayer = second;
+        curPlayer = GetPlayer(FirstPlayer);
+    }
+
+    private void InitPlayerStat()
     {
         foreach (var player in players)
             player.InitBasicStat();
@@ -495,7 +502,7 @@ public class GameManager : Singleton<GameManager>
         }
         return null;
     }
-    private void ActivePlayer(string playerName)
+    public void ActivePlayer(string playerName)
     {
         foreach (var player in players)
             player.gameObject.SetActive(player.name == playerName);
@@ -778,7 +785,6 @@ public class GameManager : Singleton<GameManager>
                 break;
             }
         }
-
         return result;
     }
 
@@ -787,21 +793,6 @@ public class GameManager : Singleton<GameManager>
     {
         var uiBase = uiObject.GetComponent<UIBase>();
         uiBase.Setup(uiType);
-        if (uiBase != null)
-            BindPresenter(uiType, uiBase); 
-    }
-    // 활성화 된 UI나 Popup을 바인딩
-    private void SetUIorPopup(eUIType uiType)
-    {
-        UIBase uiBase = null;
-        foreach (var list in objectList)
-        {
-            if (list.GetComponent<UIBase>() && list.GetComponent<UIBase>().GetUIType() == uiType)
-            {
-                uiBase = list.GetComponent<UIBase>();
-                break;
-            }
-        }
         if (uiBase != null)
             BindPresenter(uiType, uiBase); 
     }
@@ -831,7 +822,7 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-    public void CharacterChange()
+    public void CharacterChange(bool changeAttack = true)
     {
         var pastPlayer = curPlayer;
         var pastVelocity = pastPlayer.GetVelocity();
@@ -845,15 +836,53 @@ public class GameManager : Singleton<GameManager>
         curPlayer.transform.position = changePos;
         curPlayer.transform.localScale = pastPlayer.transform.localScale;
         curPlayer.JumpAttackCount = 0;
+
+        if (changeAttack)
+        {
+            if(pastPlayer.NormalState == ENormalState.Jump)
+                curPlayer.JumpChange(pastVelocity);
+            else if(pastPlayer.MoveState == EMoveState.Moving)
+                curPlayer.MoveChange();
+            else
+                curPlayer.ChangeAttack();
+        }
+
+        RefreshSkill();
+        mainCamera.SetTarget(curPlayer.transform);
+    }
+
+    // 단독 => 단독
+    public void SetCharacterOrder(string first, string second)
+    {
+        var pastPlayer = curPlayer;
+        var changePos = curPlayer.transform.position;
         
-        if(pastPlayer.NormalState == ENormalState.Jump)
-            curPlayer.JumpChange(pastVelocity);
-        else if(pastPlayer.MoveState == EMoveState.Moving)
-            curPlayer.MoveChange();
-        else
-            curPlayer.ChangeAttack();
+        SetPlayerOrder(first, second);
+        ActivePlayer(FirstPlayer);
+        curPlayer.transform.position = changePos;
+        curPlayer.transform.localScale = pastPlayer.transform.localScale;
         
-        SetUIorPopup(eUIType.UI_Interface);
+        RefreshSkill();
+        mainCamera.SetTarget(curPlayer.transform);
+    }
+
+    private void RefreshSkill()
+    {
+        var uiInterfaceObj = GetUI(eUIType.UI_Interface);
+        if (uiInterfaceObj == null)
+            return;
+        
+        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        var changeInterface = uiInterface.ChangeCharacter.ConvertTo<IUISkillView>();
+        var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
+        var skillModel = new UISkillModel
+        {
+            changeSkill = changeSkill,
+            settingSkillList = GetSettingSkillList()
+        };
+        var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
+        uiInterface.SetSkillPresenter(skillPresenter);
+        skillPresenter.SetSkillInfo();
     }
 
     public SpeechFrame SpawnSpeechFrame(string frameName, Vector2 speechVector, string dialog)
