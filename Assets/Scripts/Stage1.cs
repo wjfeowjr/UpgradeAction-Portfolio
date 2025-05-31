@@ -67,15 +67,15 @@ public class Stage1 : Stage
         // GameManager.Instance.ControlStart = true;
         
         // 태양 전투
-        // episodeStep = new EpisodeStep()
-        // {
-        //     episodeTitle = 1,
-        //     dialogStep = 3,
-        //     playerStep = 2,
-        //     customMoveStep = 2,
-        //     eventStep = 4,
-        // };
-        // GameManager.Instance.ControlStart = true;
+        episodeStep = new EpisodeStep()
+        {
+            episodeTitle = 1,
+            dialogStep = 4,
+            playerStep = 3,
+            customMoveStep = 3,
+            eventStep = 4,
+        };
+        GameManager.Instance.ControlStart = true;
 
         LoadEpisode();
         StepCharacterSetting();

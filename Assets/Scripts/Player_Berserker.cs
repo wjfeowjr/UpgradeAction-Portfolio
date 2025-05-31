@@ -385,7 +385,7 @@ public class Player_Berserker : Player
             chargeVector = new Vector2(transform.position.x - dashLength, transform.position.y);
         
         // 돌진
-        await AirCharge(dashSpeed, 1.0f, dashLength, 1.0f);
+        await Charge(dashSpeed, 1.0f, dashLength, 1.0f);
         
         SetTriggerAnimator(ConstValues.ComboAttack);
         SpawnAttack(ConstValues.BerserkerChargeCrashSlash, centerPos);       

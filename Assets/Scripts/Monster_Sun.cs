@@ -36,8 +36,7 @@ public class Monster_Sun : Monster
         ZeroVelocity();
         await UniTask.WaitUntil(() => GameManager.Instance.ControlStart && Time.timeScale > 0);
         
-        MoveStateSetting(EMoveState.Moving);
-        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        IdleOrMove();
         FirstCoolTimeReduce();
         myBoxCollider.enabled = true;
         PatrolRay();
@@ -155,8 +154,6 @@ public class Monster_Sun : Monster
         myBoxCollider.enabled = false;
         
         CancelMotion();
-        ClearObjectList(buffObject);
-        
         MoveStateSetting(EMoveState.Stopping);
         isDie = true;
         GameManager.Instance.RemoveMonster(this);

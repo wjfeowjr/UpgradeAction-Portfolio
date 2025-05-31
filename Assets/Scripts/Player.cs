@@ -816,8 +816,6 @@ public abstract class Player : Character
         var dashSpeed = 15;
         var dashLength = 4.5f;
         
-        // 대시 레이캐스트 체크
-        //chargeVector = RayCheckLength(dashLength, 0);
         if(transform.localScale.x > 0)
             chargeVector = new Vector2(transform.position.x + dashLength, transform.position.y);
         else
@@ -834,7 +832,7 @@ public abstract class Player : Character
         trace.enabled = true;
 
         // 돌진
-        bool chargeFinish = await AirCharge(dashSpeed, 0.5f, dashLength, 0.5f);
+        bool chargeFinish = await Charge(dashSpeed, 0.5f, dashLength, 0.5f);
 
         trace.enabled = false;
         ClearObjectList(normalObject, 0.3f);

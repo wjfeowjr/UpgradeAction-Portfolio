@@ -114,6 +114,7 @@ public class Monster : Character
         PlayerInAttackRangeCheck();
         PlayerInJumpRangeCheck();
         PlayerInDropRangeCheck();
+        UpdateStandingCheck();
     }
 
     private void OnDisable()
@@ -220,6 +221,7 @@ public class Monster : Character
         if (string.IsNullOrEmpty(myStat.appearEffect))
         {
             myStat = new MonsterStat();
+            myStat.standMotion = targetStat.standMotion;
             myStat.appearDelay = targetStat.appearDelay;
             myStat.firstCoolTime = targetStat.firstCoolTime;
             myStat.globalCoolTime = targetStat.globalCoolTime;
@@ -227,31 +229,31 @@ public class Monster : Character
             var totalAttackRangeArray = targetStat.attackRange.Split('ㅗ');
             foreach (var totalRange in totalAttackRangeArray)
             {
-                var attackRangeArray = totalRange.Split(',');
+                var attackRangeArray = totalRange.Split(';');
                 Vector2 attackRange = new Vector2(float.Parse(attackRangeArray[0]), float.Parse(attackRangeArray[1]));
                 myStat.attackRange.Add(attackRange);
             }
             
-            var jumpRangeArray = targetStat.jumpRange.Split(',');
+            var jumpRangeArray = targetStat.jumpRange.Split(';');
             myStat.jumpRange = new Vector2(float.Parse(jumpRangeArray[0]), float.Parse(jumpRangeArray[1]));
             
-            var dropRangeArray = targetStat.dropRange.Split(',');
+            var dropRangeArray = targetStat.dropRange.Split(';');
             myStat.dropRange = new Vector2(float.Parse(dropRangeArray[0]), float.Parse(dropRangeArray[1]));
 
-            var coolTimeArray = targetStat.coolTime.Split(',');
+            var coolTimeArray = targetStat.coolTime.Split(';');
             foreach (var coolTime in coolTimeArray)
                 myStat.coolTime.Add(float.Parse(coolTime));
             
-            var priorityArray = targetStat.priority.Split(',');
+            var priorityArray = targetStat.priority.Split(';');
             foreach (var priority in priorityArray)
                 myStat.priority.Add(int.Parse(priority));
 
-            var pageHpArray = targetStat.pageHp.Split(',');
+            var pageHpArray = targetStat.pageHp.Split(';');
             var pagePatternArray = targetStat.pagePattern.Split('ㅗ');
             for (var i = 0; i < pagePatternArray.Length; i++)
             {
                 MonsterPattern monsterPattern = new MonsterPattern();
-                var patternArray = pagePatternArray[i].Split(',');
+                var patternArray = pagePatternArray[i].Split(';');
                 var pagePatternList = new List<int>();
                 foreach (var pattern in patternArray)
                     pagePatternList.Add(int.Parse(pattern));
@@ -289,13 +291,13 @@ public class Monster : Character
             myStat.traceLength = targetStat.traceLength;
             myStat.hovering = targetStat.hovering;
             
-            var hoveringHeightArray = targetStat.hoveringHeight.Split(',');
+            var hoveringHeightArray = targetStat.hoveringHeight.Split(';');
             foreach (var hoveringHeight in hoveringHeightArray)
                 myStat.hoveringHeight.Add(float.Parse(hoveringHeight));
             
             myStat.hoveringSpeed = targetStat.hoveringSpeed;
             
-            var appearShakeArray = targetStat.appearShake.Split(',');
+            var appearShakeArray = targetStat.appearShake.Split(';');
             foreach (var appearShake in appearShakeArray)
                 myStat.appearShake.Add(float.Parse(appearShake));
             
@@ -362,6 +364,30 @@ public class Monster : Character
         SetTriggerAnimator(triggerName);
         StopVelocity();
     }
+
+    protected void IdleOrMove()
+    {
+        // 원거리몹
+        if (myStat.standMotion)
+        {
+            if (patternInfo[0].playerInAttackRange)
+            {
+                StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+                MoveStateSetting(EMoveState.Stopping);
+            }
+            else
+            {
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                MoveStateSetting(EMoveState.Moving);
+            }
+        }
+        // 근접몹
+        else
+        {
+            StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+            MoveStateSetting(EMoveState.Moving);
+        }
+    }
     
     protected override void StateRecovery()
     {
@@ -370,8 +396,8 @@ public class Monster : Character
         // 스턴상태가 걸려있지 않은 경우
         if (findDeBuff == null)
         {
-            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-            MoveStateSetting(EMoveState.Moving);
+            basicStat.bodyType = originStat.bodyType;
+            IdleOrMove();
         }
         // 스턴상태가 걸려있는 경우
         else
@@ -432,7 +458,7 @@ public class Monster : Character
 
         if (finishSuccess)
         {
-            SpawnObject(ConstValues.MonsterSpinachAppear, transform);
+            SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
             StateSetting(ENormalState.AppearEnd, ConstValues.AppearEnd, ConstValues.AppearEnd);
             if (await NormalDelay(myStat.appearDelay, stateCancellation).SuppressCancellationThrow())
             {
@@ -444,8 +470,7 @@ public class Monster : Character
             // Hovering();
             // AppearShake();
             
-            MoveStateSetting(EMoveState.Moving);
-            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+            IdleOrMove();
         }
         bossProduct?.Invoke();
         FirstCoolTimeReduce();
@@ -695,7 +720,7 @@ public class Monster : Character
         {
             if (i == 0)
             {
-                patternInfo[i].patternCoolTime = myStat.firstCoolTime;
+                patternInfo[i].patternCoolTime = myStat.coolTime[i] - myStat.firstCoolTime;
             }
             else
             {
@@ -773,8 +798,7 @@ public class Monster : Character
         if (!movingStart)
             return;
         
-        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-        MoveStateSetting(EMoveState.Moving);
+        IdleOrMove();
     }
     
     // 적 공격
@@ -791,6 +815,32 @@ public class Monster : Character
             LookAt(GameManager.Instance.CurPlayer.transform.position.x);
             MonsterPattern(idx);
         }
+    }
+    
+    // 원거리 몬스터 스탠딩 알고리즘
+    private void UpdateStandingCheck()
+    {
+        if (!myStat.standMotion || normalState != ENormalState.Move || normalState != ENormalState.Idle)
+            return;
+
+        if (patternInfo[0].playerInAttackRange)
+        {
+            if (!patternInfo[0].canPattern)
+            {
+                IdleOrMove();
+            }
+        }
+        else
+        {
+            if (moveState == EMoveState.Stopping)
+            {
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                MoveStateSetting(EMoveState.Moving);
+            }
+        }
+
+        if(normalState == ENormalState.Idle)
+            LookAt(GameManager.Instance.CurPlayer.transform.position.x);
     }
     
     // 패턴 사이클
@@ -850,14 +900,14 @@ public class Monster : Character
                 int rand = Random.Range(0, patternIdx.Count);
                 currentSkillIdx = patternIdx[rand];
                 MonsterAttack(currentSkillIdx);
-                //Debug.Log($"우선순위가 같은 스킬들이 {idxList.Count}개다, 나온건 {currentSkillIdx}, {isAttack}");
+                //Debug.Log($"우선순위가 같은 스킬들이 {patternIdx.Count}개다, 최종적으로 나온건 {currentSkillIdx}");
             }
             // 들어있는 패턴들의 우선순위가 하나라도 다를 때
             else
             {
                 // 가장 높은 우선순위의 패턴이 발동한다
                 MonsterAttack(currentSkillIdx);
-                //Debug.Log("가장 높은 우선순위" + currentSkillIdx + "발동");
+                //Debug.Log($"가장 높은 우선순위{currentSkillIdx}발동");
             }
         }
     }
@@ -874,6 +924,8 @@ public class Monster : Character
                 Vector2 start = transform.position;
                 var playerPos = GameManager.Instance.CurPlayer.transform.position;
                 Vector2 end = new Vector2(playerPos.x, playerPos.y);
+                if(myStat.standMotion)
+                    end = new Vector2(transform.position.x, playerPos.y);
         
                 if (Vector2.Distance(start, end) < 0.01f)
                     return;
@@ -902,8 +954,9 @@ public class Monster : Character
     {
         if (IsCanJump() && downJumpInfo.playerInRange && downJumpInfo.coolTime >= ConstValues.JumpCoolTime)
         {
+            float minY = 0.2f;
             // 밑점의 조건, 플레이어의 위치가 나보다 밑에 있고, 밟고 있는 지면이 나와 다른 게임 오브젝트다
-            if (GameManager.Instance.CurPlayer.GetDownPosY() < transform.position.y && GameManager.Instance.CurPlayer.GroundObject != GroundObject)
+            if (GameManager.Instance.CurPlayer.GetDownPosY() < transform.position.y - minY && GameManager.Instance.CurPlayer.GroundObject != GroundObject)
             {
                 CancelMotion();
                 var playerPos = GameManager.Instance.CurPlayer.transform.position;
@@ -1057,8 +1110,7 @@ public class Monster : Character
                     if(await AttackDelay(delay1).SuppressCancellationThrow())
                         return;
                     
-                    StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-                    MoveStateSetting(EMoveState.Moving);
+                    IdleOrMove();
                     jumpInfo.coolTime = 0;
                     downJumpInfo.coolTime = 0;
                     
@@ -1078,7 +1130,7 @@ public class Monster : Character
         {
             LandingStateSetting(ELandingState.Air);
 
-            if(normalState == ENormalState.Idle)
+            if(normalState is ENormalState.Idle or ENormalState.Move)
                 StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
             
             // if (col.gameObject.CompareTag(ConstValues.Platform))

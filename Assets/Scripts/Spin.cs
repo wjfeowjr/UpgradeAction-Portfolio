@@ -47,6 +47,15 @@ public class Spin : MonoBehaviour
         transform.eulerAngles = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, angleZ);
     }
 
+    public void SetSpinSpeed(bool plus)
+    {
+        var originSpeed = Mathf.Abs(spinSpeed);
+        if (plus)
+            spinSpeed = originSpeed;
+        else
+            spinSpeed = -originSpeed;
+    }
+
     public void DeleteSpinObject(int idx)
     {
         spinObjects[idx].SetActive(false);

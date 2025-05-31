@@ -99,6 +99,11 @@ public class Attack : MonoBehaviour
         
         ContinuousCollider();
     }
+
+    public void DisActiveCollider()
+    {
+        myCollider.enabled = false;
+    }
     
     private void ColliderTimer()
     {

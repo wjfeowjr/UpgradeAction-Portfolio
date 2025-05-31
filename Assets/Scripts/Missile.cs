@@ -24,6 +24,7 @@ public class Missile : MonoBehaviour
     private Rigidbody2D myRigidbody;
     private Collider2D myCollider;
     private SpriteRenderer missileSprite;
+    private Spin mySpin;
     [SerializeField] private MissileInfo missileInfo;
 
     private void Awake()
@@ -33,6 +34,7 @@ public class Missile : MonoBehaviour
 
         myCollider = GetComponent<Collider2D>();
         missileSprite = GetComponentInChildren<SpriteRenderer>();
+        mySpin = GetComponentInChildren<Spin>();
     }
 
     private void OnEnable()
@@ -87,12 +89,16 @@ public class Missile : MonoBehaviour
             limitPosX -= missileInfo.limitLength;
             if(missileSprite)
                 missileSprite.flipX = true;
+            if(mySpin)
+                mySpin.SetSpinSpeed(false);
         }
         else if (dir == Vector2.right)
         {
             limitPosX += missileInfo.limitLength;
             if(missileSprite)
                 missileSprite.flipX = false;
+            if(mySpin)
+                mySpin.SetSpinSpeed(true);
         }
     }
     

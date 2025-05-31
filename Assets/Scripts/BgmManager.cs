@@ -24,7 +24,7 @@ public class BgmManager : Singleton<BgmManager>
             bgmDic.Add(soundName, bgm);
         }
     }
-
+ 
     public void PlayBgm(string uniqueId)
     {
         if (!myAudioSource || uniqueId == ConstValues.None)

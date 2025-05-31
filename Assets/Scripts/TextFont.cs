@@ -13,8 +13,10 @@ using UnityEngine.Serialization;
 
 public enum EFontType
 {
-    Damage,
-    Critical,
+    MyDamage,
+    EnemyDamage,
+    MyCritical,
+    EnemyCritical,
     Heal,
     Dot,
 }
@@ -64,7 +66,7 @@ public class TextFont : MonoBehaviour
         myText.color = existingColor;
         myText.text = textValue;
         
-        if(fontType == EFontType.Critical)
+        if(fontType == EFontType.EnemyCritical)
             myText.text = $"{textValue}!";
     }
 
@@ -73,11 +75,17 @@ public class TextFont : MonoBehaviour
         fontType = type;
         switch (fontType)
         {
-            case EFontType.Damage:
+            case EFontType.MyDamage:
                 myText.color = ConstValues.WhiteColor;
                 break;
-            case EFontType.Critical:
+            case EFontType.EnemyDamage:
+                myText.color = ConstValues.RedColor;
+                break;
+            case EFontType.MyCritical:
                 myText.color = ConstValues.YellowColor;
+                break;
+            case EFontType.EnemyCritical:
+                myText.color = ConstValues.OrangeColor;
                 break;
         }
     }

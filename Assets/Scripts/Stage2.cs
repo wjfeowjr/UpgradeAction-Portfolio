@@ -107,7 +107,7 @@ public class Stage2 : Stage
         switch (myEventStep)
         {
             case 0:
-                GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default);
+                GameManager.Instance.SetPlayerOrder(ConstValues.Gunner, default);
                 break;
             
             // case 1:
@@ -128,6 +128,9 @@ public class Stage2 : Stage
             case 0:
                 // 카메라 제한
                 GameManager.Instance.MainCamera.MinXAndY = new Vector2(0, GameManager.Instance.MainCamera.MinXAndY.y);
+                GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[0].position);
+                GameManager.Instance.SpawnMonster(ConstValues.MonsterPurple, monsterPos[0].position);
+                GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[0].position);
                 break;
         }
     }

@@ -422,13 +422,26 @@ public abstract class Character : MonoBehaviour
     }
 
     public void SpawnDamageFont(int damage, bool critical)
-    { 
+    {
+        if (damage == 0)
+            return;
+        
         var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, fontPos).GetComponent<TextFont>();
 
         if (critical)
-            textFont.ColorSetting(EFontType.Critical);
+        {
+            if(GetComponent<Player>())
+                textFont.ColorSetting(EFontType.EnemyCritical);
+            else if(GetComponent<Monster>())
+                textFont.ColorSetting(EFontType.MyCritical);
+        }
         else
-            textFont.ColorSetting(EFontType.Damage);
+        {
+            if(GetComponent<Player>())
+                textFont.ColorSetting(EFontType.EnemyDamage);
+            else if(GetComponent<Monster>())
+                textFont.ColorSetting(EFontType.MyDamage);
+        }
         
         textFont.DisplayFont(55, damage.ToString());
     }
@@ -771,7 +784,7 @@ public abstract class Character : MonoBehaviour
             var objectAngle = spawnedObject.transform.eulerAngles;
             spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
         }
-        
+
         if (spawnedObject.GetObjectTime() == 0)
         {
             if(isBuff)
@@ -908,7 +921,8 @@ public abstract class Character : MonoBehaviour
 
     private void AddObjectList(List<GameObject> list, GameObject obj)
     {
-        list.Add(obj);
+        if(!list.Contains(obj))
+            list.Add(obj);
     }
     protected void RemoveObjectList(List<GameObject> list, GameObject obj)
     {
@@ -999,7 +1013,7 @@ public abstract class Character : MonoBehaviour
     }
     
     // 지형을 무시하는 돌진 (기본스피드, 가속 배율, 돌진거리, 가속되는 시점)
-    protected async UniTask<bool> AirCharge(float basicSpeed, float limitMag, float chargeLength, float accelPercent)
+    protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float accelPercent)
     {
         // 1) 초기 계산
         float realDashSpeed = basicSpeed;
@@ -1032,7 +1046,8 @@ public abstract class Character : MonoBehaviour
             }
 
             // Rigidbody2D에 속도 적용
-            myRigidbody.linearVelocity = direction * realDashSpeed;
+            // direction * realDashSpeed
+            myRigidbody.linearVelocity = new Vector2(direction.x * realDashSpeed, myRigidbody.linearVelocityY);
 
             // FixedYieldDelay 대기, 취소 시 false 반환
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())

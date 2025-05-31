@@ -848,7 +848,7 @@ public class GameManager : Singleton<GameManager>
         }
 
         RefreshSkill();
-        mainCamera.SetTarget(curPlayer.transform);
+        SetCameraTarget(curPlayer.transform);
     }
 
     // 단독 => 단독
@@ -863,7 +863,12 @@ public class GameManager : Singleton<GameManager>
         curPlayer.transform.localScale = pastPlayer.transform.localScale;
         
         RefreshSkill();
-        mainCamera.SetTarget(curPlayer.transform);
+        SetCameraTarget(curPlayer.transform);
+    }
+
+    public void SetCameraTarget(Transform targetTransform)
+    {
+        mainCamera.SetTarget(targetTransform);
     }
 
     private void RefreshSkill()

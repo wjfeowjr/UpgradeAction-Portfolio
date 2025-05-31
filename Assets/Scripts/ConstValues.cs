@@ -181,6 +181,8 @@ public class ConstValues : Singleton<ConstValues>
     // 몬스터
     public const string MonsterSpinach = "Monster_Spinach";
     public const string MonsterSpinachAppear = "Monster_Spinach_Appear";
+    public const string MonsterPurple = "Monster_Purple";
+    public const string MonsterCharge = "Monster_Charge";
     
     public const string MonsterSun = "Monster_Sun";
     public const string MonsterSunAttack1 = "Monster_Sun_Attack1";
