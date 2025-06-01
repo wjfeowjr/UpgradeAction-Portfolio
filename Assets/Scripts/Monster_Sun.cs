@@ -12,12 +12,6 @@ public class Monster_Sun : Monster
     private float pointB;
     private Vector2 dir;
 
-    protected override void OnEnable()
-    {
-        base.OnEnable();
-        moveState = EMoveState.Moving;
-    }
-    
     // 등장
     protected override async void AppearProduction(Action bossProduct)
     {
@@ -28,11 +22,7 @@ public class Monster_Sun : Monster
         var movePos = new Vector2(transform.position.x, transform.position.y - 3.5f);
         
         stateCancellation = new CancellationTokenSource();
-        while (Math.Abs(transform.position.y - movePos.y) > 0.1f)
-        {
-            EpisodeMoveVertical(movePos.y);
-            await FixedYieldDelay(stateCancellation);
-        }
+        await EpisodeMove_Y(movePos, basicStat.moveSpeed, -1);
         ZeroVelocity();
         await UniTask.WaitUntil(() => GameManager.Instance.ControlStart && Time.timeScale > 0);
         

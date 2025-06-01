@@ -890,11 +890,10 @@ public class GameManager : Singleton<GameManager>
         skillPresenter.SetSkillInfo();
     }
 
-    public SpeechFrame SpawnSpeechFrame(string frameName, Vector2 speechVector, string dialog)
+    public SpeechFrame GetSpeechFrame(string frameName)
     {
-        var speechFrame = SpawnToUIObjectPool(frameName, speechVector);
+        var speechFrame = SpawnToUIObjectPool(frameName, Vector2.zero);
         var frameClass = speechFrame.GetComponent<SpeechFrame>();
-        frameClass.Speech(dialog);
         return frameClass;
     }
 }

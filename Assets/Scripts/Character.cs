@@ -1323,6 +1323,45 @@ public abstract class Character : MonoBehaviour
     {
         SoundManager.Instance.PlaySound(soundId);
     }
+    
+    // 정지
+    public void Stop()
+    {
+        if (normalState == ENormalState.Move)
+        {
+            myAnimator.ResetTrigger(ConstValues.Move);
+            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        }
+        
+        if(moveState == EMoveState.Moving)
+            MoveStateSetting(EMoveState.Stopping);
+    }
+    
+    // 커스텀
+    public void CustomJump(Vector2 jumpVelocity)
+    {
+        myRigidbody.linearVelocity = jumpVelocity;
+    }
+    
+    protected void CustomMoving_X(Vector2 dir, float speed)
+    {
+        float targetSpeedX = dir.x * speed;
+        float targetSpeedY = myRigidbody.linearVelocity.y;
+
+        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+    }
+    protected void CustomMoving_Y(Vector2 dir, float speed)
+    {
+        float targetSpeedX = myRigidbody.linearVelocity.x;
+        float targetSpeedY = dir.y * speed;
+
+        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+    }
+    
+    public void CustomAnimTrigger(ENormalState state, string triggerName)
+    {
+        StateSetting(state, triggerName, null);
+    }
 
     // protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float acceleration)
     // {

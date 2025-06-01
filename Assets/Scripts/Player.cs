@@ -332,6 +332,9 @@ public abstract class Player : Character
 
     protected void MotionFlip()
     {
+        if(GameManager.Instance.CurPlayer != this)
+            return;
+        
         switch (transform.localScale.x)
         {
             case > 0 when Controller.Instance.isLeftMove:
@@ -432,6 +435,9 @@ public abstract class Player : Character
 
     private void UpdateCameraLimit()
     {
+        if(!GameManager.Instance.ControlStart)
+            return;
+        
         // 1) 플레이어 절반 크기
         float halfWidth  = physicsCollider.size.x * 0.5f;
         float halfHeight = physicsCollider.size.y * 0.5f;
@@ -465,7 +471,8 @@ public abstract class Player : Character
         if (pos.y > upLimit)
         {
             pos.y = upLimit;
-            if (vel.y > 0) vel.y = 0;
+            if (vel.y > 0)
+                vel.y = 0;
         }
         
         //transform.position = pos;
@@ -506,19 +513,6 @@ public abstract class Player : Character
         float targetSpeedX = dir.x * basicStat.moveSpeed * (moveRatio * 0.01f);
         float targetSpeedY = myRigidbody.linearVelocity.y;
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-    }
-
-    // 정지
-    public void Stop()
-    {
-        if (normalState == ENormalState.Move)
-        {
-            myAnimator.ResetTrigger(ConstValues.Move);
-            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-        }
-        
-        if(moveState == EMoveState.Moving)
-            MoveStateSetting(EMoveState.Stopping);
     }
 
     public override void TakeDamage(int damage)
@@ -843,17 +837,12 @@ public abstract class Player : Character
     }
     
     // 커스텀
-    public void CustomJump(Vector2 jumpVelocity)
-    {
-        myRigidbody.linearVelocity = jumpVelocity;
-    }
-
-    public async UniTask CustomMove(Vector2 movePos, int finishDir)
+    public async UniTask EpisodeMove(Vector2 movePos, float speed, int finishDir)
     {
         Controller.Instance.isLeftMove = false;
         Controller.Instance.isRightMove = false;
         Stop();
-        await UniTask.WaitUntil(() => normalState == Idle);
+        await UniTask.WaitUntil(() => normalState == ENormalState.Idle);
         
         StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
         
@@ -872,7 +861,7 @@ public abstract class Player : Character
             if(normalState == ENormalState.Idle)
                 StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
             
-            Move(dir);
+            CustomMoving_X(dir, speed);
             await FixedYieldDelay(stateCancellation);
         }
 
@@ -888,11 +877,6 @@ public abstract class Player : Character
         }
         Stop();
         StopVelocity();
-    }
-
-    public void CustomAnimTrigger(ENormalState state, string triggerName)
-    {
-        StateSetting(state, triggerName, null);
     }
 
     protected void OnCollisionEnter2D(Collision2D col)

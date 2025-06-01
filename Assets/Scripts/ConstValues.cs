@@ -192,6 +192,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterSunPillar = "Monster_Sun_Pillar";
     public const string MonsterSunDie = "Monster_Sun_Die";
     public const string MonsterSunLaugh = "Monster_Sun_Laugh";
+    
+    // Npc
+    public const string NpcCitizen = "Npc_Citizen";
 
     // 함정
     public const string TrapPillar = "Trap_Pillar";

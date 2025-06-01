@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class Stage2 : Stage
 {
+    [SerializeField] private Player anotherPlayer;
+    
     protected override void SetEpisodeName()
     {
         base.SetEpisodeName();
@@ -28,15 +30,16 @@ public class Stage2 : Stage
     
     private void Start()
     {
-        episodeStep = new EpisodeStep()
-        {
-            episodeTitle = 1,
-            dialogStep = 1,
-            playerStep = 0,
-            customMoveStep = 0,
-            eventStep = 0,
-        };
-        GameManager.Instance.ControlStart = true;
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 1,
+        //     playerStep = 0,
+        //     customMoveStep = 0,
+        //     eventStep = 0,
+        // };
+        //GameManager.Instance.ControlStart = true;
+        
         LoadEpisode();
         StepCharacterSetting();
         
@@ -64,20 +67,44 @@ public class Stage2 : Stage
         {
             dialogSwitch = false;
             string dialog1 = "어헝!";
+            string dialog2 = "이게 무슨 난리야?";
+            string dialog3 = "나와는 상관 없는 일이다.";
 
+            GameManager.Instance.SpawnToObjectPool(ConstValues.NpcCitizen, playerPos[0].position);
+            
             dialogCancellation = new CancellationTokenSource();
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            var speechPosition = curPlayer.FontPos.position;
-            var speechFrame = GameManager.Instance.SpawnSpeechFrame(ConstValues.SpeechFrame1, speechPosition, dialog1);
+            var gunnerSpeechPos = curPlayer.FontPos.position;
+            speechFrame1.SetPos(gunnerSpeechPos);
+            speechFrame1.Speech(dialog1);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
+
+            var curPlayerPos = curPlayer.transform.position;
+            var berserkerMovePos = new Vector2(curPlayerPos.x - 2, curPlayerPos.y);
+            await anotherPlayer.EpisodeMove(berserkerMovePos, curPlayer.BasicStat.moveSpeed, 1);
             
-            speechFrame.gameObject.SetActive(false);
+            var berserkerSpeechPos = anotherPlayer.FontPos.position;
+            speechFrame1.SetPos(berserkerSpeechPos);
+            speechFrame1.Speech(dialog2);
+            
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            speechFrame1.Speech(dialog3);
+            
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            speechFrame1.gameObject.SetActive(false);
+            
+            berserkerMovePos = new Vector2(curPlayerPos.x - 7, curPlayerPos.y);
+            await anotherPlayer.EpisodeMove(berserkerMovePos, curPlayer.BasicStat.moveSpeed, -1);
 
             // 게임 시작
             GameManager.Instance.ControlStart = true;
@@ -128,9 +155,13 @@ public class Stage2 : Stage
             case 0:
                 // 카메라 제한
                 GameManager.Instance.MainCamera.MinXAndY = new Vector2(0, GameManager.Instance.MainCamera.MinXAndY.y);
-                GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[0].position);
-                GameManager.Instance.SpawnMonster(ConstValues.MonsterPurple, monsterPos[0].position);
-                GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[0].position);
+                anotherPlayer = GameManager.Instance.Players[0];
+                var curPlayerPos = curPlayer.transform.position;
+                anotherPlayer.transform.position = new Vector2(curPlayerPos.x - 7, curPlayerPos.y);
+                anotherPlayer.gameObject.SetActive(true);
+                // GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[0].position);
+                // GameManager.Instance.SpawnMonster(ConstValues.MonsterPurple, monsterPos[0].position);
+                // GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[0].position);
                 break;
         }
     }

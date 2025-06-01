@@ -1019,71 +1019,76 @@ public class Monster : Character
         await warningArea.Fade();
     }
     
-    // 스토리 연출
-    public async UniTask CustomMove(Vector2 movePos, int finishDir, bool horizontal)
+    // 커스텀
+    public async UniTask EpisodeMove_X(Vector2 movePos, float speed, int finishDir)
     {
+        Stop();
         StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
         
+        Vector2 dir = Vector2.left;
         transform.localScale = reverseScale;
         if (transform.position.x < movePos.x)
+        {
+            dir = Vector2.right;
             transform.localScale = defaultScale;
+        }
 
         stateCancellation = new CancellationTokenSource();
+        while (Math.Abs(transform.position.x - movePos.x) > 0.1f)
+        {
+            // basicStat.moveSpeed
+            if(normalState == ENormalState.Idle)
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+            
+            CustomMoving_X(dir, speed);
+            await FixedYieldDelay(stateCancellation);
+        }
 
-        if (horizontal)
-        {
-            while (Math.Abs(transform.position.x - movePos.x) > 0.1f)
-            {
-                // basicStat.moveSpeed
-                if(normalState == ENormalState.Idle)
-                    StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-            
-                EpisodeMoveHorizontal();
-                await FixedYieldDelay(stateCancellation);
-            }
-            switch (finishDir)
-            {
-                case -1:
-                    transform.localScale = reverseScale;
-                    break;
-                case 1:
-                    transform.localScale = defaultScale;
-                    break;
-            }
-        }
-        else
-        {
-            while (Math.Abs(transform.position.y - movePos.y) > 0.1f)
-            {
-                // basicStat.moveSpeed
-                if(normalState == ENormalState.Idle)
-                    StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-            
-                EpisodeMoveVertical(movePos.y);
-                await FixedYieldDelay(stateCancellation);
-            }
-        }
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        switch (finishDir)
+        {
+            case -1:
+                transform.localScale = reverseScale;
+                break;
+            case 1:
+                transform.localScale = defaultScale;
+                break;
+        }
+        Stop();
+        StopVelocity();
     }
-    private void EpisodeMoveHorizontal()
+    public async UniTask EpisodeMove_Y(Vector2 movePos, float speed, int finishDir)
     {
-        if (moveState != EMoveState.Moving)
-            return;
+        Stop();
+        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
         
-        float targetSpeedX = basicStat.moveSpeed;
-        if (transform.localScale.x < 0)
-            targetSpeedX = -basicStat.moveSpeed;
-        
-        float targetSpeedY = myRigidbody.linearVelocity.y;
-        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-    }
-    protected void EpisodeMoveVertical(float movePosY)
-    {
-        float targetSpeedX = myRigidbody.linearVelocity.x;
-        float targetSpeedY = basicStat.moveSpeed;
-        if(transform.position.y > movePosY)
-            targetSpeedY = -basicStat.moveSpeed;
-        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+        Vector2 dir = Vector2.down;
+        if (transform.position.y < movePos.y)
+            dir = Vector2.up;
+
+        stateCancellation = new CancellationTokenSource();
+        while (Math.Abs(transform.position.y - movePos.y) > 0.1f)
+        {
+            // basicStat.moveSpeed
+            if(normalState == ENormalState.Idle)
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+            
+            CustomMoving_Y(dir, speed);
+            await FixedYieldDelay(stateCancellation);
+        }
+
+        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        switch (finishDir)
+        {
+            case -1:
+                transform.localScale = reverseScale;
+                break;
+            case 1:
+                transform.localScale = defaultScale;
+                break;
+        }
+        Stop();
+        StopVelocity();
     }
     
     protected async void OnCollisionEnter2D(Collision2D col)

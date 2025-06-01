@@ -46,6 +46,10 @@ public abstract class Stage : MonoBehaviour
     protected float dialogDelay1 = 2.5f;
     protected float dialogDelay2 = 1.0f;
 
+    protected SpeechFrame speechFrame1;
+    protected SpeechFrame speechFrame2;
+    protected SpeechFrame speechFrameTitle;
+
     [SerializeField] protected List<GameObject> stageWalls = new List<GameObject>();
     protected Player curPlayer;
     
@@ -58,8 +62,20 @@ public abstract class Stage : MonoBehaviour
         {
             GameManager.Instance.ClearMonsterList();
             GameManager.Instance.DisActiveObjectList();
+            CashingSpeechFrame();
         }
         SetEpisodeName();
+    }
+
+    private void CashingSpeechFrame()
+    {
+        speechFrame1 = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame1);
+        speechFrame2 = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame2);
+        speechFrameTitle = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameTitle);
+        
+        speechFrame1.gameObject.SetActive(false);
+        speechFrame2.gameObject.SetActive(false);
+        speechFrameTitle.gameObject.SetActive(false);
     }
 
     protected virtual void SetEpisodeName()
