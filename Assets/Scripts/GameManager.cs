@@ -894,6 +894,25 @@ public class GameManager : Singleton<GameManager>
     {
         var speechFrame = SpawnToUIObjectPool(frameName, Vector2.zero);
         var frameClass = speechFrame.GetComponent<SpeechFrame>();
+        
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == frameName);
+        if (objectData == null)
+            return frameClass;
+        
+        var spawnedObject = speechFrame.GetComponent<SpawnedObject>();
+        if (!spawnedObject)
+            spawnedObject = speechFrame.AddComponent<SpawnedObject>();
+            
+        spawnedObject.SetupData(objectData, transform.localScale.x);
+        spawnedObject.EnableSetting();
+
+        if (spawnedObject.GetTrace())
+        {
+            var trace = speechFrame.GetComponent<Trace>();
+            if(!trace)
+                speechFrame.AddComponent<Trace>();
+        }
+        
         return frameClass;
     }
 }

@@ -13,9 +13,15 @@ public class SpeechFrame : MonoBehaviour
     {
         if(!gameObject.activeSelf)
             gameObject.SetActive(true);
-        
+
+        Trace(null);
         PlaySound();
         dialogText.text = dialog;
+    }
+
+    public void Trace(Transform targetTransform)
+    {
+        GetComponent<Trace>().SetTarget(targetTransform);
     }
 
     private void PlaySound()

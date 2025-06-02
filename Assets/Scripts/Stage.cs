@@ -46,9 +46,9 @@ public abstract class Stage : MonoBehaviour
     protected float dialogDelay1 = 2.5f;
     protected float dialogDelay2 = 1.0f;
 
-    protected SpeechFrame speechFrame1;
-    protected SpeechFrame speechFrame2;
-    protected SpeechFrame speechFrameTitle;
+    [SerializeField] protected List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
+    protected List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
+    protected List<SpeechFrame> speechFrameTitle = new List<SpeechFrame>();
 
     [SerializeField] protected List<GameObject> stageWalls = new List<GameObject>();
     protected Player curPlayer;
@@ -69,13 +69,19 @@ public abstract class Stage : MonoBehaviour
 
     private void CashingSpeechFrame()
     {
-        speechFrame1 = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame1);
-        speechFrame2 = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame2);
-        speechFrameTitle = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameTitle);
-        
-        speechFrame1.gameObject.SetActive(false);
-        speechFrame2.gameObject.SetActive(false);
-        speechFrameTitle.gameObject.SetActive(false);
+        int count = 3;
+        for (int i = 0; i < count; i++)
+        {
+            speechFrame1.Add(GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame1));
+            speechFrame2.Add(GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame2));
+            speechFrameTitle.Add(GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameTitle));
+        }
+        for (int i = 0; i < count; i++)
+        {
+            speechFrame1[i].gameObject.SetActive(false);
+            speechFrame2[i].gameObject.SetActive(false);
+            speechFrameTitle[i].gameObject.SetActive(false);
+        }
     }
 
     protected virtual void SetEpisodeName()

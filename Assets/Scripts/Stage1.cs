@@ -10,6 +10,7 @@ using UnityEngine.Serialization;
 
 public class Stage1 : Stage
 {
+    
     [SerializeField] private Monster sunObject;
     
     protected override void SetEpisodeName()
@@ -125,13 +126,13 @@ public class Stage1 : Stage
                 return;
 
             var speechPosition = curPlayer.FontPos.position;
-            speechFrame1.SetPos(speechPosition);
-            speechFrame1.Speech(dialog1);
+            speechFrame1[0].SetPos(speechPosition);
+            speechFrame1[0].Speech(dialog1);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1.Speech(dialog2);
+            speechFrame1[0].Speech(dialog2);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
@@ -140,8 +141,8 @@ public class Stage1 : Stage
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 1.0f);
 
-            speechFrame1.SetPos(new Vector2(speechPosition.x, speechPosition.y + 0.5f));
-            speechFrame1.Speech(dialog3);
+            speechFrame1[0].SetPos(new Vector2(speechPosition.x, speechPosition.y + 0.5f));
+            speechFrame1[0].Speech(dialog3);
 
             for (int i = 0; i < 2; i++)
             {
@@ -155,22 +156,22 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1.gameObject.SetActive(false);
+            speechFrame1[0].gameObject.SetActive(false);
 
             var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2.SetPos(speechPosition2);
-            speechFrame2.Speech(dialog1);
+            speechFrame2[0].SetPos(speechPosition2);
+            speechFrame2[0].Speech(dialog1);
             var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
 
-            speechFrame2.Speech(dialog4);
+            speechFrame2[0].Speech(dialog4);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame2.Speech(dialog5);
+            speechFrame2[0].Speech(dialog5);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame2.gameObject.SetActive(false);
+            speechFrame2[0].gameObject.SetActive(false);
 
             PlaySound(ConstValues.MonsterSunLaugh);
             sunObject.transform.DOMove(sunMoveVector, 2.0f);
@@ -215,8 +216,8 @@ public class Stage1 : Stage
 
             var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
             var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2.SetPos(speechPosition2);
-            speechFrame2.Speech(dialog1);
+            speechFrame2[0].SetPos(speechPosition2);
+            speechFrame2[0].Speech(dialog1);
             
             dialogCancellation = new CancellationTokenSource();
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
@@ -234,7 +235,7 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame2.gameObject.SetActive(false);
+            speechFrame2[0].gameObject.SetActive(false);
             
             PlaySound(ConstValues.MonsterSunLaugh);
             sunObject.transform.DOMove(sunMoveVector, 2.0f);
@@ -244,18 +245,18 @@ public class Stage1 : Stage
             sunObject.gameObject.SetActive(false);
             
             var speechPosition = curPlayer.FontPos.position;
-            speechFrame1.SetPos(speechPosition);
-            speechFrame1.Speech(dialog2);
+            speechFrame1[0].SetPos(speechPosition);
+            speechFrame1[0].Speech(dialog2);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1.Speech(dialog3);
+            speechFrame1[0].Speech(dialog3);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1.gameObject.SetActive(false);
+            speechFrame1[0].gameObject.SetActive(false);
             // 게임 시작
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
@@ -303,31 +304,31 @@ public class Stage1 : Stage
             string dialog4 = "난 주인공이다.\n아무도 막을 수 없다!";
 
             var speechPosition = curPlayer.FontPos.position;
-            speechFrame1.SetPos(speechPosition);
-            speechFrame1.Speech(dialog1);
+            speechFrame1[0].SetPos(speechPosition);
+            speechFrame1[0].Speech(dialog1);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1.SetPos(new Vector2(GameManager.Instance.MonsterList[0].FontPos.position.x,
+            speechFrame1[0].SetPos(new Vector2(GameManager.Instance.MonsterList[0].FontPos.position.x,
                 GameManager.Instance.MonsterList[0].FontPos.position.y - 0.5f));
-            speechFrame1.Speech(dialog2);
+            speechFrame1[0].Speech(dialog2);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1.SetPos(new Vector2(GameManager.Instance.MonsterList[1].FontPos.position.x, GameManager.Instance.MonsterList[1].FontPos.position.y - 0.5f));
-            speechFrame1.Speech(dialog3);
+            speechFrame1[0].SetPos(new Vector2(GameManager.Instance.MonsterList[1].FontPos.position.x, GameManager.Instance.MonsterList[1].FontPos.position.y - 0.5f));
+            speechFrame1[0].Speech(dialog3);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame1.SetPos(speechPosition);
-            speechFrame1.Speech(dialog4);
+            speechFrame1[0].SetPos(speechPosition);
+            speechFrame1[0].Speech(dialog4);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1.gameObject.SetActive(false);
+            speechFrame1[0].gameObject.SetActive(false);
             // 게임 시작
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
@@ -377,24 +378,24 @@ public class Stage1 : Stage
                 return;
 
             var speechPosition = curPlayer.FontPos.position;
-            speechFrame1.SetPos(speechPosition);
-            speechFrame1.Speech(dialog1);
+            speechFrame1[0].SetPos(speechPosition);
+            speechFrame1[0].Speech(dialog1);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame1.Speech(dialog2);
+            speechFrame1[0].Speech(dialog2);
             
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrame1.gameObject.SetActive(false);
+            speechFrame1[0].gameObject.SetActive(false);
             
             var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2.SetPos(speechPosition2);
-            speechFrame2.Speech(dialog3);
+            speechFrame2[0].SetPos(speechPosition2);
+            speechFrame2[0].Speech(dialog3);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrame2.gameObject.SetActive(false);
+            speechFrame2[0].gameObject.SetActive(false);
             Guide3();
             
             // 게임 시작
@@ -444,24 +445,24 @@ public class Stage1 : Stage
             string dialog13 = "ㅋ";
             
             var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2.SetPos(speechPosition2);
-            speechFrame2.Speech(dialog1);
+            speechFrame2[0].SetPos(speechPosition2);
+            speechFrame2[0].Speech(dialog1);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame2.Speech(dialog2);
+            speechFrame2[0].Speech(dialog2);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
             // BGM 끄기
             StopBGM();
             
-            speechFrame2.Speech(dialog3);
+            speechFrame2[0].Speech(dialog3);
             await SunBomb(1, 0);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame2.Speech(dialog4);
+            speechFrame2[0].Speech(dialog4);
             await SunBomb(2, 0.3f);
             await SunBomb(2, 0.2f);
             sunObject.DieShake();
@@ -471,70 +472,70 @@ public class Stage1 : Stage
                 return;
             
             sunObject.DieExplosion();
-            speechFrame2.gameObject.SetActive(false);
+            speechFrame2[0].gameObject.SetActive(false);
             
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
             var speechPosition = curPlayer.FontPos.position;
-            speechFrame1.SetPos(speechPosition);
-            speechFrame1.Speech(dialog5);
+            speechFrame1[0].SetPos(speechPosition);
+            speechFrame1[0].Speech(dialog5);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame1.Speech(dialog6);
+            speechFrame1[0].Speech(dialog6);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame1.Speech(dialog7);
+            speechFrame1[0].Speech(dialog7);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrame1.gameObject.SetActive(false);
+            speechFrame1[0].gameObject.SetActive(false);
             
             var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, GameManager.Instance.MainCamera.transform.position).GetComponent<FadeSystem>();
             fadeBg.SetParameter(0, 1.0f, 1.5f, false);
             await fadeBg.Fade();
             
-            speechFrame1.Speech(dialog8);
+            speechFrame1[0].Speech(dialog8);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrame1.gameObject.SetActive(false);
+            speechFrame1[0].gameObject.SetActive(false);
             
             var speechPosition3 = new Vector3(GameManager.Instance.MainCamera.transform.position.x, 0, 0);
-            speechFrameTitle.SetPos(speechPosition3);
-            speechFrameTitle.Speech(dialog9);
+            speechFrameTitle[0].SetPos(speechPosition3);
+            speechFrameTitle[0].Speech(dialog9);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrameTitle.gameObject.SetActive(false);
+            speechFrameTitle[0].gameObject.SetActive(false);
             
             BgmManager.Instance.Play();
             
             PlaySound(ConstValues.ChickenCock);
-            speechFrame1.Speech(dialog10);
+            speechFrame1[0].Speech(dialog10);
             fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
             await fadeBg.Fade();
-            speechFrame1.gameObject.SetActive(false);
+            speechFrame1[0].gameObject.SetActive(false);
             
             PlaySound(ConstValues.RewardPage);
             sunObject.gameObject.transform.position = new Vector2(bossPos[2].transform.position.x + 3.5f, bossPos[2].transform.position.y);
             sunObject.gameObject.SetActive(true);
             await sunObject.EpisodeMove_X(bossPos[2].transform.position, sunObject.BasicStat.moveSpeed, -1);
             
-            speechFrame2.Speech(dialog11);
+            speechFrame2[0].Speech(dialog11);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame2.Speech(dialog12);
+            speechFrame2[0].Speech(dialog12);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
             // await GameManager.Instance.MainCamera.SetTarget(sunObject.CenterPos.transform, true);
             // await GameManager.Instance.MainCamera.SetZoom(3, 1.0f);
-            speechFrame2.Speech(dialog13);
+            speechFrame2[0].Speech(dialog13);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame2.gameObject.SetActive(false);
+            speechFrame2[0].gameObject.SetActive(false);
             
             // 엔딩 연출
             ProductStageClear();

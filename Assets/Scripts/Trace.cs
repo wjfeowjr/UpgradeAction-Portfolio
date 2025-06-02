@@ -28,6 +28,9 @@ public class Trace : MonoBehaviour
     public void SetTarget(Transform targetTransform)
     {
         target = targetTransform;
+        if (!target)
+            return;
+        
         var targetPosition = target.position;
         transform.position = new Vector3(targetPosition.x + xPos, targetPosition.y + yPos, targetPosition.z + zPos);
 
