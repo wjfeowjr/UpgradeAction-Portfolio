@@ -181,7 +181,7 @@ public class Attack : MonoBehaviour
         var hitTarget = col.GetComponent<Character>();
         if (hitTarget != null)
         {
-            if(hitTarget.Immortal)
+            if(hitTarget.Immortal || hitTarget.IsDie)
                 return;
             
             // 플레이어의 공격
@@ -223,13 +223,6 @@ public class Attack : MonoBehaviour
             // 폰트소환
             hitTarget.SpawnDamageFont(damage, critical);
 
-            // 피해를 입고, 체력이 0으로 떨어지면 죽는다
-            if (hitTarget.BasicStat.hp <= 0)
-            {
-                hitTarget.Die();
-                return;
-            }
-
             var upperPowerX = attackInfo.upperPower.x;
             var knockBackX = attackInfo.knockBack;
             
@@ -254,6 +247,14 @@ public class Attack : MonoBehaviour
                         knockBackX = Math.Abs(knockBackX);
                     }
                     break;
+            }
+            
+            // 피해를 입고, 체력이 0으로 떨어지면 죽는다
+            if (hitTarget.BasicStat.hp <= 0)
+            {
+                hitTarget.Die();
+                hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
+                return;
             }
             
             if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())

@@ -144,7 +144,6 @@ public abstract class Player : Character
         base.Update();
         UpdateFlip();
         UpdateJumpDown();
-        UpdateAirborneDown();
         UpdateGlobalCoolTime();
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
@@ -363,14 +362,6 @@ public abstract class Player : Character
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
     }
 
-    private void UpdateAirborneDown()
-    {
-        if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Airborne) && myRigidbody.linearVelocity.y < 0)
-        {
-            StateSetting(ENormalState.Airborne, ConstValues.AirborneDown, ConstValues.AirborneDown);
-        }
-    }
-
     private void UpdateGlobalCoolTime()
     {
         if (curGlobalCoolTime < globalCoolTime)
@@ -526,9 +517,13 @@ public abstract class Player : Character
             PlaySound(ConstValues.PlayerDamaged1);
     }
 
-    public override void Die()
+    public override void Die(bool isBomb = false)
     {
         base.Die();
+        StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
+        MoveStateSetting(EMoveState.Stopping);
+        SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
+        gameObject.SetActive(false);
         Controller.Instance.StopMove();
     }
     

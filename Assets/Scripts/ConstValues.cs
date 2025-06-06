@@ -81,6 +81,7 @@ public class ConstValues : Singleton<ConstValues>
     
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
+    public const string DialogShot = "DialogShot";
 
     public const string None = "None";
     public const string Normal = "Normal";
@@ -162,6 +163,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string GunnerAttackEffect1 = "Gunner_AttackEffect1";
     public const string GunnerAttack2Object = "Gunner_Attack2Object";
     public const string GunnerAttackEffect2 = "Gunner_AttackEffect2";
+    public const string GunnerAttackHitCrit = "Gunner_Attack_Hit_Crit";
 
     public const string GunnerDash = "Gunner_Dash";
     public const string GunnerDashShot = "Gunner_DashShot";

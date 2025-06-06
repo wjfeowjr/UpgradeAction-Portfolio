@@ -30,6 +30,7 @@ public class Grenade : MonoBehaviour
 
     private Rigidbody2D myRigidbody;
     private Collider2D myCollider;
+    private bool isDelete;
     private bool isGrounded;
 
     private void Awake()
@@ -37,7 +38,7 @@ public class Grenade : MonoBehaviour
         myRigidbody  = GetComponent<Rigidbody2D>();
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
         myCollider = GetComponent<Collider2D>();
-
+        
         angular = 720f;
         groundDrag = 1.0f;
         groundAngularDrag = 2.0f;
@@ -47,6 +48,7 @@ public class Grenade : MonoBehaviour
     private void OnEnable()
     {
         myCollider.enabled = true;
+        isDelete = false;
     }
 
     private void Update()
@@ -133,6 +135,10 @@ public class Grenade : MonoBehaviour
     
     private void Delete()
     {
+        if (isDelete)
+            return;
+        isDelete = true;
+        
         if (grenadeInfo.spawnObject != ConstValues.None)
             grenadeInfo.explosionAction(grenadeInfo.spawnObject, transform, 0);
 
@@ -176,11 +182,15 @@ public class Grenade : MonoBehaviour
                 var character = col.GetComponent<Character>();
                 if (character != null)
                 {
-                    if (character.Immortal)
+                    if (character.Immortal || character.IsDie)
                         return;
                 }
+                
+                // 이 부분 기억 (플레이어의 물리 판정)
+                if (!col.isTrigger)
+                    return;
             }
-
+            
             Delete();
             return;
         }

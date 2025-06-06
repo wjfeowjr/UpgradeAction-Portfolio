@@ -216,7 +216,7 @@ public class Missile : MonoBehaviour
                 var character = col.GetComponent<Character>();
                 if (character != null)
                 {
-                    if (character.Immortal)
+                    if (character.Immortal || character.IsDie)
                         return;
                 }
                 

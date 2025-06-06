@@ -56,6 +56,8 @@ public class Stage1 : Stage
     
     private void Start()
     {
+        StepCharacterSetting();
+        
         // 잡초맨 전투
         // episodeStep = new EpisodeStep()
         // {
@@ -79,8 +81,7 @@ public class Stage1 : Stage
         // GameManager.Instance.ControlStart = true;
 
         LoadEpisode();
-        StepCharacterSetting();
-        
+
         dialogSwitch = true;
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);

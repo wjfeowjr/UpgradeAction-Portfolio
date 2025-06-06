@@ -88,7 +88,7 @@ public class Monster : Character
 
     protected override void Update()
     {
-        if (basicStat.hp <= 0 || !GameManager.Instance.ControlStart)
+        if (isDie || basicStat.hp <= 0 || !GameManager.Instance.ControlStart)
             return;
 
         base.Update();
@@ -130,6 +130,9 @@ public class Monster : Character
 
     protected void OnDrawGizmos()
     {
+        if(isDie)
+            return;
+        
         var myPosition = transform.position;
 
         if (myStat.jumpRange != Vector2.zero)
@@ -610,11 +613,19 @@ public class Monster : Character
         }
     }
 
-    public override void Die()
+    public override void Die(bool isBomb = false)
     {
         base.Die();
         GameManager.Instance.RemoveMonster(this);
-        
+
+        if (isBomb)
+        {
+            StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
+            MoveStateSetting(EMoveState.Stopping);
+            SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
+            gameObject.SetActive(false);
+        }
+
         if (!totalBar)
             return;
         
@@ -1198,11 +1209,11 @@ public class Monster : Character
 
     protected void OnCollisionExit2D(Collision2D col)
     {
-        // 점프
         if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
         {
             LandingStateSetting(ELandingState.Air);
 
+            // 점프
             if(normalState is ENormalState.Idle or ENormalState.Move)
                 StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
             

@@ -285,7 +285,7 @@ public class Player_Gunner : Player
     }
     
     // 넉백샷
-    private async UniTask<bool> KnockBackShot()
+    public async UniTask<bool> KnockBackShot()
     {
         var delay1 = 0.1f;
         var delay2 = 0.2f;

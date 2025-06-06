@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -8,6 +9,9 @@ public class Stage2 : Stage
     [SerializeField] private Transform[] npcPos;
     [SerializeField] private Player anotherPlayer;
     [SerializeField] private List<string> monsterWave1 = new List<string>();
+    private Npc citizen;
+    private List<Monster> traceMonsters = new List<Monster>();
+
     private float monsterInterval = 1.0f;
 
     protected override void SetEpisodeName()
@@ -28,6 +32,12 @@ public class Stage2 : Stage
             case 1:
                 Product2();
                 break;
+            case 2:
+                Product3();
+                break;
+            case 3:
+                await Product4();
+                break;
         }
     }
     protected override void StageClearButtonAction() 
@@ -37,23 +47,26 @@ public class Stage2 : Stage
     
     private void Start()
     {
-        // episodeStep = new EpisodeStep()
-        // {
-        //     episodeTitle = 1,
-        //     dialogStep = 1,
-        //     playerStep = 0,
-        //     customMoveStep = 0,
-        //     eventStep = 0,
-        // };
-        //GameManager.Instance.ControlStart = true;
+        StepCharacterSetting();
+
+        episodeStep = new EpisodeStep()
+        {
+            episodeTitle = 1,
+            dialogStep = 1,
+            playerStep = 1,
+            customMoveStep = 0,
+            eventStep = 2,
+        };
+        GameManager.Instance.ControlStart = true;
         
         LoadEpisode();
-        StepCharacterSetting();
-        
+
         dialogSwitch = true;
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
         GameManager.Instance.SetGroundVector();
+
+        StartSetting();
         
         SpawnEpisode(episodeTitle);
         SpawnStageClear();
@@ -76,6 +89,17 @@ public class Stage2 : Stage
         monsterWave1.Add(ConstValues.MonsterSpinach);
         monsterWave1.Add(ConstValues.MonsterPurple);
     }
+
+    private void StartSetting()
+    {
+        citizen = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcCitizen, Vector2.zero).GetComponent<Npc>();
+        traceMonsters.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSpinach, Vector2.zero).GetComponent<Monster>());
+        traceMonsters.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterPurple, Vector2.zero).GetComponent<Monster>());
+        
+        citizen.gameObject.SetActive(false);
+        foreach (var traceMonster in traceMonsters)
+            traceMonster.gameObject.SetActive(false);
+    }
     
     private async UniTask Product1()
     {
@@ -85,10 +109,10 @@ public class Stage2 : Stage
             string dialog1 = "어헝! 정말 좋은 날씨야!";
             string dialog2 = "사람살려!";
             string dialog3 = "저 사람을 구해줘야겠다! 흐헝";
-
+            
             dialogCancellation = new CancellationTokenSource();
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-
+            
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
             
@@ -99,36 +123,36 @@ public class Stage2 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            CameraShake(0.1f, 1.5f);
+            CameraShake(0.1f, 1.5f); 
             
             var citizenPos = npcPos[0].position;
             var traceMonsterPos1 = new Vector2(npcPos[0].position.x - 1.5f, npcPos[0].position.y);
-            var traceMonsterPos2 = new Vector2(npcPos[0].position.x - 2.0f, npcPos[0].position.y);
-            var traceMonsterPos3 = new Vector2(npcPos[0].position.x - 2.9f, npcPos[0].position.y);
+            var traceMonsterPos2 = new Vector2(npcPos[0].position.x - 2.5f, npcPos[0].position.y);
+
+            citizen.gameObject.SetActive(true);
+            traceMonsters[0].gameObject.SetActive(true);
+            traceMonsters[1].gameObject.SetActive(true);
             
+            citizen.transform.position = citizenPos;
+            traceMonsters[0].transform.position = traceMonsterPos1;
+            traceMonsters[1].transform.position = traceMonsterPos2;
+
             var arrivePos = new Vector2(npcPos[1].position.x, npcPos[1].position.y);
-            var citizen1 = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcCitizen, citizenPos).GetComponent<Npc>();
-            var traceMonster1 = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSpinach, traceMonsterPos1).GetComponent<Monster>();
-            var traceMonster2 = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSpinach, traceMonsterPos2).GetComponent<Monster>();
-            var traceMonster3 = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterPurple, traceMonsterPos3).GetComponent<Monster>();
-            
-            var npcSpeechPos = citizen1.FontPos;
+            var npcSpeechPos = citizen.FontPos;
             PlaySound(ConstValues.PlayerScream);
             speechFrame1[0].SetPos(npcSpeechPos.position);
             speechFrame1[0].Speech(dialog2);
             speechFrame1[0].Trace(npcSpeechPos);
-            citizen1.EpisodeMove_X(arrivePos, 7.0f, 1).Forget();
-            traceMonster1.EpisodeMove_X(arrivePos, 7.0f, 1).Forget();
-            traceMonster2.EpisodeMove_X(arrivePos, 7.0f, 1).Forget();
-            await traceMonster3.EpisodeMove_X(arrivePos, 7.0f, 1);
+            citizen.EpisodeMove_X(arrivePos, 7.0f, 1).Forget();
+            traceMonsters[0].EpisodeMove_X(arrivePos, 7.0f, 1).Forget();
+            await traceMonsters[1].EpisodeMove_X(arrivePos, 7.0f, 1);
             
             // 마무리
-            citizen1.gameObject.SetActive(false);
-            traceMonster1.gameObject.SetActive(false);
-            traceMonster2.gameObject.SetActive(false);
-            traceMonster3.gameObject.SetActive(false);
+            citizen.gameObject.SetActive(false);
+            traceMonsters[0].gameObject.SetActive(false);
+            traceMonsters[1].gameObject.SetActive(false);
             speechFrame1[0].gameObject.SetActive(false);
-
+            
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
                 return;
             
@@ -140,7 +164,7 @@ public class Stage2 : Stage
             {
                 curPlayer.CustomJump(new Vector2(0, 6.0f));
                 curPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.Jump);
-
+            
                 if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                     return;
             }
@@ -154,6 +178,9 @@ public class Stage2 : Stage
             SaveEpisode();
             dialogSwitch = true;
             
+            // var citizenPos = npcPos[0].position;
+            // var citizen1 = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcCitizen, citizenPos).GetComponent<Npc>();
+            // citizen1.Airborne(-10,10);
             //GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[0].position);
         }
         MyEventStepUp();
@@ -165,7 +192,7 @@ public class Stage2 : Stage
         AccumulatedStep();
         MyEventStepUp();
         SetEventStep();
-        SaveEpisode();
+        //SaveEpisode();
         
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
@@ -178,6 +205,115 @@ public class Stage2 : Stage
                 return;
         }
         monsterSpawning = false;
+    }
+    
+    // 대화가 없는 연출은 UniTask형태가 아님
+    private void Product3()
+    {
+        AccumulatedStep();
+        MyEventStepUp();
+        SaveEpisode();
+    }
+    
+    private async UniTask Product4()
+    {
+        if (episodeStep.dialogStep == 1)
+        {
+            dialogSwitch = false;
+            string dialog1 = "나좀 살려줘!";
+            string dialog2 = "어헝! 내쪽으로 어서 달려와!";
+            string dialog3 = "어딜 도망치려고!";
+            string dialog4 = "??";
+            string dialog5 = "총을 잘못 쏴서 셋 다 죽어 버렸네 크헝!";
+            
+            GameManager.Instance.ControlStart = false;
+            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+            GameManager.Instance.MainCamera.MinXAndY = new Vector2(46.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+            
+            dialogCancellation = new CancellationTokenSource();
+            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
+            
+            var citizenSpeechPosition = citizen.FontPos.position;
+            speechFrame1[0].SetPos(citizenSpeechPosition);
+            speechFrame1[0].Speech(dialog1);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+
+            PlaySound(ConstValues.GunnerLaugh);
+            var gunnerSpeechPos = curPlayer.FontPos.position;
+            speechFrame1[0].SetPos(new Vector2(gunnerSpeechPos.x, gunnerSpeechPos.y + 0.5f));
+            speechFrame1[0].Speech(dialog2);
+            for (int i = 0; i < 2; i++)
+            {
+                curPlayer.CustomJump(new Vector2(0, 6.0f));
+                curPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.Jump);
+            
+                if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                    return;
+            }
+
+            var monsterSpeechPos = traceMonsters[0].FontPos.position;
+            speechFrame1[0].SetPos(monsterSpeechPos);
+            speechFrame1[0].Speech(dialog3);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            speechFrame1[0].gameObject.SetActive(false);
+            
+            curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogShot);
+            curPlayer.SpawnObject(ConstValues.GunnerFlash, curPlayer.CenterPos.position);
+
+            var length = 0.6f;
+            traceMonsters[0].EpisodeMove_X(new Vector2(curPlayer.transform.position.x + length, curPlayer.transform.position.y), 6, -1).Forget();
+            traceMonsters[1].EpisodeMove_X(new Vector2(curPlayer.transform.position.x + length, curPlayer.transform.position.y), 6, -1).Forget();
+            citizen.EpisodeMove_X(new Vector2(curPlayer.transform.position.x + length, curPlayer.transform.position.y), 6, -1).Forget();
+
+            await UniTask.WaitUntil(() => citizen.transform.position.x < curPlayer.transform.position.x + length + 1.0f);
+            curPlayer.GetComponent<Player_Gunner>().KnockBackShot().Forget();
+            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            citizen.Airborne(4, 7);
+            citizen.HitMaterial();
+            citizen.SpawnHitEffect(ConstValues.GunnerAttackHitCrit, 1.0f, 1.5f);
+            
+            traceMonsters[0].Airborne(6, 8);
+            traceMonsters[0].HitMaterial();
+            traceMonsters[0].SpawnHitEffect(ConstValues.GunnerAttackHitCrit, 1.0f, 1.5f);
+            
+            traceMonsters[1].Airborne(8, 9);
+            traceMonsters[1].HitMaterial();
+            traceMonsters[1].SpawnHitEffect(ConstValues.GunnerAttackHitCrit, 1.0f, 1.5f);
+            
+            CameraShake(0.1f, 0.1f);
+            
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            curPlayer.CustomAnimTrigger(ENormalState.Normal, ConstValues.Idle);
+            
+            citizenSpeechPosition = citizen.FontPos.position;
+            speechFrame1[0].SetPos(new Vector2(citizenSpeechPosition.x, citizenSpeechPosition.y - 1.0f));
+            speechFrame1[0].Speech(dialog4);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            gunnerSpeechPos = curPlayer.FontPos.position;
+            speechFrame1[0].SetPos(gunnerSpeechPos);
+            speechFrame1[0].Speech(dialog5);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+
+            // 게임 시작
+            GameManager.Instance.ControlStart = true;
+            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+            DialogStepUp();
+            SaveEpisode();
+            dialogSwitch = true;
+        }
+        MyEventStepUp();
     }
 
     private void Test()
@@ -221,7 +357,35 @@ public class Stage2 : Stage
                 GameManager.Instance.MainCamera.MinXAndY = new Vector2(0, GameManager.Instance.MainCamera.MinXAndY.y);
                 break;
             case 1:
+                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(36.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+                // 벽 설치
+                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallRight, stageWallPos[0]));
+                break;
+            case 2:
+                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(46.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+                // 벽 제거
+                foreach (var stageWall in stageWalls)
+                    stageWall.SetActive(false);
                 
+                // 시민과 몬스터 스폰시키기
+                var citizenPos = npcPos[2].position;
+                var traceMonsterPos1 = new Vector2(npcPos[2].position.x + 1.0f, npcPos[2].position.y);
+                var traceMonsterPos2 = new Vector2(npcPos[2].position.x + 2.0f, npcPos[2].position.y);
+                
+                citizen.transform.position = citizenPos;
+                citizen.gameObject.SetActive(true);
+                
+                traceMonsters[0].transform.position = traceMonsterPos1;
+                traceMonsters[0].gameObject.SetActive(true);
+                
+                traceMonsters[1].transform.position = traceMonsterPos2;
+                traceMonsters[1].gameObject.SetActive(true);
+
+                traceMonsters[0].IsDie = true;
+                traceMonsters[0].Flip(-1);
+                
+                traceMonsters[1].IsDie = true;
+                traceMonsters[1].Flip(-1);
                 break;
         }
     }

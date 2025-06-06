@@ -5,6 +5,14 @@ using UnityEngine;
 
 public class Npc : Character
 {
+    protected override void Update()
+    {
+        if (isDie || basicStat.hp <= 0 || !GameManager.Instance.ControlStart)
+            return;
+
+        base.Update();
+    }
+    
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
     {
         normalState = changeNormalState;
@@ -77,5 +85,36 @@ public class Npc : Character
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         Stop();
         StopVelocity();
+    }
+    
+    protected void OnCollisionEnter2D(Collision2D col)
+    {
+        // 착지
+        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
+        {
+            if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)
+                return;
+            
+            LandingStateSetting(ELandingState.Ground);
+            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            myRigidbody.linearVelocity = Vector2.zero;
+            groundObject = col.gameObject;
+            
+            // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
+            switch (normalState)
+            {
+                case ENormalState.Airborne:
+                    DownAndStand();
+                    break;
+            }
+        }
+    }
+    
+    protected void OnCollisionExit2D(Collision2D col)
+    {
+        if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
+        {
+            LandingStateSetting(ELandingState.Air);
+        }
     }
 }

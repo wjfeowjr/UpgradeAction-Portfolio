@@ -126,9 +126,9 @@ public abstract class Character : MonoBehaviour
     
     protected Vector2 chargeVector;
     protected int jumpAttackCount;
-    protected bool isDie;
+    [SerializeField] protected bool isDie;
     protected float myGravity;
-    [SerializeField] protected bool downJumping;
+    protected bool downJumping;
     
     private int airborneCount;     // 에어본 카운트
     private int platformLayerMask;
@@ -151,7 +151,11 @@ public abstract class Character : MonoBehaviour
         set => immortal = value;
     }
     public bool ImmuneStagger => immuneStagger;
-    public bool IsDie => isDie;
+    public bool IsDie
+    {
+        get => isDie;
+        set => isDie = value;
+    }
 
     public ENormalState NormalState => normalState;
     public EMoveState MoveState => moveState;
@@ -194,6 +198,7 @@ public abstract class Character : MonoBehaviour
     protected virtual void Update()
     {
         UpdateBungee();
+        UpdateAirborneDown();
     }
 
     protected virtual void FixedUpdate()
@@ -219,12 +224,20 @@ public abstract class Character : MonoBehaviour
         downOffset = new Vector2(hitBoxOffset.x, hitBoxOffset.y - hitBoxOffset.y * 0.4f);
     }
     
-    protected void UpdateBungee()
+    protected void UpdateAirborneDown()
+    {
+        if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Airborne) && myRigidbody.linearVelocity.y < 0)
+        {
+            SetTriggerAnimator(ConstValues.AirborneDown);
+        }
+    }
+    
+    protected virtual void UpdateBungee()
     {
         if (!isDie && transform.position.y < ConstValues.BungeePosY)
         {
             TakeDamage(basicStat.maxHp);
-            Die();
+            Die(true);
         }
     }
     
@@ -1084,15 +1097,10 @@ public abstract class Character : MonoBehaviour
         return true;
     }
 
-    public virtual void Die()
+    public virtual void Die(bool isBomb = false)
     {
         CancelMotion();
         ClearObjectList(buffObject);
-        
-        StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
-        MoveStateSetting(EMoveState.Stopping);
-        SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-        gameObject.SetActive(false);
         isDie = true;
     }
     public async void Grabbed(Vector3 grabVector)
@@ -1162,6 +1170,9 @@ public abstract class Character : MonoBehaviour
         // 이후에는 고정된 시간만큼 누워있다가 일어난다
         else
         {
+            if(isDie)
+                return;
+            
             if (await NormalDelay(ConstValues.DownSecond, stateCancellation).SuppressCancellationThrow())
                 return;
             
