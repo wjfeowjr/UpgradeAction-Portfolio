@@ -18,6 +18,6 @@ public class StageManager : MonoBehaviour
 
     private void Start()
     {
-        Instantiate(stageArray[1]);
+        Instantiate(stageArray[0]);
     }
 }

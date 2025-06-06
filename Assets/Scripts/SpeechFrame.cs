@@ -21,6 +21,9 @@ public class SpeechFrame : MonoBehaviour
 
     public void Trace(Transform targetTransform)
     {
+        if (GetComponent<Trace>() == null)
+            return;
+        
         GetComponent<Trace>().SetTarget(targetTransform);
     }
 

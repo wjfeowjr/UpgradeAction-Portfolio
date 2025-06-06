@@ -139,11 +139,11 @@ public abstract class Player : Character
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
     }
 
-    private void Update()
+    protected override void Update()
     {
+        base.Update();
         UpdateFlip();
         UpdateJumpDown();
-        UpdateBungee();
         UpdateAirborneDown();
         UpdateGlobalCoolTime();
         UpdateChangeGlobalCoolTime();
@@ -363,15 +363,6 @@ public abstract class Player : Character
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
     }
 
-    private void UpdateBungee()
-    {
-        if (!isDie && transform.position.y < ConstValues.BungeePosY)
-        {
-            TakeDamage(9999);
-            Die();
-        }
-    }
-    
     private void UpdateAirborneDown()
     {
         if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Airborne) && myRigidbody.linearVelocity.y < 0)
@@ -424,7 +415,7 @@ public abstract class Player : Character
     {
         return transform.position.x - physicsCollider.size.x * 0.5f;
     }
-    public float GetUpPosY()
+    public float  GetUpPosY()
     {
         return transform.position.y + physicsCollider.size.y;
     }

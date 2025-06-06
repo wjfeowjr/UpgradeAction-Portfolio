@@ -116,8 +116,7 @@ public class Stage1 : Stage
             string dialog1 = "날씨 참 좋다...";
             string dialog2 = "저 거지같은\n태양만 빼고\n말이야!";
             string dialog3 = "뿌셔버릴거야!!!";
-            string dialog4 = "ㅋㅋㅋㅋㅋㅋ";
-            string dialog5 = "나 잡아봐라~";
+            string dialog4 = "나 잡아봐라~";
 
             dialogCancellation = new CancellationTokenSource();
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
@@ -164,10 +163,6 @@ public class Stage1 : Stage
             var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
 
             speechFrame2[0].Speech(dialog4);
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
-
-            speechFrame2[0].Speech(dialog5);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
@@ -285,19 +280,20 @@ public class Stage1 : Stage
         }
 
         dialogCancellation = new CancellationTokenSource();
-        GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[0].position);
-        if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
-            return;
-
-        GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[1].position);
-        if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
-            return;
-
-        if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-            return;
-
+        monsterSpawning = true;
+        for (int i = 0; i < 2; i++)
+        {
+            GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[i].position);
+            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+                return;
+        }
+        monsterSpawning = false;
+        
         if (episodeStep.dialogStep == 2)
         {
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
             string dialog1 = "뭐야 이 시금치들은!!";
             string dialog2 = "여긴 우리\n구역이다.";
             string dialog3 = "그래\n당장 꺼져!";
@@ -371,7 +367,7 @@ public class Stage1 : Stage
         {
             string dialog1 = "넌 표정이 마음에 안 들었어!!";
             string dialog2 = "이제 뿌셔주마!";
-            string dialog3 = "덤벼보던가ㅋㅋ";
+            string dialog3 = "덤벼보던가!";
             
             dialogCancellation = new CancellationTokenSource();
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
@@ -396,7 +392,7 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             speechFrame2[0].gameObject.SetActive(false);
-            Guide3();
+            //Guide3();
             
             // 게임 시작
             GameManager.Instance.ControlStart = true;
@@ -627,19 +623,19 @@ public class Stage1 : Stage
     {
         var guideModel = new PopupGuideModel()
         {
-            guideMessage = "<color=#F36B6B>'X'</color>키와 우측 하단의 스킬들을 활용하여 전투를 해보세요!\n몬스터한테 맞아 체력이 다 깎이면 죽습니다.",
+            guideMessage = "<color=#F36B6B>'X'</color>키와 우측 하단의 스킬들을 활용하여 전투를 해보세요!",
             imgName = "Guide2",
         };
         SpawnGuide(guideModel);
     }
     
-    private void Guide3()
-    {
-        var guideModel = new PopupGuideModel()
-        {
-            guideMessage = "<color=#F36B6B>'보스'</color>는 일반 몬스터와 달리 강력한 패턴으로 무장하고 있습니다.\n공격과 스킬을 잘 활용하여 상대하세요!",
-            imgName = "Guide3",
-        };
-        SpawnGuide(guideModel);
-    }
+    // private void Guide3()
+    // {
+    //     var guideModel = new PopupGuideModel()
+    //     {
+    //         guideMessage = "<color=#F36B6B>'보스'</color>는 일반 몬스터와 달리 강력한 패턴으로 무장하고 있습니다.\n공격과 스킬을 잘 활용하여 상대하세요!",
+    //         imgName = "Guide3",
+    //     };
+    //     SpawnGuide(guideModel);
+    // }
 }

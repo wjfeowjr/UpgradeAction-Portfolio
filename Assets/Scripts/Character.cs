@@ -132,7 +132,7 @@ public abstract class Character : MonoBehaviour
     
     private int airborneCount;     // 에어본 카운트
     private int platformLayerMask;
-    private int groundAndPlatformLayerMask;
+    protected int groundAndPlatformLayerMask;
     protected int wallLayerMask;
 
     protected bool immortal;
@@ -191,6 +191,11 @@ public abstract class Character : MonoBehaviour
         isDie = false;
     }
 
+    protected virtual void Update()
+    {
+        UpdateBungee();
+    }
+
     protected virtual void FixedUpdate()
     {
         UpdateVelocity();
@@ -212,6 +217,15 @@ public abstract class Character : MonoBehaviour
         var hitBoxOffset = myBoxCollider.offset;
         standOffset = new Vector2(hitBoxOffset.x, hitBoxOffset.y);
         downOffset = new Vector2(hitBoxOffset.x, hitBoxOffset.y - hitBoxOffset.y * 0.4f);
+    }
+    
+    protected void UpdateBungee()
+    {
+        if (!isDie && transform.position.y < ConstValues.BungeePosY)
+        {
+            TakeDamage(basicStat.maxHp);
+            Die();
+        }
     }
     
     protected void UpdateBuff()

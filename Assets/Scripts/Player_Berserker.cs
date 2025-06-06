@@ -200,10 +200,12 @@ public class Player_Berserker : Player
             jumpAttackCount += 1;
             float jumpAttackDelay3 = 0.12f;
             float jumpAttackDelay4 = 0.6f;
+            float jumpAttackForce = 6;
 
             MotionFlip();
             GravityChange(myGravity);
             StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack2, ConstValues.JumpAttack2Start);
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
             if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow())
                 return false;
 

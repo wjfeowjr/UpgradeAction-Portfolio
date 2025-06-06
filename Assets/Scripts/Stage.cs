@@ -41,6 +41,7 @@ public abstract class Stage : MonoBehaviour
     private CancellationTokenSource dieCancellation;
 
     [SerializeField] protected bool dialogSwitch;
+    [SerializeField] protected bool monsterSpawning;
     [SerializeField] protected int myEventStep;
 
     protected float dialogDelay1 = 2.5f;
@@ -238,7 +239,7 @@ public abstract class Stage : MonoBehaviour
         if (myEventStep > stepPos.Length - 1)
             return;
 
-        if (dialogSwitch && !curPlayer.IsDie && curPlayer.transform.position.x >= stepPos[myEventStep].transform.position.x && GameManager.Instance.MonsterList.Count == 0)
+        if (dialogSwitch && !curPlayer.IsDie && curPlayer.transform.position.x >= stepPos[myEventStep].transform.position.x && GameManager.Instance.MonsterList.Count == 0 && !monsterSpawning)
         {
             // 대화 진행
             DialogStep();

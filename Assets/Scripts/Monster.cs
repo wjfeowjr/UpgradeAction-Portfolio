@@ -86,11 +86,12 @@ public class Monster : Character
         InitAdditionalStat();
     }
 
-    private void Update()
+    protected override void Update()
     {
         if (basicStat.hp <= 0 || !GameManager.Instance.ControlStart)
             return;
-        
+
+        base.Update();
         Trace();
         Move();
         UpdateGlobalCoolTime();
@@ -101,6 +102,7 @@ public class Monster : Character
         // 점프 관련
         MonsterJump();
         MonsterDownJump();
+        MonsterBridgeJump();
         JumpCoolTimeReduce();
         DownJumpCoolTimeReduce();
     }
@@ -670,10 +672,12 @@ public class Monster : Character
 
     private void PlayerInJumpRangeCheck()
     {
+        // GameManager.Instance.CurPlayer.GetUpPosY() > transform.position.y &&
+        //Debug.Log($"{GameManager.Instance.CurPlayer.GetDownPosY()}, {transform.position.y + myStat.jumpRange.y}");
+        
         if (GameManager.Instance.CurPlayer.GetRightPosX() > transform.position.x - myStat.jumpRange.x &&
             GameManager.Instance.CurPlayer.GetLeftPosX() < transform.position.x + myStat.jumpRange.x &&
-            GameManager.Instance.CurPlayer.GetUpPosY() > transform.position.y &&
-            GameManager.Instance.CurPlayer.GetDownPosY() < transform.position.y + myStat.jumpRange.y)
+            GameManager.Instance.CurPlayer.GetDownPosY() < transform.position.y + myStat.jumpRange.y * 2)
         {
             jumpInfo.playerInRange = true;
         }
@@ -687,7 +691,7 @@ public class Monster : Character
     {
         if (GameManager.Instance.CurPlayer.GetRightPosX() > transform.position.x - myStat.dropRange.x &&
             GameManager.Instance.CurPlayer.GetLeftPosX() < transform.position.x + myStat.dropRange.x &&
-            GameManager.Instance.CurPlayer.GetUpPosY() > transform.position.y - myStat.dropRange.y &&
+            GameManager.Instance.CurPlayer.GetUpPosY() > transform.position.y - myStat.dropRange.y * 2 &&
             GameManager.Instance.CurPlayer.GetDownPosY() < transform.position.y)
         {
             downJumpInfo.playerInRange = true;
@@ -820,7 +824,7 @@ public class Monster : Character
     // 원거리 몬스터 스탠딩 알고리즘
     private void UpdateStandingCheck()
     {
-        if (!myStat.standMotion || normalState != ENormalState.Move || normalState != ENormalState.Idle)
+        if (!myStat.standMotion || (normalState != ENormalState.Move && normalState != ENormalState.Idle))
             return;
 
         if (patternInfo[0].playerInAttackRange)
@@ -923,6 +927,12 @@ public class Monster : Character
             {
                 Vector2 start = transform.position;
                 var playerPos = GameManager.Instance.CurPlayer.transform.position;
+
+                RaycastHit2D upRay = Physics2D.Raycast(transform.position, Vector2.up, 3.0f, groundAndPlatformLayerMask);
+                Debug.DrawRay(transform.position, Vector2.up * 3.0f, ConstValues.CyanColor, 0.02f);
+                if (upRay.collider != null)
+                    playerPos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, upRay.point.y);
+                
                 Vector2 end = new Vector2(playerPos.x, playerPos.y);
                 if(myStat.standMotion)
                     end = new Vector2(transform.position.x, playerPos.y);
@@ -970,6 +980,64 @@ public class Monster : Character
                     return;
                 
                 DownJump();
+            }
+        }
+    }
+    
+    protected async void MonsterBridgeJump()
+    {
+        if (IsCanJump())
+        {
+            var rayVector = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+            if(transform.localScale.x < 0)
+                rayVector = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+        
+            RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, 20.0f, groundAndPlatformLayerMask);
+            Debug.DrawRay(rayVector, Vector2.down * 20.0f, ConstValues.OrangeColor, 0.02f);
+            if (downRay.collider == null)
+            {
+                var verticalVector = new Vector2(rayVector.x, rayVector.y - 0.2f);
+                RaycastHit2D verticalRay;
+                if (transform.localScale.x > 0)
+                {
+                    verticalRay = Physics2D.Raycast(verticalVector, Vector2.right, 20.0f, groundAndPlatformLayerMask);
+                    Debug.DrawRay(verticalVector, Vector2.right * 20.0f, ConstValues.OrangeColor, 0.02f);
+                }
+                else
+                {
+                    verticalRay = Physics2D.Raycast(verticalVector, Vector2.left, 20.0f, groundAndPlatformLayerMask);
+                    Debug.DrawRay(verticalVector, Vector2.left * 20.0f, ConstValues.OrangeColor, 0.02f);
+                }
+
+                if (verticalRay.collider != null)
+                {
+                    Vector2 start = transform.position;
+                    var arrivePos = new Vector2(verticalRay.point.x + 1.0f, transform.position.y);
+                    if (transform.localScale.x < 0)
+                        arrivePos = new Vector2(verticalRay.point.x - 1.0f, transform.position.y);
+                    
+                    Vector2 end = new Vector2(arrivePos.x, arrivePos.y);
+
+                    if (Vector2.Distance(start, end) < 0.01f)
+                        return;
+                
+                    CancelMotion();
+                    LookAt(arrivePos.x);
+                    stateCancellation = new CancellationTokenSource();
+                    StateSetting(ENormalState.Landing, ConstValues.Landing, ConstValues.Landing);
+                    MoveStateSetting(EMoveState.Stopping);
+
+                    var delay1 = 0.2f;
+                    if(await AttackDelay(delay1).SuppressCancellationThrow())
+                        return;
+                
+                    PlaySound(ConstValues.Jump1);
+                    LookAt(arrivePos.x);
+                    StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+                    float travelTime = 0.5f;
+                    Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
+                    myRigidbody.linearVelocity = velocity;
+                }
             }
         }
     }

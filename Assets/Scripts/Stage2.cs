@@ -7,7 +7,9 @@ public class Stage2 : Stage
 {
     [SerializeField] private Transform[] npcPos;
     [SerializeField] private Player anotherPlayer;
-    
+    [SerializeField] private List<string> monsterWave1 = new List<string>();
+    private float monsterInterval = 1.0f;
+
     protected override void SetEpisodeName()
     {
         base.SetEpisodeName();
@@ -22,6 +24,9 @@ public class Stage2 : Stage
         {
             case 0:
                 await Product1();
+                break;
+            case 1:
+                Product2();
                 break;
         }
     }
@@ -55,12 +60,21 @@ public class Stage2 : Stage
         GameOverCycle();
         ProductEpisode();
         AccumulatedStep();
+        StartMonsterList();
     }
     
     private void Update()
     {
         DialogCycle();
         Test();
+    }
+
+    private void StartMonsterList()
+    {
+        monsterWave1.Add(ConstValues.MonsterSpinach);
+        monsterWave1.Add(ConstValues.MonsterSpinach);
+        monsterWave1.Add(ConstValues.MonsterSpinach);
+        monsterWave1.Add(ConstValues.MonsterPurple);
     }
     
     private async UniTask Product1()
@@ -85,16 +99,18 @@ public class Stage2 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
+            CameraShake(0.1f, 1.5f);
+            
             var citizenPos = npcPos[0].position;
             var traceMonsterPos1 = new Vector2(npcPos[0].position.x - 1.5f, npcPos[0].position.y);
             var traceMonsterPos2 = new Vector2(npcPos[0].position.x - 2.0f, npcPos[0].position.y);
-            var traceMonsterPos3 = new Vector2(npcPos[0].position.x - 2.5f, npcPos[0].position.y);
+            var traceMonsterPos3 = new Vector2(npcPos[0].position.x - 2.9f, npcPos[0].position.y);
             
             var arrivePos = new Vector2(npcPos[1].position.x, npcPos[1].position.y);
             var citizen1 = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcCitizen, citizenPos).GetComponent<Npc>();
             var traceMonster1 = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSpinach, traceMonsterPos1).GetComponent<Monster>();
             var traceMonster2 = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSpinach, traceMonsterPos2).GetComponent<Monster>();
-            var traceMonster3 = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSpinach, traceMonsterPos3).GetComponent<Monster>();
+            var traceMonster3 = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterPurple, traceMonsterPos3).GetComponent<Monster>();
             
             var npcSpeechPos = citizen1.FontPos;
             PlaySound(ConstValues.PlayerScream);
@@ -116,11 +132,18 @@ public class Stage2 : Stage
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame1[0].SetPos(gunnerSpeechPos);
+            PlaySound(ConstValues.GunnerLaugh);
+            speechFrame1[0].SetPos(new Vector2(gunnerSpeechPos.x, gunnerSpeechPos.y + 0.5f));
             speechFrame1[0].Speech(dialog3);
             
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            for (int i = 0; i < 2; i++)
+            {
+                curPlayer.CustomJump(new Vector2(0, 6.0f));
+                curPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.Jump);
+
+                if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                    return;
+            }
             
             speechFrame1[0].gameObject.SetActive(false);
             
@@ -130,8 +153,31 @@ public class Stage2 : Stage
             DialogStepUp();
             SaveEpisode();
             dialogSwitch = true;
+            
+            //GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[0].position);
         }
         MyEventStepUp();
+    }
+    
+    // 대화가 없는 연출은 UniTask형태가 아님
+    private async void Product2()
+    {
+        AccumulatedStep();
+        MyEventStepUp();
+        SetEventStep();
+        SaveEpisode();
+        
+        dialogCancellation = new CancellationTokenSource();
+        monsterSpawning = true;
+        foreach (var wave in monsterWave1)
+        {
+            var randX = Random.Range(-monsterInterval, monsterInterval);
+            var randPos = new Vector2(monsterPos[0].position.x + randX, monsterPos[0].position.y);
+            GameManager.Instance.SpawnMonster(wave, randPos);
+            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+                return;
+        }
+        monsterSpawning = false;
     }
 
     private void Test()
@@ -173,13 +219,9 @@ public class Stage2 : Stage
             case 0:
                 // 카메라 제한
                 GameManager.Instance.MainCamera.MinXAndY = new Vector2(0, GameManager.Instance.MainCamera.MinXAndY.y);
-                // anotherPlayer = GameManager.Instance.Players[0];
-                // var curPlayerPos = curPlayer.transform.position;
-                // anotherPlayer.transform.position = new Vector2(curPlayerPos.x - 7, curPlayerPos.y);
-                // anotherPlayer.gameObject.SetActive(true);
-                // GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[0].position);
-                // GameManager.Instance.SpawnMonster(ConstValues.MonsterPurple, monsterPos[0].position);
-                // GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[0].position);
+                break;
+            case 1:
+                
                 break;
         }
     }
