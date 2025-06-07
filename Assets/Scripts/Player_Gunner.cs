@@ -285,7 +285,7 @@ public class Player_Gunner : Player
     }
     
     // 넉백샷
-    public async UniTask<bool> KnockBackShot()
+    public async UniTask<bool> KnockBackShot(bool isRebound = true)
     {
         var delay1 = 0.1f;
         var delay2 = 0.2f;
@@ -297,7 +297,8 @@ public class Player_Gunner : Player
 
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
         SpawnAttack(ConstValues.GunnerKnockBackShot, knockBackShotPos);
-        Rebound(4.0f);
+        if(isRebound)
+            Rebound(4.0f);
         
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;

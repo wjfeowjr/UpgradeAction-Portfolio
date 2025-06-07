@@ -36,6 +36,7 @@ public abstract class Stage : MonoBehaviour
     [SerializeField] protected Transform[] stageWallPos;
     [SerializeField] protected Transform[] trapPos;
     [SerializeField] protected Transform[] bossPos;
+    [SerializeField] protected Transform[] strongSpeechPos;
     
     protected CancellationTokenSource dialogCancellation;
     private CancellationTokenSource dieCancellation;
@@ -47,9 +48,10 @@ public abstract class Stage : MonoBehaviour
     protected float dialogDelay1 = 2.5f;
     protected float dialogDelay2 = 1.0f;
 
-    [SerializeField] protected List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
+    protected List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
     protected List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
-    protected List<SpeechFrame> speechFrameTitle = new List<SpeechFrame>();
+    [SerializeField] protected SpeechFrame speechFrameStrong;
+    [SerializeField] protected SpeechFrame speechFrameTitle;
 
     [SerializeField] protected List<GameObject> stageWalls = new List<GameObject>();
     protected Player curPlayer;
@@ -75,14 +77,17 @@ public abstract class Stage : MonoBehaviour
         {
             speechFrame1.Add(GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame1));
             speechFrame2.Add(GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame2));
-            speechFrameTitle.Add(GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameTitle));
         }
         for (int i = 0; i < count; i++)
         {
             speechFrame1[i].gameObject.SetActive(false);
             speechFrame2[i].gameObject.SetActive(false);
-            speechFrameTitle[i].gameObject.SetActive(false);
         }
+        speechFrameStrong = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameStrong);
+        speechFrameStrong.gameObject.SetActive(false);
+        
+        speechFrameTitle = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameTitle);
+        speechFrameTitle.gameObject.SetActive(false);
     }
 
     protected virtual void SetEpisodeName()

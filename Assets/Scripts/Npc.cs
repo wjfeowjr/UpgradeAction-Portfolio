@@ -23,7 +23,7 @@ public class Npc : Character
     {
         StandHitBox();
     }
-    
+
     // 커스텀
     public async UniTask EpisodeMove_X(Vector2 movePos, float speed, int finishDir)
     {

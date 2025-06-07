@@ -592,6 +592,10 @@ public class GameManager : Singleton<GameManager>
         return SpawnToPool(id, uiObjectPool, objVector);
     }
     // UI화면
+    public GameObject SpawnToUIPool(string id, Vector2 objVector)
+    {
+        return SpawnToPool(id, uiPool, objVector);
+    }
     public GameObject SpawnToUIPool(eUIType type, Transform objTransform)
     {
         var go = SpawnToPool(type.ToString(), uiPool, objTransform);
@@ -892,7 +896,12 @@ public class GameManager : Singleton<GameManager>
 
     public SpeechFrame GetSpeechFrame(string frameName)
     {
-        var speechFrame = SpawnToUIObjectPool(frameName, Vector2.zero);
+        GameObject speechFrame;
+        if(frameName == ConstValues.SpeechFrameTitle)
+            speechFrame = SpawnToHighestPool(frameName, Vector2.zero);
+        else
+            speechFrame = SpawnToUIObjectPool(frameName, Vector2.zero);
+        
         var frameClass = speechFrame.GetComponent<SpeechFrame>();
         
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == frameName);

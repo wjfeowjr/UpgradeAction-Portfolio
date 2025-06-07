@@ -57,9 +57,13 @@ public class ConstValues : Singleton<ConstValues>
     public const string SkillImage = "SkillImage";
     public const string SpeechFrame1 = "SpeechFrame1";
     public const string SpeechFrame2 = "SpeechFrame2";
+    public const string SpeechFrameStrong = "SpeechFrame_Strong";
     public const string SpeechFrameTitle = "SpeechFrame_Title";
-    
+
+    public const string BangEffect = "BangEffect";
     public const string Effect = "Effect";
+    public const string FadeBg = "FadeBg";
+    public const string FadeUI = "FadeUI";
 
     public const string Berserker = "Berserker";
     public const string Gunner = "Gunner";
@@ -78,11 +82,15 @@ public class ConstValues : Singleton<ConstValues>
     public const string JumpAttack2Start = "JumpAttack2_Start";
     public const string JumpAttack2Drop = "JumpAttack2_Drop";
     public const string JumpAttack2End = "JumpAttack2_End";
-    
+    public const string Event = "Event";
+
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
     public const string DialogShot = "DialogShot";
-
+    public const string Arrive = "Arrive";
+    public const string Thumbs = "Thumbs";
+    public const string Point = "Point";
+    
     public const string None = "None";
     public const string Normal = "Normal";
     public const string Pattern = "Pattern";
@@ -135,8 +143,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string DownDust = "DownDust";
     public const string FireFlash = "FireFlash";
     public const string WarningArea = "WarningArea";
-    public const string FadeBg = "FadeBg";
-    
+
     public const string BerserkerSlash = "Berserker_Slash";
     public const string BerserkerFlash = "Berserker_Flash";
     public const string BerserkerAttack1 = "Berserker_Attack1";
@@ -175,11 +182,13 @@ public class ConstValues : Singleton<ConstValues>
     public const string GunnerCrazyShotEffect = "Gunner_CrazyShot_Effect";
     public const string GunnerBigShot = "Gunner_BigShot";
     public const string GunnerBigShotReady = "Gunner_BigShot_Ready";
+    
+    public const string FighterStrongPunch = "Fighter_StrongPunch";
 
     public const string UIPool = "UIPool";
     public const string PopupPool = "PopupPool";
     public const string Prefab = ".prefab";
-    
+
     // 몬스터
     public const string MonsterSpinach = "Monster_Spinach";
     public const string MonsterSpinachAppear = "Monster_Spinach_Appear";
@@ -197,6 +206,7 @@ public class ConstValues : Singleton<ConstValues>
     
     // Npc
     public const string NpcCitizen = "Npc_Citizen";
+    public const string NpcSystem = "Npc_System";
 
     // 함정
     public const string TrapPillar = "Trap_Pillar";
@@ -227,6 +237,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BGMEpisodeStart = "BGM_EpisodeStart";
     public const string BGMEpisode1 = "BGM_Episode1";
     public const string BGMEpisode2 = "BGM_Episode2";
+    public const string BGMEpisode2Battle = "BGM_Episode2Battle";
     
     // 사운드
     public const string GunnerLaugh = "Gunner_Laugh";

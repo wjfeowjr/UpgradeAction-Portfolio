@@ -499,11 +499,11 @@ public class Stage1 : Stage
             speechFrame1[0].gameObject.SetActive(false);
             
             var speechPosition3 = new Vector3(GameManager.Instance.MainCamera.transform.position.x, 0, 0);
-            speechFrameTitle[0].SetPos(speechPosition3);
-            speechFrameTitle[0].Speech(dialog9);
+            speechFrameTitle.SetPos(speechPosition3);
+            speechFrameTitle.Speech(dialog9);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrameTitle[0].gameObject.SetActive(false);
+            speechFrameTitle.gameObject.SetActive(false);
             
             BgmManager.Instance.Play();
             

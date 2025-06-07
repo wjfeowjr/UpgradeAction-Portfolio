@@ -126,7 +126,7 @@ public abstract class Character : MonoBehaviour
     
     protected Vector2 chargeVector;
     protected int jumpAttackCount;
-    [SerializeField] protected bool isDie;
+    protected bool isDie;
     protected float myGravity;
     protected bool downJumping;
     
