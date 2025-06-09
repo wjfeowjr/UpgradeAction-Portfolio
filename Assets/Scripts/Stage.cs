@@ -70,6 +70,18 @@ public abstract class Stage : MonoBehaviour
         SetEpisodeName();
     }
 
+    protected virtual void Update()
+    {
+        DialogCycle();
+        CheckCurPlayer();
+    }
+
+    private void CheckCurPlayer()
+    {
+        if (GameManager.Instance.CurPlayer != null && curPlayer != GameManager.Instance.CurPlayer)
+            curPlayer = GameManager.Instance.CurPlayer;
+    }
+
     private void CashingSpeechFrame()
     {
         int count = 3;
@@ -297,5 +309,10 @@ public abstract class Stage : MonoBehaviour
     protected void CameraShake(float amount, float time)
     {
         GameManager.Instance.CameraShake(amount, time);
+    }
+
+    protected void SetTimeScale(float value)
+    {
+        Time.timeScale = value;
     }
 }

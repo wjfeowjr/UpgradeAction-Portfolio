@@ -339,6 +339,37 @@ public class Player_Berserker : Player
 
         return true;
     }
+    public async UniTask<bool> EventCrash()
+    {
+        float delay1 = 0.5f;
+        float delay2 = 0.05f;
+        float delay3 = 0.32f;
+
+        SpawnAttack(ConstValues.BerserkerFlash, centerPos);
+        StateSetting(ENormalState.Skill, ConstValues.BerserkerCrash, ConstValues.BerserkerCrash);
+        
+        // 도움닫기
+        myRigidbody.linearVelocity = new Vector2(0, 8.0f);
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+        
+        float dropForce = 20.0f;
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
+        while (GetJumpState())
+        {
+            if(await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                return false;
+        }
+        
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.BerserkerCrashSmash);
+        
+        if (await AttackDelay(delay2).SuppressCancellationThrow())
+            return false;
+        
+        SpawnAttack(ConstValues.BerserkerCrash, crashPos);
+        SpawnAttack(ConstValues.BerserkerCrashExplosion, crashExplosionPos);
+        return true;
+    }
 
     private async UniTask<bool> FireStrike()
     {
@@ -387,7 +418,8 @@ public class Player_Berserker : Player
             chargeVector = new Vector2(transform.position.x - dashLength, transform.position.y);
         
         // 돌진
-        await Charge(dashSpeed, 1.0f, dashLength, 1.0f);
+        if(await Charge(dashSpeed, 1.0f, dashLength, 1.0f) == false)
+            return false;
         
         SetTriggerAnimator(ConstValues.ComboAttack);
         SpawnAttack(ConstValues.BerserkerChargeCrashSlash, centerPos);       

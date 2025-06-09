@@ -192,6 +192,7 @@ public class Monster : Character
             name = targetStat.name,
             bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
             hp = targetStat.hp,
+            maxHp = targetStat.hp,
             power = targetStat.power,
             defence = targetStat.defence,
             moveSpeed = targetStat.moveSpeed, 
@@ -210,6 +211,7 @@ public class Monster : Character
                 name = targetStat.name,
                 bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
                 hp = targetStat.hp,
+                maxHp = targetStat.hp,
                 power = targetStat.power,
                 defence = targetStat.defence,
                 moveSpeed = targetStat.moveSpeed,
@@ -315,8 +317,8 @@ public class Monster : Character
     {
         await UniTask.WaitUntil(() => basicStat.hp > 0);
         var finalHp = basicStat.hp;
-        basicStat.maxHp = finalHp;
         basicStat.hp = finalHp;
+        basicStat.maxHp = finalHp;
         
         var finalStagger = basicStat.stagger;
         basicStat.maxStagger = finalStagger;
@@ -358,6 +360,9 @@ public class Monster : Character
         }
         else
         {
+            if(!gameObject.activeSelf)
+                return;
+            
             totalBar = SpawnUI(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
             totalBar.SetCastCharacter(this);
         }
@@ -613,12 +618,12 @@ public class Monster : Character
         }
     }
 
-    public override void Die(bool isBomb = false)
+    public override void Die()
     {
         base.Die();
         GameManager.Instance.RemoveMonster(this);
 
-        if (isBomb)
+        if (transform.position.y < ConstValues.BungeePosY)
         {
             StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
             MoveStateSetting(EMoveState.Stopping);
@@ -1200,6 +1205,24 @@ public class Monster : Character
                     
                     break;
                 
+                case ENormalState.Airborne:
+                    DownAndStand();
+                    break;
+            }
+        }
+    }
+    
+    // 지면에 닿고 굳는것 방지
+    protected void OnCollisionStay2D(Collision2D col)
+    {
+        // 착지
+        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air && !isDie)
+        {
+            if (myRigidbody.linearVelocityY != 0)
+                return;
+            
+            switch (normalState)
+            {
                 case ENormalState.Airborne:
                     DownAndStand();
                     break;

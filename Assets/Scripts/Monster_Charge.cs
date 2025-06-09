@@ -40,7 +40,9 @@ public class Monster_Charge : Monster
         // 돌진
         SetTriggerAnimator(ConstValues.Pattern);
         var spawnObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}", attackPos).GetComponent<Attack>();
-        await Charge(chargeSpeed, 0.5f, chargeLength, 0.5f);
+        if (await Charge(chargeSpeed, 0.5f, chargeLength, 0.5f) == false)
+            return;
+        
         spawnObject.DisActiveCollider();
         if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
@@ -49,13 +51,12 @@ public class Monster_Charge : Monster
         PatternEnd();
     }
 
-    public async UniTask EventCharge()
+    public async UniTask EventCharge(float chargeLength, float upperX = 0, float upperY = 0)
     {
         float delay1 = 0.9f;
         float delay2 = 0.5f;
         float chargeSpeed = 13;
-        float chargeLength = 3.0f;
-        
+
         if(transform.localScale.x > 0)
             chargeVector = new Vector2(transform.position.x + chargeLength, transform.position.y);
         else
@@ -72,6 +73,9 @@ public class Monster_Charge : Monster
         // 돌진
         SetTriggerAnimator(ConstValues.Pattern);
         var spawnObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}_{ConstValues.Event}", attackPos).GetComponent<Attack>();
+        if (upperX > 0 && upperY > 0)
+            spawnObject.SetUpperPower(new Vector2(upperX, upperY));
+        
         await Charge(chargeSpeed, 0.5f, chargeLength, 0.5f);
         spawnObject.DisActiveCollider();
         if(await AttackDelay(delay2).SuppressCancellationThrow())

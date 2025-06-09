@@ -95,11 +95,6 @@ public class Stage1 : Stage
         AccumulatedStep();
     }
 
-    private void Update()
-    {
-        DialogCycle();
-    }
-
     private void CashingSunObject()
     {
         if (!sunObject)

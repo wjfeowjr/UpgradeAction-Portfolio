@@ -134,7 +134,6 @@ public abstract class Player : Character
     protected override void OnEnable()
     {
         base.OnEnable();
-        InitAdditionalStat();
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
     }
@@ -214,7 +213,7 @@ public abstract class Player : Character
         }
     }
 
-    private void InitAdditionalStat()
+    public void InitAdditionalStat()
     {
         var finalHp = basicStat.hp;
         basicStat.maxHp = finalHp;
@@ -319,6 +318,7 @@ public abstract class Player : Character
         // 스턴상태가 걸려있지 않은 경우
         if (findDeBuff == null)
         {
+            basicStat.bodyType = originStat.bodyType;
             StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         }
         // 스턴상태가 걸려있는 경우
@@ -500,9 +500,11 @@ public abstract class Player : Character
     public override void TakeDamage(int damage)
     {
         base.TakeDamage(damage);
-        
+
         if (damage == 0)
             return;
+        
+        GameManager.Instance.SetPlayerHp(basicStat.hp);
         
         var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
         if (uiInterfaceObj == null)
@@ -517,7 +519,7 @@ public abstract class Player : Character
             PlaySound(ConstValues.PlayerDamaged1);
     }
 
-    public override void Die(bool isBomb = false)
+    public override void Die()
     {
         base.Die();
         StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
@@ -679,6 +681,28 @@ public abstract class Player : Character
                 return;
         }
         downJumping = false;
+    }
+
+    public async UniTask DialogDownJump()
+    {
+        await UniTask.WaitUntil(() => normalState == ENormalState.Idle);
+
+        PlaySound(ConstValues.Jump1);
+        CancelMotion();
+
+        IgnorePlatform(Vector2.down, 1.0f);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
+        
+        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+        LandingStateSetting(ELandingState.Air);
+
+        stateCancellation = new CancellationTokenSource();
+        while (transform.position.y >= groundObject.transform.position.y)
+        {
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+        await NormalDelay(1.0f, stateCancellation);
     }
     
     public async void JumpToChange()

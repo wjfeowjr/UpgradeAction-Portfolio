@@ -23,6 +23,8 @@ public class ConstValues : Singleton<ConstValues>
     public const float DefaultAngularDamping = 0.05f;
 
     public const float BungeePosY = -8.0f;
+
+    public const float BlinkSecond = 0.1f; // 사라질떄 깜빡이는거
     
     public const string PrefabFolder = "Assets/Prefab";
     public const string SoundFolder = "Assets/Sound";
@@ -83,14 +85,17 @@ public class ConstValues : Singleton<ConstValues>
     public const string JumpAttack2Drop = "JumpAttack2_Drop";
     public const string JumpAttack2End = "JumpAttack2_End";
     public const string Event = "Event";
+    public const string PunchPose = "PunchPose";
 
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
     public const string DialogShot = "DialogShot";
+    public const string DialogGround = "DialogGround";
+    public const string DialogGroundLaugh = "DialogGroundLaugh";
     public const string Arrive = "Arrive";
     public const string Thumbs = "Thumbs";
     public const string Point = "Point";
-    
+
     public const string None = "None";
     public const string Normal = "Normal";
     public const string Pattern = "Pattern";
@@ -153,6 +158,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerJumpAttack2 = "Berserker_JumpAttack2";
     public const string BerserkerJumpAttack2Effect = "Berserker_JumpAttack2_Effect";
     public const string BerserkerAttackHitCrit = "Berserker_Attack_Hit_Crit";
+    public const string BerserkerCrashHitEffect = "Berserker_Crash_HitEffect";
 
     public const string BerserkerDash = "Berserker_Dash";
     public const string BerserkerUpperSlash = "Berserker_UpperSlash";
@@ -204,9 +210,13 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterSunDie = "Monster_Sun_Die";
     public const string MonsterSunLaugh = "Monster_Sun_Laugh";
     
+    public const string MonsterMouseCursorWarning = "Monster_MouseCursor_Warning";
+
     // Npc
     public const string NpcCitizen = "Npc_Citizen";
     public const string NpcSystem = "Npc_System";
+    public const string NpcGameSystem = "Npc_GameSystem";
+    public const string NpcGameSystemDie = "NPC_GameSystem_Die";
 
     // 함정
     public const string TrapPillar = "Trap_Pillar";
@@ -253,4 +263,6 @@ public class ConstValues : Singleton<ConstValues>
     public const string SpeechFrame = "SpeechFrame";
     public const string WarningSound = "WarningSound";
     public const string ChickenCock = "ChickenCock";
+    public const string PlayerFlash = "Player_Flash";
+    public const string MonsterBigTreeLog = "Monster_BigTree_Log";
 }

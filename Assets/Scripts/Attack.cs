@@ -173,6 +173,11 @@ public class Attack : MonoBehaviour
         return finalDamage;
     }
 
+    public void SetUpperPower(Vector2 upperPower)
+    {
+        attackInfo.upperPower = upperPower;
+    }
+
     // 공격판정 적용
     // if (col.GetComponent<Monster>() != null)
     // hitTarget.LookAt(transform.position.x);
@@ -189,7 +194,7 @@ public class Attack : MonoBehaviour
             {
                 if (castChar.GetComponent<Player>())
                 {
-                    if (col.GetComponent<Monster>() == null)
+                    if (col.GetComponent<Monster>() == null && col.GetComponent<Npc>() == null)
                         return;
                 
                     // 스프라이트가 점멸한다
@@ -198,10 +203,11 @@ public class Attack : MonoBehaviour
                 // 몬스터의 공격
                 if (castChar.GetComponent<Monster>())
                 {
-                    if (col.GetComponent<Player>() == null)
+                    if (col.GetComponent<Player>() == null && col.GetComponent<Npc>() == null)
                         return;
                 }
             }
+            // 트랩
             else
             {
                 if (col.GetComponent<Player>() == null)
@@ -253,7 +259,10 @@ public class Attack : MonoBehaviour
             if (hitTarget.BasicStat.hp <= 0)
             {
                 hitTarget.Die();
-                hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
+                var upperPowerY = attackInfo.upperPower.y;
+                if (upperPowerY < 5)
+                    upperPowerY = 5;
+                hitTarget.Airborne(upperPowerX, upperPowerY);
                 return;
             }
             

@@ -180,13 +180,14 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
 
+    private bool secondStart;
     private string firstPlayer;
     private string secondPlayer = default;
     private bool controlStart;
     private int comboCount;
     private int groundLayerMask;
     private float groundPosY;
-
+    
     // 등록된 스킬 목록
     private SettingSkill changeSkill;
     [SerializeField] private SkillKeyCollection playerSkillKeyCollection;
@@ -208,6 +209,12 @@ public class GameManager : Singleton<GameManager>
     }
 
     public Player[] Players => players;
+
+    public bool SecondStart
+    {
+        get => secondStart;
+        set => secondStart = value;
+    }
 
     public string FirstPlayer
     {
@@ -472,9 +479,17 @@ public class GameManager : Singleton<GameManager>
         foreach (var player in players)
         {
             player.InitBasicStat();
+            player.InitAdditionalStat();
             player.InitSkill();
         }
     }
+
+    public void SetPlayerHp(int hp)
+    {
+        foreach (var player in players)
+            player.BasicStat.hp = hp;
+    }
+    
     public void SetPlayerOrder(string first, string second)
     {
         firstPlayer = first;
@@ -493,7 +508,7 @@ public class GameManager : Singleton<GameManager>
         curPlayer.transform.position = playerPos;
         curPlayer.transform.localScale = Vector3.one;
     }
-    private Player GetPlayer(string playerName)
+    public Player GetPlayer(string playerName)
     {
         foreach (var player in players)
         {
@@ -502,10 +517,20 @@ public class GameManager : Singleton<GameManager>
         }
         return null;
     }
-    public void ActivePlayer(string playerName)
+
+    private void ActivePlayer(string playerName)
     {
         foreach (var player in players)
             player.gameObject.SetActive(player.name == playerName);
+    }
+
+    public void ArrivePlayer()
+    {
+        foreach (var player in players)
+        {
+            player.Immortal = false;
+            player.IsDie = false;
+        }
     }
 
     public void InitCamera(FollowCamera targetCamera)

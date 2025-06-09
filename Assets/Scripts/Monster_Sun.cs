@@ -139,7 +139,7 @@ public class Monster_Sun : Monster
         PatternEnd();
     }
     
-    public override void Die(bool isBomb = false)
+    public override void Die()
     {
         myBoxCollider.enabled = false;
         

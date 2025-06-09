@@ -126,7 +126,7 @@ public abstract class Character : MonoBehaviour
     
     protected Vector2 chargeVector;
     protected int jumpAttackCount;
-    protected bool isDie;
+    [SerializeField] protected bool isDie;
     protected float myGravity;
     protected bool downJumping;
     
@@ -135,7 +135,7 @@ public abstract class Character : MonoBehaviour
     protected int groundAndPlatformLayerMask;
     protected int wallLayerMask;
 
-    protected bool immortal;
+    [SerializeField] protected bool immortal;
     protected bool immuneStagger;
 
     // 프로퍼티
@@ -193,6 +193,7 @@ public abstract class Character : MonoBehaviour
     protected virtual void OnEnable()
     {
         isDie = false;
+        StandHitBox();
     }
 
     protected virtual void Update()
@@ -237,7 +238,7 @@ public abstract class Character : MonoBehaviour
         if (!isDie && transform.position.y < ConstValues.BungeePosY)
         {
             TakeDamage(basicStat.maxHp);
-            Die(true);
+            Die();
         }
     }
     
@@ -264,10 +265,13 @@ public abstract class Character : MonoBehaviour
                 RemoveObjectList(buffObject, removeEffect);
             
             // 스턴상태 회복
-            if (expiredDeBuff.buffType == EBuffType.Stun && normalState == ENormalState.Stun)
+            if (expiredDeBuff.buffType == EBuffType.Stun)
             {
                 basicStat.bodyType = originStat.bodyType;
-                StateRecovery();
+                if(normalState == ENormalState.Stun)
+                {
+                    StateRecovery();
+                }
             }
         }
     }
@@ -1097,7 +1101,7 @@ public abstract class Character : MonoBehaviour
         return true;
     }
 
-    public virtual void Die(bool isBomb = false)
+    public virtual void Die()
     {
         CancelMotion();
         ClearObjectList(buffObject);
@@ -1170,8 +1174,13 @@ public abstract class Character : MonoBehaviour
         // 이후에는 고정된 시간만큼 누워있다가 일어난다
         else
         {
-            if(isDie)
+            if (isDie)
+            {
+                await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
+                if(gameObject.activeSelf)
+                    BlinkDelete();
                 return;
+            }
             
             if (await NormalDelay(ConstValues.DownSecond, stateCancellation).SuppressCancellationThrow())
                 return;
@@ -1383,9 +1392,33 @@ public abstract class Character : MonoBehaviour
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
     
-    public void CustomAnimTrigger(ENormalState state, string triggerName)
+    public void CustomAnimTrigger(ENormalState state, string triggerName, string animId = null)
     {
-        StateSetting(state, triggerName, null);
+        StateSetting(state, triggerName, animId);
+    }
+    
+    // 깜빡이며 사라지기
+    public async void BlinkDelete()
+    {
+        stateCancellation = new CancellationTokenSource();
+        for (int i = 0; i < 7; i++)
+        {
+            foreach (var mySpriteRenderer in mySpriteRenderers)
+                mySpriteRenderer.enabled = false;
+            if (await NormalDelay(ConstValues.BlinkSecond, stateCancellation).SuppressCancellationThrow())
+                return;
+            
+            foreach (var mySpriteRenderer in mySpriteRenderers)
+                mySpriteRenderer.enabled = true;
+            if (await NormalDelay(ConstValues.BlinkSecond, stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+        gameObject.SetActive(false);
+    }
+
+    public bool IsOnPlatform()
+    {
+        return groundObject.CompareTag(ConstValues.Platform);
     }
 
     // protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float acceleration)

@@ -6,6 +6,9 @@ public class SoundManager : Singleton<SoundManager>
 {
     private AudioSource myAudioSource;
     private readonly Dictionary<string, AudioClip> soundDic = new Dictionary<string, AudioClip>();
+    private readonly Dictionary<string, float> lastPlayTime = new Dictionary<string, float>();
+    private readonly float minInterval = 0.05f; // 최소 0.05초 간격으로 제한
+    
     [SerializeField] private List<AudioClip> soundList = new List<AudioClip>();
 
     protected override void Awake()
@@ -27,9 +30,15 @@ public class SoundManager : Singleton<SoundManager>
 
     public void PlaySound(string uniqueId)
     {
-        if (!myAudioSource || uniqueId == ConstValues.None)
+        if (!myAudioSource || uniqueId == ConstValues.None || !soundDic.ContainsKey(uniqueId))
             return;
         
+        float now = Time.time;
+        
+        if (lastPlayTime.TryGetValue(uniqueId, out float t) && now - t < minInterval)
+            return;
+        
+        lastPlayTime[uniqueId] = now;
         myAudioSource.PlayOneShot(soundDic[uniqueId], 0.8f);
     }
 
