@@ -181,9 +181,11 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
 
     private bool secondStart;
+    private string episodeName;
+    
     private string firstPlayer;
     private string secondPlayer = default;
-    private bool controlStart;
+    [SerializeField] private bool controlStart;
     private int comboCount;
     private int groundLayerMask;
     private float groundPosY;
@@ -214,6 +216,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => secondStart;
         set => secondStart = value;
+    }
+    
+    public string EpisodeName
+    {
+        get => episodeName;
+        set => episodeName = value;
     }
 
     public string FirstPlayer

@@ -19,9 +19,13 @@ public class Npc : Character
         SetTriggerAnimator(triggerName);
     }
     
+    protected override void StateCheck()
+    {
+        
+    }
     protected override void StateRecovery()
     {
-        StandHitBox();
+        
     }
 
     // 커스텀

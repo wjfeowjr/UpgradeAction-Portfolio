@@ -34,6 +34,7 @@ public enum ENormalState
     Appear,
     AppearEnd,
     Die,
+    Stagger,
 }
 
 // 실제 이동 관련
@@ -64,6 +65,7 @@ public enum EBodyType
 public enum EBuffType
 {
     Stun,
+    Stagger,
 }
 
 [Serializable]
@@ -100,6 +102,9 @@ public abstract class Character : MonoBehaviour
     
     protected Vector3 defaultScale;
     protected Vector3 reverseScale;
+    
+    protected Vector3 defaultAnimatorScale;
+
     protected CancellationTokenSource stateCancellation;
     protected CancellationTokenSource anotherCancellation; // 우선 넉백에만사용되고 있음
 
@@ -135,10 +140,11 @@ public abstract class Character : MonoBehaviour
     protected int groundAndPlatformLayerMask;
     protected int wallLayerMask;
 
-    [SerializeField] protected bool immortal;
-    protected bool immuneStagger;
+    protected bool immortal;
+    [SerializeField] protected bool immuneStagger;
 
     // 프로퍼티
+    public BasicStat OriginStat => originStat;
     public BasicStat BasicStat => basicStat;
     public Rigidbody2D MyRigidbody => myRigidbody;
     public GameObject GroundObject => groundObject;
@@ -163,6 +169,7 @@ public abstract class Character : MonoBehaviour
     // 상태 설정
     protected abstract void StateSetting(ENormalState changeNormalState, string triggerName, string animId);
 
+    protected abstract void StateCheck();
     protected abstract void StateRecovery();
 
     protected virtual void Awake()
@@ -212,6 +219,8 @@ public abstract class Character : MonoBehaviour
     {
         defaultScale = transform.localScale;
         reverseScale = new Vector3(-defaultScale.x, defaultScale.y, defaultScale.z);
+
+        defaultAnimatorScale = myAnimator.transform.localScale;
     }
     
     private void ColSizeSetting()
@@ -264,11 +273,11 @@ public abstract class Character : MonoBehaviour
             if(removeEffect != null) 
                 RemoveObjectList(buffObject, removeEffect);
             
-            // 스턴상태 회복
-            if (expiredDeBuff.buffType == EBuffType.Stun)
+            // 스턴, 무력화 상태 회복
+            if (expiredDeBuff.buffType is EBuffType.Stun or EBuffType.Stagger)
             {
-                basicStat.bodyType = originStat.bodyType;
-                if(normalState == ENormalState.Stun)
+                StateCheck();
+                if(normalState is ENormalState.Stun or ENormalState.Stagger)
                 {
                     StateRecovery();
                 }
@@ -450,6 +459,16 @@ public abstract class Character : MonoBehaviour
         basicStat.hp -= damage;
         if (basicStat.hp < 0)
             basicStat.hp = 0;
+    }
+
+    public virtual void TakeStagger(int stagger)
+    {
+        if (immuneStagger)
+            return;
+        
+        basicStat.stagger -= stagger;
+        if (basicStat.stagger <= 0)
+            basicStat.stagger = 0;
     }
 
     public void SpawnDamageFont(int damage, bool critical)
@@ -884,6 +903,33 @@ public abstract class Character : MonoBehaviour
             var objectAngle = spawnedObject.transform.eulerAngles;
             spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
         }
+        
+        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
+        if (missileData != null)
+        {
+            var missile = obj.GetComponent<Missile>();
+            if (!missile)
+                missile = obj.AddComponent<Missile>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            missile.SetupData(missileData, dir, SpawnAttack);
+        }
+        
+        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
+        if (grenadeData != null)
+        {
+            var grenade = obj.GetComponent<Grenade>();
+            if (!grenade)
+                grenade = obj.AddComponent<Grenade>();
+            
+            var dir = Vector2.right;
+            if(transform.localScale.x < 0)
+                dir = Vector2.left;
+            grenade.SetupData(grenadeData, dir, SpawnAttack);
+            grenade.Throw();
+        }
 
         return obj;
     }
@@ -1207,6 +1253,12 @@ public abstract class Character : MonoBehaviour
                 case EBuffType.Stun:
                     basicStat.bodyType = EBodyType.Normal;
                     break;
+                case EBuffType.Stagger:
+                    // 스트롱 아머만 깨짐
+                    if(originStat.bodyType == EBodyType.StrongArmor)
+                        basicStat.bodyType = EBodyType.Normal;
+                    SpawnObject($"{buffType.ToString()}{ConstValues.Explosion}", buffEffectPos);
+                    break;
             }
             
             SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, 0, true);
@@ -1223,6 +1275,9 @@ public abstract class Character : MonoBehaviour
             }
         }
     }
+    
+    // 상태이상
+    // 스턴
     public void Stun(float stunTime)
     {
         // 스턴 디버프 추가
@@ -1239,6 +1294,18 @@ public abstract class Character : MonoBehaviour
         CancelMotion();
         stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
+    }
+    // 무력화
+    public virtual void Stagger()
+    {
+        // 무력화 디버프 추가
+        AddBuff(EBuffType.Stagger, basicStat.staggerTime);
+        MoveStateSetting(EMoveState.Stopping);
+
+        CancelMotion();
+        stateCancellation = new CancellationTokenSource();
+        StateSetting(ENormalState.Stagger, ConstValues.Stagger, ConstValues.Stagger);
+        immuneStagger = true;
     }
     
     public async void Damaged(float damagedTime) 

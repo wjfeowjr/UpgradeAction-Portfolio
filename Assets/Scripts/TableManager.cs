@@ -86,6 +86,7 @@ public class GrenadeData
     public string id;
     public string minForce;
     public string maxForce;
+    public bool dirObject;
     public string hitLayer;
     public string spawnObject;
 }

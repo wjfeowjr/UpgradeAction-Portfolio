@@ -201,6 +201,7 @@ public class Monster : Character
             criticalDamage = targetStat.criticalDamage,
             weight = targetStat.weight,
             stagger = targetStat.stagger,
+            maxStagger = targetStat.stagger,
             staggerTime = targetStat.staggerTime,
         };
         if (string.IsNullOrEmpty(originStat.id))
@@ -220,6 +221,7 @@ public class Monster : Character
                 criticalDamage = targetStat.criticalDamage,
                 weight = targetStat.weight,
                 stagger = targetStat.stagger,
+                maxStagger = targetStat.stagger,
                 staggerTime = targetStat.staggerTime,
             };
         }
@@ -357,6 +359,8 @@ public class Monster : Character
             uiInterface.BossHpPresenter.SetModel(bossHpModel);
             uiInterface.BossHpPresenter.SetHp();
             uiInterface.BossHpPresenter.SetHpText();
+            
+            uiInterface.BossHpPresenter.SetStagger();
         }
         else
         {
@@ -399,24 +403,39 @@ public class Monster : Character
         }
     }
     
+    protected override void StateCheck()
+    {
+        var stunOrStagger = buffList.FindAll(x => x.buffType is EBuffType.Stun or EBuffType.Stagger);
+
+        if (stunOrStagger.Count == 0)
+        {
+            immuneStagger = false;
+            basicStat.bodyType = originStat.bodyType;
+            basicStat.stagger = basicStat.maxStagger;
+            curGlobalCoolTime = 0;
+            SetStagger();
+        }
+    }
     protected override void StateRecovery()
     {
-        var findDeBuff = buffList.Find(x => x.buffType == EBuffType.Stun);
-        
-        // 스턴상태가 걸려있지 않은 경우
-        if (findDeBuff == null)
+        var stunOrStagger = buffList.FindAll(x => x.buffType is EBuffType.Stun or EBuffType.Stagger);
+        if (stunOrStagger.Count == 0)
         {
-            basicStat.bodyType = originStat.bodyType;
             IdleOrMove();
         }
-        // 스턴상태가 걸려있는 경우
         else
         {
-            StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
+            // 스턴에 걸려있는 경우
+            if (stunOrStagger.Find(x => x.buffType == EBuffType.Stun) != null)
+                StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
+            
+            // 무력화에 걸려있는 경우
+            if (stunOrStagger.Find(x => x.buffType == EBuffType.Stagger) != null)
+                StateSetting(ENormalState.Stagger, ConstValues.Stagger, ConstValues.Stagger);
         }
         StandHitBox();
     }
-    
+
     // 아랫점프
     private async void DownJump()
     {
@@ -444,24 +463,23 @@ public class Monster : Character
         downJumping = false;
     }
 
-    // 등장
-    public async void Appear(Action bossProduct)
+    // 등장(연출 포함)
+    public virtual async void Appear(Action bossProduct)
     {
         await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
         StandHitBox();
         StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
         MoveStateSetting(EMoveState.Stopping);
-        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-        
-        AppearProduction(bossProduct);
-    }
-    protected virtual async void AppearProduction(Action bossProduct)
-    {
+
         stateCancellation = new CancellationTokenSource();
+        if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+            return;
+        
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         myBoxCollider.enabled = true;
         GravityChange(myGravity);
-        
-        myAnimator.transform.localScale = new Vector3(myAnimator.transform.localScale.x, myAnimator.transform.localScale.y * 2.6f, myAnimator.transform.localScale.z);
+
+        myAnimator.transform.localScale = new Vector3(defaultAnimatorScale.x, defaultAnimatorScale.y * 2.6f, defaultAnimatorScale.z);
         bool finishSuccess = true;
 
         finishSuccess = await AppearMotion();
@@ -479,14 +497,13 @@ public class Monster : Character
             await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
             // Hovering();
             // AppearShake();
-            
             IdleOrMove();
         }
         bossProduct?.Invoke();
         FirstCoolTimeReduce();
     }
     // 등장모션
-    protected virtual async UniTask<bool> AppearMotion()
+    protected async UniTask<bool> AppearMotion()
     {
         if(appearMotions.Length == 0)
             return false;
@@ -499,9 +516,9 @@ public class Monster : Character
         
         float yScale = myAnimator.transform.localScale.y;
         float alpha = 1.0f;
-        while (yScale > defaultScale.y)
+        while (yScale > defaultAnimatorScale.y)
         {
-            yScale -= 0.35f;
+            yScale -= 0.35f * defaultAnimatorScale.y;
             alpha -= 0.26f;
             myAnimator.transform.localScale = new Vector3(myAnimator.transform.localScale.x, yScale, 1);
             foreach (var appearMotion in appearMotions)
@@ -523,7 +540,7 @@ public class Monster : Character
     }
     private void DeleteAppearObject()
     {
-        myAnimator.transform.localScale = defaultScale;
+        myAnimator.transform.localScale = defaultAnimatorScale;
         foreach (var appearMotion in appearMotions)
             appearMotion.gameObject.SetActive(false);
     }
@@ -615,6 +632,60 @@ public class Monster : Character
         {
             if(totalBar)
                 totalBar.ReduceHpBar(basicStat.hp, basicStat.maxHp, 1.5f);
+        }
+    }
+
+    public override void TakeStagger(int stagger)
+    {
+        base.TakeStagger(stagger);
+        
+        if (immuneStagger)
+            return;
+        
+        var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
+        if (uiInterfaceObj == null)
+            return;
+        
+        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        if (isBoss)
+        {
+            // 보스가 두 마리 이상일 때를 대비
+            var bossHpModel = new UIBossHpModel()
+            {
+                character = this
+            };
+            uiInterface.BossHpPresenter.SetModel(bossHpModel);
+        
+            if (basicStat.stagger > 0)
+            {
+                uiInterface.BossHpPresenter.StaggerReduce();
+            }
+            else
+            {
+                // 터지는 전기 연출
+                GameManager.Instance.SpawnToUIPool(ConstValues.StaggerExplosionUI, uiInterface.BossHpPresenter.StaggerGaugeTransform().position);
+                uiInterface.BossHpPresenter.SetStagger();
+            }
+        }
+    }
+
+    private void SetStagger()
+    {
+        var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
+        if (uiInterfaceObj == null)
+            return;
+        
+        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        
+        if (isBoss)
+        {
+            // 보스가 두 마리 이상일 때를 대비
+            var bossHpModel = new UIBossHpModel()
+            {
+                character = this
+            };
+            uiInterface.BossHpPresenter.SetModel(bossHpModel);
+            uiInterface.BossHpPresenter.SetStagger();
         }
     }
 
@@ -1058,7 +1129,7 @@ public class Monster : Character
         }
     }
     
-    private Vector2 CalculateLaunchVelocity(Vector2 start, Vector2 end, float t)
+    protected Vector2 CalculateLaunchVelocity(Vector2 start, Vector2 end, float t)
     {
         Vector2 d  = end - start;
         float dx   = d.x;
@@ -1206,25 +1277,8 @@ public class Monster : Character
                     break;
                 
                 case ENormalState.Airborne:
-                    DownAndStand();
-                    break;
-            }
-        }
-    }
-    
-    // 지면에 닿고 굳는것 방지
-    protected void OnCollisionStay2D(Collision2D col)
-    {
-        // 착지
-        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air && !isDie)
-        {
-            if (myRigidbody.linearVelocityY != 0)
-                return;
-            
-            switch (normalState)
-            {
-                case ENormalState.Airborne:
-                    DownAndStand();
+                    if (!myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Die))
+                        DownAndStand();
                     break;
             }
         }

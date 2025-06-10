@@ -106,6 +106,7 @@ public abstract class Stage : MonoBehaviour
     {
         clearString = "클리어!!";
         buttonString = "종료";
+        GameManager.Instance.EpisodeName = episodeName;
     }
     
     // 에피소드 저장

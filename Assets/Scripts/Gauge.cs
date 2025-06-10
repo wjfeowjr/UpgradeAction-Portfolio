@@ -58,7 +58,7 @@ public class Gauge : MonoBehaviour
         if(reduceGauge) 
             reduceGauge.fillAmount = 1;
     }
-    // 게이치 해당 비율로 즉시 고정
+    // 게이지 해당 비율로 즉시 고정
     public void GaugeSetting(float currentValue, float maxValue, string text = default)
     {
         if (mainGauge)

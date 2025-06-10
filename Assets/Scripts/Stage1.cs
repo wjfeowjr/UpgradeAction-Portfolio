@@ -15,9 +15,9 @@ public class Stage1 : Stage
     
     protected override void SetEpisodeName()
     {
-        base.SetEpisodeName();
         episodeName = ConstValues.Episode1;
         episodeTitle = "에피소드1: 날씨 좋은 날";
+        base.SetEpisodeName();
     }
     protected override async void DialogStep()
     {

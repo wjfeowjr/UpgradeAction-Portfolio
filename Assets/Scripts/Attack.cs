@@ -224,6 +224,9 @@ public class Attack : MonoBehaviour
             float randDmg = Random.Range(0.95f, 1.05f);
             damage = (int)(damage * randDmg);
             
+            // 무력화 피해도 입는다
+            int stagger = attackInfo.stagger;
+            
             // 피해입기
             hitTarget.TakeDamage(damage);
             // 폰트소환
@@ -265,16 +268,25 @@ public class Attack : MonoBehaviour
                 hitTarget.Airborne(upperPowerX, upperPowerY);
                 return;
             }
+            IgnoreCol(col);
+
+            hitTarget.TakeStagger(attackInfo.stagger);
+            if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
+            {
+                // 무력화 효과 넣기
+                hitTarget.Stagger();
+                return;
+            }
             
             if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
             {
-                if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
+                if(hitTarget.OriginStat.bodyType == EBodyType.Normal || (hitTarget.OriginStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                     hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                 
                 switch (attackInfo.effectType)
                 {
                     case EEffectType.Stun:
-                        if(hitTarget.BasicStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor)
+                        if(hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor)
                             hitTarget.Stun(attackInfo.effectTime);
                         break;
                 }
@@ -284,17 +296,17 @@ public class Attack : MonoBehaviour
                 switch (attackInfo.effectType)
                 {
                     case EEffectType.Airborne:
-                        if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
+                        if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.OriginStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                             hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                         break;
             
                     case EEffectType.Stun:
-                        if(hitTarget.BasicStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor)
+                        if(hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor)
                             hitTarget.Stun(attackInfo.effectTime);
                         break;
             
                     case EEffectType.Damaged:
-                        if (hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
+                        if (hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.OriginStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                         {
                             hitTarget.Damaged(attackInfo.effectTime);
                             hitTarget.KnockBack(knockBackX);
@@ -302,7 +314,6 @@ public class Attack : MonoBehaviour
                         break;
                 }
             }
-            IgnoreCol(col);
         }
     }
 }

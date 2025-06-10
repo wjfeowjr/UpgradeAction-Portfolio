@@ -66,6 +66,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Effect = "Effect";
     public const string FadeBg = "FadeBg";
     public const string FadeUI = "FadeUI";
+    public const string Explosion = "Explosion";
 
     public const string Berserker = "Berserker";
     public const string Gunner = "Gunner";
@@ -86,7 +87,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string JumpAttack2End = "JumpAttack2_End";
     public const string Event = "Event";
     public const string PunchPose = "PunchPose";
-
+    public const string LandingPose = "LandingPose";
+    
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
     public const string DialogShot = "DialogShot";
@@ -121,6 +123,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string Down = "Down";
     public const string Damaged = "Damaged";
     public const string Die = "Die";
+    public const string Stagger = "Stagger";
+    public const string StaggerExplosionUI = "StaggerExplosionUI";
     
     public const string Landing = "Landing";
     public const string Jumping = "Jumping";
@@ -209,6 +213,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterSunPillar = "Monster_Sun_Pillar";
     public const string MonsterSunDie = "Monster_Sun_Die";
     public const string MonsterSunLaugh = "Monster_Sun_Laugh";
+    
+    public const string MonsterBigCharge = "Monster_BigCharge";
     
     public const string MonsterMouseCursorWarning = "Monster_MouseCursor_Warning";
 

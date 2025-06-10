@@ -172,6 +172,7 @@ public abstract class Player : Character
             name = targetStat.name,
             bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
             hp = targetStat.hp,
+            maxHp = targetStat.hp,
             power = targetStat.power,
             defence = targetStat.defence,
             moveSpeed = targetStat.moveSpeed,
@@ -200,6 +201,7 @@ public abstract class Player : Character
                 name = targetStat.name,
                 bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
                 hp = targetStat.hp,
+                maxHp = targetStat.hp,
                 power = targetStat.power,
                 defence = targetStat.defence,
                 moveSpeed = targetStat.moveSpeed,
@@ -311,24 +313,30 @@ public abstract class Player : Character
         }
     }
     
+    protected override void StateCheck()
+    {
+        var stun = buffList.Find(x => x.buffType is EBuffType.Stun);
+
+        if (stun != null)
+            basicStat.bodyType = originStat.bodyType;
+    }
     protected override void StateRecovery()
     {
-        var findDeBuff = buffList.Find(x => x.buffType == EBuffType.Stun);
-        
-        // 스턴상태가 걸려있지 않은 경우
-        if (findDeBuff == null)
+        var stun = buffList.Find(x => x.buffType is EBuffType.Stun);
+
+        // 스턴이 풀린 경우
+        if (stun == null)
         {
-            basicStat.bodyType = originStat.bodyType;
             StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         }
-        // 스턴상태가 걸려있는 경우
+        // 스턴에 걸려있는 경우
         else
         {
             StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
         }
         StandHitBox();
     }
-
+    
     protected void MotionFlip()
     {
         if(GameManager.Instance.CurPlayer != this)

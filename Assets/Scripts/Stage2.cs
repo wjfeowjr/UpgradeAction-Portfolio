@@ -13,15 +13,16 @@ public class Stage2 : Stage
     private Npc gameSystem;
     private List<Monster> traceMonsters = new List<Monster>();
     private Monster chargeMonster;
-
+    private Monster chargeBoss;
+    
     private float monsterInterval = 1.0f;
     private float monsterInterval2 = 7.0f;
 
     protected override void SetEpisodeName()
     {
-        base.SetEpisodeName();
         episodeName = ConstValues.Episode2;
         episodeTitle = "에피소드2: 선행";
+        base.SetEpisodeName();
     }
     
     protected override async void DialogStep()
@@ -967,7 +968,8 @@ public class Stage2 : Stage
         }
 
         chargeMonster = GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[4].transform.position);
-            
+        //chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, monsterPos[4].transform.position, true, () => { SpawnBossMessage(chargeBoss.BasicStat.name); });
+        
         if (episodeStep.dialogStep == 2)
         {
             string dialog1 = "???";
@@ -1057,64 +1059,25 @@ public class Stage2 : Stage
         if (episodeStep.dialogStep == 3)
         {
             dialogSwitch = false;
+            string dialog1 = "이익!";
+            
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-
-            while (curPlayer.IsOnPlatform())
-                await curPlayer.DialogDownJump();
-
-            await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position,
-                curPlayer.BasicStat.moveSpeed, 1);
             
-            // 항상 광전사가 플레이어의 위치에 있어야함
-            var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
-            var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
-
-            var berserkerPos = curPlayer.transform.position;
-            var gunnerPos = new Vector2(curPlayer.transform.position.x - 1.5f, curPlayer.transform.position.y);
-
-            berserker.gameObject.SetActive(true);
-            berserker.transform.position = berserkerPos;
-            berserker.Flip(1);
-
-            gunner.gameObject.SetActive(true);
-            gunner.transform.position = berserkerPos;
-            await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
-        }
-        
-        if (episodeStep.dialogStep == 3)
-        {
-            string dialog1 = "이익!";
-
+            GameManager.Instance.MainCamera.SetTarget(chargeMonster.transform);
+            await UniTask.WaitUntil(() => chargeMonster.MyRigidbody.linearVelocityY <= 0.01f);
             dialogCancellation = new CancellationTokenSource();
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+            chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.LandingPose);
             var chargeSpeechPos = chargeMonster.FontPos.position;
             speechFrame1[0].gameObject.SetActive(true);
-            speechFrame1[0].SetPos(chargeSpeechPos);
+            speechFrame1[0].SetPos(new Vector2(chargeSpeechPos.x, chargeSpeechPos.y - 0.3f));
             speechFrame1[0].Speech(dialog1);
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-
-            var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
-            var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
             
-            var berserkerPos = berserker.FontPos.position;
-            var gunnerPos = gunner.FontPos.position;
-            
-            speechFrame1[0].gameObject.SetActive(false);
-            if (curPlayer == berserker)
-            {
-                gunner.SpawnObject(ConstValues.BangEffect, gunner.transform.position);
-                gunner.gameObject.SetActive(false);
-            }
-            else if (curPlayer == gunner)
-            {
-                berserker.SpawnObject(ConstValues.BangEffect, berserker.transform.position);
-                berserker.gameObject.SetActive(false);
-            }
             
             // 게임 시작
             GameManager.Instance.ControlStart = true;

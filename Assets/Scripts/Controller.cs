@@ -17,7 +17,13 @@ public class Controller : Singleton<Controller>
     private void Update()
     {
         if (!GameManager.Instance.ControlStart)
+        {
+            if (isLeftMove)
+                isLeftMove = false;
+            if (isRightMove)
+                isRightMove = false;
             return;
+        }
         
         DirControl();
         PlayerControl();
@@ -38,21 +44,18 @@ public class Controller : Singleton<Controller>
     // 방향 컨트롤(좌,우 동시입력 방지)
     private void DirControl()
     {
-        if (GameManager.Instance.ControlStart)
+        if (Input.GetKeyDown(GameManager.Instance.leftMoveKey))
         {
-            if (Input.GetKeyDown(GameManager.Instance.leftMoveKey))
-            {
-                isLeftMove = true;
-                if(isRightMove)
-                    isRightMove = false;
-            }
+            isLeftMove = true;
+            if(isRightMove)
+                isRightMove = false;
+        }
         
-            if (Input.GetKeyDown(GameManager.Instance.rightMoveKey))
-            {
-                if(isLeftMove)
-                    isLeftMove = false;
-                isRightMove = true;
-            }
+        if (Input.GetKeyDown(GameManager.Instance.rightMoveKey))
+        {
+            isRightMove = true;
+            if(isLeftMove)
+                isLeftMove = false;
         }
 
         if (Input.GetKeyUp(GameManager.Instance.leftMoveKey))

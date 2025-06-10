@@ -10,6 +10,7 @@ public class GrenadeInfo
     public string id;
     public Vector2 minForce;
     public Vector2 maxForce;
+    public bool dirObject;
     public List<string> hitLayerList;
     public string spawnObject;
     public Action<string, Transform, int> explosionAction;
@@ -85,6 +86,8 @@ public class Grenade : MonoBehaviour
             var maxForceSplit = grenadeData.maxForce.Split(';');
             grenadeInfo.maxForce = new Vector2(float.Parse(maxForceSplit[0]), float.Parse(maxForceSplit[1]));
 
+            grenadeInfo.dirObject = grenadeData.dirObject;
+
             var hitLayerSplit = grenadeData.hitLayer.Split(',');
             grenadeInfo.hitLayerList = new List<string>();
             foreach (var hitLayer in hitLayerSplit)
@@ -96,10 +99,13 @@ public class Grenade : MonoBehaviour
 
         float xForce = Random.Range(grenadeInfo.minForce.x, grenadeInfo.maxForce.x);
         float yForce = Random.Range(grenadeInfo.minForce.y, grenadeInfo.maxForce.y);
-        
-        if (dir == Vector2.left)
-            xForce = -Random.Range(grenadeInfo.minForce.x, grenadeInfo.maxForce.x);
 
+        if (grenadeInfo.dirObject)
+        {
+            if (dir == Vector2.left)
+                xForce = -Random.Range(grenadeInfo.minForce.x, grenadeInfo.maxForce.x);
+        }
+        
         throwForce = new Vector2(xForce, yForce);
     }
 

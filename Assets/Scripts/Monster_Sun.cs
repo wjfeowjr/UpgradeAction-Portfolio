@@ -12,27 +12,6 @@ public class Monster_Sun : Monster
     private float pointB;
     private Vector2 dir;
 
-    // 등장
-    protected override async void AppearProduction(Action bossProduct)
-    {
-        myBoxCollider.enabled = false;
-        MoveStateSetting(EMoveState.Stopping);
-        GravityChange(myGravity);
-        PlaySound(ConstValues.RewardPage);
-        var movePos = new Vector2(transform.position.x, transform.position.y - 3.5f);
-        
-        stateCancellation = new CancellationTokenSource();
-        await EpisodeMove_Y(movePos, basicStat.moveSpeed, -1);
-        ZeroVelocity();
-        await UniTask.WaitUntil(() => GameManager.Instance.ControlStart && Time.timeScale > 0);
-        
-        IdleOrMove();
-        FirstCoolTimeReduce();
-        myBoxCollider.enabled = true;
-        PatrolRay();
-        bossProduct?.Invoke();
-    }
-
     protected override void MonsterPattern(int idx)
     {
         base.MonsterPattern(idx);
@@ -137,6 +116,33 @@ public class Monster_Sun : Monster
             return;
         spinObject.gameObject.SetActive(false);
         PatternEnd();
+    }
+    
+    // 등장
+    public override async void Appear(Action bossProduct)
+    {
+        await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
+        StandHitBox();
+        StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
+        MoveStateSetting(EMoveState.Stopping);
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+        
+        myBoxCollider.enabled = false;
+        MoveStateSetting(EMoveState.Stopping);
+        GravityChange(myGravity);
+        PlaySound(ConstValues.RewardPage);
+        var movePos = new Vector2(transform.position.x, transform.position.y - 3.5f);
+        
+        stateCancellation = new CancellationTokenSource();
+        await EpisodeMove_Y(movePos, basicStat.moveSpeed, -1);
+        ZeroVelocity();
+        await UniTask.WaitUntil(() => GameManager.Instance.ControlStart && Time.timeScale > 0);
+        
+        IdleOrMove();
+        FirstCoolTimeReduce();
+        myBoxCollider.enabled = true;
+        PatrolRay();
+        bossProduct?.Invoke();
     }
     
     public override void Die()
