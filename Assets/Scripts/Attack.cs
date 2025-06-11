@@ -262,9 +262,13 @@ public class Attack : MonoBehaviour
             if (hitTarget.BasicStat.hp <= 0)
             {
                 hitTarget.Die();
+                
                 var upperPowerY = attackInfo.upperPower.y;
-                if (upperPowerY < 5)
-                    upperPowerY = 5;
+                if (hitTarget.GetComponent<Npc>() == null)
+                {
+                    if (upperPowerY < 5)
+                        upperPowerY = 5;
+                }
                 hitTarget.Airborne(upperPowerX, upperPowerY);
                 return;
             }
@@ -280,7 +284,7 @@ public class Attack : MonoBehaviour
             
             if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
             {
-                if(hitTarget.OriginStat.bodyType == EBodyType.Normal || (hitTarget.OriginStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
+                if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.OriginStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                     hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                 
                 switch (attackInfo.effectType)

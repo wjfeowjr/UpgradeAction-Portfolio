@@ -1197,7 +1197,7 @@ public abstract class Character : MonoBehaviour
         GravityChange(ConstValues.BasicGravity);
         myRigidbody.linearVelocity = new Vector2(xVelocity, yVelocity);
     }
-    protected async void DownAndStand()
+    protected virtual async void DownAndStand()
     {
         StateSetting(ENormalState.Down, ConstValues.Down, ConstValues.Down);
         MoveStateSetting(EMoveState.Stopping);
@@ -1207,11 +1207,6 @@ public abstract class Character : MonoBehaviour
         if (airborneCount > 0)
         {
             airborneCount -= 1;
-            //GameObject downDust = CharacterObjectPool.Instance.SpawnFromPool("DownDust_Monster");
-            //downDust.transform.position = transform.position;
-            //downDust.SetActive(true);
-            //AddStaticEffect(GameManager.IDDown, 0.05f);
-            //await UniTask.WaitUntil(() => !EffectInfo(GameManager.IDDown).isApplied, cancellationToken: cancellationToken);
             if (await NormalDelay(ConstValues.ReboundSecond, stateCancellation).SuppressCancellationThrow())
                 return;
             
@@ -1465,7 +1460,7 @@ public abstract class Character : MonoBehaviour
     }
     
     // 깜빡이며 사라지기
-    public async void BlinkDelete()
+    public virtual async void BlinkDelete()
     {
         stateCancellation = new CancellationTokenSource();
         for (int i = 0; i < 7; i++)

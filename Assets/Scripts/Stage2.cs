@@ -7,7 +7,10 @@ using UnityEngine;
 public class Stage2 : Stage
 {
     [SerializeField] private Transform[] npcPos;
-    [SerializeField] private List<string> monsterWave1 = new List<string>();
+    private List<string> monsterWave1 = new List<string>();
+    private List<string> monsterWave2 = new List<string>();
+    private List<string> monsterWave3 = new List<string>();
+    
     private Npc citizen;
     private Npc system;
     private Npc gameSystem;
@@ -15,9 +18,10 @@ public class Stage2 : Stage
     private Monster chargeMonster;
     private Monster chargeBoss;
     
-    private float monsterInterval = 1.0f;
+    private float monsterInterval1 = 1.0f;
     private float monsterInterval2 = 7.0f;
-
+    private float monsterInterval3 = 5.0f;
+    
     protected override void SetEpisodeName()
     {
         episodeName = ConstValues.Episode2;
@@ -57,6 +61,9 @@ public class Stage2 : Stage
             case 8:
                 Product9();
                 break;
+            case 9:
+                Product10();
+                break;
         }
     }
     protected override void StageClearButtonAction() 
@@ -66,27 +73,43 @@ public class Stage2 : Stage
     
     private void Start()
     {
-        if (!GameManager.Instance.SecondStart)
-        {
-            // episodeStep = new EpisodeStep()
-            // {
-            //     episodeTitle = 1,
-            //     dialogStep = 2,
-            //     playerStep = 3,
-            //     customMoveStep = 1,
-            //     eventStep = 5,
-            // };
-            episodeStep = new EpisodeStep()
-            {
-                episodeTitle = 1,
-                dialogStep = 3,
-                playerStep = 3,
-                customMoveStep = 1,
-                eventStep = 7,
-            };
-            GameManager.Instance.ControlStart = true;
-            GameManager.Instance.SecondStart = true;
-        }
+        // if (!GameManager.Instance.SecondStart)
+        // {
+        //     // episodeStep = new EpisodeStep()
+        //     // {
+        //     //     episodeTitle = 1,
+        //     //     dialogStep = 2,
+        //     //     playerStep = 3,
+        //     //     customMoveStep = 1,
+        //     //     eventStep = 5,
+        //     // };
+        //     // episodeStep = new EpisodeStep() // 권투맨 전 잡몹전투
+        //     // {
+        //     //     episodeTitle = 1,
+        //     //     dialogStep = 2,
+        //     //     playerStep = 3,
+        //     //     customMoveStep = 1,
+        //     //     eventStep = 6,
+        //     // };
+        //     // episodeStep = new EpisodeStep() // 권투맨 전투(대화 포함)
+        //     // {
+        //     //     episodeTitle = 1,
+        //     //     dialogStep = 2,//3
+        //     //     playerStep = 3,
+        //     //     customMoveStep = 1, // 2
+        //     //     eventStep = 7,
+        //     // };
+        //     episodeStep = new EpisodeStep() // 권투맨 전투(대화생략)
+        //     {
+        //         episodeTitle = 1,
+        //         dialogStep = 4,
+        //         playerStep = 3,
+        //         customMoveStep = 2,
+        //         eventStep = 7,
+        //     };
+        //     GameManager.Instance.ControlStart = true;
+        //     GameManager.Instance.SecondStart = true;
+        // }
 
         LoadEpisode();
         StepCharacterSetting();
@@ -105,11 +128,11 @@ public class Stage2 : Stage
         StartMonsterList();
     }
     
-    protected override void Update()
-    {
-        base.Update();
-        Test();
-    }
+    // protected override void Update()
+    // {
+    //     base.Update();
+    //     Test();
+    // }
 
     private void StartMonsterList()
     {
@@ -117,6 +140,38 @@ public class Stage2 : Stage
         monsterWave1.Add(ConstValues.MonsterSpinach);
         monsterWave1.Add(ConstValues.MonsterSpinach);
         monsterWave1.Add(ConstValues.MonsterPurple);
+        
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterPurple);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterPurple);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterPurple);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterPurple);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterSpinach);
+        monsterWave2.Add(ConstValues.MonsterPurple);
+        
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterPurple);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterPurple);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterPurple);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterPurple);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterSpinach);
+        monsterWave3.Add(ConstValues.MonsterPurple);
     }
 
     private void StartSetting()
@@ -124,13 +179,31 @@ public class Stage2 : Stage
         citizen = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcCitizen, Vector2.zero).GetComponent<Npc>();
         system = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcSystem, Vector2.zero).GetComponent<Npc>();
         gameSystem = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcGameSystem, Vector2.zero).GetComponent<Npc>();
+        
         traceMonsters.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSpinach, Vector2.zero).GetComponent<Monster>());
         traceMonsters.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterPurple, Vector2.zero).GetComponent<Monster>());
+        
         chargeMonster = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterCharge, Vector2.zero).GetComponent<Monster>();
         
         citizen.gameObject.SetActive(false);
         system.gameObject.SetActive(false);
         gameSystem.gameObject.SetActive(false);
+        foreach (var traceMonster in traceMonsters)
+            traceMonster.gameObject.SetActive(false);
+        chargeMonster.gameObject.SetActive(false);
+    }
+
+    private void CitizenSetting()
+    {
+        citizen = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcCitizen, Vector2.zero).GetComponent<Npc>();
+        
+        traceMonsters.Clear();
+        traceMonsters.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSpinach, Vector2.zero).GetComponent<Monster>());
+        traceMonsters.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterPurple, Vector2.zero).GetComponent<Monster>());
+        
+        chargeMonster = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterCharge, Vector2.zero).GetComponent<Monster>();
+        
+        citizen.gameObject.SetActive(false);
         foreach (var traceMonster in traceMonsters)
             traceMonster.gameObject.SetActive(false);
         chargeMonster.gameObject.SetActive(false);
@@ -157,9 +230,7 @@ public class Stage2 : Stage
             
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            
-            CameraShake(0.1f, 1.5f); 
-            
+
             var citizenPos = npcPos[0].position;
             var traceMonsterPos1 = new Vector2(npcPos[0].position.x - 1.5f, npcPos[0].position.y);
             var traceMonsterPos2 = new Vector2(npcPos[0].position.x - 2.5f, npcPos[0].position.y);
@@ -223,20 +294,30 @@ public class Stage2 : Stage
     private async void Product2()
     {
         AccumulatedStep();
+        PlayerStepUp();
+        SaveEpisode();
+        
         MyEventStepUp();
         SetEventStep();
-        //SaveEpisode();
-        
+
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
+
+        // 미리 몹 소환하고 잠재워두기
+        var monsterList = new List<Monster>();
         foreach (var wave in monsterWave1)
         {
-            var randX = Random.Range(-monsterInterval, monsterInterval);
+            var randX = Random.Range(-monsterInterval1, monsterInterval1);
             var randPos = new Vector2(monsterPos[0].position.x + randX, monsterPos[0].position.y);
-            GameManager.Instance.SpawnMonster(wave, randPos);
+            monsterList.Add(GameManager.Instance.ActiveAndHideMonster(wave, randPos));
+        }
+        foreach (var monster in monsterList)
+        {
+            GameManager.Instance.ActiveMonster(monster, false);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
+        
         monsterSpawning = false;
     }
     
@@ -252,7 +333,7 @@ public class Stage2 : Stage
         if (episodeStep.dialogStep == 1)
         {
             dialogSwitch = false;
-            SetTimeScale(100.0f);
+            //SetTimeScale(100.0f);
             string dialog1 = "나좀 살려줘!";
             string dialog2 = "어헝! 내쪽으로 어서 달려와!";
             string dialog3 = "어딜 도망치려고!";
@@ -280,7 +361,7 @@ public class Stage2 : Stage
             string dialog25 = "광고를 보고 부활시키겠...";
             string dialog26 = "집어 치워!";
             string dialog27 = "무슨 조무래기\n일반 몬스터\n살리려고\n광고를 봐!";
-            string dialog28 = "난 죽는다...";
+            string dialog28 = "우리 죽어요...";
             string dialog29 = "게임 시스템 나와!";
             string dialog30 = "왜요?";
             string dialog31 = "리스폰 시스템 작동!";
@@ -293,7 +374,7 @@ public class Stage2 : Stage
             string dialog38 = "어헝!\n땅에 박혀버렸어";
             string dialog39 = "뭐여 이건?";
             string dialog40 = "어헝!\n사람이다!";
-            string dialog41 = "나좀 살려줘..";
+            string dialog41 = "우리가 만난 건 운명이야!\n그니까 나좀 살려줘!";
             string dialog42 = "살려달라고?\n나랑은 상관없는 일이다";
             string dialog43 = "근데 내가 주인공이라서 살려줘야겠다";
             string dialog44 = "기다려봐";
@@ -340,11 +421,15 @@ public class Stage2 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             speechFrame1[0].gameObject.SetActive(false);
-            
+
             curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogShot);
             curPlayer.SpawnObject(ConstValues.GunnerFlash, curPlayer.CenterPos.position);
 
             var length = 0.6f;
+            
+            citizen.IsDie = false;
+            traceMonsters[0].IsDie = false;
+            traceMonsters[1].IsDie = false;
             traceMonsters[0].EpisodeMove_X(new Vector2(curPlayer.transform.position.x + length, curPlayer.transform.position.y), 6, -1).Forget();
             traceMonsters[1].EpisodeMove_X(new Vector2(curPlayer.transform.position.x + length, curPlayer.transform.position.y), 6, -1).Forget();
             citizen.EpisodeMove_X(new Vector2(curPlayer.transform.position.x + length, curPlayer.transform.position.y), 6, -1).Forget();
@@ -355,12 +440,15 @@ public class Stage2 : Stage
                 return;
             
             BgmManager.Instance.Stop();
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
             
+            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+                return;
             traceMonsters[0].IsDie = true;
             traceMonsters[1].IsDie = true;
             
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+
             curPlayer.CustomAnimTrigger(ENormalState.Normal, ConstValues.Idle);
             
             citizenSpeechPosition = citizen.FontPos.position;
@@ -530,7 +618,7 @@ public class Stage2 : Stage
                 return;
             speechFrame1[0].gameObject.SetActive(false);
 
-            await chargeMonster.GetComponent<Monster_Charge>().EventCharge(3.0f);
+            await chargeMonster.GetComponent<Monster_Charge>().EventCharge(3.0f, 20, 20);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
@@ -570,7 +658,7 @@ public class Stage2 : Stage
             speechFrame1[0].SetPos(chargeSpeechPosition);
             speechFrame1[0].Speech(dialog26);
             speechFrame1[0].Trace(chargeMonster.FontPos);
-            await chargeMonster.GetComponent<Monster_Charge>().EventCharge(0.1f);
+            await chargeMonster.GetComponent<Monster_Charge>().EventCharge(0.1f, 20, 20);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             system.gameObject.SetActive(false);
@@ -607,6 +695,7 @@ public class Stage2 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
+            //SetTimeScale(1.0f);
             // 왜요?
             var gameSystemPosition = gameSystem.FontPos.position;
             speechFrame1[0].SetPos(gameSystemPosition);
@@ -615,7 +704,7 @@ public class Stage2 : Stage
                 return;
             speechFrame1[0].gameObject.SetActive(false);
             
-            await chargeMonster.GetComponent<Monster_Charge>().EventCharge(1.0f, 10, 1);
+            await chargeMonster.GetComponent<Monster_Charge>().EventCharge(1.0f, 20, 1);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
@@ -624,7 +713,7 @@ public class Stage2 : Stage
             
             chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
 
-            for (int i = 0; i < 20; i++)
+            for (int i = 0; i < 25; i++)
             {
                 var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, gameSystem.transform).GetComponent<TextFont>();
                 textFont.ColorSetting(EFontType.MyDamage);
@@ -853,7 +942,6 @@ public class Stage2 : Stage
                 return;
             
             // 어헝 나도 합류할게!
-            speechFrame1[0].Speech(dialog51);
             PlaySound(ConstValues.GunnerLaugh);
             speechFrame1[0].SetPos(new Vector2(gunnerSpeechPos.x, gunnerSpeechPos.y + 0.5f));
             speechFrame1[0].Speech(dialog51);
@@ -872,7 +960,7 @@ public class Stage2 : Stage
             // 가이드 띄우기
             Guide3();
             
-            gunner.SpawnObject(ConstValues.BangEffect, gunner.transform.position);
+            gunner.SpawnObject(ConstValues.BangEffect, gunner.CenterPos.position);
             gunner.gameObject.SetActive(false);
 
             // 게임 시작
@@ -897,14 +985,30 @@ public class Stage2 : Stage
 
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
-        foreach (var wave in monsterWave1)
+        
+        // 미리 몹 소환하고 잠재워두기
+        var monsterList = new List<Monster>();
+        foreach (var wave in monsterWave2)
         {
-            var randX = Random.Range(-monsterInterval, monsterInterval);
+            var randX = Random.Range(-monsterInterval2, monsterInterval2);
             var randPos = new Vector2(monsterPos[2].position.x + randX, monsterPos[2].position.y);
-            GameManager.Instance.SpawnMonster(wave, randPos);
+            monsterList.Add(GameManager.Instance.ActiveAndHideMonster(wave, randPos));
+        }
+        foreach (var monster in monsterList)
+        {
+            GameManager.Instance.ActiveMonster(monster, false);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
+        
+        // foreach (var wave in monsterWave2)
+        // {
+        //     var randX = Random.Range(-monsterInterval2, monsterInterval2);
+        //     var randPos = new Vector2(monsterPos[2].position.x + randX, monsterPos[2].position.y);
+        //     GameManager.Instance.SpawnMonster(wave, randPos);
+        //     if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+        //         return;
+        // }
         monsterSpawning = false;
     }
     
@@ -926,14 +1030,31 @@ public class Stage2 : Stage
 
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
-        foreach (var wave in monsterWave1)
+        
+        var monsterList = new List<Monster>();
+        foreach (var wave in monsterWave3)
         {
-            var randX = Random.Range(-monsterInterval, monsterInterval);
-            var randPos = new Vector2(monsterPos[3].position.x + randX, monsterPos[3].position.y);
-            GameManager.Instance.SpawnMonster(wave, randPos);
+            var randX = Random.Range(-monsterInterval3, monsterInterval3);
+            int randY = Random.Range(0, 3);
+            var randPos = new Vector2(monsterPos[3 + randY].position.x + randX, monsterPos[3 + randY].position.y);
+            monsterList.Add(GameManager.Instance.ActiveAndHideMonster(wave, randPos));
+        }
+        foreach (var monster in monsterList)
+        {
+            GameManager.Instance.ActiveMonster(monster, false);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
+        
+        // foreach (var wave in monsterWave3)
+        // {
+        //     var randX = Random.Range(-monsterInterval3, monsterInterval3);
+        //     int randY = Random.Range(0, 3);
+        //     var randPos = new Vector2(monsterPos[3 + randY].position.x + randX, monsterPos[3 + randY].position.y);
+        //     GameManager.Instance.SpawnMonster(wave, randPos);
+        //     if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+        //         return;
+        // }
         monsterSpawning = false;
     }
     
@@ -942,9 +1063,21 @@ public class Stage2 : Stage
         if (episodeStep.dialogStep == 2)
         {
             dialogSwitch = false;
+            
+            string dialog1 = "야!!!";
+            string dialog2 = "???";
+            string dialog3 = "넌 뭐냐?";
+            string dialog4 = "그게 중요하냐?";
+            string dialog5 = "니 얼굴 보니까 어차피 내가 누구든 나를 때릴 거 같은데?";
+            string dialog6 = "잘 아네?";
+            string dialog7 = "저 녀석 슈퍼아머야! 조심해!";
+            string dialog8 = "슈퍼아머를 <color=#F36B6B>박살</color>내버릴 기술이 필요하겠군";
+            
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
+            await curPlayer.WaitIdle();
+            
             while (curPlayer.IsOnPlatform())
                 await curPlayer.DialogDownJump();
 
@@ -965,58 +1098,55 @@ public class Stage2 : Stage
             gunner.gameObject.SetActive(true);
             gunner.transform.position = berserkerPos;
             await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
-        }
 
-        chargeMonster = GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[4].transform.position);
-        //chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, monsterPos[4].transform.position, true, () => { SpawnBossMessage(chargeBoss.BasicStat.name); });
-        
-        if (episodeStep.dialogStep == 2)
-        {
-            string dialog1 = "???";
-            string dialog2 = "넌 뭐냐?";
-            string dialog3 = "그게 중요하냐?";
-            string dialog4 = "니 얼굴 보니까 어차피 내가 누구든 나를 때릴 거 같은데?";
-            string dialog5 = "잘 아네?";
-            string dialog6 = "저 녀석 슈퍼아머야! 조심해!";
-            string dialog7 = "슈퍼아머를 <color=#F36B6B>박살</color>내버릴 기술이 필요하겠군";
-            
             dialogCancellation = new CancellationTokenSource();
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            
-            chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
-            var chargeSpeechPos = chargeMonster.FontPos.position;
-            speechFrame1[0].gameObject.SetActive(true);
-            speechFrame1[0].SetPos(chargeSpeechPos);
-            speechFrame1[0].Speech(dialog1);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame1[0].Speech(dialog2);
+            CameraShake(0.5f, 0.5f); 
+            PlaySound(ConstValues.FighterStrongPunch);
+            speechFrameStrong.gameObject.SetActive(true);
+            speechFrameStrong.SetPos(strongSpeechPos[2].position);
+            speechFrameStrong.Speech(dialog1);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-
-            var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
-            var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+            speechFrameStrong.gameObject.SetActive(false);
             
-            var berserkerPos = berserker.FontPos.position;
-            speechFrame1[0].SetPos(berserkerPos);
+            chargeMonster.gameObject.SetActive(true);
+            chargeMonster.transform.position = bossPos[1].position;
+            var movePos = new Vector2(bossPos[2].position.x + 2.0f, bossPos[2].position.y);
+            await chargeMonster.EpisodeMove_X(movePos, chargeMonster.BasicStat.moveSpeed, -1);
+            chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+
+            var chargeSpeechPos = chargeMonster.FontPos.position;
+            speechFrame1[0].gameObject.SetActive(true);
+            speechFrame1[0].SetPos(chargeSpeechPos);
+            speechFrame1[0].Speech(dialog2);
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
             speechFrame1[0].Speech(dialog3);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            
+
+            var berserkerSpeechPos = berserker.FontPos.position;
+            speechFrame1[0].SetPos(berserkerSpeechPos);
             speechFrame1[0].Speech(dialog4);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame1[0].SetPos(chargeSpeechPos);
             speechFrame1[0].Speech(dialog5);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-
-            var gunnerPos = gunner.FontPos.position;
-            speechFrame1[0].SetPos(new Vector2(gunnerPos.x, gunnerPos.y + 0.5f));
+            
+            speechFrame1[0].SetPos(chargeSpeechPos);
             speechFrame1[0].Speech(dialog6);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            var gunnerSpeechPos = gunner.FontPos.position;
+            speechFrame1[0].SetPos(new Vector2(gunnerSpeechPos.x, gunnerSpeechPos.y + 0.5f));
+            speechFrame1[0].Speech(dialog7);
             PlaySound(ConstValues.GunnerLaugh);
             for (int i = 0; i < 2; i++)
             {
@@ -1027,20 +1157,181 @@ public class Stage2 : Stage
                     return;
             }
             
-            speechFrame1[0].SetPos(berserkerPos);
-            speechFrame1[0].Speech(dialog7);
+            speechFrame1[0].SetPos(berserkerSpeechPos);
+            speechFrame1[0].Speech(dialog8);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             speechFrame1[0].gameObject.SetActive(false);
             
             if (curPlayer == berserker)
             {
-                gunner.SpawnObject(ConstValues.BangEffect, gunner.transform.position);
+                gunner.SpawnObject(ConstValues.BangEffect, gunner.CenterPos.position);
                 gunner.gameObject.SetActive(false);
             }
             else if (curPlayer == gunner)
             {
-                berserker.SpawnObject(ConstValues.BangEffect, berserker.transform.position);
+                berserker.SpawnObject(ConstValues.BangEffect, berserker.CenterPos.position);
+                berserker.gameObject.SetActive(false);
+            }
+            
+            // 게임 시작
+            GameManager.Instance.SetMonster(chargeMonster, false);
+            GameManager.Instance.ControlStart = true;
+            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+            DialogStepUp();
+            CustomMoveStepUp();
+            SaveEpisode();
+            dialogSwitch = true;
+        }
+        else if (episodeStep.dialogStep >= 3)
+        {
+            chargeMonster = GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, bossPos[2].transform.position);
+        }
+        MyEventStepUp();
+    }
+
+    private async void Product9()
+    {
+        MyEventStepUp();
+        dialogCancellation = new CancellationTokenSource();
+        monsterSpawning = true;
+        if (episodeStep.dialogStep == 3)
+        {
+            dialogSwitch = false;
+
+            GameManager.Instance.ControlStart = false;
+            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+
+            GameManager.Instance.MainCamera.SetTarget(chargeMonster.transform);
+        }
+        
+        await UniTask.WaitUntil(() => chargeMonster.MyRigidbody.linearVelocityY <= 0.01f);
+        if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            return;
+        chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.LandingPose);
+        chargeMonster.SpawnObject($"{chargeMonster.BasicStat.id}_{ConstValues.Appear}", chargeMonster.transform.position);
+        
+        if (episodeStep.dialogStep == 3)
+        {
+            string dialog1 = "이익!";
+            var chargeSpeechPos = chargeMonster.FontPos.position;
+            speechFrame1[0].gameObject.SetActive(true);
+            speechFrame1[0].SetPos(new Vector2(chargeSpeechPos.x, chargeSpeechPos.y - 0.6f));
+            speechFrame1[0].Speech(dialog1);
+        }
+        
+        if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            return;
+        speechFrame1[0].gameObject.SetActive(false);
+        
+        chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.JumpPose);
+        await chargeMonster.GetComponent<Monster_Charge>().EventJump();
+
+        if (episodeStep.dialogStep == 3)
+        {
+            string dialog2 = "너네도!\n짜증나는 플랫폼도!\n다 부숴버릴 테다!!";
+            
+            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+            // while (curPlayer.IsOnPlatform())
+            //     await curPlayer.DialogDownJump();
+
+            await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position,
+                curPlayer.BasicStat.moveSpeed, 1);
+            
+            // 항상 광전사가 플레이어의 위치에 있어야함
+            var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+            var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+
+            var berserkerPos = curPlayer.transform.position;
+            var gunnerPos = new Vector2(curPlayer.transform.position.x - 1.5f, curPlayer.transform.position.y);
+
+            berserker.gameObject.SetActive(true);
+            berserker.transform.position = berserkerPos;
+            berserker.Flip(1);
+
+            gunner.gameObject.SetActive(true);
+            gunner.transform.position = berserkerPos;
+            await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
+            
+            CameraShake(0.5f, 0.5f); 
+            PlaySound(ConstValues.FighterStrongPunch);
+            speechFrameStrong.gameObject.SetActive(true);
+            speechFrameStrong.SetPos(strongSpeechPos[3].position);
+            speechFrameStrong.Speech(dialog2);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            speechFrameStrong.gameObject.SetActive(false);
+        }
+        
+        Camera cam = GameManager.Instance.MainCamera.MyCamera;
+        float startY = cam.ViewportToWorldPoint(new Vector3(1, 1, 0)).y;
+        var bossPos = new Vector2(monsterPos[3].transform.position.x, startY + 5);
+        chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, bossPos, true, () => { SpawnBossMessage(chargeBoss.BasicStat.name); });
+        monsterSpawning = false;
+        
+        if (episodeStep.dialogStep == 3)
+        {
+            if (await NormalDelay(3.0f, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            string dialog3 = "이야!!!!!!!";
+            string dialog4 = "와! 거대해요!";
+            string dialog5 = "뭘 먹고 저렇게 커진거지?";
+            string dialog6 = "커진건 나랑 상관 없는 일이다";
+            string dialog7 = "근데, 저런 놈도 <color=#F36B6B>무력화</color>시킬 방법이 있을거다";
+            string dialog8 = "가자!";
+
+            var bossSpeechPos = chargeBoss.FontPos.position;
+            speechFrame1[0].gameObject.SetActive(true);
+            speechFrame1[0].SetPos(new Vector2(bossSpeechPos.x, bossSpeechPos.y + 0.5f));
+            speechFrame1[0].Speech(dialog3);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            // 항상 광전사가 플레이어의 위치에 있어야함
+            var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+            var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+
+            var gunnerSpeechPos = gunner.FontPos.position;
+            speechFrame1[0].SetPos(new Vector2(gunnerSpeechPos.x, gunnerSpeechPos.y + 0.5f));
+            speechFrame1[0].Speech(dialog4);
+            PlaySound(ConstValues.GunnerLaugh);
+            for (int i = 0; i < 2; i++)
+            {
+                gunner.CustomJump(new Vector2(0, 6.0f));
+                gunner.CustomAnimTrigger(ENormalState.Jump, ConstValues.Jump);
+            
+                if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                    return;
+            }
+            speechFrame1[0].SetPos(gunnerSpeechPos);
+            speechFrame1[0].Speech(dialog5);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            var berserkerSpeechPos = berserker.FontPos.position;
+            speechFrame1[0].SetPos(berserkerSpeechPos);
+            speechFrame1[0].Speech(dialog6);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            speechFrame1[0].Speech(dialog7);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            speechFrame1[0].Speech(dialog8);
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                return;
+            speechFrame1[0].gameObject.SetActive(false);
+            
+            if (curPlayer == berserker)
+            {
+                gunner.SpawnObject(ConstValues.BangEffect, gunner.CenterPos.position);
+                gunner.gameObject.SetActive(false);
+            }
+            else if (curPlayer == gunner)
+            {
+                berserker.SpawnObject(ConstValues.BangEffect, berserker.CenterPos.position);
                 berserker.gameObject.SetActive(false);
             }
             
@@ -1051,42 +1342,81 @@ public class Stage2 : Stage
             SaveEpisode();
             dialogSwitch = true;
         }
-        MyEventStepUp();
     }
-
-    private async void Product9()
+    
+    private async void Product10()
     {
-        if (episodeStep.dialogStep == 3)
+        if (episodeStep.dialogStep == 4)
         {
             dialogSwitch = false;
-            string dialog1 = "이익!";
+            string dialog1 = "우리가 이겼어!";
+            string dialog2 = "근데 많은 적들이 스테이지 곳곳으로 퍼져버렸어!";
+            string dialog3 = "나한테 좋은 방법이 있다";
+            string dialog4 = "뭔데?";
+            string dialog5 = "날 따라와\n같이 갈 데가 있다";
             
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+            GameManager.Instance.MainCamera.SetTarget(chargeBoss.transform);
             
-            GameManager.Instance.MainCamera.SetTarget(chargeMonster.transform);
-            await UniTask.WaitUntil(() => chargeMonster.MyRigidbody.linearVelocityY <= 0.01f);
             dialogCancellation = new CancellationTokenSource();
+            if (await NormalDelay(3.0f, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            chargeBoss.GetComponent<Monster_BigCharge>().DieAirborne(base.bossPos[2].position);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.LandingPose);
-            var chargeSpeechPos = chargeMonster.FontPos.position;
-            speechFrame1[0].gameObject.SetActive(true);
-            speechFrame1[0].SetPos(new Vector2(chargeSpeechPos.x, chargeSpeechPos.y - 0.3f));
+            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+
+            await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
+            
+            // 항상 광전사가 플레이어의 위치에 있어야함
+            var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+            var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+
+            var berserkerPos = curPlayer.transform.position;
+            var gunnerPos = new Vector2(curPlayer.transform.position.x - 1.5f, curPlayer.transform.position.y);
+
+            berserker.gameObject.SetActive(true);
+            berserker.transform.position = berserkerPos;
+            berserker.Flip(1);
+
+            gunner.gameObject.SetActive(true);
+            gunner.transform.position = berserkerPos;
+            await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            var berserkerSpeechPos = berserker.FontPos.position;
+            var gunnerSpeechPos = gunner.FontPos.position;
+            speechFrame1[0].SetPos(new Vector2(gunnerSpeechPos.x, gunnerSpeechPos.y + 0.5f));
             speechFrame1[0].Speech(dialog1);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
+            speechFrame1[0].Speech(dialog2);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+
+            speechFrame1[0].SetPos(berserkerSpeechPos);
+            speechFrame1[0].Speech(dialog3);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
             
-            // 게임 시작
-            GameManager.Instance.ControlStart = true;
-            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
-            DialogStepUp();
-            SaveEpisode();
-            dialogSwitch = true;
+            speechFrame1[0].SetPos(gunnerSpeechPos);
+            speechFrame1[0].Speech(dialog4);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            speechFrame1[0].SetPos(berserkerSpeechPos);
+            speechFrame1[0].Speech(dialog5);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            speechFrame1[0].gameObject.SetActive(false);
+            
+            ProductStageClear();
         }
-        MyEventStepUp();
     }
     
     private void Test()
@@ -1118,7 +1448,7 @@ public class Stage2 : Stage
         GameManager.Instance.ArrivePlayer();
     }
     
-    private void AccumulatedStep()
+    private async void AccumulatedStep()
     {
         if(myEventStep <= 2)
             PlayBGM(ConstValues.BGMEpisode2);
@@ -1141,6 +1471,8 @@ public class Stage2 : Stage
                 // 벽 제거
                 foreach (var stageWall in stageWalls)
                     stageWall.SetActive(false);
+
+                CitizenSetting();
                 
                 // 시민과 몬스터 스폰시키기
                 var citizenPos = npcPos[2].position;
@@ -1149,17 +1481,16 @@ public class Stage2 : Stage
                 
                 citizen.transform.position = citizenPos;
                 citizen.gameObject.SetActive(true);
+                citizen.IsDie = true;
                 
                 traceMonsters[0].transform.position = traceMonsterPos1;
                 traceMonsters[0].gameObject.SetActive(true);
+                traceMonsters[0].IsDie = true;
+                traceMonsters[0].Flip(-1);
                 
                 traceMonsters[1].transform.position = traceMonsterPos2;
                 traceMonsters[1].gameObject.SetActive(true);
-
-                //traceMonsters[0].IsDie = true;
-                traceMonsters[0].Flip(-1);
-                
-                //traceMonsters[1].IsDie = true;
+                traceMonsters[1].IsDie = true;
                 traceMonsters[1].Flip(-1);
                 break;
             

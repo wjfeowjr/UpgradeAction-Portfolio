@@ -51,7 +51,7 @@ public class Monster_Charge : Monster
         PatternEnd();
     }
 
-    public async UniTask EventCharge(float chargeLength, float upperX = 0, float upperY = 0)
+    public async UniTask EventCharge(float chargeLength, float upperX, float upperY)
     {
         float delay1 = 0.9f;
         float delay2 = 0.5f;
@@ -73,8 +73,7 @@ public class Monster_Charge : Monster
         // 돌진
         SetTriggerAnimator(ConstValues.Pattern);
         var spawnObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}_{ConstValues.Event}", attackPos).GetComponent<Attack>();
-        if (upperX > 0 && upperY > 0)
-            spawnObject.SetUpperPower(new Vector2(upperX, upperY));
+        spawnObject.SetUpperPower(new Vector2(upperX, upperY));
         
         await Charge(chargeSpeed, 0.5f, chargeLength, 0.5f);
         spawnObject.DisActiveCollider();
@@ -82,5 +81,27 @@ public class Monster_Charge : Monster
             return;
         
         spawnObject.gameObject.SetActive(false);
+    }
+    
+    public async UniTask EventJump()
+    {
+        float delay1 = 1.0f;
+        SpawnObject(ConstValues.MonsterChargeEventJumpEffect, transform.position);
+
+        GravityChange(0);
+        float jumpForce = 20.0f;
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpForce);
+        stateCancellation = new CancellationTokenSource();
+        if(await NormalDelay(delay1, stateCancellation).SuppressCancellationThrow())
+            return;
+        
+        gameObject.SetActive(false);
+    }
+    
+    // 깜빡이며 사라지기
+    public override async void BlinkDelete()
+    {
+        if (GameManager.Instance.EpisodeName != ConstValues.Episode2)
+            base.BlinkDelete();
     }
 }

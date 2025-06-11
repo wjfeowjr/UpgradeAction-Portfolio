@@ -1284,6 +1284,29 @@ public class Monster : Character
         }
     }
 
+    // 버그 방지
+    protected void OnCollisionStay2D(Collision2D col)
+    {
+        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
+        {
+            if (myRigidbody.linearVelocityY != 0)
+                return;
+            
+            LandingStateSetting(ELandingState.Ground);
+            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            myRigidbody.linearVelocity = Vector2.zero;
+            groundObject = col.gameObject;
+            
+            switch (normalState)
+            {
+                case ENormalState.Airborne:
+                    if (!myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Die))
+                        DownAndStand();
+                    break;
+            }
+        }
+    }
+
     protected void OnCollisionExit2D(Collision2D col)
     {
         if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))

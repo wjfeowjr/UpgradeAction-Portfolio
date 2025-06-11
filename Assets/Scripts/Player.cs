@@ -853,7 +853,11 @@ public abstract class Player : Character
         immortal = false;
         return chargeFinish;
     }
-    
+
+    public async UniTask WaitIdle()
+    {
+        await UniTask.WaitUntil(() => normalState == ENormalState.Idle);
+    }
     // 커스텀
     public async UniTask EpisodeMove(Vector2 movePos, float speed, int finishDir)
     {

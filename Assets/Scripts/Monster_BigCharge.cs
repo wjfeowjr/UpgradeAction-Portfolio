@@ -127,33 +127,41 @@ public class Monster_BigCharge : Monster
     {
         if (GameManager.Instance.EpisodeName == ConstValues.Episode2)
         {
+            stateCancellation = new CancellationTokenSource();
             await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
+            await UniTask.WaitUntil(() => basicStat.id != default);
+
             StandHitBox();
             StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
             MoveStateSetting(EMoveState.Stopping);
+            LandingStateSetting(ELandingState.Air);
             myBoxCollider.enabled = false;
             GravityChange(myGravity);
+
+            foreach (var mySpriteRenderer in mySpriteRenderers)
+                mySpriteRenderer.enabled = false;
+
+            var meteor = SpawnObject($"{basicStat.id}_{ConstValues.Meteor}", centerPos);
+            float dropForce = 20.0f;
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
+            await UniTask.WaitUntil(() => landingState == ELandingState.Ground);
+
+            foreach (var mySpriteRenderer in mySpriteRenderers)
+                mySpriteRenderer.enabled = true;
             
-            stateCancellation = new CancellationTokenSource();
-            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-                return;
+            meteor.SetActive(false);
+            
             LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-            myAnimator.transform.localScale = new Vector3(defaultAnimatorScale.x, defaultAnimatorScale.y * 2.6f, defaultAnimatorScale.z);
-            bool finishSuccess = true;
 
-            finishSuccess = await AppearMotion();
-
-            if (finishSuccess)
-            {
-                SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
-                StateSetting(ENormalState.AppearEnd, ConstValues.AppearEnd, ConstValues.AppearEnd);
-                if (await NormalDelay(1.0f, stateCancellation).SuppressCancellationThrow())
-                    return;
+            SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
+            StateSetting(ENormalState.AppearEnd, ConstValues.AppearEnd, ConstValues.AppearEnd);
+            if (await NormalDelay(1.0f, stateCancellation).SuppressCancellationThrow())
+                return;
                 
-                await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
-                FirstCoolTimeReduce();
-                IdleOrMove();
-            }
+            CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+            await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
+            FirstCoolTimeReduce();
+            IdleOrMove();
             myBoxCollider.enabled = true;
             bossProduct?.Invoke();
         }
@@ -167,7 +175,12 @@ public class Monster_BigCharge : Monster
     {
         if (GameManager.Instance.EpisodeName == ConstValues.Episode2)
         {
-            var delay = 0.15f;
+            CancelMotion();
+            ClearObjectList(buffObject);
+            isDie = true;
+            GameManager.Instance.RemoveMonster(this);
+            
+            var delay = 0.12f;
             StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
             MoveStateSetting(EMoveState.Stopping);
             
@@ -195,6 +208,7 @@ public class Monster_BigCharge : Monster
         Vector2 end = endPos;
         float travelTime = 0.6f;
         Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
-        myRigidbody.linearVelocity = velocity;
+        Airborne(velocity.x, velocity.y);
+        //myRigidbody.linearVelocity = velocity;
     }
 }

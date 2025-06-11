@@ -364,7 +364,7 @@ public class GameManager : Singleton<GameManager>
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey5));
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerUpperSlash, skillKey6));
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey7));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey8));
+        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey8));
         
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey8));
@@ -379,7 +379,7 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey5));
         gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey6));
         gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey8));
+        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
         
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
@@ -561,6 +561,29 @@ public class GameManager : Singleton<GameManager>
         monsterList.Add(monster);
         return monster;
     }
+
+    public Monster ActiveAndHideMonster(string id, Vector2 monsterVector, bool isBoss = false)
+    {
+        var monster = SpawnToPoolInstantiate(id, objectPool, monsterVector).GetComponent<Monster>();
+        monster.IsBoss = isBoss;
+        monster.gameObject.SetActive(false);
+        monsterList.Add(monster);
+        return monster;
+    }
+    public void ActiveMonster(Monster monster, bool isBoss, Action bossProduct = null)
+    {
+        monster.gameObject.SetActive(true);
+        monster.SpawnHpBar();
+        monster.Appear(bossProduct);
+    }
+    
+    public void SetMonster(Monster monster, bool isBoss)
+    {
+        monster.IsBoss = isBoss;
+        monster.SpawnHpBar();
+        monsterList.Add(monster);
+    }
+    
     public void RemoveMonster(Monster monster)
     {
         monsterList.Remove(monster);
@@ -688,6 +711,8 @@ public class GameManager : Singleton<GameManager>
         GameObject go;
         if (isSearch.Count == 0)
         {
+            if(prefabList.Find(x => x.name == id) == null)
+                Debug.LogWarning($"{id}가 프리팹 리스트에 없다");
             go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
             objectList.Add(go);
         }
@@ -738,7 +763,17 @@ public class GameManager : Singleton<GameManager>
         go.SetActive(true);
         return go;
     }
-
+    private GameObject SpawnToPoolInstantiate(string id, Transform pool, Vector2 objVector)
+    { 
+        var objectName = $"{id}(Clone)";
+        GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
+        objectList.Add(go);
+        
+        go.transform.position = objVector;
+        go.SetActive(true);
+        return go;
+    }
+    
     // UI관련 코드
     // 바인딩(변하지 않는 UI만)
     private async void BindPresenter(eUIType type, UIBase uiBase)

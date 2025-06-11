@@ -88,6 +88,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Event = "Event";
     public const string PunchPose = "PunchPose";
     public const string LandingPose = "LandingPose";
+    public const string JumpPose = "JumpPose";
     
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
@@ -138,6 +139,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string StageWallLeft = "StageWallLeft";
     public const string StageWallRight = "StageWallRight";
     public const string Platform = "Platform";
+    public const string DestroyPlatform = "DestroyPlatform";
 
     public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";
@@ -152,6 +154,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string DownDust = "DownDust";
     public const string FireFlash = "FireFlash";
     public const string WarningArea = "WarningArea";
+    public const string PlatformFragments = "PlatformFragments";
+    public const string PlatformExplosion = "PlatformExplosion";
 
     public const string BerserkerSlash = "Berserker_Slash";
     public const string BerserkerFlash = "Berserker_Flash";
@@ -204,7 +208,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterSpinachAppear = "Monster_Spinach_Appear";
     public const string MonsterPurple = "Monster_Purple";
     public const string MonsterCharge = "Monster_Charge";
-    
+    public const string MonsterChargeEventJumpEffect = "Monster_Charge_EventJumpEffect";
+
     public const string MonsterSun = "Monster_Sun";
     public const string MonsterSunAttack1 = "Monster_Sun_Attack1";
     public const string MonsterSunAttack2 = "Monster_Sun_Attack2";
@@ -215,6 +220,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterSunLaugh = "Monster_Sun_Laugh";
     
     public const string MonsterBigCharge = "Monster_BigCharge";
+    public const string Meteor = "Meteor";
     
     public const string MonsterMouseCursorWarning = "Monster_MouseCursor_Warning";
 
