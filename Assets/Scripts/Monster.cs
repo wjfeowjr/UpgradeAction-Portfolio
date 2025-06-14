@@ -911,7 +911,7 @@ public class Monster : Character
     // 원거리 몬스터 스탠딩 알고리즘
     private void UpdateStandingCheck()
     {
-        if (!myStat.standMotion || (normalState != ENormalState.Move && normalState != ENormalState.Idle))
+        if (!myStat.standMotion || (normalState != ENormalState.Move && normalState != ENormalState.Idle) || isDie)
             return;
 
         if (patternInfo[0].playerInAttackRange)

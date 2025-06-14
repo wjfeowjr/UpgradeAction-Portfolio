@@ -273,8 +273,8 @@ public class Stage2 : Stage
                 if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                     return;
             }
-            
             speechFrame1[0].gameObject.SetActive(false);
+            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
             
             // 게임 시작
             GameManager.Instance.ControlStart = true;
@@ -345,7 +345,7 @@ public class Stage2 : Stage
             string dialog9 = "안 보면 못 살려 ㅋ";
             string dialog10 = "속는 셈 치고 봐야겠네 ㅎ";
             string dialog11 = "광고 시청 후";
-            string dialog12 = "오잉? 나 살아났네?";
+            string dialog12 = "오잉? 나 살아났네?"; 
             string dialog13 = "너가 날 살렸어!";
             string dialog14 = "어헝! 내가 시민을 구했다!";
             string dialog15 = "야!!!";
@@ -1432,7 +1432,7 @@ public class Stage2 : Stage
         }
     }
 
-    private void StepCharacterSetting()
+    private void  StepCharacterSetting()
     {
         switch (myEventStep)
         {
@@ -1441,11 +1441,12 @@ public class Stage2 : Stage
                 break;
         }
         
-        if(myEventStep >= 4)
+        if(myEventStep >= 3)
             GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, ConstValues.Gunner);
         
         curPlayer = GameManager.Instance.CurPlayer;
         GameManager.Instance.ArrivePlayer();
+        GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
     }
     
     private async void AccumulatedStep()
@@ -1487,11 +1488,13 @@ public class Stage2 : Stage
                 traceMonsters[0].gameObject.SetActive(true);
                 traceMonsters[0].IsDie = true;
                 traceMonsters[0].Flip(-1);
+                traceMonsters[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
                 
                 traceMonsters[1].transform.position = traceMonsterPos2;
                 traceMonsters[1].gameObject.SetActive(true);
                 traceMonsters[1].IsDie = true;
                 traceMonsters[1].Flip(-1);
+                traceMonsters[1].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
                 break;
             
             case 3:
