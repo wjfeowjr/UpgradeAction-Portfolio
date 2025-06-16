@@ -92,6 +92,7 @@ public class ConstValues : Singleton<ConstValues>
     
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
+    public const string DialogPose = "DialogPose";
     public const string DialogShot = "DialogShot";
     public const string DialogGround = "DialogGround";
     public const string DialogGroundLaugh = "DialogGroundLaugh";
@@ -205,7 +206,7 @@ public class ConstValues : Singleton<ConstValues>
 
     // 몬스터
     public const string MonsterSpinach = "Monster_Spinach";
-    public const string MonsterSpinachAppear = "Monster_Spinach_Appear";
+    public const string MonsterCoal = "Monster_Coal";
     public const string MonsterPurple = "Monster_Purple";
     public const string MonsterCharge = "Monster_Charge";
     public const string MonsterChargeEventJumpEffect = "Monster_Charge_EventJumpEffect";

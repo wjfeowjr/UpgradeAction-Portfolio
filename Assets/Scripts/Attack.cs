@@ -263,6 +263,10 @@ public class Attack : MonoBehaviour
             {
                 hitTarget.Die();
                 
+                // 죽을때 기본적으로 에어본 이후 넘어져서 죽는다(보스 제외)
+                if (hitTarget.GetComponent<Monster>() && hitTarget.GetComponent<Monster>().IsBoss)
+                    return;
+                
                 var upperPowerY = attackInfo.upperPower.y;
                 if (hitTarget.GetComponent<Npc>() == null)
                 {

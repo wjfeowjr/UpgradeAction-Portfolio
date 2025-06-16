@@ -751,14 +751,13 @@ public class Stage2 : Stage
                 return;
 
             PlaySound(ConstValues.MonsterBigTreeLog);
-            speechFrameStrong.gameObject.SetActive(true);
             speechFrameStrong.SetPos(strongSpeechPos[1].position);
             speechFrameStrong.Speech(dialog32);
             CameraShake(0.1f, 0.2f);
             
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrameStrong.gameObject.SetActive(false);
+            speechFrameStrong.SpeechEnd();
             
             // 광고를 왜 봐? 게임시스템 부수면 되는걸
             chargeSpeechPosition = chargeMonster.FontPos.position;
@@ -1181,6 +1180,7 @@ public class Stage2 : Stage
             DialogStepUp();
             CustomMoveStepUp();
             SaveEpisode();
+            chargeMonster.IdleOrMove();
             dialogSwitch = true;
         }
         else if (episodeStep.dialogStep >= 3)

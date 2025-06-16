@@ -132,7 +132,7 @@ public abstract class Character : MonoBehaviour
     protected Vector2 chargeVector;
     protected int jumpAttackCount;
     [SerializeField] protected bool isDie;
-    protected float myGravity;
+    [SerializeField] protected float myGravity;
     protected bool downJumping;
     
     private int airborneCount;     // 에어본 카운트
@@ -188,11 +188,10 @@ public abstract class Character : MonoBehaviour
         }
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
-        myGravity = myRigidbody.gravityScale;
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
         wallLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
-
+        
         ScaleSetting();
         ColSizeSetting();
     }

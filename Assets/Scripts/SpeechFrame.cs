@@ -18,6 +18,11 @@ public class SpeechFrame : MonoBehaviour
         PlaySound();
         dialogText.text = dialog;
     }
+    
+    public void SpeechEnd()
+    {
+        gameObject.SetActive(false);
+    }
 
     public void Trace(Transform targetTransform)
     {

@@ -7,11 +7,13 @@ using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class Stage1 : Stage
 {
-    
     [SerializeField] private Monster sunObject;
+    [SerializeField] private GameObject[] guideObjects;
+    private float monsterInterval1 = 1.0f;
     
     protected override void SetEpisodeName()
     {
@@ -35,17 +37,29 @@ public class Stage1 : Stage
             case 2:
                 await Product3();
                 break;
-
+            
             case 3:
-                Product4();
+                await Product4();
                 break;
 
             case 4:
-                await Product5();
+                Product5();
                 break;
 
             case 5:
                 await Product6();
+                break;
+
+            case 6:
+                Product7();
+                break;
+            
+            case 7:
+                await Product8();
+                break;
+            
+            case 8:
+                await Product9();
                 break;
         }
     }
@@ -110,7 +124,7 @@ public class Stage1 : Stage
         {
             dialogSwitch = false;
             string dialog1 = "날씨 참 좋다...";
-            string dialog2 = "저 거지같은\n태양만 빼고\n말이야!";
+            string dialog2 = "저 거지같은 태양만\n빼고말이야!";
             string dialog3 = "뿌셔버릴거야!!!";
             string dialog4 = "나 잡아봐라~";
 
@@ -120,8 +134,8 @@ public class Stage1 : Stage
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            var speechPosition = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(speechPosition);
+            var berserkerPos = curPlayer.FontPos.position;
+            speechFrame1[0].SetPos(berserkerPos);
             speechFrame1[0].Speech(dialog1);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
@@ -136,9 +150,8 @@ public class Stage1 : Stage
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 1.0f);
 
-            speechFrame1[0].SetPos(new Vector2(speechPosition.x, speechPosition.y + 0.5f));
+            speechFrame1[0].SetPos(new Vector2(berserkerPos.x, berserkerPos.y + 0.5f));
             speechFrame1[0].Speech(dialog3);
-
             for (int i = 0; i < 2; i++)
             {
                 curPlayer.CustomJump(new Vector2(0, 6.0f));
@@ -151,10 +164,10 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1[0].gameObject.SetActive(false);
+            speechFrame1[0].SpeechEnd();
 
-            var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2[0].SetPos(speechPosition2);
+            var sunPos = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
+            speechFrame2[0].SetPos(sunPos);
             speechFrame2[0].Speech(dialog1);
             var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
 
@@ -162,7 +175,7 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame2[0].gameObject.SetActive(false);
+            speechFrame2[0].SpeechEnd();
 
             PlaySound(ConstValues.MonsterSunLaugh);
             sunObject.transform.DOMove(sunMoveVector, 2.0f);
@@ -175,11 +188,15 @@ public class Stage1 : Stage
                 return;
 
             // 게임 시작
+            guideObjects[0].SetActive(true);
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
             DialogStepUp();
             SaveEpisode();
             dialogSwitch = true;
+            
+            // 임시
+            //GameManager.Instance.SpawnMonster(ConstValues.MonsterCoal, curPlayer.transform.position);
         }
         MyEventStepUp();
     }
@@ -191,7 +208,7 @@ public class Stage1 : Stage
         if (episodeStep.dialogStep == 1)
         {
             dialogSwitch = false;
-            string dialog1 = "이거나\n먹어랏~!";
+            string dialog1 = "이거나 먹어랏~!";
             string dialog2 = "닿으면 죽겠지?";
             string dialog3 = "회피를 사용하자!";
 
@@ -226,7 +243,7 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame2[0].gameObject.SetActive(false);
+            speechFrame2[0].SpeechEnd();
             
             PlaySound(ConstValues.MonsterSunLaugh);
             sunObject.transform.DOMove(sunMoveVector, 2.0f);
@@ -247,8 +264,9 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1[0].gameObject.SetActive(false);
+            speechFrame1[0].SpeechEnd();
             // 게임 시작
+            guideObjects[1].SetActive(true);
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
             
@@ -291,52 +309,206 @@ public class Stage1 : Stage
                 return;
             
             string dialog1 = "뭐야 이 시금치들은!!";
-            string dialog2 = "여긴 우리\n구역이다.";
-            string dialog3 = "그래\n당장 꺼져!";
-            string dialog4 = "난 주인공이다.\n아무도 막을 수 없다!";
+            string dialog2 = "넌 게임을 너무 빨리 끝내려 하고있다!";
+            string dialog3 = "우린 그걸 막으러 온 적이다!!";
+            string dialog4 = "악!!!!!!!!!";
 
-            var speechPosition = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(speechPosition);
+            var berserkerPos = curPlayer.FontPos.position;
+            speechFrame1[0].SetPos(berserkerPos);
             speechFrame1[0].Speech(dialog1);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1[0].SetPos(new Vector2(GameManager.Instance.MonsterList[0].FontPos.position.x,
-                GameManager.Instance.MonsterList[0].FontPos.position.y - 0.5f));
+            var monster1Pos = GameManager.Instance.MonsterList[0].FontPos.position;
+            speechFrame1[0].SetPos(new Vector2(monster1Pos.x, monster1Pos.y));
             speechFrame1[0].Speech(dialog2);
-
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame1[0].SetPos(new Vector2(GameManager.Instance.MonsterList[1].FontPos.position.x, GameManager.Instance.MonsterList[1].FontPos.position.y - 0.5f));
+            var monster2Pos = GameManager.Instance.MonsterList[1].FontPos.position;
+            speechFrame1[0].SetPos(new Vector2(monster2Pos.x, monster2Pos.y));
             speechFrame1[0].Speech(dialog3);
 
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame1[0].SetPos(speechPosition);
+            PlaySound(ConstValues.PlayerScream);
+            CameraShake(0.4f, 1.0f);
+            speechFrame1[0].SetPos(new Vector2(berserkerPos.x, berserkerPos.y + 0.5f));
             speechFrame1[0].Speech(dialog4);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            for (int i = 0; i < 2; i++)
+            {
+                curPlayer.CustomJump(new Vector2(0, 6.0f));
+                curPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
 
-            speechFrame1[0].gameObject.SetActive(false);
+                if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                    return;
+            }
+            speechFrame1[0].SpeechEnd();
+            
             // 게임 시작
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
             
             DialogStepUp();
             PlayerStepUp();
-            CustomMoveStepUp();
             SaveEpisode();
             dialogSwitch = true;
-            Guide2();
+            //Guide2();
         }
         MyEventStepUp();
     }
+    
+    private async UniTask Product4()
+    {
+        dialogCancellation = new CancellationTokenSource();
+        if (episodeStep.dialogStep == 3)
+        {
+            dialogSwitch = false;
+            GameManager.Instance.ControlStart = false;
+            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+            await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
+            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            var berserkerPos = curPlayer.FontPos.position;
+            string dialog1 = "고작 잡몹 두 마리로\n게임시간을 늘릴 수 있을거같냐!";
+            curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
+            speechFrame1[0].SetPos(berserkerPos);
+            speechFrame1[0].Speech(dialog1);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            speechFrame1[0].SpeechEnd();
+        }
+        
+        monsterSpawning = true;
+        // 미리 몹 소환하고 잠재워두기
+        var monsterList = new List<Monster>();
+        for (int i = 0; i < 16; i++)
+        {
+            var randX = Random.Range(-monsterInterval1, monsterInterval1);
+            int idx = 0;
+            if (i >= 4)
+                idx = 1;
+            if (i >= 8)
+                idx = 2;
+            if (i >= 12)
+                idx = 3;
 
+            var randPos = new Vector2(monsterPos[idx].position.x + randX, monsterPos[idx].position.y);
+            monsterList.Add(GameManager.Instance.ActiveAndHideMonster(ConstValues.MonsterSpinach, randPos));
+        }
+        foreach (var monster in monsterList)
+        {
+            GameManager.Instance.ActiveMonster(monster, false);
+            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+                return;
+        }
+        monsterSpawning = false;
+        
+        if (episodeStep.dialogStep == 3)
+        {
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            string dialog2 = "그래서 더 많이 왔다!!!";
+            string dialog3 = "다 뿌셔주마!!!!!";
+            
+            PlaySound(ConstValues.MonsterBigTreeLog);
+            speechFrameStrong.SetPos(strongSpeechPos[0].position);
+            speechFrameStrong.Speech(dialog2);
+            CameraShake(0.1f, 0.2f);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            speechFrameStrong.SpeechEnd();
+
+            var berserkerPos = curPlayer.FontPos.position;
+            PlaySound(ConstValues.PlayerScream);
+            CameraShake(0.4f, 1.0f);
+            speechFrame1[0].SetPos(new Vector2(berserkerPos.x, berserkerPos.y + 0.5f));
+            speechFrame1[0].Speech(dialog3);
+            for (int i = 0; i < 2; i++)
+            {
+                curPlayer.CustomJump(new Vector2(0, 6.0f));
+                curPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
+
+                if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                    return;
+            }
+            speechFrame1[0].SpeechEnd();
+            // 게임 시작
+            GameManager.Instance.ControlStart = true;
+            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+            
+            DialogStepUp();
+            SaveEpisode();
+            dialogSwitch = true;
+        }
+        CustomMoveStepUp();
+        MyEventStepUp();
+    }
     // 대화가 없는 연출은 UniTask형태가 아님
-    private void Product4()
+    private void Product5()
+    {
+        AccumulatedStep();
+        MyEventStepUp();
+        SetEventStep();
+        SaveEpisode();
+    }
+    
+    private async UniTask Product6()
+    {
+        AccumulatedStep();
+        dialogCancellation = new CancellationTokenSource();
+        if (episodeStep.dialogStep == 4)
+        {
+            dialogSwitch = false;
+            GameManager.Instance.ControlStart = false;
+            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+            await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
+        }
+        
+        monsterSpawning = true;
+        var coalMonster = GameManager.Instance.SpawnMonster(ConstValues.MonsterCoal, monsterPos[4].position);
+        monsterSpawning = false;
+        
+        if (episodeStep.dialogStep == 4)
+        {
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            string dialog1 = "하하! 나는 석탄맨!\n더 강한 적이다!";
+            string dialog2 = "제작자 이놈 가만히 안 둘 테다";
+
+            var coalPos = coalMonster.FontPos.position;
+            speechFrame1[0].SetPos(coalPos);
+            speechFrame1[0].Speech(dialog1);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+
+            var berserkerPos = curPlayer.FontPos.position;
+            speechFrame1[0].SetPos(berserkerPos);
+            speechFrame1[0].Speech(dialog2);
+            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+                return;
+            
+            speechFrame1[0].SpeechEnd();
+            
+            // 게임 시작
+            GameManager.Instance.ControlStart = true;
+            GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+            
+            DialogStepUp();
+            PlayerStepUp();
+            SaveEpisode();
+            dialogSwitch = true;
+        }
+        CustomMoveStepUp();
+        MyEventStepUp();
+    }
+    // 대화가 없는 연출은 UniTask형태가 아님
+    private void Product7()
     {
         AccumulatedStep();
         MyEventStepUp();
@@ -344,11 +516,11 @@ public class Stage1 : Stage
         SaveEpisode();
     }
 
-    private async UniTask Product5()
+    private async UniTask Product8()
     {
         AccumulatedStep();
 
-        if (episodeStep.dialogStep == 3)
+        if (episodeStep.dialogStep == 5)
         {
             dialogSwitch = false;
             GameManager.Instance.ControlStart = false;
@@ -359,7 +531,7 @@ public class Stage1 : Stage
         var sunPos = new Vector2(bossPos[2].transform.position.x, bossPos[2].transform.position.y + 3.5f);
         sunObject = GameManager.Instance.SpawnMonster(ConstValues.MonsterSun, sunPos, true, () => { SpawnBossMessage(sunObject.BasicStat.name); });
 
-        if (episodeStep.dialogStep == 3)
+        if (episodeStep.dialogStep == 5)
         {
             string dialog1 = "넌 표정이 마음에 안 들었어!!";
             string dialog2 = "이제 뿌셔주마!";
@@ -369,6 +541,7 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
+            curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
             var speechPosition = curPlayer.FontPos.position;
             speechFrame1[0].SetPos(speechPosition);
             speechFrame1[0].Speech(dialog1);
@@ -380,31 +553,31 @@ public class Stage1 : Stage
             
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrame1[0].gameObject.SetActive(false);
+            speechFrame1[0].SpeechEnd();
             
             var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
             speechFrame2[0].SetPos(speechPosition2);
             speechFrame2[0].Speech(dialog3);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrame2[0].gameObject.SetActive(false);
+            speechFrame2[0].SpeechEnd();
             //Guide3();
             
             // 게임 시작
+            curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
             DialogStepUp();
             PlayerStepUp();
-            CustomMoveStepUp();
             SaveEpisode();
             dialogSwitch = true;
         }
         MyEventStepUp();
     }
 
-    private async UniTask Product6()
+    private async UniTask Product9()
     {
-        if (episodeStep.dialogStep == 4)
+        if (episodeStep.dialogStep == 6)
         {
             dialogSwitch = false;
             GameManager.Instance.ControlStart = false;
@@ -464,7 +637,7 @@ public class Stage1 : Stage
                 return;
             
             sunObject.DieExplosion();
-            speechFrame2[0].gameObject.SetActive(false);
+            speechFrame2[0].SpeechEnd();
             
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
@@ -482,7 +655,7 @@ public class Stage1 : Stage
             speechFrame1[0].Speech(dialog7);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrame1[0].gameObject.SetActive(false);
+            speechFrame1[0].SpeechEnd();
             
             var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, GameManager.Instance.MainCamera.transform.position).GetComponent<FadeSystem>();
             fadeBg.SetParameter(0, 1.0f, 1.5f, false);
@@ -491,10 +664,10 @@ public class Stage1 : Stage
             speechFrame1[0].Speech(dialog8);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
-            speechFrame1[0].gameObject.SetActive(false);
+            speechFrame1[0].SpeechEnd();
             
-            var speechPosition3 = new Vector3(GameManager.Instance.MainCamera.transform.position.x, 0, 0);
-            speechFrameTitle.SetPos(speechPosition3);
+            var titleSpeechPos = Vector3.zero;
+            speechFrameTitle.SetPos(titleSpeechPos);
             speechFrameTitle.Speech(dialog9);
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
@@ -506,7 +679,7 @@ public class Stage1 : Stage
             speechFrame1[0].Speech(dialog10);
             fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
             await fadeBg.Fade();
-            speechFrame1[0].gameObject.SetActive(false);
+            speechFrame1[0].SpeechEnd();
             
             PlaySound(ConstValues.RewardPage);
             sunObject.gameObject.transform.position = new Vector2(bossPos[2].transform.position.x + 3.5f, bossPos[2].transform.position.y);
@@ -527,7 +700,7 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            speechFrame2[0].gameObject.SetActive(false);
+            speechFrame2[0].SpeechEnd();
             
             // 엔딩 연출
             ProductStageClear();
@@ -571,6 +744,9 @@ public class Stage1 : Stage
                     sunObject.gameObject.SetActive(true);
                     sunObject.Flip(-1);
                 }
+
+                foreach (var guideObject in guideObjects)
+                    guideObject.SetActive(false);
                 break;
             case 1:
                 // 카메라 제한
@@ -587,19 +763,36 @@ public class Stage1 : Stage
                 stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[0]));
                 stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallRight, stageWallPos[1]));
                 break;
-            case 3:
+            case 4:
                 foreach (var stageWall in stageWalls)
                     stageWall.SetActive(false);
-                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(112.4f, GameManager.Instance.MainCamera.MinXAndY.y);
+                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(117.4f, GameManager.Instance.MainCamera.MinXAndY.y);
                 break;
-            case 4:
+            
+            case 5:
                 // 카메라 제한
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(110, GameManager.Instance.MainCamera.MinXAndY.y);
-                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(114.8f, GameManager.Instance.MainCamera.MinXAndY.y);
+                GameManager.Instance.MainCamera.MinXAndY = new Vector2(110.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(117.5f, GameManager.Instance.MainCamera.MinXAndY.y);
 
                 // 벽 설치
                 stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[2]));
                 stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallRight, stageWallPos[3]));
+                break;
+            
+            case 6:
+                foreach (var stageWall in stageWalls)
+                    stageWall.SetActive(false);
+                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(138.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+                break;
+            
+            case 7:
+                // 카메라 제한
+                GameManager.Instance.MainCamera.MinXAndY = new Vector2(133.7f, GameManager.Instance.MainCamera.MinXAndY.y);
+                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(138.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+                
+                // 벽 설치
+                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[4]));
+                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallRight, stageWallPos[5]));
                 break;
         }
     }
@@ -615,15 +808,15 @@ public class Stage1 : Stage
         SpawnGuide(guideModel);
     }
 
-    private void Guide2()
-    {
-        var guideModel = new PopupGuideModel()
-        {
-            guideMessage = "<color=#F36B6B>'X'</color>키와 우측 하단의 스킬들을 활용하여 전투를 해보세요!",
-            imgName = "Guide2",
-        };
-        SpawnGuide(guideModel);
-    }
+    // private void Guide2()
+    // {
+    //     var guideModel = new PopupGuideModel()
+    //     {
+    //         guideMessage = "<color=#F36B6B>'X'</color>키와 우측 하단의 스킬들을 활용하여 전투를 해보세요!",
+    //         imgName = "Guide2",
+    //     };
+    //     SpawnGuide(guideModel);
+    // }
     
     // private void Guide3()
     // {

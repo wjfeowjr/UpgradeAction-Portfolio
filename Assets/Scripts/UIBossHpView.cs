@@ -14,6 +14,7 @@ public interface IUIBossHpView
     void SetStagger(Character character);
     void SetStaggerText(Character character);
     void StaggerReduce(Character character, float speed);
+    void StaggerExplosion(Character character, Transform targetTransform);
     Transform StaggerGaugeTransform();
 }
 
@@ -70,6 +71,11 @@ public class UIBossHpPresenter
     public Transform StaggerGaugeTransform()
     {
         return _hpview.StaggerGaugeTransform();
+    }
+
+    public void StaggerExplosion(Character character, Transform targetTransform)
+    {
+        _hpview.StaggerExplosion(character, targetTransform);
     }
 }
 
@@ -130,7 +136,6 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
 
         if (character.BasicStat.stagger <= 0)
         {
-            // 터지는 연출 넣기
             staggerGauge.gameObject.SetActive(false);
         }
     }
@@ -147,6 +152,14 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
             return;
         
         staggerGauge.GaugeReduce(character.BasicStat.stagger, character.BasicStat.maxStagger, speed);
+    }
+
+    public void StaggerExplosion(Character character, Transform targetTransform)
+    {
+        if (character.BasicStat.bodyType != EBodyType.StrongArmor && character.BasicStat.bodyType != EBodyType.HyperArmor) 
+            return;
+        
+        GameManager.Instance.SpawnToUIPool(ConstValues.StaggerExplosionUI, targetTransform.position);
     }
 
     public Transform StaggerGaugeTransform()

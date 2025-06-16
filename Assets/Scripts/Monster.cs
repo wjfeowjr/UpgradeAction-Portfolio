@@ -299,6 +299,7 @@ public class Monster : Character
 
             myStat.traceLength = targetStat.traceLength;
             myStat.hovering = targetStat.hovering;
+            myGravity = myStat.hovering ? 0 : 1;
             
             var hoveringHeightArray = targetStat.hoveringHeight.Split(';');
             foreach (var hoveringHeight in hoveringHeightArray)
@@ -379,7 +380,7 @@ public class Monster : Character
         StopVelocity();
     }
 
-    protected void IdleOrMove()
+    public void IdleOrMove()
     {
         // 원거리몹
         if (myStat.standMotion)
@@ -494,6 +495,8 @@ public class Monster : Character
                 return;
             }
             
+            if(!GameManager.Instance.ControlStart)
+                StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
             await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
             // Hovering();
             // AppearShake();
@@ -663,7 +666,7 @@ public class Monster : Character
             else
             {
                 // 터지는 전기 연출
-                GameManager.Instance.SpawnToUIPool(ConstValues.StaggerExplosionUI, uiInterface.BossHpPresenter.StaggerGaugeTransform().position);
+                uiInterface.BossHpPresenter.StaggerExplosion(this, uiInterface.BossHpPresenter.StaggerGaugeTransform());
                 uiInterface.BossHpPresenter.SetStagger();
             }
         }

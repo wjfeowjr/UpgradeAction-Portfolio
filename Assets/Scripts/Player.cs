@@ -136,6 +136,7 @@ public abstract class Player : Character
         base.OnEnable();
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        myGravity = myRigidbody.gravityScale;
     }
 
     protected override void Update()
