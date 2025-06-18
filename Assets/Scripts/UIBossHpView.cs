@@ -87,9 +87,10 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
 
     public void HideHp()
     {
-        nameText.gameObject.SetActive(false);
-        hpGauge.gameObject.SetActive(false);
+        // nameText.gameObject.SetActive(false);
+        // hpGauge.gameObject.SetActive(false);
         staggerGauge.gameObject.SetActive(false);
+        gameObject.SetActive(false);
     }
     
     // 이름
@@ -104,14 +105,14 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
     // 체력
     public void SetHp(Character character)
     {
-        if(character.BasicStat.hp > 0 && !hpGauge.gameObject.activeSelf)
-            hpGauge.gameObject.SetActive(true);
+        if(character.BasicStat.hp > 0 && !gameObject.activeSelf)
+            gameObject.SetActive(true);
 
         hpGauge.GaugeSetting(character.BasicStat.hp, character.BasicStat.maxHp);
         SetHpText(character);
         
         if(character.BasicStat.hp <= 0)
-            hpGauge.gameObject.SetActive(false);
+            gameObject.SetActive(false);
     }
     public void SetHpText(Character character)
     {
@@ -120,6 +121,8 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
     public void HpReduce(Character character, float speed)
     {
         hpGauge.GaugeReduce(character.BasicStat.hp, character.BasicStat.maxHp, speed);
+        if(character.BasicStat.hp <= 0)
+            gameObject.SetActive(false);
     }
     
     // 무력화

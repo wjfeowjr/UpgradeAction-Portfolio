@@ -67,12 +67,14 @@ public class AttackDataList
 public class MissileData
 {
     public string id;
+    public string type;
     public float speed;
     public bool piercingBullet;
     public float limitLength;
     public string hitLayer;
     public string spawnObject;
     public bool hitSpawn;
+    public bool afterImage;
 }
 [Serializable]
 public class MissileDataList

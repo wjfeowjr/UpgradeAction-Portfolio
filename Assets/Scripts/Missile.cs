@@ -4,22 +4,31 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 
+public enum MissileType
+{
+    Horizontal,
+    Vertical,
+}
+
 [Serializable]
 public class MissileInfo
 {
     public string id;
+    public MissileType type;
     public float speed;
     public bool piercingBullet;
     public float limitLength;
     public List<string> hitLayerList;
     public string spawnObject;
     public bool hitSpawn;
+    public bool afterImage;
     public Action<string, Transform, int> explosionAction;
 }
 public class Missile : MonoBehaviour
 {
     private Vector2 dir;
     private float limitPosX;
+    private float limitPosY;
     private bool isDelete;
     private Rigidbody2D myRigidbody;
     private Collider2D myCollider;
@@ -61,6 +70,7 @@ public class Missile : MonoBehaviour
         {
             missileInfo = new MissileInfo();
             missileInfo.id = missileData.id;
+            missileInfo.type = (MissileType)Enum.Parse(typeof(MissileType), missileData.type);
             missileInfo.speed = missileData.speed;
             missileInfo.piercingBullet = missileData.piercingBullet;
             missileInfo.limitLength = missileData.limitLength;
@@ -72,6 +82,7 @@ public class Missile : MonoBehaviour
             
             missileInfo.spawnObject = missileData.spawnObject;
             missileInfo.hitSpawn = missileData.hitSpawn;
+            missileInfo.afterImage = missileData.afterImage;
             missileInfo.explosionAction = action;
         }
         dir = missileDir;
@@ -82,23 +93,47 @@ public class Missile : MonoBehaviour
     {
         if (missileInfo.limitLength == 0)
             return;
-
-        limitPosX = transform.position.x;
-        if (dir == Vector2.left)
+        
+        switch (missileInfo.type)
         {
-            limitPosX -= missileInfo.limitLength;
-            if(missileSprite)
-                missileSprite.flipX = true;
-            if(mySpin)
-                mySpin.SetSpinSpeed(false);
-        }
-        else if (dir == Vector2.right)
-        {
-            limitPosX += missileInfo.limitLength;
-            if(missileSprite)
-                missileSprite.flipX = false;
-            if(mySpin)
-                mySpin.SetSpinSpeed(true);
+            case MissileType.Horizontal:
+                limitPosX = transform.position.x;
+                if (dir == Vector2.left)
+                {
+                    limitPosX -= missileInfo.limitLength;
+                    if(missileSprite)
+                        missileSprite.flipX = true;
+                    if(mySpin)
+                        mySpin.SetSpinSpeed(false);
+                }
+                else if (dir == Vector2.right)
+                {
+                    limitPosX += missileInfo.limitLength;
+                    if(missileSprite)
+                        missileSprite.flipX = false;
+                    if(mySpin)
+                        mySpin.SetSpinSpeed(true);
+                }
+                break;
+            case MissileType.Vertical:
+                limitPosY = transform.position.y;
+                if (missileInfo.speed > 0)
+                {
+                    limitPosY += missileInfo.limitLength;
+                    if(missileSprite)
+                        missileSprite.flipY = false;
+                    if(mySpin)
+                        mySpin.SetSpinSpeed(true);
+                }
+                else
+                {
+                    limitPosY -= missileInfo.limitLength;
+                    if(missileSprite)
+                        missileSprite.flipY = true;
+                    if(mySpin)
+                        mySpin.SetSpinSpeed(false);
+                }
+                break;
         }
     }
     
@@ -108,24 +143,48 @@ public class Missile : MonoBehaviour
         if (isDelete)
             return;
         
-        transform.Translate(dir * (missileInfo.speed * Time.deltaTime));
-        
-        if (limitPosX == 0)
-            return;
-        
-        if (dir == Vector2.left)
+        switch (missileInfo.type)
         {
-            if (transform.position.x <= limitPosX)
-            {
-                Delete(false);
-            }
-        }
-        else if (dir == Vector2.right)
-        {
-            if (transform.position.x >= limitPosX)
-            {
-                Delete(false);
-            }
+            case MissileType.Horizontal:
+                transform.Translate(dir * (missileInfo.speed * Time.deltaTime));
+                
+                if (limitPosX == 0)
+                    return;
+                if (dir == Vector2.left)
+                {
+                    if (transform.position.x <= limitPosX)
+                    {
+                        Delete(false);
+                    }
+                }
+                else if (dir == Vector2.right)
+                {
+                    if (transform.position.x >= limitPosX)
+                    {
+                        Delete(false);
+                    }
+                }
+                break;
+            case MissileType.Vertical:
+                transform.Translate(Vector2.up * (missileInfo.speed * Time.deltaTime));
+                
+                if (limitPosY == 0)
+                    return;
+                if (missileInfo.speed > 0)
+                {
+                    if (transform.position.y >= limitPosY)
+                    {
+                        Delete(false);
+                    }
+                }
+                else
+                {
+                    if (transform.position.y <= limitPosY)
+                    {
+                        Delete(false);
+                    }
+                }
+                break;
         }
     }
     
@@ -190,7 +249,8 @@ public class Missile : MonoBehaviour
             missileSprite.enabled = false;
         
         // 잔상 남기기 용도
-        await UniTask.WaitForSeconds(1.0f);
+        if(missileInfo.afterImage)
+            await UniTask.WaitForSeconds(1.0f);
         gameObject.SetActive(false);
     }
     

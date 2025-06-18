@@ -71,6 +71,7 @@ public class Monster : Character
     [SerializeField] private Transform hpBarPos;
     [SerializeField] private TotalBar totalBar;
     [SerializeField] private SpriteRenderer[] appearMotions;      // 등장 연출 이미지
+    protected CancellationTokenSource dieCancellation;
     
     // 프로퍼티
     public bool IsBoss
@@ -121,6 +122,9 @@ public class Monster : Character
 
     private void OnDisable()
     {
+        dieCancellation?.Cancel();
+        stateCancellation?.Cancel();
+        
         if (!totalBar)
             return;
         
@@ -723,7 +727,7 @@ public class Monster : Character
             await YieldDelay(stateCancellation);
         }
     }
-    public void DieExplosion()
+    public virtual void DieExplosion()
     {
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
         gameObject.SetActive(false);
@@ -1161,7 +1165,7 @@ public class Monster : Character
         return fadeSystem;
     }
     
-    // 위험영역 표시(콜라이더)
+    // 위험영역 표시(콜라이더) (위치, 각도, 콜라이더, 길이, 색깔)
     protected async UniTask WarningAreaSpawnCollider(Vector2 pos, Vector3 angle, BoxCollider2D targetCollider, float duration, Color color)
     {
         float scaleX = Mathf.Abs(targetCollider.gameObject.transform.localScale.x);
@@ -1174,6 +1178,19 @@ public class Monster : Character
         Vector2 finalScale = new Vector2(scaleX * targetCollider.size.x,scaleY * targetCollider.size.y);
 
         FadeSystem warningArea = WarningAreaSpawn(duration, color, finalPos, angle, finalScale);
+        await warningArea.Fade();
+    }
+    
+    // 위험영역 표시(궤적) 좌표, x크기, y크기, x축 높이, y축 높이
+    protected async UniTask WarningAreaSpawnTrajectory(Vector2 startPos, Vector2 endPos, Vector3 angle, float duration, Color color, float thickness, float addDistance = 0)
+    {
+        float distance = Vector2.Distance(startPos, endPos);
+        
+        // (시작좌표 + 끝좌표) / 2를 생성 좌표로 설정
+        Vector2 spawnPos = (startPos + endPos) * 0.5f;
+        Vector2 spawnSize = new Vector2(distance + addDistance, thickness);
+
+        FadeSystem warningArea = WarningAreaSpawn(duration, color, spawnPos, angle, spawnSize);
         await warningArea.Fade();
     }
     

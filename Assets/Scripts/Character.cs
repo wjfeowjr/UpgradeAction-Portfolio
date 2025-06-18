@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -476,13 +477,17 @@ public abstract class Character : MonoBehaviour
             return;
         
         var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, fontPos).GetComponent<TextFont>();
-
+        StringBuilder damageText = new StringBuilder();
+        damageText.Append(damage);
+        
         if (critical)
         {
             if(GetComponent<Player>())
                 textFont.ColorSetting(EFontType.EnemyCritical);
             else if(GetComponent<Monster>())
                 textFont.ColorSetting(EFontType.MyCritical);
+            
+            damageText.Append("!");
         }
         else
         {
@@ -492,7 +497,7 @@ public abstract class Character : MonoBehaviour
                 textFont.ColorSetting(EFontType.MyDamage);
         }
         
-        textFont.DisplayFont(55, damage.ToString());
+        textFont.DisplayFont(55, damageText.ToString());
     }
 
     public void SpawnHitEffect(string id, float minScale = 1.0f, float maxScale = 1.0f)

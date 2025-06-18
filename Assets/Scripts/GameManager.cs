@@ -165,6 +165,7 @@ public class GameManager : Singleton<GameManager>
     public KeyCode optionKey;
 
     [SerializeField] private SpriteAtlas uiAtlas;
+    [SerializeField] private SpriteAtlas bgAtlas;
     private Sprite[] cloneSprites;
     private Dictionary<string, Sprite> atlasDic = new Dictionary<string, Sprite>();
 
@@ -277,10 +278,12 @@ public class GameManager : Singleton<GameManager>
         groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         DefaultKeySetting();
         InitManager();
-        InitAtlas();
+        InitAtlas(uiAtlas);
+        InitAtlas(bgAtlas);
         InitPlayer();
         InitChangeSkill();
         SetPrefabActive(false);
+        FirstCashing();
     }
 
     private void OnDestroy()
@@ -444,21 +447,19 @@ public class GameManager : Singleton<GameManager>
         return settingSkillList;
     }
 
-    private void InitAtlas()
+    private void InitAtlas(SpriteAtlas spriteAtlas)
     {
         // Atlas 안에 들어있는 스프라이트 개수만큼 배열 생성
-        cloneSprites = new Sprite[uiAtlas.spriteCount];
-
+        cloneSprites = new Sprite[spriteAtlas.spriteCount];
         // GetSprites 호출 시 배열에 모두 채워진다
-        uiAtlas.GetSprites(cloneSprites);
-
+        spriteAtlas.GetSprites(cloneSprites);
         foreach (var sprite in cloneSprites)
         {
             var keyName = sprite.name.Split(ConstValues.AtlasClone)[0];
             atlasDic.Add(keyName, sprite);
         }
     }
-    public Sprite GetUISprite(string id)
+    public Sprite GetAtlasSprite(string id)
     {
         return atlasDic[id];
     }
@@ -466,14 +467,9 @@ public class GameManager : Singleton<GameManager>
     private async void InitManager() 
     {
         tableManager = TableManager.Instance;
-        //resourceManager = ResourceManager.Instance;
-        //uiManager = UIManager.Instance;
-        
         tableManager.Init();
-        //uiManager.Init();
-        //await resourceManager.Init();
     }
-    
+
     private async void OpenUI()
     {
         //await UIManager.Instance.OpenAsync(eUIType.UI_Skill, model);
@@ -701,6 +697,26 @@ public class GameManager : Singleton<GameManager>
             return targetCollider;
         }
         return null;
+    }
+
+    private void FirstCashing()
+    {
+        // foreach (var prefab in prefabList)
+        // {
+        //     GameObject go = Instantiate(prefab, objectPool);
+        //     objectList.Add(go);
+        // }
+        // foreach (var list in objectList)
+        // {
+        //     list.SetActive(false);
+        // }
+        foreach (var prefab in prefabList)
+        {
+            GameObject go = Instantiate(prefab, objectPool);
+            Destroy(go);
+        }
+        var font = SpawnToUIObjectPool(ConstValues.TextFont, Vector2.zero);
+        font.SetActive(false);
     }
 
     private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)

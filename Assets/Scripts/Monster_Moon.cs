@@ -3,7 +3,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-public class Monster_Sun : Monster
+public class Monster_Moon : Monster
 {
     [SerializeField] private Transform attackPos;
 
@@ -17,10 +17,13 @@ public class Monster_Sun : Monster
         switch (idx)
         {
             case 0:
-                RisingFire();
+                DropFrost();
                 break;
             case 1:
-                FireBall();
+                IceBall();
+                break;
+            case 2:
+                TraceFrost();
                 break;
         }
     }
@@ -67,45 +70,43 @@ public class Monster_Sun : Monster
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
     
-    // 불기둥
-    private async void RisingFire()
+    // 얼음 낙하
+    private async void DropFrost()
     {
-        float delay1 = 0.2f;
-        float delay2 = 0.5f;
+        float delay1 = 0.3f;
         float fadeSpeed = 0.4f;
         
-        var firePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, GameManager.Instance.GroundPosY);
-        var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterSunAttack1);
-        SpawnObject(ConstValues.FireFlash, CenterPos);
+        var playerPos = GameManager.Instance.CurPlayer.transform.position;
+        var firePos = new Vector2(playerPos.x, playerPos.y + 10.0f);
+        var endPos = new Vector2(playerPos.x, GameManager.Instance.GroundPosY);
+        Vector3 warningAngle = new Vector3(0, 0, 90);
+        var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterMoonAttack1Object);
+        var moonEffect = SpawnObject(ConstValues.MonsterMoonEffect, CenterPos);
         
-        await WarningAreaSpawnCollider(firePos, Vector3.zero, targetCollider, fadeSpeed, ConstValues.RedColor);
+        await WarningAreaSpawnTrajectory(firePos, endPos, warningAngle, fadeSpeed, ConstValues.RedColor, targetCollider.size.x);
+        SpawnAttack(ConstValues.MonsterMoonAttack1Object, firePos);
+        
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
         
-        SpawnAttack(ConstValues.MonsterSunAttack1, firePos);
-        
-        if(await AttackDelay(delay2).SuppressCancellationThrow())
-            return;
-        
+        moonEffect.SetActive(false);
         PatternEnd();
     }
     
-    // 파이어볼
-    private async void FireBall()
+    // 아이스볼
+    private async void IceBall()
     {
         float delay1 = 1.0f;
-        float delay2 = 0.5f;
+        float delay2 = 0.2f;
         float delay3 = 1.0f;
 
-        var spinObject = SpawnObject(ConstValues.MonsterSunAttack2SpinObject, CenterPos).GetComponent<Spin>();
+        var moonEffect = SpawnObject(ConstValues.MonsterMoonEffect, CenterPos);
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
 
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < 7; i++)
         {
-            spinObject.DeleteSpinObject(i);
-            
-            var attackObject = SpawnAttackObject(ConstValues.MonsterSunAttack2, CenterPos).GetComponent<Missile>();
+            var attackObject = SpawnAttackObject(ConstValues.MonsterMoonAttack2, attackPos).GetComponent<Missile>();
             attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
             if(await AttackDelay(delay2).SuppressCancellationThrow())
                 return;
@@ -113,7 +114,32 @@ public class Monster_Sun : Monster
         
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
-        spinObject.gameObject.SetActive(false);
+        moonEffect.gameObject.SetActive(false);
+        PatternEnd();
+    }
+    
+    // 추적 냉기 폭파
+    private async void TraceFrost()
+    {
+        float delay1 = 1.0f;
+        float delay2 = 0.5f;
+
+        var moonEffect = SpawnObject(ConstValues.MonsterMoonEffect, CenterPos);
+        
+        for (int i = 0; i < 3; i++)
+        {
+            var playerPos = GameManager.Instance.CurPlayer.CenterPos.position;
+            
+            SpawnObject(ConstValues.MonsterMoonAttack3DelayObject, playerPos);
+            if(await AttackDelay(delay1).SuppressCancellationThrow())
+                return;
+            
+            SpawnAttack(ConstValues.MonsterMoonAttack3, playerPos);
+        }
+        
+        if(await AttackDelay(delay2).SuppressCancellationThrow())
+            return;
+        moonEffect.gameObject.SetActive(false);
         PatternEnd();
     }
     
@@ -143,46 +169,33 @@ public class Monster_Sun : Monster
         PatrolRay();
         bossProduct?.Invoke();
     }
-    
-    public override async void Die()
+
+    public override void Die()
     {
         myBoxCollider.enabled = false;
-        
+
         CancelMotion();
         MoveStateSetting(EMoveState.Stopping);
         isDie = true;
         GameManager.Instance.RemoveMonster(this);
-        
-        if (StageManager.Instance.GetStageDialogStep() >= 7)
-        {
-            var delay = 0.12f;
-            dieCancellation = new CancellationTokenSource();
-            for (int i = 0; i < 15; i++)
-            {
-                BombEffect();
-                if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
-                    return;
-            }
-            SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-            gameObject.SetActive(false);
-        }
     }
-    
-    public async UniTask SunBomb(int bombCount, float slashInterval)
+
+    public async void DieBomb()
     {
-        stateCancellation = new CancellationTokenSource();
-        for (int i = 0; i < bombCount; i++)
+        var delay = 0.12f;
+        dieCancellation = new CancellationTokenSource();
+        while (true)
         {
-            BombEffect();
-            if (await NormalDelay(slashInterval, stateCancellation).SuppressCancellationThrow())
+            SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
+            //GameManager.Instance.CameraShake(0.1f, 0.1f);
+            if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
                 return;
         }
     }
 
-    private void BombEffect()
+    public override void DieExplosion()
     {
-        HitMaterial();
-        SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
-        GameManager.Instance.CameraShake(0.1f, 0.1f);
+        dieCancellation?.Cancel();
+        base.DieExplosion();
     }
 }

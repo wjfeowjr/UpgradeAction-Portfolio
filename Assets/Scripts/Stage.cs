@@ -28,7 +28,6 @@ public abstract class Stage : MonoBehaviour
     protected string buttonString;
     
     [SerializeField] protected EpisodeStep episodeStep;
-    
     [SerializeField] protected Transform[] playerPos;
     [SerializeField] protected Transform[] stepPos;
     [SerializeField] protected Transform[] customMovePos;
@@ -52,9 +51,13 @@ public abstract class Stage : MonoBehaviour
     protected List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
     [SerializeField] protected SpeechFrame speechFrameStrong;
     [SerializeField] protected SpeechFrame speechFrameTitle;
-
     [SerializeField] protected List<GameObject> stageWalls = new List<GameObject>();
+    [SerializeField] protected SpriteRenderer[] bgSpriteRenderers;
+    
     protected Player curPlayer;
+    
+    // 프로퍼티
+    public EpisodeStep EpisodeStep => episodeStep;
     
     protected abstract void DialogStep();
     protected abstract void StageClearButtonAction();
@@ -290,6 +293,14 @@ public abstract class Stage : MonoBehaviour
     {
         episodeStep.eventStep = myEventStep;
     }
+
+    protected void BgSpriteChange(string bgName)
+    {
+        foreach (var bgSpriteRenderer in bgSpriteRenderers)
+        {
+            bgSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(bgName);
+        }
+    }
     
     protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
@@ -311,7 +322,6 @@ public abstract class Stage : MonoBehaviour
     {
         GameManager.Instance.CameraShake(amount, time);
     }
-
     protected void SetTimeScale(float value)
     {
         Time.timeScale = value;

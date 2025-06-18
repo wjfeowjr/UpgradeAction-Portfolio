@@ -63,7 +63,7 @@ public class PopupGuideView : MonoBehaviour, IUIGuideView
     {
         titleText.text = "가이드";
         explainText.text = guideMessage;
-        guideImage.sprite = GameManager.Instance.GetUISprite(imgName);
+        guideImage.sprite = GameManager.Instance.GetAtlasSprite(imgName);
     }
     
     public void SetAction(Action closeAction)

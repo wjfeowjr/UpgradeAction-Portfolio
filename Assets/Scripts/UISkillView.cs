@@ -149,7 +149,7 @@ public class UISkillView : MonoBehaviour, IUISkillView
         if (string.IsNullOrEmpty(skillId))
             return;
 
-        skillImage.sprite = GameManager.Instance.GetUISprite(skillId);
+        skillImage.sprite = GameManager.Instance.GetAtlasSprite(skillId);
         
         if(skillId == ConstValues.ChangeCharacter)
             gameObject.SetActive(!string.IsNullOrEmpty(GameManager.Instance.SecondPlayer));

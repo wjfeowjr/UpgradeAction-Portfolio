@@ -12,7 +12,7 @@ public class ConstValues : Singleton<ConstValues>
     public const float GrabbedSpeed = 30.0f;
     public const float GrabbedBoundX = 8.0f;
     public const float GrabbedBoundY = 10.0f;
-    public const float WhiteSecond = 0.05f;
+    public const float WhiteSecond = 0.075f;
     public const float GaugeReduce = 0.3f;
     public const float GaugeFillSpeed = 0.02f;
 
@@ -30,6 +30,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string SoundFolder = "Assets/Sound";
 
     public const string AtlasClone = "(Clone)";
+    public const string BgTutorial = "Bg_Tutorial";
+    public const string BgTutorial2 = "Bg_Tutorial2";
 
     public const string TitleScene = "Title";
     public const string BattleScene = "Battle";
@@ -219,6 +221,13 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterSunPillar = "Monster_Sun_Pillar";
     public const string MonsterSunDie = "Monster_Sun_Die";
     public const string MonsterSunLaugh = "Monster_Sun_Laugh";
+    
+    public const string MonsterMoon = "Monster_Moon";
+    public const string MonsterMoonEffect = "Monster_Moon_Effect";
+    public const string MonsterMoonAttack1Object = "Monster_Moon_Attack1_Object";
+    public const string MonsterMoonAttack2 = "Monster_Moon_Attack2";
+    public const string MonsterMoonAttack3 = "Monster_Moon_Attack3";
+    public const string MonsterMoonAttack3DelayObject = "Monster_Moon_Attack3_DelayObject";
     
     public const string MonsterBigCharge = "Monster_BigCharge";
     public const string Meteor = "Meteor";

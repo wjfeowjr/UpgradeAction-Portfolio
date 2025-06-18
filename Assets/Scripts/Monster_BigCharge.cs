@@ -8,7 +8,6 @@ public class Monster_BigCharge : Monster
     [SerializeField] private Transform attackPos;
     [SerializeField] private Transform upperCutPos;
     [SerializeField] private Transform readyEffectPos;
-    protected CancellationTokenSource dieCancellation;
 
     protected override void MonsterPattern(int idx)
     {
