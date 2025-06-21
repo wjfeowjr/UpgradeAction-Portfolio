@@ -73,10 +73,16 @@ public abstract class Stage : MonoBehaviour
         SetEpisodeName();
     }
 
+    protected virtual void Start()
+    {
+        GameManager.Instance.InitPlayerStat();
+    }
+
     protected virtual void Update()
     {
         DialogCycle();
         CheckCurPlayer();
+        GameManager.Instance.ReduceSkillPlayer();
     }
 
     private void CheckCurPlayer()
@@ -96,13 +102,30 @@ public abstract class Stage : MonoBehaviour
         for (int i = 0; i < count; i++)
         {
             speechFrame1[i].gameObject.SetActive(false);
-            speechFrame2[i].gameObject.SetActive(false);
+            speechFrame2[i].gameObject.SetActive(false); 
         }
         speechFrameStrong = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameStrong);
         speechFrameStrong.gameObject.SetActive(false);
         
         speechFrameTitle = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameTitle);
         speechFrameTitle.gameObject.SetActive(false);
+    }
+
+    protected void SpawnSpeechFrame(SpeechFrame speechFrame, Vector2 speechPos, string dialog)
+    {
+        speechFrame.SetPos(speechPos);
+        speechFrame.Speech(dialog);
+    }
+    protected async UniTask NextDialog(SpeechFrame speechFrame)
+    {
+        speechFrame.NextObjectActive();
+        // 스페이스바를 누르면 넘어간다
+        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: dialogCancellation.Token).SuppressCancellationThrow())
+        {
+            speechFrame.SpeechEnd();
+            return;
+        }
+        speechFrame.SpeechEnd();
     }
 
     protected virtual void SetEpisodeName()
@@ -306,6 +329,7 @@ public abstract class Stage : MonoBehaviour
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
+    
     protected void StopBGM()
     {
         BgmManager.Instance.Stop();

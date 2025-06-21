@@ -11,67 +11,98 @@ using static ENormalState;
 public class PlayerSkill
 {
     public string skillName;
-    public List<float> coolTime = new List<float>();
-    public int maxStack;
+    public List<float> maxCoolTime = new List<float>();
+    public List<float> curCoolTime = new List<float>();
     public string icon;
-    private float lastUsedTime = -Mathf.Infinity;
-    private float stackUsedTime = -Mathf.Infinity;
-    
+
     public bool IsOnCooldown
     {
         get
         {
-            if (coolTime.Count > 1)
+            if (curCoolTime.Count > 1)
             {
-                return Time.time < lastUsedTime + coolTime[0] || coolTime[2] < 1;
+                return maxCoolTime[0] > curCoolTime[0] || curCoolTime[2] < 1;
             }
             else
             {
-                return Time.time < lastUsedTime + coolTime[0];
+                return maxCoolTime[0] > curCoolTime[0];
             }
         }
     }
 
-    public List<float> GetRemainingCooldown()
+    // 쿨타임 감소
+    public List<float> ReducingCooldown()
     {
-        List<float> remainingList = new List<float>();
-        float remaining = (lastUsedTime + coolTime[0]) - Time.time;
-        remainingList.Add(Mathf.Max(0f, remaining));
-        
-        // 스택형 스킬이라면
-        if (coolTime.Count > 1)
+        if (curCoolTime[0] < maxCoolTime[0])
         {
-            // 스택 쿨타임이 별개로 돌아간다
-            float remaining2 = (stackUsedTime + coolTime[1]) - Time.time;
-            // 스택 쿨타임이 다 차게 되면
-            if (remaining2 < 0 && (int)coolTime[2] < maxStack)
-            {
-                // 스킬 스택이 1 차오르고
-                coolTime[2] += 1;
-                // 스택이 찼는데도 최대 스택에 도달하지 못한다면
-                if ((int)coolTime[2] < maxStack)
-                    // 스택 쿨타임만큼 시간을 늘려준다
-                    stackUsedTime += coolTime[1];
-            }
-            
-            remainingList.Add(Mathf.Max(0f, remaining2));
-            
-            float remaining3 = coolTime[2];
-            remainingList.Add(remaining3);
+            curCoolTime[0] += Time.deltaTime;
+            if (curCoolTime[0] >= maxCoolTime[0])
+                curCoolTime[0] = maxCoolTime[0];
         }
 
-        return remainingList;
+        // 스택형 스킬이라면
+        if (curCoolTime.Count > 1)
+        {
+            // 스택 쿨타임이 별개로 돌아간다
+            curCoolTime[1] += Time.deltaTime;
+            // 스택 쿨타임이 다 차게 되면
+            if (curCoolTime[1] >= maxCoolTime[1] && (int)curCoolTime[2] < maxCoolTime[2])
+            {
+                // 스킬 스택이 1 차오르고
+                curCoolTime[2] += 1;
+                // 스택이 찼는데도 최대 스택에 도달하지 못한다면
+                if ((int)curCoolTime[2] < maxCoolTime[2])
+                    // 스택 쿨타임을 0으로 바꾼다(다시 채워지도록)
+                    curCoolTime[1] = 0;
+            }
+        }
+        return curCoolTime;
+    }
+
+    // 남은 쿨타임
+    public List<float> GetRemainingCooldown()
+    {
+        return curCoolTime;
+    }
+    
+    // 쿨타임 초기화
+    public void ResetCoolTime()
+    {
+        curCoolTime[0] = maxCoolTime[0];
+        if (curCoolTime.Count > 1)
+        {
+            curCoolTime[1] = maxCoolTime[1];
+            curCoolTime[2] = maxCoolTime[2];
+        }
+    }
+    
+    public List<float> GetMaxCoolTime()
+    {
+        return maxCoolTime;
+    }
+    
+    public List<float> ResetCooldown()
+    {
+        curCoolTime[0] = maxCoolTime[0];
+
+        // 스택형 스킬이라면
+        if (curCoolTime.Count > 1)
+        {
+            curCoolTime[1] = maxCoolTime[1];
+            curCoolTime[2] = maxCoolTime[2];
+        }
+        return curCoolTime;
     }
 
     public void SetCoolTime()
     {
-        lastUsedTime = Time.time;
-        if (coolTime.Count > 1)
+        curCoolTime[0] = 0;
+        if (curCoolTime.Count > 1)
         {
-            if((int)coolTime[2] == maxStack)
-                stackUsedTime = Time.time;
+            if((int)curCoolTime[2] == (int)maxCoolTime[2])
+                curCoolTime[1] = 0;
             
-            coolTime[2] -= 1;
+            curCoolTime[2] -= 1;
         }
     }
 }
@@ -221,6 +252,19 @@ public abstract class Player : Character
         var finalHp = basicStat.hp;
         basicStat.maxHp = finalHp;
         basicStat.hp = finalHp;
+    }
+
+    public void ResetSkillCoolTime()
+    {
+        foreach (var skill in skillList)
+            skill.ResetCoolTime();
+    }
+
+    // 스킬 쿨타임 진행
+    public void ReduceSkillCoolTime()
+    {
+        foreach (var skill in skillList)
+            skill.ReducingCooldown();
     }
 
     public void MoveChange()
@@ -784,11 +828,10 @@ public abstract class Player : Character
             addedSkill.skillName = skill.id;
             var coolTimeArray = skill.coolTime.Split(',');
             foreach (var coolTime in coolTimeArray)
-                addedSkill.coolTime.Add(float.Parse(coolTime));
-
-            if (addedSkill.coolTime.Count > 1)
-                addedSkill.maxStack = (int)addedSkill.coolTime[2];
-            
+            {
+                addedSkill.maxCoolTime.Add(float.Parse(coolTime));
+                addedSkill.curCoolTime.Add(float.Parse(coolTime));
+            }
             addedSkill.icon = skill.icon;
                 
             skillList.Add(addedSkill);

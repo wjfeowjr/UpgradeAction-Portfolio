@@ -44,7 +44,7 @@ public class UI_Interface : UIBase
     {
         uiBossHpPresenter = presenter;
     }
-    
+
     public void SetSkillPresenter(UISkillPresenter presenter)
     {
         uiSkillPresenter = presenter;

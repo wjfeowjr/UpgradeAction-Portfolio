@@ -223,10 +223,7 @@ public class Attack : MonoBehaviour
             int damage = GetDamage(critical);
             float randDmg = Random.Range(0.95f, 1.05f);
             damage = (int)(damage * randDmg);
-            
-            // 무력화 피해도 입는다
-            int stagger = attackInfo.stagger;
-            
+
             // 피해입기
             hitTarget.TakeDamage(damage);
             // 폰트소환

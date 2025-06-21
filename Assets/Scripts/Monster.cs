@@ -125,6 +125,10 @@ public class Monster : Character
         dieCancellation?.Cancel();
         stateCancellation?.Cancel();
         
+        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        MoveStateSetting(EMoveState.Stopping);
+        LandingStateSetting(ELandingState.Ground);
+        
         if (!totalBar)
             return;
         
@@ -186,7 +190,7 @@ public class Monster : Character
     // 테이블의 값으로 스텟 초기화(기본 스텟)
     public async void InitBasicStat()
     {
-        await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
+        //await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
         var myName = name.Split('(')[0];
         var targetStat = TableManager.Instance.monsterTable.Monster.Find(x => x.id == myName);
         
@@ -322,16 +326,17 @@ public class Monster : Character
     }
     private async void InitAdditionalStat()
     {
-        await UniTask.WaitUntil(() => basicStat.hp > 0);
+        //await UniTask.WaitUntil(() => basicStat.hp > 0);
         var finalHp = basicStat.hp;
         basicStat.hp = finalHp;
         basicStat.maxHp = finalHp;
-        
+
         var finalStagger = basicStat.stagger;
         basicStat.maxStagger = finalStagger;
         basicStat.stagger = finalStagger;
         
         curGlobalCoolTime = 0;
+        isDie = false;
 
         if (myStat.hovering)
             landingState = ELandingState.Air;
@@ -347,7 +352,7 @@ public class Monster : Character
 
     public async void SpawnHpBar()
     {
-        await UniTask.WaitUntil(() => basicStat.hp > 0);
+        //await UniTask.WaitUntil(() => basicStat.hp > 0);
         await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
 
         if (isBoss)
@@ -471,7 +476,9 @@ public class Monster : Character
     // 등장(연출 포함)
     public virtual async void Appear(Action bossProduct)
     {
-        await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
+        if(IsDamaged())
+            return;
+        
         StandHitBox();
         StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
         MoveStateSetting(EMoveState.Stopping);
@@ -717,14 +724,14 @@ public class Monster : Character
     }
     public async void DieShake()
     {
-        stateCancellation = new CancellationTokenSource();
+        anotherCancellation = new CancellationTokenSource();
         Vector2 myVector = transform.position;
         
         while(gameObject.activeSelf)
         {
             var randPos = Random.Range(-0.05f, 0.05f);
             transform.position = new Vector2(myVector.x + randPos, myVector.y + randPos);
-            await YieldDelay(stateCancellation);
+            await YieldDelay(anotherCancellation);
         }
     }
     public virtual void DieExplosion()

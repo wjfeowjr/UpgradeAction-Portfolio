@@ -71,8 +71,11 @@ public class Stage2 : Stage
         Application.Quit();
     }
     
-    private void Start()
+    protected override void Start()
     {
+        base.Start();
+        StepCharacterSetting();
+        
         // if (!GameManager.Instance.SecondStart)
         // {
         //     // episodeStep = new EpisodeStep()
@@ -112,7 +115,6 @@ public class Stage2 : Stage
         // }
 
         LoadEpisode();
-        StepCharacterSetting();
 
         dialogSwitch = true;
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);

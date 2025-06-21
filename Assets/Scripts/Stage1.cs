@@ -73,25 +73,26 @@ public class Stage1 : Stage
         Application.Quit();
     }
     
-    private void Start()
+    protected override void Start()
     {
+        base.Start();
         StepCharacterSetting();
         
         // 초반
         // episodeStep = new EpisodeStep()
         // {
         //     episodeTitle = 1,
-        //     dialogStep = 1,
-        //     playerStep = 0,
-        //     customMoveStep = 0,
-        //     eventStep = 0,
+        //     dialogStep = 2,
+        //     playerStep = 1,
+        //     customMoveStep = 1,
+        //     eventStep = 1,
         // };
         // GameManager.Instance.ControlStart = true;
         // 잡초맨 전투
         // episodeStep = new EpisodeStep()
         // {
         //     episodeTitle = 1,
-        //     dialogStep = 3,
+        //     dialogStep = 4,
         //     playerStep = 2,
         //     customMoveStep = 2,
         //     eventStep = 2,
@@ -146,28 +147,18 @@ public class Stage1 : Stage
             
             dialogCancellation = new CancellationTokenSource();
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-            
-            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
-                return;
-            
+
             var berserkerPos = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(berserkerPos);
-            speechFrame1[0].Speech(dialog1);
+            SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog1);
+            await NextDialog(speechFrame1[0]);
             
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            
-            speechFrame1[0].Speech(dialog2);
-            
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog2);
+            await NextDialog(speechFrame1[0]);
             
             PlayBGM(ConstValues.BGMEpisode1);
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 1.0f);
-            
-            speechFrame1[0].SetPos(new Vector2(berserkerPos.x, berserkerPos.y + 0.5f));
-            speechFrame1[0].Speech(dialog3);
+            SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), dialog3);
             for (int i = 0; i < 2; i++)
             {
                 curPlayer.CustomJump(new Vector2(0, 6.0f));
@@ -176,28 +167,17 @@ public class Stage1 : Stage
                 if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                     return;
             }
-            
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
-            
-            speechFrame1[0].SpeechEnd();
+            await NextDialog(speechFrame1[0]);
             
             var sunPos = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2[0].SetPos(sunPos);
-            speechFrame2[0].Speech(dialog1);
-            var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
-            
-            speechFrame2[0].Speech(dialog4);
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
-            
-            speechFrame2[0].SpeechEnd();
+            SpawnSpeechFrame(speechFrame2[0], sunPos, dialog4);
+            await NextDialog(speechFrame2[0]);
             
             PlaySound(ConstValues.MonsterSunLaugh);
+            var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
             sunObject.transform.DOMove(sunMoveVector, 2.0f);
             if (await NormalDelay(2.0f, dialogCancellation).SuppressCancellationThrow())
                 return;
-            
             sunObject.gameObject.SetActive(false);
             
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
@@ -236,13 +216,10 @@ public class Stage1 : Stage
             await sunObject.EpisodeMove_X(bossPos[1].transform.position, sunObject.BasicStat.moveSpeed, -1);
 
             var sunMoveVector = new Vector2(sunObject.transform.position.x + 7.5f, sunObject.transform.position.y);
-            var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2[0].SetPos(speechPosition2);
-            speechFrame2[0].Speech(dialog1);
+            var sunSpeechPos = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
             
             dialogCancellation = new CancellationTokenSource();
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog1);
 
             sunObject.SpawnObject(ConstValues.FireFlash, sunObject.CenterPos.position);
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
@@ -256,28 +233,21 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            speechFrame2[0].SpeechEnd();
+            await NextDialog(speechFrame2[0]);
             
             PlaySound(ConstValues.MonsterSunLaugh);
             sunObject.transform.DOMove(sunMoveVector, 2.0f);
             if (await NormalDelay(2.0f, dialogCancellation).SuppressCancellationThrow())
                 return;
-
             sunObject.gameObject.SetActive(false);
             
-            var speechPosition = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(speechPosition);
-            speechFrame1[0].Speech(dialog2);
+            var berserkerSpeechPos = curPlayer.FontPos.position;
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog2);
+            await NextDialog(speechFrame1[0]);
 
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-
-            speechFrame1[0].Speech(dialog3);
-
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-
-            speechFrame1[0].SpeechEnd();
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog3);
+            await NextDialog(speechFrame1[0]);
+            
             // 게임 시작
             guideObjects[1].SetActive(true);
             GameManager.Instance.ControlStart = true;
@@ -326,30 +296,21 @@ public class Stage1 : Stage
             string dialog3 = "우린 그걸 막으러 온 적이다!!";
             string dialog4 = "악!!!!!!!!!";
 
-            var berserkerPos = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(berserkerPos);
-            speechFrame1[0].Speech(dialog1);
-
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            var berserkerSpeechPos = curPlayer.FontPos.position;
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog1);
+            await NextDialog(speechFrame1[0]);
 
             var monster1Pos = GameManager.Instance.MonsterList[0].FontPos.position;
-            speechFrame1[0].SetPos(new Vector2(monster1Pos.x, monster1Pos.y));
-            speechFrame1[0].Speech(dialog2);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame1[0], new Vector2(monster1Pos.x, monster1Pos.y), dialog2);
+            await NextDialog(speechFrame1[0]);
 
             var monster2Pos = GameManager.Instance.MonsterList[1].FontPos.position;
-            speechFrame1[0].SetPos(new Vector2(monster2Pos.x, monster2Pos.y));
-            speechFrame1[0].Speech(dialog3);
-
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame1[0], new Vector2(monster2Pos.x, monster2Pos.y), dialog3);
+            await NextDialog(speechFrame1[0]);
             
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 1.0f);
-            speechFrame1[0].SetPos(new Vector2(berserkerPos.x, berserkerPos.y + 0.5f));
-            speechFrame1[0].Speech(dialog4);
+            SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerSpeechPos.x, berserkerSpeechPos.y + 0.5f), dialog4);
             for (int i = 0; i < 2; i++)
             {
                 curPlayer.CustomJump(new Vector2(0, 6.0f));
@@ -358,7 +319,7 @@ public class Stage1 : Stage
                 if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                     return;
             }
-            speechFrame1[0].SpeechEnd();
+            await NextDialog(speechFrame1[0]);
             
             // 게임 시작
             GameManager.Instance.ControlStart = true;
@@ -385,21 +346,18 @@ public class Stage1 : Stage
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            var berserkerPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.FontPos.position;
             string dialog1 = "고작 잡몹 두 마리로\n게임시간을 늘릴 수 있을거같냐!";
             string dialog2 = "그래서 더 많이 왔다!!!";
             
             curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
-            speechFrame1[0].SetPos(berserkerPos);
-            speechFrame1[0].Speech(dialog1);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame1[0].SpeechEnd();
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog1);
+            await NextDialog(speechFrame1[0]);
             
             PlaySound(ConstValues.MonsterBigTreeLog);
-            speechFrameStrong.SetPos(strongSpeechPos[0].position);
-            speechFrameStrong.Speech(dialog2);
             CameraShake(0.1f, 0.2f);
+            
+            SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[0].position, dialog2);
         }
         
         monsterSpawning = true;
@@ -416,6 +374,8 @@ public class Stage1 : Stage
             if (i >= 12)
                 idx = 3;
 
+            // var randPos = new Vector2(monsterPos[idx].position.x + randX, monsterPos[idx].position.y);
+            // GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, randPos);
             var randPos = new Vector2(monsterPos[idx].position.x + randX, monsterPos[idx].position.y);
             monsterList.Add(GameManager.Instance.ActiveAndHideMonster(ConstValues.MonsterSpinach, randPos));
         }
@@ -429,17 +389,14 @@ public class Stage1 : Stage
         
         if (episodeStep.dialogStep == 3)
         {
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrameStrong.SpeechEnd();
+            await NextDialog(speechFrameStrong);
 
             string dialog3 = "다 뿌셔주마!!!!!";
 
-            var berserkerPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.FontPos.position;
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 1.0f);
-            speechFrame1[0].SetPos(new Vector2(berserkerPos.x, berserkerPos.y + 0.5f));
-            speechFrame1[0].Speech(dialog3);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog3);
             for (int i = 0; i < 2; i++)
             {
                 curPlayer.CustomJump(new Vector2(0, 6.0f));
@@ -448,7 +405,8 @@ public class Stage1 : Stage
                 if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                     return;
             }
-            speechFrame1[0].SpeechEnd();
+            await NextDialog(speechFrame1[0]);
+            
             // 게임 시작
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
@@ -494,19 +452,13 @@ public class Stage1 : Stage
             string dialog2 = "제작자 이놈 가만히 안 둘 테다";
 
             var coalPos = coalMonster.FontPos.position;
-            speechFrame1[0].SetPos(coalPos);
-            speechFrame1[0].Speech(dialog1);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame1[0], coalPos, dialog1);
+            await NextDialog(speechFrame1[0]);
 
             var berserkerPos = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(berserkerPos);
-            speechFrame1[0].Speech(dialog2);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            
-            speechFrame1[0].SpeechEnd();
-            
+            SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog2);
+            await NextDialog(speechFrame1[0]);
+
             // 게임 시작
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
@@ -550,31 +502,21 @@ public class Stage1 : Stage
             string dialog3 = "덤벼보던가!";
             
             dialogCancellation = new CancellationTokenSource();
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
             curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
             var speechPosition = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(speechPosition);
-            speechFrame1[0].Speech(dialog1);
+            SpawnSpeechFrame(speechFrame1[0], speechPosition, dialog1);
+            await NextDialog(speechFrame1[0]);
+            
+            SpawnSpeechFrame(speechFrame1[0], speechPosition, dialog2);
+            await NextDialog(speechFrame1[0]);
 
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            
-            speechFrame1[0].Speech(dialog2);
-            
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame1[0].SpeechEnd();
-            
-            var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2[0].SetPos(speechPosition2);
-            speechFrame2[0].Speech(dialog3);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame2[0].SpeechEnd();
-            //Guide3();
-            
+            var sunSpeechPos = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog3); 
+            await NextDialog(speechFrame2[0]);
+
             // 게임 시작
             curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
             GameManager.Instance.ControlStart = true;
@@ -611,15 +553,12 @@ public class Stage1 : Stage
             string dialog1 = "어허헝!! 태양은\n죽지 않아!!!";
             string dialog2 = "ㅋ";
 
-            var speechPosition2 = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
-            speechFrame2[0].SetPos(speechPosition2);
-            speechFrame2[0].Speech(dialog1);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            var sunSpeechPos = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog1); 
+            await NextDialog(speechFrame2[0]);
 
-            speechFrame2[0].Speech(dialog2);
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog2); 
+            await NextDialog(speechFrame2[0]);
         }
 
         // BGM 끄기
@@ -630,21 +569,20 @@ public class Stage1 : Stage
             string dialog3 = "어!?";
             string dialog4 = "오오???!";
 
-            speechFrame2[0].Speech(dialog3);
-            await sunObject.GetComponent<Monster_Sun>().SunBomb(1, 0);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-
-            speechFrame2[0].Speech(dialog4);
-            await sunObject.GetComponent<Monster_Sun>().SunBomb(2, 0.3f);
-            await sunObject.GetComponent<Monster_Sun>().SunBomb(2, 0.2f);
-            sunObject.DieShake();
-            await sunObject.GetComponent<Monster_Sun>().SunBomb(10, 0.1f);
+            var sunSpeechPos = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog3); 
+            await sunObject.GetComponent<Monster_Sun>().DieBomb(1, 0);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
+            await NextDialog(speechFrame2[0]);
             
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog4); 
+            await sunObject.GetComponent<Monster_Sun>().DieBomb(2, 0.3f);
+            await sunObject.GetComponent<Monster_Sun>().DieBomb(2, 0.2f);
+            sunObject.DieShake();
+            await sunObject.GetComponent<Monster_Sun>().DieBomb(10, 0.1f);
+            await NextDialog(speechFrame2[0]);
             sunObject.DieExplosion();
-            speechFrame2[0].SpeechEnd();
         }
         await UniTask.WaitUntil(() => !sunObject.gameObject.activeSelf);
 
@@ -658,20 +596,15 @@ public class Stage1 : Stage
             string dialog6 = "이 세상에 영원한 건 없다.";
             string dialog7 = "흙으로 돌아가라 태양...";
 
-            var berserkerPosition = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(berserkerPosition);
-            speechFrame1[0].Speech(dialog5);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            var berserkerSpeechPos = curPlayer.FontPos.position;
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog5); 
+            await NextDialog(speechFrame1[0]);
+            
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog6); 
+            await NextDialog(speechFrame1[0]);
 
-            speechFrame1[0].Speech(dialog6);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-
-            speechFrame1[0].Speech(dialog7);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame1[0].SpeechEnd();
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog7); 
+            await NextDialog(speechFrame1[0]);
         }
 
         var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, GameManager.Instance.MainCamera.transform.position).GetComponent<FadeSystem>();
@@ -686,18 +619,17 @@ public class Stage1 : Stage
             string dialog8 = "어둠이 찾아왔다..";
             string dialog9 = "?";
             
-            speechFrame1[0].Speech(dialog8);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            var berserkerSpeechPos = curPlayer.FontPos.position;
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog8); 
+            await NextDialog(speechFrame1[0]);
             
-            speechFrame1[0].Speech(dialog9);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog9); 
         }
         
         fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
         await fadeBg.Fade();
         fadeBg.gameObject.SetActive(false);
-        speechFrame1[0].SpeechEnd();
-        
+
         BgmManager.Instance.Play();
         var moonPos = new Vector2(bossPos[2].transform.position.x, bossPos[2].transform.position.y + 3.5f);
         moonObject = GameManager.Instance.SpawnMonster(ConstValues.MonsterMoon, moonPos, true, () => { SpawnBossMessage(sunObject.BasicStat.name); });
@@ -710,31 +642,24 @@ public class Stage1 : Stage
             string dialog12 = "태양의 복수를 하러\n내가 찾아왔다!";
             string dialog13 = "저것도 거지같이 생겼네!?\n너도 태양 곁으로 보내주마!";
             
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
+            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
+            await NextDialog(speechFrame1[0]);
             
-            var berserkerPos = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(berserkerPos);
-            speechFrame1[0].Speech(dialog10);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame1[0].SpeechEnd();
-            
+            var berserkerSpeechPos = curPlayer.FontPos.position;
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog10); 
+            await NextDialog(speechFrame1[0]);
+
             var moonSpeech = new Vector2(moonObject.CenterPos.position.x - 2.0f, moonObject.CenterPos.position.y); 
-            speechFrame2[0].SetPos(moonSpeech);
-            speechFrame2[0].Speech(dialog11);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame2[0], moonSpeech, dialog11); 
+            await NextDialog(speechFrame2[0]);
             
-            speechFrame2[0].Speech(dialog12);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame2[0].SpeechEnd();
+            SpawnSpeechFrame(speechFrame2[0], moonSpeech, dialog12); 
+            await NextDialog(speechFrame2[0]);
             
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 1.0f);
-            speechFrame1[0].SetPos(new Vector2(berserkerPos.x, berserkerPos.y + 0.5f));
-            speechFrame1[0].Speech(dialog13);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog13);
             for (int i = 0; i < 2; i++)
             {
                 curPlayer.CustomJump(new Vector2(0, 6.0f));
@@ -743,12 +668,11 @@ public class Stage1 : Stage
                 if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                     return;
             }
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame1[0].SpeechEnd();
+            await NextDialog(speechFrame1[0]);
             
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
+            GameManager.Instance.CurPlayer.Immortal = false;
             DialogStepUp();
             SaveEpisode();
             dialogSwitch = true;
@@ -780,21 +704,15 @@ public class Stage1 : Stage
             moonObject.Flip(-1);
             await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
 
-            if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-                return;
-            
             moonObject.DieShake();
             moonObject.GetComponent<Monster_Moon>().DieBomb();
             var moonSpeech = new Vector2(moonObject.CenterPos.position.x - 2.0f, moonObject.CenterPos.position.y);
-            speechFrame2[0].SetPos(moonSpeech);
-            speechFrame2[0].Speech(dialog14);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame2[0], moonSpeech, dialog14); 
+            await NextDialog(speechFrame2[0]);
+
+            SpawnSpeechFrame(speechFrame2[0], moonSpeech, dialog15); 
+            await NextDialog(speechFrame2[0]);
             
-            speechFrame2[0].Speech(dialog15);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame2[0].SpeechEnd();
             moonObject.DieExplosion();
             BgmManager.Instance.Stop();
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
@@ -809,26 +727,20 @@ public class Stage1 : Stage
             GameManager.Instance.MainCamera.SetTarget(null);
             
             var berserkerPos = curPlayer.FontPos.position;
-            speechFrame1[0].SetPos(berserkerPos);
-            speechFrame1[0].Speech(dialog16);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog16); 
+            await NextDialog(speechFrame1[0]);
+
+            SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog17); 
+            await NextDialog(speechFrame1[0]);
             
-            speechFrame1[0].Speech(dialog17);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrame1[0].SpeechEnd();
             var movePos = new Vector2(curPlayer.transform.position.x + 15.0f, curPlayer.transform.position.y);
             await curPlayer.EpisodeMove(movePos, curPlayer.BasicStat.moveSpeed, 1);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
             var titleSpeechPos = Vector3.zero;
-            speechFrameTitle.SetPos(titleSpeechPos);
-            speechFrameTitle.Speech(dialog18);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-            speechFrameTitle.gameObject.SetActive(false);
+            SpawnSpeechFrame(speechFrameTitle, titleSpeechPos, dialog18); 
+            await NextDialog(speechFrameTitle);
 
             BgmManager.Instance.Play();
             PlaySound(ConstValues.ChickenCock);
@@ -840,19 +752,15 @@ public class Stage1 : Stage
             sunObject.gameObject.SetActive(true);
             await sunObject.EpisodeMove_X(bossPos[2].transform.position, sunObject.BasicStat.moveSpeed, -1);
 
-            speechFrame2[0].Speech(dialog19);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            var sunSpeechPos = new Vector2(sunObject.CenterPos.position.x - 2.0f, sunObject.CenterPos.position.y);
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog19); 
+            await NextDialog(speechFrame2[0]);
 
-            speechFrame2[0].Speech(dialog20);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog20); 
+            await NextDialog(speechFrame2[0]);
             
-            speechFrame2[0].Speech(dialog21);
-            if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
-                return;
-
-            speechFrame2[0].SpeechEnd();
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog21); 
+            await NextDialog(speechFrame2[0]);
 
             // 엔딩 연출
             DialogStepUp();
@@ -863,7 +771,7 @@ public class Stage1 : Stage
 
     private void StepCharacterSetting()
     {
-        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default);
+        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, ConstValues.Gunner); // default
         curPlayer = GameManager.Instance.CurPlayer;
     }
 

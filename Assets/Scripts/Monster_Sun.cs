@@ -168,13 +168,13 @@ public class Monster_Sun : Monster
         }
     }
     
-    public async UniTask SunBomb(int bombCount, float slashInterval)
+    public async UniTask DieBomb(int bombCount, float slashInterval)
     {
-        stateCancellation = new CancellationTokenSource();
+        dieCancellation = new CancellationTokenSource();
         for (int i = 0; i < bombCount; i++)
         {
             BombEffect();
-            if (await NormalDelay(slashInterval, stateCancellation).SuppressCancellationThrow())
+            if (await NormalDelay(slashInterval, dieCancellation).SuppressCancellationThrow())
                 return;
         }
     }

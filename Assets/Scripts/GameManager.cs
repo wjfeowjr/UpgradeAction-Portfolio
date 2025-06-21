@@ -76,7 +76,6 @@ public class SkillKey
 [Serializable]
 public class SkillKeyCollection
 {
-    public SkillKey changeKey;
     public List<SkillKey> berserkerSkillKeyList;
     public List<SkillKey> gunnerSkillKeyList;
 }
@@ -356,8 +355,6 @@ public class GameManager : Singleton<GameManager>
     }
     private void InitSkillCollection()
     {
-        playerSkillKeyCollection.changeKey = SetSkillKey(ConstValues.ChangeCharacterKey, changeCharacterKey);
-        
         List<SkillKey> berserkerSkillKeyList = new List<SkillKey>();
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey1));
@@ -478,8 +475,6 @@ public class GameManager : Singleton<GameManager>
     // 플레이어
     private void InitPlayer()
     {
-        SetPlayerOrder(ConstValues.Berserker, ConstValues.Gunner);
-
         foreach (var player in players)
         {
             player.InitBasicStat();
@@ -501,11 +496,15 @@ public class GameManager : Singleton<GameManager>
         curPlayer = GetPlayer(FirstPlayer);
     }
 
-    private void InitPlayerStat()
+    public void InitPlayerStat()
     {
         foreach (var player in players)
+        {
             player.InitBasicStat();
+            player.ResetSkillCoolTime();
+        }
     }
+    
     public void SpawnPlayer(string playerName, Vector2 playerPos)
     {
         ActivePlayer(playerName);
@@ -535,6 +534,13 @@ public class GameManager : Singleton<GameManager>
             player.Immortal = false;
             player.IsDie = false;
         }
+    }
+
+    public void ReduceSkillPlayer()
+    {
+        ChangeSkill.playerSkill.ReducingCooldown();
+        foreach (var player in players)
+            player.ReduceSkillCoolTime();
     }
 
     public void InitCamera(FollowCamera targetCamera)
@@ -849,7 +855,6 @@ public class GameManager : Singleton<GameManager>
                         {
                             GoScene(ConstValues.BattleScene);
                             uiBase.Close();
-                            InitPlayerStat();
                             controlStart = true;
                             Time.timeScale = 1;
                             BgmManager.Instance.ReplayBgm();
@@ -902,7 +907,10 @@ public class GameManager : Singleton<GameManager>
             addedSkill.skillName = skill.id;
             var coolTimeArray = skill.coolTime.Split(',');
             foreach (var coolTime in coolTimeArray)
-                addedSkill.coolTime.Add(float.Parse(coolTime));
+            {
+                addedSkill.maxCoolTime.Add(float.Parse(coolTime));
+                addedSkill.curCoolTime.Add(float.Parse(coolTime));
+            }
 
             addedSkill.icon = skill.icon;
             changeSkill.playerSkill = addedSkill;

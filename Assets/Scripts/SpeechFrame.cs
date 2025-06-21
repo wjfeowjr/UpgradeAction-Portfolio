@@ -4,6 +4,7 @@ using UnityEngine;
 public class SpeechFrame : MonoBehaviour
 {
     [SerializeField] private TMP_Text dialogText; 
+    [SerializeField] private GameObject nextObject; 
     
     public void SetPos(Vector2 pos)
     {
@@ -13,10 +14,17 @@ public class SpeechFrame : MonoBehaviour
     {
         if(!gameObject.activeSelf)
             gameObject.SetActive(true);
+        
+        nextObject.SetActive(false);
 
         Trace(null);
         PlaySound();
         dialogText.text = dialog;
+    }
+
+    public void NextObjectActive()
+    {
+        nextObject.SetActive(true);
     }
     
     public void SpeechEnd()
