@@ -148,6 +148,7 @@ public abstract class Character : MonoBehaviour
     public BasicStat OriginStat => originStat;
     public BasicStat BasicStat => basicStat;
     public Rigidbody2D MyRigidbody => myRigidbody;
+    public BoxCollider2D MyBoxCollider => myBoxCollider;
     public GameObject GroundObject => groundObject;
     public Transform CenterPos => centerPos;
     public Transform FontPos => fontPos;
@@ -995,7 +996,8 @@ public abstract class Character : MonoBehaviour
         switch (normalState)
         {
             case ENormalState.Dash:
-                immortal = false;
+                //immortal = false;
+                myBoxCollider.enabled = true;
                 break;
         }
     }
@@ -1419,9 +1421,9 @@ public abstract class Character : MonoBehaviour
             mySpriteRenderer.enabled = active;
     }
 
-    protected void PlaySound(string soundId)
+    protected void PlaySound(string soundId, float volumeScale = 0.8f)
     {
-        SoundManager.Instance.PlaySound(soundId);
+        SoundManager.Instance.PlaySound(soundId, volumeScale);
     }
     
     // 정지

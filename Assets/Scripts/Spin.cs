@@ -7,6 +7,7 @@ using UnityEngine.Serialization;
 
 public class Spin : MonoBehaviour
 {
+    private bool spinSwitch;
     private float angleZ;
     private float firstSpeed;
     [SerializeField] private float spinSpeed;
@@ -19,6 +20,7 @@ public class Spin : MonoBehaviour
 
     private async void OnEnable()
     {
+        spinSwitch = true;
         angleZ = 0;
 
         await UniTask.Yield();
@@ -33,18 +35,31 @@ public class Spin : MonoBehaviour
 
     private void Update()
     {
-        //Debug.Log(Speed);
         SpinAngle();
     }
 
     private void SpinAngle()
     {
+        if (!spinSwitch)
+            return;
+        
         if (transform.localScale.x > 0)
             angleZ -= spinSpeed * Time.deltaTime;
         else
             angleZ += spinSpeed * Time.deltaTime;
 
         transform.eulerAngles = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, angleZ);
+    }
+
+    public void SpinSwitchOn(bool on)
+    {
+        spinSwitch = on;
+    }
+    
+    public void StopAndReset()
+    {
+        SpinSwitchOn(false);
+        transform.eulerAngles = Vector3.zero;
     }
 
     public void SetSpinSpeed(bool plus)

@@ -6,7 +6,9 @@ using UnityEngine;
 public class Monster_Sun : Monster
 {
     [SerializeField] private Transform attackPos;
-
+    [SerializeField] private Spin faceSpin;
+    [SerializeField] private Reduction faceReduction;
+    
     private float pointA;
     private float pointB;
     private Vector2 dir;
@@ -78,6 +80,8 @@ public class Monster_Sun : Monster
         var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterSunAttack1);
         SpawnObject(ConstValues.FireFlash, CenterPos);
         
+        faceSpin.SpinSwitchOn(true);
+
         await WarningAreaSpawnCollider(firePos, Vector3.zero, targetCollider, fadeSpeed, ConstValues.RedColor);
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
@@ -87,6 +91,8 @@ public class Monster_Sun : Monster
         if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
         
+        faceSpin.StopAndReset();
+        
         PatternEnd();
     }
     
@@ -94,24 +100,35 @@ public class Monster_Sun : Monster
     private async void FireBall()
     {
         float delay1 = 1.0f;
-        float delay2 = 0.5f;
-        float delay3 = 1.0f;
-
+        float delay2 = 0.25f;
+        float delay3 = 0.25f;
+        float delay4 = 1.0f;
+        
+        faceReduction.PlayReduction();
         var spinObject = SpawnObject(ConstValues.MonsterSunAttack2SpinObject, CenterPos).GetComponent<Spin>();
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
 
-        for (int i = 0; i < 3; i++)
+        int count = 3;
+        for (int i = 0; i < count; i++)
         {
+            faceReduction.StopAndReset();
             spinObject.DeleteSpinObject(i);
-            
-            var attackObject = SpawnAttackObject(ConstValues.MonsterSunAttack2, CenterPos).GetComponent<Missile>();
+            var attackObject = SpawnAttackObject(ConstValues.MonsterSunAttack2, attackPos).GetComponent<Missile>();
             attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
+            
             if(await AttackDelay(delay2).SuppressCancellationThrow())
+                return;
+            
+            if(i < count - 1)
+                faceReduction.PlayReduction();
+            
+            if(await AttackDelay(delay3).SuppressCancellationThrow())
                 return;
         }
         
-        if(await AttackDelay(delay3).SuppressCancellationThrow())
+        faceReduction.StopAndReset();
+        if(await AttackDelay(delay4).SuppressCancellationThrow())
             return;
         spinObject.gameObject.SetActive(false);
         PatternEnd();
@@ -120,7 +137,10 @@ public class Monster_Sun : Monster
     // 등장
     public override async void Appear(Action bossProduct)
     {
-        await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
+        faceSpin.enabled = true;
+        faceSpin.StopAndReset();
+        faceReduction.enabled = true;
+
         StandHitBox();
         StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
         MoveStateSetting(EMoveState.Stopping);
@@ -147,6 +167,8 @@ public class Monster_Sun : Monster
     public override async void Die()
     {
         myBoxCollider.enabled = false;
+        faceSpin.StopAndReset();
+        faceReduction.StopAndReset();
         
         CancelMotion();
         MoveStateSetting(EMoveState.Stopping);
@@ -177,6 +199,13 @@ public class Monster_Sun : Monster
             if (await NormalDelay(slashInterval, dieCancellation).SuppressCancellationThrow())
                 return;
         }
+    }
+
+    public override void DieExplosion()
+    {
+        base.DieExplosion();
+        faceSpin.enabled = false;
+        faceReduction.enabled = false;
     }
 
     private void BombEffect()

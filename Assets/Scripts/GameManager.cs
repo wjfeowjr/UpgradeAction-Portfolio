@@ -531,6 +531,7 @@ public class GameManager : Singleton<GameManager>
     {
         foreach (var player in players)
         {
+            player.MyBoxCollider.enabled = true;
             player.Immortal = false;
             player.IsDie = false;
         }

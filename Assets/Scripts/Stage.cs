@@ -330,6 +330,11 @@ public abstract class Stage : MonoBehaviour
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
     
+    protected async UniTask YieldDelay(CancellationTokenSource tokenSource)
+    {
+        await UniTask.Yield(cancellationToken: tokenSource.Token);
+    }
+    
     protected void StopBGM()
     {
         BgmManager.Instance.Stop();

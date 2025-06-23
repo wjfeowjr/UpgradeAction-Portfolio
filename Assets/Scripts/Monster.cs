@@ -453,7 +453,7 @@ public class Monster : Character
         if(downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged())
             return;
 
-        PlaySound(ConstValues.Jump1);
+        PlaySound(ConstValues.Jump2, 2.0f);
         CancelMotion();
         
         downJumping = true;
@@ -1051,7 +1051,7 @@ public class Monster : Character
                 if(await AttackDelay(delay1).SuppressCancellationThrow())
                     return;
                 
-                PlaySound(ConstValues.Jump1);
+                PlaySound(ConstValues.Jump1, 2.0f);
                 LookAt(playerPos.x);
                 StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
                 float travelTime = 0.6f;
@@ -1132,7 +1132,7 @@ public class Monster : Character
                     if(await AttackDelay(delay1).SuppressCancellationThrow())
                         return;
                 
-                    PlaySound(ConstValues.Jump1);
+                    PlaySound(ConstValues.Jump1, 2.0f);
                     LookAt(arrivePos.x);
                     StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
                     float travelTime = 0.5f;

@@ -17,6 +17,7 @@ public class SpawnedObjectData
     public string flipAngle;
     public float objectTime;
     public string sound;
+    public float soundVolume;
     public string cameraShake;
 }
 [Serializable]

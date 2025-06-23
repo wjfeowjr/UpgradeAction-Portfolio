@@ -28,7 +28,7 @@ public class SoundManager : Singleton<SoundManager>
         }
     }
 
-    public void PlaySound(string uniqueId)
+    public void PlaySound(string uniqueId, float volumeScale = 0.8f)
     {
         if (!myAudioSource || uniqueId == ConstValues.None || !soundDic.ContainsKey(uniqueId))
             return;
@@ -39,7 +39,7 @@ public class SoundManager : Singleton<SoundManager>
             return;
         
         lastPlayTime[uniqueId] = now;
-        myAudioSource.PlayOneShot(soundDic[uniqueId], 0.8f);
+        myAudioSource.PlayOneShot(soundDic[uniqueId], volumeScale);
     }
 
     public List<AudioClip> GetSoundList()

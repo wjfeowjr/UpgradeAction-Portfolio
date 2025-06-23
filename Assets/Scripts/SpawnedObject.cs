@@ -15,6 +15,7 @@ public class SpawnObjectInfo
     public Vector3 flipAngle;
     public float objectTime;
     public List<string> soundList = new List<string>();
+    public float soundVolume;
     public Vector2 cameraShake;
 }
 
@@ -81,6 +82,8 @@ public class SpawnedObject : MonoBehaviour
         var soundArray = objectData.sound.Split(',');
         foreach (var sound in soundArray)
             spawnObjectInfo.soundList.Add(sound);
+
+        spawnObjectInfo.soundVolume = objectData.soundVolume;
         
         var cameraShakeArray = objectData.cameraShake.Split(';');
         spawnObjectInfo.cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
@@ -119,7 +122,7 @@ public class SpawnedObject : MonoBehaviour
             else
             {
                 firstChildTransform.eulerAngles = spawnObjectInfo.flipAngle;
-                if (boxCollider2D)
+                if (boxCollider2D) 
                     boxCollider2D.offset = reverseBoxColOffset;
                 if (circleCollider2D)
                     circleCollider2D.offset = reverseCircleColOffset;
@@ -130,7 +133,7 @@ public class SpawnedObject : MonoBehaviour
         transform.eulerAngles = defaultAngle;
 
         foreach (var sound  in spawnObjectInfo.soundList)
-            SoundManager.Instance.PlaySound(sound);
+            SoundManager.Instance.PlaySound(sound, spawnObjectInfo.soundVolume);
         
         if(spawnObjectInfo.cameraShake != Vector2.zero)
             GameManager.Instance.CameraShake(spawnObjectInfo.cameraShake.x, spawnObjectInfo.cameraShake.y);

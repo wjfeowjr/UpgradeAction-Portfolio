@@ -683,7 +683,7 @@ public abstract class Player : Character
             }
             
             Debug.Log("점프");
-            PlaySound(ConstValues.Jump1);
+            PlaySound(ConstValues.Jump1, 2.0f);
             curGlobalCoolTime = 0;
             jumpAttackCount = 0;
             CancelMotion();
@@ -715,7 +715,7 @@ public abstract class Player : Character
         if(downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged() || normalState == ENormalState.JumpAttack)
             return;
 
-        PlaySound(ConstValues.Jump1);
+        PlaySound(ConstValues.Jump2, 2.0f);
         CancelMotion();
         
         curGlobalCoolTime = 0;
@@ -740,7 +740,7 @@ public abstract class Player : Character
     {
         await UniTask.WaitUntil(() => normalState == ENormalState.Idle);
 
-        PlaySound(ConstValues.Jump1);
+        PlaySound(ConstValues.Jump2, 2.0f);
         CancelMotion();
 
         IgnorePlatform(Vector2.down, 1.0f);
@@ -864,7 +864,8 @@ public abstract class Player : Character
     protected async UniTask<bool> Dash()
     {
         StateSetting(ENormalState.Dash, ConstValues.Dash, ConstValues.Dash);
-        immortal = true;
+        //immortal = true;
+        myBoxCollider.enabled = false;
         StandHitBox();
         GravityChange(0);
         myRigidbody.linearVelocity = Vector2.zero;
@@ -894,7 +895,8 @@ public abstract class Player : Character
         ClearObjectList(normalObject, 0.3f);
         
         // 대시 끝
-        immortal = false;
+        //immortal = false;
+        myBoxCollider.enabled = true;
         return chargeFinish;
     }
 

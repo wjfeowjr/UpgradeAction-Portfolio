@@ -8,7 +8,6 @@ using UnityEngine.UI;
 
 public class TitleManager : MonoBehaviour
 {
-    [SerializeField] private Button startButton;
     [SerializeField] private TMP_Text startText; 
     private CancellationTokenSource fadeCancellation;
     
@@ -17,9 +16,13 @@ public class TitleManager : MonoBehaviour
         StartBGM();
         SetText();
         TextFade();
-        ButtonSetting();
         if (SceneChanger.Instance)
             SceneChanger.Instance.TitleScene = true;
+    }
+
+    private void Update()
+    {
+        AnyKeyStart();
     }
 
     private void StartBGM()
@@ -29,7 +32,7 @@ public class TitleManager : MonoBehaviour
 
     private void SetText()
     {
-        startText.text = "화면을 클릭하세요";
+        startText.text = "Press Any Key";
     }
 
     private async void TextFade()
@@ -48,9 +51,10 @@ public class TitleManager : MonoBehaviour
         }
     }
 
-    private void ButtonSetting()
+    private void AnyKeyStart()
     {
-        startButton.onClick.AddListener(()=> {GameManager.Instance.GoScene(ConstValues.BattleScene);});
+        if (Input.anyKeyDown)
+            GameManager.Instance.GoScene(ConstValues.BattleScene);
     }
     
     private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)

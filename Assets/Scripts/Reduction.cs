@@ -1,39 +1,67 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class Reduction : MonoBehaviour
 {
-    public float Delay, Speed;
-    public Vector3 StartScale, EndScale;
+    [SerializeField] private float delay;
+    [SerializeField] private float speed;
+    [SerializeField] private Vector3 startScale;
+    [SerializeField] private Vector3 endScale;
+    private CancellationTokenSource reductionCancellation;
 
-    private void OnEnable()
+    public async void PlayReduction()
     {
-        StartCoroutine(Reduction_C());
-    }
+        reductionCancellation = new CancellationTokenSource();
+        transform.localScale = startScale;
 
-    private IEnumerator Reduction_C()
-    {
-        transform.localScale = StartScale;
+        float scaleX = startScale.x;
+        float scaleY = startScale.y;
+        float scaleZ = startScale.z;
 
-        float scaleX = StartScale.x;
-        float scaleY = StartScale.y;
-        float scaleZ = StartScale.z;
+        if (await NormalDelay(delay, reductionCancellation).SuppressCancellationThrow())
+            return;
 
-        yield return new WaitForSeconds(Delay);
-
-        while(scaleX > EndScale.x || scaleY > EndScale.y || scaleZ > EndScale.z)
+        while(scaleX > endScale.x || scaleY > endScale.y || scaleZ > endScale.z)
         {
-            if (scaleX > EndScale.x)
-                scaleX -= Speed * Time.deltaTime;
-            if (scaleY > EndScale.y)
-                scaleY -= Speed * Time.deltaTime;
-            if (scaleZ > EndScale.z)
-                scaleZ -= Speed * Time.deltaTime;
+            if (scaleX > endScale.x)
+                scaleX -= speed * Time.deltaTime;
+            if (scaleY > endScale.y)
+                scaleY -= speed * Time.deltaTime;
+            if (scaleZ > endScale.z)
+                scaleZ -= speed * Time.deltaTime;
 
             transform.localScale = new Vector3(scaleX, scaleY, scaleZ);
 
-            yield return null;
+            if (await YieldDelay(reductionCancellation).SuppressCancellationThrow())
+                return;
         }        
+    }
+
+    public void Stop()
+    {
+        reductionCancellation?.Cancel();
+    }
+    
+    public void StopAndReset()
+    {
+        reductionCancellation?.Cancel();
+        transform.localScale = startScale;
+    }
+    
+    // 일반 딜레이
+    private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+    }
+    
+    // 1프레임 딜레이
+    private async UniTask YieldDelay(CancellationTokenSource tokenSource)
+    {
+        await UniTask.Yield(cancellationToken: tokenSource.Token);
     }
 }

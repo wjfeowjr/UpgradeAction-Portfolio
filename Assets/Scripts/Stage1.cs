@@ -94,8 +94,17 @@ public class Stage1 : Stage
         //     episodeTitle = 1,
         //     dialogStep = 4,
         //     playerStep = 2,
-        //     customMoveStep = 2,
+        //     customMoveStep = 1,
         //     eventStep = 2,
+        // };
+        // GameManager.Instance.ControlStart = true;
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 4,
+        //     playerStep = 3,
+        //     customMoveStep = 2,
+        //     eventStep = 4,
         // };
         // GameManager.Instance.ControlStart = true;
         // 태양 전투
@@ -278,12 +287,12 @@ public class Stage1 : Stage
 
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
-        for (int i = 0; i < 2; i++)
-        {
-            GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[i].position);
-            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
-                return;
-        }
+        GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[0].position);
+        if (await YieldDelay(dialogCancellation).SuppressCancellationThrow())
+            return;
+        GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, monsterPos[2].position);
+        if (await YieldDelay(dialogCancellation).SuppressCancellationThrow())
+            return;
         monsterSpawning = false;
         
         if (episodeStep.dialogStep == 2)
@@ -291,8 +300,8 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            string dialog1 = "뭐야 이 시금치들은!!";
-            string dialog2 = "넌 게임을 너무 빨리 끝내려 하고있다!";
+            string dialog1 = "뭐야 이 잔디들은!!";
+            string dialog2 = "넌 게임을 너무 빨리 끝내려 한다!";
             string dialog3 = "우린 그걸 막으러 온 적이다!!";
             string dialog4 = "악!!!!!!!!!";
 
@@ -363,25 +372,29 @@ public class Stage1 : Stage
         monsterSpawning = true;
         // 미리 몹 소환하고 잠재워두기
         var monsterList = new List<Monster>();
-        for (int i = 0; i < 16; i++)
+        for (int i = 0; i < 30; i++)
         {
             var randX = Random.Range(-monsterInterval1, monsterInterval1);
             int idx = 0;
-            if (i >= 4)
+            if (i >= 5)
                 idx = 1;
-            if (i >= 8)
+            if (i >= 10)
                 idx = 2;
-            if (i >= 12)
+            if (i >= 15)
                 idx = 3;
-
-            // var randPos = new Vector2(monsterPos[idx].position.x + randX, monsterPos[idx].position.y);
-            // GameManager.Instance.SpawnMonster(ConstValues.MonsterSpinach, randPos);
+            if (i >= 20)
+                idx = 4;
+            if (i >= 25)
+                idx = 5;
+            
             var randPos = new Vector2(monsterPos[idx].position.x + randX, monsterPos[idx].position.y);
             monsterList.Add(GameManager.Instance.ActiveAndHideMonster(ConstValues.MonsterSpinach, randPos));
         }
         foreach (var monster in monsterList)
         {
             GameManager.Instance.ActiveMonster(monster, false);
+            // if (await YieldDelay(dialogCancellation).SuppressCancellationThrow())
+            //     return;
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -440,7 +453,39 @@ public class Stage1 : Stage
         }
         
         monsterSpawning = true;
-        var coalMonster = GameManager.Instance.SpawnMonster(ConstValues.MonsterCoal, monsterPos[4].position);
+        var monsterList = new List<Monster>();
+        for (int i = 0; i < 3; i++)
+        {
+            var xPos = -monsterInterval1;
+            if (i == 1)
+                xPos = 0;
+            else if (i == 2)
+                xPos = monsterInterval1;
+            
+            var randPos = new Vector2(monsterPos[6].position.x + xPos, monsterPos[6].position.y);
+            monsterList.Add(GameManager.Instance.ActiveAndHideMonster(ConstValues.MonsterCoal, randPos));
+        }
+        for (int i = 0; i < 3; i++)
+        {
+            var xPos = -monsterInterval1;
+            if (i == 1)
+                xPos = 0;
+            else if (i == 2)
+                xPos = monsterInterval1;
+            
+            var randPos = new Vector2(monsterPos[7].position.x + xPos, monsterPos[7].position.y);
+            monsterList.Add(GameManager.Instance.ActiveAndHideMonster(ConstValues.MonsterPurple, randPos));
+        }
+        foreach (var monster in monsterList)
+        {
+            GameManager.Instance.ActiveMonster(monster, false);
+            if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
+                return;
+            // if (await YieldDelay(dialogCancellation).SuppressCancellationThrow())
+            //     return;
+        }
+        var coalMonster = monsterList[0];
+        var purpleMonster = monsterList[3];
         monsterSpawning = false;
         
         if (episodeStep.dialogStep == 4)
@@ -448,15 +493,20 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            string dialog1 = "하하! 나는 석탄맨!\n더 강한 적이다!";
-            string dialog2 = "제작자 이놈 가만히 안 둘 테다";
-
+            string dialog1 = "하하! 우린 더 강한 적이다!";
+            string dialog2 = "원거리 맛 좀 봐라!";
+            string dialog3 = "첫 스테이지부터\n난이도가 왜 이런거야!";
+            
             var coalPos = coalMonster.FontPos.position;
             SpawnSpeechFrame(speechFrame1[0], coalPos, dialog1);
             await NextDialog(speechFrame1[0]);
+            
+            var purplePos = purpleMonster.FontPos.position;
+            SpawnSpeechFrame(speechFrame1[0], purplePos, dialog2);
+            await NextDialog(speechFrame1[0]);
 
             var berserkerPos = curPlayer.FontPos.position;
-            SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog2);
+            SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog3);
             await NextDialog(speechFrame1[0]);
 
             // 게임 시작
@@ -771,7 +821,7 @@ public class Stage1 : Stage
 
     private void StepCharacterSetting()
     {
-        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, ConstValues.Gunner); // default
+        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default); // default
         curPlayer = GameManager.Instance.CurPlayer;
     }
 
