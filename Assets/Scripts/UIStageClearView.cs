@@ -8,9 +8,8 @@ using UnityEngine.UI;
 
 public interface IUIStageClearView
 {
-    void SetStageClear(string episodeName, string clearString, string buttonString);
+    void SetStageClear(string episodeName, string clearString, string buttonString, Action confirmAction);
     void StageClearProduct(Action soundAction);
-    event Action ButtonAction;
 }
 
 public class UIStageClearModel
@@ -18,6 +17,7 @@ public class UIStageClearModel
     public string episodeName;
     public string clearString;
     public string buttonString;
+    public Action confirmAction;
 }
 
 public class UIStageClearPresenter
@@ -33,17 +33,12 @@ public class UIStageClearPresenter
     
     public void SetStageClear()
     {
-        _stageClearview.SetStageClear(_model.episodeName, _model.clearString, _model.buttonString);
+        _stageClearview.SetStageClear(_model.episodeName, _model.clearString, _model.buttonString, _model.confirmAction);
     }
 
     public void StageClearProduct(Action soundAction)
     {
         _stageClearview.StageClearProduct(soundAction);
-    }
-    
-    public void HandelStageClearEnd(Action action)
-    {
-        _stageClearview.ButtonAction += action;
     }
 }
 
@@ -63,8 +58,7 @@ public class UIStageClearView : MonoBehaviour, IUIStageClearView
     [SerializeField] private Transform endTransform;
     [SerializeField] private Image fadeImage;
     [SerializeField] private Button nextButton;
-
-    public event Action ButtonAction;
+    private Action action;
     
     // 딜레이
     private async UniTask EpisodeDelay(float second)
@@ -72,7 +66,7 @@ public class UIStageClearView : MonoBehaviour, IUIStageClearView
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: stageClearCancellation.Token);
     }
     
-    public void SetStageClear(string episodeName, string clearString, string buttonString)
+    public void SetStageClear(string episodeName, string clearString, string buttonString, Action confirmAction)
     {
         episodeText.text = episodeName;
         episodeText.transform.position = startTransform.transform.position;
@@ -85,8 +79,14 @@ public class UIStageClearView : MonoBehaviour, IUIStageClearView
        
         fadeImage.color = new Color(fadeImage.color.r, fadeImage.color.g, fadeImage.color.b, 0);
         nextButton.gameObject.SetActive(false);
-        if(ButtonAction != null)
-            nextButton.onClick.AddListener(() => { ButtonAction(); });
+
+        action = confirmAction;
+        
+        nextButton.onClick.RemoveAllListeners();
+        nextButton.onClick.AddListener(() =>
+        {
+            action();
+        });
         
         gameObject.SetActive(false);
     }
@@ -117,5 +117,15 @@ public class UIStageClearView : MonoBehaviour, IUIStageClearView
             return;
         
         nextButton.gameObject.SetActive(true);
+    }
+    
+    public void InvokeAction()
+    {
+        action.Invoke();
+    }
+
+    public bool IsNextButtonActive()
+    {
+        return nextButton.gameObject.activeSelf;
     }
 }

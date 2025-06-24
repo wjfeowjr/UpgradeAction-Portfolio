@@ -851,7 +851,7 @@ public class GameManager : Singleton<GameManager>
                     var hpModel = new PopupGameOverModel()
                     {
                         title = "게임 오버",
-                        message = "다시 하기",
+                        message = "다시 하기(Space)",
                         confirmAction = () =>
                         {
                             GoScene(ConstValues.BattleScene);

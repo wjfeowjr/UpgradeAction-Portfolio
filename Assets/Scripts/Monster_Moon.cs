@@ -104,7 +104,7 @@ public class Monster_Moon : Monster
         float delay4 = 1.0f;
 
         faceReduction.PlayReduction();
-        var moonEffect = SpawnObject(ConstValues.MonsterMoonEffect, CenterPos);
+        var spinObject = SpawnObject(ConstValues.MonsterMoonAttack2SpinObject, CenterPos).GetComponent<Spin>();
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
 
@@ -112,6 +112,7 @@ public class Monster_Moon : Monster
         for (int i = 0; i < count; i++)
         {
             faceReduction.StopAndReset();
+            spinObject.DeleteSpinObject(i);
             var attackObject = SpawnAttackObject(ConstValues.MonsterMoonAttack2, attackPos).GetComponent<Missile>();
             attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
             
@@ -128,7 +129,7 @@ public class Monster_Moon : Monster
         faceReduction.StopAndReset();
         if(await AttackDelay(delay4).SuppressCancellationThrow())
             return;
-        moonEffect.gameObject.SetActive(false);
+        spinObject.gameObject.SetActive(false);
         PatternEnd();
     }
     

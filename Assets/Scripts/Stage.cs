@@ -202,11 +202,11 @@ public abstract class Stage : MonoBehaviour
             {
                 episodeName = episodeTitle,
                 clearString = "클리어!!",
-                buttonString = "종료"
+                buttonString = "종료(Space)",
+                confirmAction = StageClearButtonAction
             };
             var stageClearPresenter = new UIStageClearPresenter(stageClearInterface, stageClearModel);
             stageClearView.SetStageClearPresenter(stageClearPresenter);
-            stageClearView.StageClearPresenter.HandelStageClearEnd(StageClearButtonAction);
             stageClearPresenter.SetStageClear();
         }
     }

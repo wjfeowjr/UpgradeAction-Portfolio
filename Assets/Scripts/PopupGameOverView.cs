@@ -38,16 +38,24 @@ public class PopupGameOverView : MonoBehaviour, IUIGameOverView
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text messageText;
     [SerializeField] private Button confirmButton;
+    private Action action;
     
     public void SetMessage(string title, string message, Action confirmAction)
     {
         titleText.text = title;
         messageText.text = message;
         
+        action = confirmAction;
+        
         confirmButton.onClick.RemoveAllListeners();
         confirmButton.onClick.AddListener(() =>
         {
-            confirmAction();
+            action();
         });
+    }
+
+    public void InvokeAction()
+    {
+        action.Invoke();
     }
 }

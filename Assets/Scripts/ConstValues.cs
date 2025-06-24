@@ -217,15 +217,14 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterSunAttack1 = "Monster_Sun_Attack1";
     public const string MonsterSunAttack2 = "Monster_Sun_Attack2";
     public const string MonsterSunAttack2SpinObject = "Monster_Sun_Attack2_SpinObject";
-    public const string MonsterSunAttackHit = "Monster_Sun_Attack_Hit";
     public const string MonsterSunPillar = "Monster_Sun_Pillar";
-    public const string MonsterSunDie = "Monster_Sun_Die";
     public const string MonsterSunLaugh = "Monster_Sun_Laugh";
     
     public const string MonsterMoon = "Monster_Moon";
     public const string MonsterMoonEffect = "Monster_Moon_Effect";
     public const string MonsterMoonAttack1Object = "Monster_Moon_Attack1_Object";
     public const string MonsterMoonAttack2 = "Monster_Moon_Attack2";
+    public const string MonsterMoonAttack2SpinObject = "Monster_Moon_Attack2_SpinObject";
     public const string MonsterMoonAttack3 = "Monster_Moon_Attack3";
     public const string MonsterMoonAttack3DelayObject = "Monster_Moon_Attack3_DelayObject";
     
