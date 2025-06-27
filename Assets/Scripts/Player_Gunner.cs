@@ -221,7 +221,7 @@ public class Player_Gunner : Player
             return;
         }
         
-        Debug.Log("스킬 시작");
+        UseSkill(skillId);
         curGlobalCoolTime = 0;
         if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);

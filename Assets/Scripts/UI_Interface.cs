@@ -26,10 +26,21 @@ public class UI_Interface : UIBase
     // 스킬
     public UISkillView ChangeCharacter => changeCharacter;
     public List<UISkillView> SkillViews => skillViews;
+    [SerializeField] private RectTransform skillLayout;
     [SerializeField] private UISkillView changeCharacter;
     [SerializeField] private List<UISkillView> skillViews;
     private UISkillPresenter uiSkillPresenter;
 
+    public Vector3 GetTooltipPos()
+    {
+        return new Vector2(skillLayout.position.x + 1.9f, skillLayout.position.y + 0.8f);
+    }
+    
+    public Vector3 GetDashSkillPos()
+    {
+        return skillViews[0].transform.position;
+    }
+    
     public void SetComboPresenter(UIComboPresenter presenter)
     {
         uiComboPresenter = presenter;

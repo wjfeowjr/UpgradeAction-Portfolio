@@ -14,7 +14,6 @@ public class ConstValues : Singleton<ConstValues>
     public const float GrabbedBoundY = 10.0f;
     public const float WhiteSecond = 0.075f;
     public const float GaugeReduce = 0.3f;
-    public const float GaugeFillSpeed = 0.02f;
 
     public const float JumpCoolTime = 1.0f;
     public const float DownJumpCoolTime = 1.0f;
@@ -59,6 +58,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";
     public const string SkillImage = "SkillImage";
+    public const string SkillTooltip = "SkillTooltip";
     public const string SpeechFrame1 = "SpeechFrame1";
     public const string SpeechFrame2 = "SpeechFrame2";
     public const string SpeechFrameStrong = "SpeechFrame_Strong";
@@ -69,6 +69,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string FadeBg = "FadeBg";
     public const string FadeUI = "FadeUI";
     public const string Explosion = "Explosion";
+    public const string DashEffectUI = "DashEffectUI";
+    public const string DashFrameUI = "DashFrameUI";
 
     public const string Berserker = "Berserker";
     public const string Gunner = "Gunner";
@@ -139,6 +141,7 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Ground = "Ground";
     public const string Wall = "Wall";
+    public const string Stage = "Stage";
     public const string StageWallLeft = "StageWallLeft";
     public const string StageWallRight = "StageWallRight";
     public const string Platform = "Platform";

@@ -184,6 +184,8 @@ public class SkillData
     public string caster;
     public string coolTime;
     public string icon;
+    public string name;
+    public string explain;
 }
 [Serializable]
 public class SkillDataList

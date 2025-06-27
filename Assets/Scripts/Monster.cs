@@ -57,6 +57,7 @@ public class JumpAndDropClass
 
 public class Monster : Character
 {
+    [SerializeField] private bool isExplosion; // 죽을때 터지면서 죽는가?
     [SerializeField] private bool isBoss; // 보스인가?
     [SerializeField] protected MonsterStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] public List<MonsterPatternClass> patternInfo; // 스킬의 우선도와 스킬 사용 가능 여부
@@ -74,6 +75,12 @@ public class Monster : Character
     protected CancellationTokenSource dieCancellation;
     
     // 프로퍼티
+    public bool IsExplosion
+    {
+        get => isExplosion;
+        set => isExplosion = value;
+    }
+    
     public bool IsBoss
     {
         get => isBoss;
@@ -377,7 +384,7 @@ public class Monster : Character
             if(!gameObject.activeSelf)
                 return;
             
-            totalBar = SpawnUI(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
+            totalBar = SpawnUIObject(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
             totalBar.SetCastCharacter(this);
         }
     }
@@ -431,7 +438,15 @@ public class Monster : Character
         var stunOrStagger = buffList.FindAll(x => x.buffType is EBuffType.Stun or EBuffType.Stagger);
         if (stunOrStagger.Count == 0)
         {
-            IdleOrMove();
+            switch (landingState)
+            {
+                case ELandingState.Air:
+                    StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+                    break;
+                case ELandingState.Ground:
+                    IdleOrMove();
+                    break;
+            }
         }
         else
         {
@@ -707,8 +722,8 @@ public class Monster : Character
     {
         base.Die();
         GameManager.Instance.RemoveMonster(this);
-
-        if (transform.position.y < ConstValues.BungeePosY)
+        
+        if (isExplosion || transform.position.y < ConstValues.BungeePosY)
         {
             StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
             MoveStateSetting(EMoveState.Stopping);

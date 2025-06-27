@@ -102,12 +102,14 @@ public class Monster_Moon : Monster
         float delay2 = 0.1f;
         float delay3 = 0.1f;
         float delay4 = 1.0f;
-
-        faceReduction.PlayReduction();
+        
         var spinObject = SpawnObject(ConstValues.MonsterMoonAttack2SpinObject, CenterPos).GetComponent<Spin>();
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
 
+        faceReduction.PlayReduction();
+        if(await AttackDelay(delay2).SuppressCancellationThrow())
+            return;
         int count = 7;
         for (int i = 0; i < count; i++)
         {

@@ -210,8 +210,10 @@ public abstract class Stage : MonoBehaviour
             stageClearPresenter.SetStageClear();
         }
     }
-    protected void ProductStageClear()
+    protected void ProductStageClear(int saveStage)
     {
+        StageBinding.SaveStage(saveStage);
+        episodeStep = new EpisodeStep();
         var uiEpisodeObj = GameManager.Instance.GetUI(eUIType.UI_StageClear);
         if (uiEpisodeObj == null)
             return;
@@ -333,6 +335,11 @@ public abstract class Stage : MonoBehaviour
     protected async UniTask YieldDelay(CancellationTokenSource tokenSource)
     {
         await UniTask.Yield(cancellationToken: tokenSource.Token);
+    }
+
+    protected async UniTask WaitUntil(Func<bool> func, CancellationTokenSource tokenSource)
+    {
+        await UniTask.WaitUntil(func, cancellationToken: tokenSource.Token);
     }
     
     protected void StopBGM()

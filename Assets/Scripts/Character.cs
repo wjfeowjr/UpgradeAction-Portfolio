@@ -938,7 +938,7 @@ public abstract class Character : MonoBehaviour
 
         return obj;
     }
-    protected GameObject SpawnUI(string id, Transform uiTransform)
+    protected GameObject SpawnUIObject(string id, Transform uiTransform)
     {
         var obj = GameManager.Instance.SpawnToUIObjectPool(id, uiTransform);
         
@@ -961,6 +961,23 @@ public abstract class Character : MonoBehaviour
             
             trace.SetTarget(uiTransform);
         }
+
+        return obj;
+    }
+    protected GameObject SpawnUI(string id, Vector2 objectVector)
+    {
+        var obj = GameManager.Instance.SpawnToUIPool(id, objectVector);
+        
+        var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        if (uiData == null)
+            return obj;
+        
+        var spawnedObject = obj.GetComponent<SpawnedObject>();
+        if (!spawnedObject)
+            spawnedObject = obj.AddComponent<SpawnedObject>();
+        
+        spawnedObject.SetupData(uiData, transform.localScale.x);
+        spawnedObject.EnableSetting();
 
         return obj;
     }
@@ -1084,7 +1101,7 @@ public abstract class Character : MonoBehaviour
         return normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun or ENormalState.Damaged;
     }
     // 군중제어에 걸렸는가?
-    public bool IsCc()
+    protected bool IsCc()
     {
         bool normalCondition = normalState is ENormalState.Grabbed or ENormalState.Stun;
         bool buffCondition = FindBuff(EBuffType.Stun);
@@ -1183,7 +1200,7 @@ public abstract class Character : MonoBehaviour
         }
         Airborne(grabBoundX, grabBoundY);
     }
-    public void Airborne(float xVelocity, float yVelocity)
+    public virtual void Airborne(float xVelocity, float yVelocity)
     {
         CancelMotion();
 
@@ -1309,7 +1326,7 @@ public abstract class Character : MonoBehaviour
         immuneStagger = true;
     }
     
-    public async void Damaged(float damagedTime) 
+    public virtual async void Damaged(float damagedTime) 
     {
         if (normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
         {

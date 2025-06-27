@@ -74,8 +74,9 @@ public class Stage2 : Stage
     protected override void Start()
     {
         base.Start();
-        StepCharacterSetting();
         
+        StepCharacterSetting();
+
         // if (!GameManager.Instance.SecondStart)
         // {
         //     // episodeStep = new EpisodeStep()
@@ -114,12 +115,15 @@ public class Stage2 : Stage
         //     GameManager.Instance.SecondStart = true;
         // }
 
-        LoadEpisode();
-
-        dialogSwitch = true;
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
         GameManager.Instance.SetGroundVector();
+        GameManager.Instance.ArrivePlayer();
+        GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+        
+        LoadEpisode();
+
+        dialogSwitch = true;
 
         StartSetting();
         SpawnEpisode(episodeTitle);
@@ -315,7 +319,7 @@ public class Stage2 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster, false);
+            GameManager.Instance.ActiveMonster(monster);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -997,7 +1001,7 @@ public class Stage2 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster, false);
+            GameManager.Instance.ActiveMonster(monster);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -1042,7 +1046,7 @@ public class Stage2 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster, false);
+            GameManager.Instance.ActiveMonster(monster);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -1268,7 +1272,7 @@ public class Stage2 : Stage
         Camera cam = GameManager.Instance.MainCamera.MyCamera;
         float startY = cam.ViewportToWorldPoint(new Vector3(1, 1, 0)).y;
         var bossPos = new Vector2(monsterPos[3].transform.position.x, startY + 5);
-        chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, bossPos, true, () => { SpawnBossMessage(chargeBoss.BasicStat.name); });
+        chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, bossPos, false, true, () => { SpawnBossMessage(chargeBoss.BasicStat.name); });
         monsterSpawning = false;
         
         if (episodeStep.dialogStep == 3)
@@ -1417,7 +1421,7 @@ public class Stage2 : Stage
                 return;
             speechFrame1[0].gameObject.SetActive(false);
             
-            ProductStageClear();
+            ProductStageClear(2);
         }
     }
     
@@ -1447,8 +1451,6 @@ public class Stage2 : Stage
             GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, ConstValues.Gunner);
         
         curPlayer = GameManager.Instance.CurPlayer;
-        GameManager.Instance.ArrivePlayer();
-        GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
     }
     
     private async void AccumulatedStep()

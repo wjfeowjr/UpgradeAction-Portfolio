@@ -104,11 +104,13 @@ public class Monster_Sun : Monster
         float delay3 = 0.25f;
         float delay4 = 1.0f;
         
-        faceReduction.PlayReduction();
         var spinObject = SpawnObject(ConstValues.MonsterSunAttack2SpinObject, CenterPos).GetComponent<Spin>();
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
 
+        faceReduction.PlayReduction();
+        if(await AttackDelay(delay2).SuppressCancellationThrow())
+            return;
         int count = 3;
         for (int i = 0; i < count; i++)
         {
@@ -185,8 +187,7 @@ public class Monster_Sun : Monster
                 if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
                     return;
             }
-            SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-            gameObject.SetActive(false);
+            DieExplosion();
         }
     }
     

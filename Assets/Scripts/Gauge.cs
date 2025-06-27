@@ -8,9 +8,8 @@ using UnityEngine.UI;
 public class Gauge : MonoBehaviour
 {
     private CancellationTokenSource cancellationToken;
-    [SerializeField] protected Image emptyGauge;
-    [SerializeField] protected Image mainGauge;
-    [SerializeField] protected Image reduceGauge;
+    [SerializeField] protected Slider mainGauge;
+    [SerializeField] protected Slider reduceGauge;
     [SerializeField] protected TextMeshProUGUI gaugeText;
 
     // 딜레이
@@ -18,6 +17,11 @@ public class Gauge : MonoBehaviour
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: cancellationToken.Token);
     }
+    private async UniTask YieldDelay()
+    {
+        await UniTask.Yield(cancellationToken: cancellationToken.Token);
+    }
+    
     private void CancelDelay()
     {
         cancellationToken?.Cancel();
@@ -54,9 +58,9 @@ public class Gauge : MonoBehaviour
     public void GaugeMax()
     {
         if(mainGauge) 
-            mainGauge.fillAmount = 1;
+            mainGauge.value = 1;
         if(reduceGauge) 
-            reduceGauge.fillAmount = 1;
+            reduceGauge.value = 1;
     }
     // 게이지 해당 비율로 즉시 고정
     public void GaugeSetting(float currentValue, float maxValue, string text = default)
@@ -65,12 +69,12 @@ public class Gauge : MonoBehaviour
         {
             if (maxValue > 0)
             {
-                mainGauge.fillAmount = currentValue / maxValue;
+                mainGauge.value = currentValue / maxValue;
             }
         }
 
         if (reduceGauge)
-            reduceGauge.fillAmount = mainGauge.fillAmount;
+            reduceGauge.value = mainGauge.value;
         
         if (text != default)
             GaugeTextInput(text);
@@ -84,20 +88,20 @@ public class Gauge : MonoBehaviour
     public async UniTaskVoid GaugeFill(float currentValue, float maxValue, float speed)
     {
         float fillArrive = currentValue / maxValue;
-        reduceGauge.fillAmount = 0;
+        reduceGauge.value = 0;
 
         if (mainGauge)
         {
             CancelDelay();
             cancellationToken = new CancellationTokenSource();
-            while (mainGauge.fillAmount < fillArrive)
+            while (mainGauge.value < fillArrive)
             {
                 if(mainGauge) 
-                    mainGauge.fillAmount += ConstValues.GaugeFillSpeed * speed;
-                if (await GaugeDelay(ConstValues.GaugeFillSpeed).SuppressCancellationThrow())
+                    mainGauge.value += speed * Time.deltaTime;
+                if (await YieldDelay().SuppressCancellationThrow())
                     return;
             }
-            mainGauge.fillAmount = fillArrive;
+            mainGauge.value = fillArrive;
         }
     }
     
@@ -106,7 +110,7 @@ public class Gauge : MonoBehaviour
         if(!mainGauge)
             return;
         
-        mainGauge.fillAmount = currentValue / maxValue;
+        mainGauge.value = currentValue / maxValue;
         
         if (!(currentValue > 0))
             return;
@@ -117,13 +121,13 @@ public class Gauge : MonoBehaviour
         if (await GaugeDelay(ConstValues.GaugeReduce).SuppressCancellationThrow())
             return;
 
-        while (mainGauge.fillAmount < reduceGauge.fillAmount)
+        while (mainGauge.value < reduceGauge.value)
         {
             if(reduceGauge) 
-                reduceGauge.fillAmount -= ConstValues.GaugeFillSpeed * speed;
-            if (await GaugeDelay(ConstValues.GaugeFillSpeed).SuppressCancellationThrow())
+                reduceGauge.value -=speed * Time.deltaTime;
+            if (await YieldDelay().SuppressCancellationThrow())
                 return;
         }
-        reduceGauge.fillAmount = mainGauge.fillAmount;
+        reduceGauge.value = mainGauge.value;
     }
 }

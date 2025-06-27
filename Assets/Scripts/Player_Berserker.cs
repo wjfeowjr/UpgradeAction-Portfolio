@@ -239,8 +239,14 @@ public class Player_Berserker : Player
         var skillId = GameManager.Instance.PlayerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
+        
+        if(!GetGlobalCoolTime())
+        {
+            Debug.Log("글로벌 쿨타임이 지나지 않음");
+            return;
+        }
 
-        Debug.Log("스킬 시작");
+        UseSkill(skillId);
         curGlobalCoolTime = 0;
         if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);

@@ -66,6 +66,33 @@ public static class SkillBinding
     }
 }
 
+public static class StageBinding
+{
+    // 저장할 때
+    public static void SaveStage(int num)
+    {
+        PlayerPrefs.SetInt(ConstValues.Stage, num);
+        PlayerPrefs.Save();
+    }
+
+    // 불러올 때
+    public static int LoadStage()
+    {
+        if (PlayerPrefs.HasKey(ConstValues.Stage))
+        {
+            Debug.Log($"저장된 스테이지가 존재{PlayerPrefs.GetInt(ConstValues.Stage)}");
+            return PlayerPrefs.GetInt(ConstValues.Stage);
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"스테이지 최초 저장");
+            SaveStage(0);
+            return 0;
+        }
+    }
+}
+
 [Serializable]
 public class SkillKey
 {
@@ -320,6 +347,8 @@ public class GameManager : Singleton<GameManager>
     {
         PlayerPrefs.DeleteAll();
 
+        StageBinding.LoadStage();
+
         escKey = KeyCode.Escape;
         
         leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
@@ -363,11 +392,11 @@ public class GameManager : Singleton<GameManager>
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey4));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey5));
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerUpperSlash, skillKey6));
-        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey7));
-        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey8));
+        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey7));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey8));
         
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
-        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey8));
+        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey8));
         playerSkillKeyCollection.berserkerSkillKeyList = berserkerSkillKeyList;
         
         List<SkillKey> gunnerSkillKeyList = new List<SkillKey>();
@@ -379,7 +408,7 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey5));
         gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey6));
         gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
-        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey8));
         
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
@@ -442,6 +471,11 @@ public class GameManager : Singleton<GameManager>
         }
 
         return settingSkillList;
+    }
+
+    public int LoadStage()
+    {
+        return StageBinding.LoadStage();
     }
 
     private void InitAtlas(SpriteAtlas spriteAtlas)
@@ -555,9 +589,10 @@ public class GameManager : Singleton<GameManager>
         mainCamera.Shake(amount, time);
     }
 
-    public Monster SpawnMonster(string id, Vector2 monsterVector, bool isBoss = false, Action bossProduct = null)
+    public Monster SpawnMonster(string id, Vector2 monsterVector, bool isExplosion = true, bool isBoss = false, Action bossProduct = null)
     {
         var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
+        monster.IsExplosion = isExplosion;
         monster.IsBoss = isBoss;
         monster.SpawnHpBar();
         monster.Appear(bossProduct);
@@ -565,15 +600,16 @@ public class GameManager : Singleton<GameManager>
         return monster;
     }
 
-    public Monster ActiveAndHideMonster(string id, Vector2 monsterVector, bool isBoss = false)
+    public Monster ActiveAndHideMonster(string id, Vector2 monsterVector, bool isExplosion = true, bool isBoss = false)
     {
         var monster = SpawnToPoolInstantiate(id, objectPool, monsterVector).GetComponent<Monster>();
+        monster.IsExplosion = isExplosion;
         monster.IsBoss = isBoss;
         monster.gameObject.SetActive(false);
         monsterList.Add(monster);
         return monster;
     }
-    public void ActiveMonster(Monster monster, bool isBoss, Action bossProduct = null)
+    public void ActiveMonster(Monster monster, Action bossProduct = null)
     {
         monster.gameObject.SetActive(true);
         monster.SpawnHpBar();
@@ -708,15 +744,6 @@ public class GameManager : Singleton<GameManager>
 
     private void FirstCashing()
     {
-        // foreach (var prefab in prefabList)
-        // {
-        //     GameObject go = Instantiate(prefab, objectPool);
-        //     objectList.Add(go);
-        // }
-        // foreach (var list in objectList)
-        // {
-        //     list.SetActive(false);
-        // }
         foreach (var prefab in prefabList)
         {
             GameObject go = Instantiate(prefab, objectPool);
@@ -914,6 +941,8 @@ public class GameManager : Singleton<GameManager>
             }
 
             addedSkill.icon = skill.icon;
+            addedSkill.name = skill.name;
+            addedSkill.explain = skill.explain;
             changeSkill.playerSkill = addedSkill;
             break;
         }

@@ -19,7 +19,7 @@ public class StageManager : Singleton<StageManager>
 
     public void Start()
     {
-        currentStage = Instantiate(stageArray[0]).GetComponent<Stage>();
+        currentStage = Instantiate(stageArray[GameManager.Instance.LoadStage()]).GetComponent<Stage>();
     }
 
     public int GetStageDialogStep()

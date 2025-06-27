@@ -14,6 +14,8 @@ public class PlayerSkill
     public List<float> maxCoolTime = new List<float>();
     public List<float> curCoolTime = new List<float>();
     public string icon;
+    public string name;
+    public string explain;
 
     public bool IsOnCooldown
     {
@@ -129,6 +131,8 @@ public abstract class Player : Character
     [SerializeField] private bool canFlip;
     [SerializeField] private bool canMove;
     [SerializeField] private float moveRatio;
+    [SerializeField] private GameObject dashEffectUI;
+    [SerializeField] private GameObject dashFrameUI;
     
     private float globalCoolTime;
     protected float curGlobalCoolTime;
@@ -168,6 +172,11 @@ public abstract class Player : Character
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         myGravity = myRigidbody.gravityScale;
+    }
+
+    private void Start()
+    {
+        SetDashUIObject();
     }
 
     protected override void Update()
@@ -372,7 +381,16 @@ public abstract class Player : Character
         // 스턴이 풀린 경우
         if (stun == null)
         {
-            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+            DeleteDashFrameUI();
+            switch (landingState)
+            {
+                case ELandingState.Air:
+                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+                    break;
+                case ELandingState.Ground:
+                    StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+                    break;
+            }
         }
         // 스턴에 걸려있는 경우
         else
@@ -466,6 +484,33 @@ public abstract class Player : Character
     public float GetDownPosY()
     {
         return transform.position.y;
+    }
+
+    // 대시UI이팩트 캐싱
+    private void SetDashUIObject()
+    {
+        var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
+        if (uiInterfaceObj == null)
+            return;
+        
+        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        dashEffectUI = SpawnUI(ConstValues.DashEffectUI, uiInterface.GetDashSkillPos());
+        dashFrameUI = SpawnUI(ConstValues.DashFrameUI, uiInterface.GetDashSkillPos());
+        dashEffectUI.SetActive(false);
+        dashFrameUI.SetActive(false);
+    }
+
+    // 대시UI이팩트 켜기
+    private void ActiveDashEffectUI()
+    {
+        dashEffectUI.GetComponent<SpawnedObject>().EnableSetting();
+        dashEffectUI.SetActive(true);
+        dashFrameUI.SetActive(true);
+    }
+
+    private void DeleteDashFrameUI()
+    {
+        dashFrameUI.SetActive(false);
     }
 
     private void UpdateCameraLimit()
@@ -582,6 +627,20 @@ public abstract class Player : Character
         Controller.Instance.StopMove();
     }
     
+    public override void Airborne(float xVelocity, float yVelocity)
+    {
+        base.Airborne(xVelocity, yVelocity);
+        if(IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
+            ActiveDashEffectUI();
+    }
+    
+    public override void Damaged(float damagedTime)
+    {
+        base.Damaged(damagedTime);
+        if(IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
+            ActiveDashEffectUI();
+    }
+    
     // 교체를 사용 할 수 있는가?
     private async UniTask<bool> IsCanChange()
     {
@@ -650,9 +709,14 @@ public abstract class Player : Character
             return false;
         }
         
+        return true;
+    }
+
+    protected void UseSkill(string id)
+    {
+        var targetSkill = GetSkill(id);
         Debug.Log($"{targetSkill.skillName} 사용!");
         targetSkill.SetCoolTime();
-        return true;
     }
 
     // 공격 전진
@@ -833,7 +897,8 @@ public abstract class Player : Character
                 addedSkill.curCoolTime.Add(float.Parse(coolTime));
             }
             addedSkill.icon = skill.icon;
-                
+            addedSkill.name = skill.name;
+            addedSkill.explain = skill.explain;
             skillList.Add(addedSkill);
         }
     }
@@ -843,7 +908,7 @@ public abstract class Player : Character
         return skillList;
     }
 
-    private PlayerSkill GetSkill(string id)
+    public PlayerSkill GetSkill(string id)
     {
         return skillList.Find(x => x.skillName == id);
     }
@@ -869,7 +934,8 @@ public abstract class Player : Character
         StandHitBox();
         GravityChange(0);
         myRigidbody.linearVelocity = Vector2.zero;
-
+        DeleteDashFrameUI();
+        
         var dashSpeed = 15;
         var dashLength = 4.5f;
         
