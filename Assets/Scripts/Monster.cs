@@ -7,6 +7,12 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
+// 실제 이동 관련
+public enum EAgroState
+{
+    Normal,
+    Agro,
+}
 
 [Serializable]
 public class MonsterStat
@@ -16,6 +22,7 @@ public class MonsterStat
     public float firstCoolTime;
     public float globalCoolTime;
     public List<Vector2> attackRange = new List<Vector2>();
+    public Vector2 agroRange;
     public Vector2 jumpRange;
     public Vector2 dropRange;
     
@@ -57,10 +64,13 @@ public class JumpAndDropClass
 
 public class Monster : Character
 {
+    [SerializeField] protected EAgroState agroState;
+    
     [SerializeField] private bool isExplosion; // 죽을때 터지면서 죽는가?
     [SerializeField] private bool isBoss; // 보스인가?
     [SerializeField] protected MonsterStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] public List<MonsterPatternClass> patternInfo; // 스킬의 우선도와 스킬 사용 가능 여부
+    
     [SerializeField] private JumpAndDropClass jumpInfo;
     [SerializeField] private JumpAndDropClass downJumpInfo;
     
@@ -100,8 +110,13 @@ public class Monster : Character
             return;
 
         base.Update();
-        Trace();
-        Move();
+
+        if (agroState == EAgroState.Agro)
+        {
+            Trace();
+            Move();
+        }
+
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
         UpdateBuff();
@@ -122,6 +137,7 @@ public class Monster : Character
         
         base.FixedUpdate();
         PlayerInAttackRangeCheck();
+        PlayerInAgroRangeCheck();
         PlayerInJumpRangeCheck();
         PlayerInDropRangeCheck();
         UpdateStandingCheck();
@@ -149,6 +165,13 @@ public class Monster : Character
             return;
         
         var myPosition = transform.position;
+        
+        if (myStat.agroRange != Vector2.zero)
+        {
+            Vector2 agroRange = new Vector2(myStat.agroRange.x * 2, myStat.agroRange.y * 2);
+            Gizmos.color = ConstValues.BlueColor;
+            Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + CenterPos.localPosition.y), agroRange);
+        }
 
         if (myStat.jumpRange != Vector2.zero)
         {
@@ -258,6 +281,9 @@ public class Monster : Character
                 myStat.attackRange.Add(attackRange);
             }
             
+            var agroRangeArray = targetStat.agroRange.Split(';');
+            myStat.agroRange = new Vector2(float.Parse(agroRangeArray[0]), float.Parse(agroRangeArray[1]));
+            
             var jumpRangeArray = targetStat.jumpRange.Split(';');
             myStat.jumpRange = new Vector2(float.Parse(jumpRangeArray[0]), float.Parse(jumpRangeArray[1]));
             
@@ -345,6 +371,7 @@ public class Monster : Character
         curGlobalCoolTime = 0;
         isDie = false;
 
+        agroState = isBoss ? EAgroState.Agro : EAgroState.Normal;
         if (myStat.hovering)
             landingState = ELandingState.Air;
     }
@@ -635,6 +662,9 @@ public class Monster : Character
     {
         base.TakeDamage(damage);
         
+        if(agroState == EAgroState.Normal)
+            agroState = EAgroState.Agro;
+        
         if (damage == 0)
             return;
         
@@ -770,12 +800,16 @@ public class Monster : Character
     // 플레이어가 공격범위 안에 들어왔는지 체크
     private void PlayerInAttackRangeCheck()
     {
+        // myBoxCollider.size.y * 0.5f
+        // GetRightPosX()
+        // GetLeftPosX()
+        // GetUpPosY()
         foreach (var pattern in patternInfo)
         {
             if (GameManager.Instance.CurPlayer.GetRightPosX() > transform.position.x - pattern.attackRange[0] &&
                 GameManager.Instance.CurPlayer.GetLeftPosX() < transform.position.x + pattern.attackRange[0] &&
-                GameManager.Instance.CurPlayer.GetUpPosY() > transform.position.y + myBoxCollider.size.y * 0.5f - pattern.attackRange[1] &&
-                GameManager.Instance.CurPlayer.GetDownPosY() < transform.position.y + myBoxCollider.size.y * 0.5f + pattern.attackRange[1])
+                GameManager.Instance.CurPlayer.CenterPos.position.y > transform.position.y - pattern.attackRange[1] + CenterPos.localPosition.y &&
+                GameManager.Instance.CurPlayer.CenterPos.position.y < transform.position.y + pattern.attackRange[1] + CenterPos.localPosition.y)
             {
                 pattern.playerInAttackRange = true;
             }
@@ -783,6 +817,17 @@ public class Monster : Character
             {
                 pattern.playerInAttackRange = false;
             }
+        }
+    }
+
+    private void PlayerInAgroRangeCheck()
+    {
+        if (GameManager.Instance.CurPlayer.GetRightPosX() > transform.position.x - myStat.agroRange.x &&
+            GameManager.Instance.CurPlayer.GetLeftPosX() < transform.position.x + myStat.agroRange.x &&
+            GameManager.Instance.CurPlayer.CenterPos.position.y > transform.position.y - myStat.agroRange.y + CenterPos.localPosition.y &&
+            GameManager.Instance.CurPlayer.CenterPos.position.y < transform.position.y + myStat.agroRange.y + CenterPos.localPosition.y)
+        {
+            agroState = EAgroState.Agro;
         }
     }
 

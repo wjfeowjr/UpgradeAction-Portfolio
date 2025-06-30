@@ -155,6 +155,7 @@ public class MonsterData
     public float firstCoolTime;
     public float globalCoolTime;
     public string attackRange;
+    public string agroRange;
     public string jumpRange;
     public string dropRange;
     public string coolTime;

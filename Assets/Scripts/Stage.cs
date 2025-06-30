@@ -30,6 +30,7 @@ public abstract class Stage : MonoBehaviour
     [SerializeField] protected EpisodeStep episodeStep;
     [SerializeField] protected Transform[] playerPos;
     [SerializeField] protected Transform[] stepPos;
+    [SerializeField] protected StepTrigger[] stepTrigger;
     [SerializeField] protected Transform[] customMovePos;
     [SerializeField] protected Transform[] monsterPos;
     [SerializeField] protected Transform[] stageWallPos;

@@ -17,6 +17,70 @@ public class Stage1 : Stage
     private Monster dialogMonster1;
     private Monster dialogMonster2;
     private float monsterInterval1 = 1.0f;
+
+    protected override async void Start()
+    {
+        base.Start();
+        stepTrigger[0].SetAction(Product1);
+        StepCharacterSetting();
+
+        // 초반
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 2,
+        //     playerStep = 1,
+        //     customMoveStep = 1,
+        //     eventStep = 1,
+        // };
+        // GameManager.Instance.ControlStart = true;
+        // 잡초맨 전투
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 3, // 2
+        //     playerStep = 2,
+        //     customMoveStep = 1,
+        //     eventStep = 2,
+        // };
+        // GameManager.Instance.ControlStart = true;
+        // 석탄맨 전투
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 5,
+        //     playerStep = 3,
+        //     customMoveStep = 2,
+        //     eventStep = 4,
+        // };
+        // GameManager.Instance.ControlStart = true;
+        // 태양 전투
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 7,
+        //     playerStep = 4,
+        //     customMoveStep = 3,
+        //     eventStep = 7,
+        // };
+        // GameManager.Instance.ControlStart = true;
+        // 임시
+        //GameManager.Instance.SpawnMonster(ConstValues.MonsterCoal, new Vector2(curPlayer.transform.position.x + 5.0f, curPlayer.transform.position.y));
+        
+        LoadEpisode();
+
+        dialogSwitch = true;
+        GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
+        GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
+        GameManager.Instance.SetGroundVector();
+
+        CashingSunObject();
+        SpawnEpisode(episodeTitle);
+        SpawnStageClear();
+        GameOverCycle();
+        ProductEpisode();
+        AccumulatedStep();
+    }
     
     protected override void SetEpisodeName()
     {
@@ -29,9 +93,6 @@ public class Stage1 : Stage
         // 대화 진행
         switch (myEventStep)
         {
-            case 0:
-                await Product1();
-                break;
 
             case 1:
                 await Product2();
@@ -74,69 +135,6 @@ public class Stage1 : Stage
     {
         GameManager.Instance.GoScene(ConstValues.BattleScene);
     }
-    
-    protected override void Start()
-    {
-        base.Start();
-        StepCharacterSetting();
-        
-        // 초반
-        // episodeStep = new EpisodeStep()
-        // {
-        //     episodeTitle = 1,
-        //     dialogStep = 2,
-        //     playerStep = 1,
-        //     customMoveStep = 1,
-        //     eventStep = 1,
-        // };
-        // GameManager.Instance.ControlStart = true;
-        // 잡초맨 전투
-        // episodeStep = new EpisodeStep()
-        // {
-        //     episodeTitle = 1,
-        //     dialogStep = 2,
-        //     playerStep = 2,
-        //     customMoveStep = 1,
-        //     eventStep = 2,
-        // };
-        // GameManager.Instance.ControlStart = true;
-        // 석탄맨 전투
-        // episodeStep = new EpisodeStep()
-        // {
-        //     episodeTitle = 1,
-        //     dialogStep = 5,
-        //     playerStep = 3,
-        //     customMoveStep = 2,
-        //     eventStep = 4,
-        // };
-        // GameManager.Instance.ControlStart = true;
-        // 태양 전투
-        episodeStep = new EpisodeStep()
-        {
-            episodeTitle = 1,
-            dialogStep = 7,
-            playerStep = 4,
-            customMoveStep = 3,
-            eventStep = 7,
-        };
-        GameManager.Instance.ControlStart = true;
-        // 임시
-        //GameManager.Instance.SpawnMonster(ConstValues.MonsterCoal, new Vector2(curPlayer.transform.position.x + 5.0f, curPlayer.transform.position.y));
-        
-        LoadEpisode();
-
-        dialogSwitch = true;
-        GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
-        GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
-        GameManager.Instance.SetGroundVector();
-
-        CashingSunObject();
-        SpawnEpisode(episodeTitle);
-        SpawnStageClear();
-        GameOverCycle();
-        ProductEpisode();
-        AccumulatedStep();
-    }
 
     private void CashingSunObject()
     {
@@ -149,6 +147,8 @@ public class Stage1 : Stage
 
     private async UniTask Product1()
     {
+        await UniTask.WaitUntil(()=> episodeStep.episodeTitle > 0);
+        
         if (episodeStep.dialogStep == 0)
         {
             dialogSwitch = false;
