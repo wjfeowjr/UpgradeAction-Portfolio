@@ -4,14 +4,10 @@ using UnityEngine;
 
 public class StepTrigger : MonoBehaviour
 {
-    private BoxCollider2D triggerCollider;
+    [SerializeField] private BoxCollider2D triggerCollider;
+    
     private Action myAction;
     private Func<UniTask> myAsyncAction;
-    
-    private void Awake()
-    {
-        triggerCollider = GetComponent<BoxCollider2D>();
-    }
 
     public void SetAction(Action action)
     {
@@ -23,16 +19,16 @@ public class StepTrigger : MonoBehaviour
         myAsyncAction = asyncAction;
     }
 
-    private async void OnTriggerEnter2D(Collider2D col)
+    private void OnTriggerEnter2D(Collider2D col)
     {
-        if (col.CompareTag(ConstValues.Player))
+        if (col.CompareTag(ConstValues.Player) && !col.isTrigger)
         {
             Debug.Log("귀신");
-            triggerCollider.enabled = false;
             myAction?.Invoke();
-            
             if (myAsyncAction != null)
-                await myAsyncAction.Invoke();
+                myAsyncAction.Invoke();
+            
+            triggerCollider.enabled = false;
         }
     }
 }

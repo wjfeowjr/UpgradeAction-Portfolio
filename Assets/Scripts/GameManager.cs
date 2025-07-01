@@ -886,6 +886,7 @@ public class GameManager : Singleton<GameManager>
                             controlStart = true;
                             Time.timeScale = 1;
                             BgmManager.Instance.ReplayBgm();
+                            StageManager.Instance.CurrentStage.CancelTask();
                         }
                     };
                     var gameOverPresenter = new PopupGameOverPresenter(gameOverInterface, hpModel);

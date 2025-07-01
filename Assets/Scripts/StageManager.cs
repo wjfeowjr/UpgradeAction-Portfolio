@@ -7,6 +7,9 @@ public class StageManager : Singleton<StageManager>
     [SerializeField] private FollowCamera mainCamera;
     [SerializeField] private GameObject[] stageArray;
     [SerializeField] private Stage currentStage;
+
+    // 프로퍼티
+    public Stage CurrentStage => currentStage;
     
     protected override void Awake()
     {
@@ -21,6 +24,7 @@ public class StageManager : Singleton<StageManager>
     {
         currentStage = Instantiate(stageArray[GameManager.Instance.LoadStage()]).GetComponent<Stage>();
     }
+    
 
     public int GetStageDialogStep()
     {

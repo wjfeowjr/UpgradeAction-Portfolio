@@ -111,12 +111,13 @@ public class Monster : Character
 
         base.Update();
 
-        if (agroState == EAgroState.Agro)
-        {
-            Trace();
-            Move();
-        }
-
+        // if (agroState == EAgroState.Agro)
+        // {
+        //     Trace();
+        //     Move();
+        // }
+        Trace();
+        Move();
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
         UpdateBuff();

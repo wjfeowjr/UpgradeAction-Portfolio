@@ -16,7 +16,7 @@ public class EpisodeStep
     public int playerStep = 0;
     // 플레이어가 연출 상 이동하는 위치의 x값
     public int customMoveStep = 0;
-    // 이벤트 스탭
+    // 이벤트 스탭(스테이지 트리거의 콜라이더를 사라지게 하는 용도로만 쓰임)
     public int eventStep = 0;
 }
 
@@ -29,7 +29,6 @@ public abstract class Stage : MonoBehaviour
     
     [SerializeField] protected EpisodeStep episodeStep;
     [SerializeField] protected Transform[] playerPos;
-    [SerializeField] protected Transform[] stepPos;
     [SerializeField] protected StepTrigger[] stepTrigger;
     [SerializeField] protected Transform[] customMovePos;
     [SerializeField] protected Transform[] monsterPos;
@@ -39,11 +38,10 @@ public abstract class Stage : MonoBehaviour
     [SerializeField] protected Transform[] strongSpeechPos;
     
     protected CancellationTokenSource dialogCancellation;
+    protected CancellationTokenSource waitCancellation;
     private CancellationTokenSource dieCancellation;
-
-    [SerializeField] protected bool dialogSwitch;
+    
     [SerializeField] protected bool monsterSpawning;
-    [SerializeField] protected int myEventStep;
 
     protected float dialogDelay1 = 2.5f;
     protected float dialogDelay2 = 1.0f;
@@ -60,7 +58,6 @@ public abstract class Stage : MonoBehaviour
     // 프로퍼티
     public EpisodeStep EpisodeStep => episodeStep;
     
-    protected abstract void DialogStep();
     protected abstract void StageClearButtonAction();
 
     private void Awake()
@@ -81,11 +78,35 @@ public abstract class Stage : MonoBehaviour
 
     protected virtual void Update()
     {
-        DialogCycle();
         CheckCurPlayer();
         GameManager.Instance.ReduceSkillPlayer();
     }
 
+    public void CancelTask()
+    {
+        dialogCancellation?.Cancel();
+        waitCancellation?.Cancel();
+    }
+    
+    protected async UniTask WaitUntil(Func<bool> condition, CancellationTokenSource tokenSource)
+    {
+        await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
+    }
+    
+    // 맵에 있는 모든 몹을 잡았을 경우 발생하는 액션
+    protected async void MonsterClearAction(Action action)
+    {
+        if (await WaitUntil(() => !monsterSpawning && GameManager.Instance.MonsterList.Count == 0, waitCancellation).SuppressCancellationThrow())
+            return;
+        action?.Invoke();
+    }
+    protected async void MonsterClearAction(Func<UniTask> asyncAction)
+    {
+        if (await WaitUntil(() => !monsterSpawning && GameManager.Instance.MonsterList.Count == 0, waitCancellation).SuppressCancellationThrow())
+            return;
+        asyncAction?.Invoke();
+    }
+    
     private void CheckCurPlayer()
     {
         if (GameManager.Instance.CurPlayer != null && curPlayer != GameManager.Instance.CurPlayer)
@@ -152,8 +173,6 @@ public abstract class Stage : MonoBehaviour
         // json 불러오기
         var loadedEpisode = JsonUtility.FromJson<EpisodeStep>(loadJson);
         episodeStep = loadedEpisode;
-        
-        myEventStep = episodeStep.eventStep;
     }
     
     protected void SpawnEpisode(string episodeName)
@@ -278,21 +297,6 @@ public abstract class Stage : MonoBehaviour
         Time.timeScale = 0;
     }
 
-    protected void DialogCycle()
-    {
-        if (episodeStep.episodeTitle == 0)
-            return;
-
-        if (myEventStep > stepPos.Length - 1)
-            return;
-
-        if (dialogSwitch && !curPlayer.IsDie && curPlayer.transform.position.x >= stepPos[myEventStep].transform.position.x && GameManager.Instance.MonsterList.Count == 0 && !monsterSpawning)
-        {
-            // 대화 진행
-            DialogStep();
-        }
-    }
-    
     // 대화 단계 증가
     protected void DialogStepUp()
     {
@@ -308,16 +312,10 @@ public abstract class Stage : MonoBehaviour
     {
         episodeStep.customMoveStep++;
     }
-    
-    // 현재 이벤트 단계 증가
-    protected void MyEventStepUp()
+    // 이벤트 단계 설정
+    protected void SetEventStep(int idx)
     {
-        myEventStep++;
-    }
-    // 저장되는 이벤트 단계를 현재 이벤트 단계와 일치시킴
-    protected void SetEventStep()
-    {
-        episodeStep.eventStep = myEventStep;
+        episodeStep.eventStep = idx;
     }
 
     protected void BgSpriteChange(string bgName)
@@ -338,11 +336,6 @@ public abstract class Stage : MonoBehaviour
         await UniTask.Yield(cancellationToken: tokenSource.Token);
     }
 
-    protected async UniTask WaitUntil(Func<bool> func, CancellationTokenSource tokenSource)
-    {
-        await UniTask.WaitUntil(func, cancellationToken: tokenSource.Token);
-    }
-    
     protected void StopBGM()
     {
         BgmManager.Instance.Stop();

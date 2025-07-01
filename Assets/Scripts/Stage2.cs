@@ -6,7 +6,10 @@ using UnityEngine;
 
 public class Stage2 : Stage
 {
+    [SerializeField] private Transform[] stepPos;
     [SerializeField] private Transform[] npcPos;
+    [SerializeField] protected int myEventStep;
+    
     private List<string> monsterWave1 = new List<string>();
     private List<string> monsterWave2 = new List<string>();
     private List<string> monsterWave3 = new List<string>();
@@ -29,43 +32,6 @@ public class Stage2 : Stage
         base.SetEpisodeName();
     }
     
-    protected override async void DialogStep()
-    {
-        // 대화 진행
-        switch (myEventStep)
-        {
-            case 0:
-                await Product1();
-                break;
-            case 1:
-                Product2();
-                break;
-            case 2:
-                Product3();
-                break;
-            case 3:
-                await Product4();
-                break;
-            case 4:
-                Product5();
-                break;
-            case 5:
-                Product6();
-                break;
-            case 6:
-                Product7();
-                break;
-            case 7:
-                Product8();
-                break;
-            case 8:
-                Product9();
-                break;
-            case 9:
-                Product10();
-                break;
-        }
-    }
     protected override void StageClearButtonAction() 
     {
         Application.Quit();
@@ -122,8 +88,6 @@ public class Stage2 : Stage
         GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
         
         LoadEpisode();
-
-        dialogSwitch = true;
 
         StartSetting();
         SpawnEpisode(episodeTitle);
@@ -219,7 +183,6 @@ public class Stage2 : Stage
     {
         if (episodeStep.dialogStep == 0)
         {
-            dialogSwitch = false;
             string dialog1 = "어헝! 정말 좋은 날씨야!";
             string dialog2 = "사람살려!";
             string dialog3 = "저 사람을 구해줘야겠다! 흐헝";
@@ -287,14 +250,12 @@ public class Stage2 : Stage
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
             DialogStepUp();
             SaveEpisode();
-            dialogSwitch = true;
-            
+
             // var citizenPos = npcPos[0].position;
             // var citizen1 = GameManager.Instance.SpawnToObjectPool(ConstValues.NpcCitizen, citizenPos).GetComponent<Npc>();
             // citizen1.Airborne(-10,10);
             //GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, monsterPos[0].position);
         }
-        MyEventStepUp();
     }
     
     private async void Product2()
@@ -302,9 +263,6 @@ public class Stage2 : Stage
         AccumulatedStep();
         PlayerStepUp();
         SaveEpisode();
-        
-        MyEventStepUp();
-        SetEventStep();
 
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
@@ -330,7 +288,6 @@ public class Stage2 : Stage
     private void Product3()
     {
         AccumulatedStep();
-        MyEventStepUp();
         SaveEpisode();
     }
     
@@ -338,7 +295,6 @@ public class Stage2 : Stage
     {
         if (episodeStep.dialogStep == 1)
         {
-            dialogSwitch = false;
             //SetTimeScale(100.0f);
             string dialog1 = "나좀 살려줘!";
             string dialog2 = "어헝! 내쪽으로 어서 달려와!";
@@ -974,19 +930,14 @@ public class Stage2 : Stage
             DialogStepUp();
             PlayerStepUp();
             CustomMoveStepUp();
-            SetEventStep();
             SaveEpisode();
             AccumulatedStep();
-            dialogSwitch = true;
         }
-        MyEventStepUp();
     }
     
     private async void Product5()
     {
         AccumulatedStep();
-        MyEventStepUp();
-        SetEventStep();
 
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
@@ -1021,8 +972,6 @@ public class Stage2 : Stage
     private void Product6()
     {
         AccumulatedStep();
-        MyEventStepUp();
-        SetEventStep();
         PlayerStepUp();
         SaveEpisode();
     }
@@ -1030,8 +979,6 @@ public class Stage2 : Stage
     private async void Product7()
     {
         AccumulatedStep();
-        MyEventStepUp();
-        SetEventStep();
 
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
@@ -1067,8 +1014,6 @@ public class Stage2 : Stage
     {
         if (episodeStep.dialogStep == 2)
         {
-            dialogSwitch = false;
-            
             string dialog1 = "야!!!";
             string dialog2 = "???";
             string dialog3 = "넌 뭐냐?";
@@ -1187,24 +1132,19 @@ public class Stage2 : Stage
             CustomMoveStepUp();
             SaveEpisode();
             chargeMonster.IdleOrMove();
-            dialogSwitch = true;
         }
         else if (episodeStep.dialogStep >= 3)
         {
             chargeMonster = GameManager.Instance.SpawnMonster(ConstValues.MonsterCharge, bossPos[2].transform.position);
         }
-        MyEventStepUp();
     }
 
     private async void Product9()
     {
-        MyEventStepUp();
         dialogCancellation = new CancellationTokenSource();
         monsterSpawning = true;
         if (episodeStep.dialogStep == 3)
         {
-            dialogSwitch = false;
-
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
@@ -1346,7 +1286,6 @@ public class Stage2 : Stage
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
             DialogStepUp();
             SaveEpisode();
-            dialogSwitch = true;
         }
     }
     
@@ -1354,7 +1293,6 @@ public class Stage2 : Stage
     {
         if (episodeStep.dialogStep == 4)
         {
-            dialogSwitch = false;
             string dialog1 = "우리가 이겼어!";
             string dialog2 = "근데 많은 적들이 스테이지 곳곳으로 퍼져버렸어!";
             string dialog3 = "나한테 좋은 방법이 있다";
