@@ -98,6 +98,24 @@ public class Monster_Charge : Monster
         gameObject.SetActive(false);
     }
     
+    public override void Die()
+    {
+        base.Die();
+        GameManager.Instance.RemoveMonster(this);
+        
+        if (isExplosion || transform.position.y < ConstValues.BungeePosY)
+        {
+            SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
+            gameObject.SetActive(false);
+        }
+
+        if (!totalBar)
+            return;
+        
+        totalBar.gameObject.SetActive(false);
+        totalBar = null;
+    }
+    
     // 깜빡이며 사라지기
     public override async void BlinkDelete()
     {

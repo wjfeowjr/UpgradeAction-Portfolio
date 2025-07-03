@@ -630,14 +630,14 @@ public abstract class Player : Character
     public override void Airborne(float xVelocity, float yVelocity)
     {
         base.Airborne(xVelocity, yVelocity);
-        if(IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
+        if(GameManager.Instance.ControlStart && IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
             ActiveDashEffectUI();
     }
     
     public override void Damaged(float damagedTime)
     {
         base.Damaged(damagedTime);
-        if(IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
+        if(GameManager.Instance.ControlStart && IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
             ActiveDashEffectUI();
     }
     

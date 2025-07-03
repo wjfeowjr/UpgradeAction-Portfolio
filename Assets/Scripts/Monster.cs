@@ -66,8 +66,8 @@ public class Monster : Character
 {
     [SerializeField] protected EAgroState agroState;
     
-    [SerializeField] private bool isExplosion; // 죽을때 터지면서 죽는가?
     [SerializeField] private bool isBoss; // 보스인가?
+    [SerializeField] protected bool isExplosion; // 죽을때 터지면서 죽는가?
     [SerializeField] protected MonsterStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] public List<MonsterPatternClass> patternInfo; // 스킬의 우선도와 스킬 사용 가능 여부
     
@@ -80,7 +80,7 @@ public class Monster : Character
     [SerializeField] private float curGlobalCoolTime;
 
     [SerializeField] private Transform hpBarPos;
-    [SerializeField] private TotalBar totalBar;
+    [SerializeField] protected TotalBar totalBar;
     [SerializeField] private SpriteRenderer[] appearMotions;      // 등장 연출 이미지
     protected CancellationTokenSource dieCancellation;
     
@@ -375,6 +375,8 @@ public class Monster : Character
         agroState = isBoss ? EAgroState.Agro : EAgroState.Normal;
         if (myStat.hovering)
             landingState = ELandingState.Air;
+        else
+            landingState = ELandingState.Ground;
     }
 
     protected override void FindGroundObject()
@@ -404,7 +406,6 @@ public class Monster : Character
             uiInterface.BossHpPresenter.SetModel(bossHpModel);
             uiInterface.BossHpPresenter.SetHp();
             uiInterface.BossHpPresenter.SetHpText();
-            
             uiInterface.BossHpPresenter.SetStagger();
         }
         else
@@ -525,11 +526,12 @@ public class Monster : Character
         StandHitBox();
         StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
         MoveStateSetting(EMoveState.Stopping);
+        LandingStateSetting(ELandingState.Ground);
 
         stateCancellation = new CancellationTokenSource();
         if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
             return;
-        
+
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         myBoxCollider.enabled = true;
         GravityChange(myGravity);
@@ -551,6 +553,7 @@ public class Monster : Character
             
             if(!GameManager.Instance.ControlStart)
                 StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+            
             await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
             // Hovering();
             // AppearShake();
@@ -756,8 +759,6 @@ public class Monster : Character
         
         if (isExplosion || transform.position.y < ConstValues.BungeePosY)
         {
-            StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
-            MoveStateSetting(EMoveState.Stopping);
             SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
             gameObject.SetActive(false);
         }

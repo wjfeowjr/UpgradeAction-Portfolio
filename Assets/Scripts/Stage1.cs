@@ -26,7 +26,6 @@ public class Stage1 : Stage
         stepTrigger[2].SetAction(() => Product3(2));
         stepTrigger[3].SetAction(() => Product6(3));
         stepTrigger[4].SetAction(() => Product8(4));
-        StepCharacterSetting();
 
         // 초반
         // episodeStep = new EpisodeStep()
@@ -49,29 +48,28 @@ public class Stage1 : Stage
         // };
         // GameManager.Instance.ControlStart = true;
         // 석탄맨 전투
-        episodeStep = new EpisodeStep()
-        {
-            episodeTitle = 1,
-            dialogStep = 5,
-            playerStep = 3,
-            customMoveStep = 2,
-            eventStep = 3,
-        };
-        GameManager.Instance.ControlStart = true;
-        // 태양 전투
         // episodeStep = new EpisodeStep()
         // {
         //     episodeTitle = 1,
-        //     dialogStep = 7,
-        //     playerStep = 4,
-        //     customMoveStep = 3,
-        //     eventStep = 4,
+        //     dialogStep = 5,
+        //     playerStep = 3,
+        //     customMoveStep = 2,
+        //     eventStep = 3,
         // };
         // GameManager.Instance.ControlStart = true;
-        // 임시
-        //GameManager.Instance.SpawnMonster(ConstValues.MonsterCoal, new Vector2(curPlayer.transform.position.x + 5.0f, curPlayer.transform.position.y));
-        
+        // 태양 전투
+        episodeStep = new EpisodeStep()
+        {
+            episodeTitle = 1,
+            dialogStep = 7,
+            playerStep = 4,
+            customMoveStep = 3,
+            eventStep = 4,
+        };
+        GameManager.Instance.ControlStart = true;
+
         LoadEpisode();
+        StepCharacterSetting();
         
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
@@ -109,8 +107,8 @@ public class Stage1 : Stage
     private async UniTask Product1(int idx)
     {
         await UniTask.WaitUntil(()=> episodeStep.episodeTitle > 0);
-
         SetEventStep(idx);
+        
         if (episodeStep.dialogStep == 0)
         {
             string dialog1 = "날씨 참 좋다...";

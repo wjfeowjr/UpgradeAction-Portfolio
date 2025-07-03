@@ -206,8 +206,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
-
-    private bool secondStart;
+    
     private string episodeName;
     
     private string firstPlayer;
@@ -239,12 +238,6 @@ public class GameManager : Singleton<GameManager>
 
     public Player[] Players => players;
 
-    public bool SecondStart
-    {
-        get => secondStart;
-        set => secondStart = value;
-    }
-    
     public string EpisodeName
     {
         get => episodeName;
@@ -616,9 +609,10 @@ public class GameManager : Singleton<GameManager>
         monster.Appear(bossProduct);
     }
     
-    public void SetMonster(Monster monster, bool isBoss)
+    public void SetMonster(Monster monster, bool isBoss, bool isExplosion)
     {
         monster.IsBoss = isBoss;
+        monster.IsExplosion = isExplosion;
         monster.SpawnHpBar();
         monsterList.Add(monster);
     }
