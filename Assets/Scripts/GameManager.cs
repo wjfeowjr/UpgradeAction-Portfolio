@@ -142,6 +142,33 @@ public static class EpisodeBinding
     }
 }
 
+public static class RoomBinding
+{
+    // 저장할 때
+    public static void SaveRoom(string roomName, string roomClass)
+    {
+        PlayerPrefs.SetString(roomName, roomClass);
+        PlayerPrefs.Save();
+    }
+
+    // 불러올 때
+    public static string LoadRoom(string roomName, string roomClass)
+    {
+        if (PlayerPrefs.HasKey(roomName))
+        {
+            Debug.Log($"저장된 룸 정보 존재");
+            return PlayerPrefs.GetString(roomName);
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"{roomName}룸 최초 생성");
+            SaveRoom(roomName, roomClass);
+            return roomClass;
+        }
+    }
+}
+
 public enum ePoolType
 {
     None,
@@ -208,7 +235,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
     
     private string episodeName;
-    
+
     private string firstPlayer;
     private string secondPlayer = default;
     [SerializeField] private bool controlStart;
@@ -536,6 +563,11 @@ public class GameManager : Singleton<GameManager>
             player.InitBasicStat();
             player.ResetSkillCoolTime();
         }
+    }
+    
+    public void SpawnPlayer(string playerName)
+    {
+        ActivePlayer(playerName);
     }
     
     public void SpawnPlayer(string playerName, Vector2 playerPos)

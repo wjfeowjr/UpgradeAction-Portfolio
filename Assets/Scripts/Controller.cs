@@ -16,14 +16,16 @@ public class Controller : Singleton<Controller>
 
     private void Update()
     {
-        if (!GameManager.Instance.ControlStart)
-        {
-            if (isLeftMove)
-                isLeftMove = false;
-            if (isRightMove)
-                isRightMove = false;
+        // if (!GameManager.Instance.ControlStart)
+        // {
+        //     if (isLeftMove)
+        //         isLeftMove = false;
+        //     if (isRightMove)
+        //         isRightMove = false;
+        //     return;
+        // }
+        if(!GameManager.Instance.ControlStart)
             return;
-        }
         
         DirControl();
         PlayerControl();
@@ -32,7 +34,22 @@ public class Controller : Singleton<Controller>
 
     private void FixedUpdate()
     {
+        if(!GameManager.Instance.ControlStart)
+            return;
+        
         PlayerMove();
+    }
+    
+    private void OnApplicationFocus(bool hasFocus)
+    {
+        if (!hasFocus)
+        {
+            if (isLeftMove)
+                isLeftMove = false;
+            if (isRightMove)
+                isRightMove = false;
+            return;
+        }
     }
 
     public void StopMove()
@@ -134,7 +151,7 @@ public class Controller : Singleton<Controller>
         //     player.KnockBack(1.0f);
         // }
 
-        if(!isLeftMove && !isRightMove)
+        if(GameManager.Instance.CurPlayer && !isLeftMove && !isRightMove)
             GameManager.Instance.CurPlayer.Stop();
     }
      

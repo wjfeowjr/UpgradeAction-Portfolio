@@ -27,12 +27,13 @@ public class FadeSystem : MonoBehaviour
         fadeCancellation = new CancellationTokenSource();
     }
 
-    public void SetParameter(float setStart, float setEnd, float setDuration, bool delete)
+    public void SetParameter(float setStart, float setEnd, float setDuration, bool delete, int setLoopCount = 0)
     {
         startAlpha = setStart;
         endAlpha = setEnd;
         duration = setDuration;
         endDelete = delete;
+        loopCount = setLoopCount;
     }
 
     public void ColorInput(Color color)

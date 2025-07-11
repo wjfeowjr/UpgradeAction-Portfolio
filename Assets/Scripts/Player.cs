@@ -560,6 +560,12 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = vel;
     }
 
+    public void ForceIdle()
+    {
+        CancelMotion();
+        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+    }
+
     public void MoveSetting(Vector2 dir)
     {
         if (!canMove)

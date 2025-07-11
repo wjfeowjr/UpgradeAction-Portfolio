@@ -25,6 +25,9 @@ public class ConstValues : Singleton<ConstValues>
 
     public const float BlinkSecond = 0.1f; // 사라질떄 깜빡이는거
     
+    public const float DialogDelay1 = 2.5f;
+    public const float DialogDelay2 = 1.0f;
+    
     public const string PrefabFolder = "Assets/Prefab";
     public const string SoundFolder = "Assets/Sound";
 
