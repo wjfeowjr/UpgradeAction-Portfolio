@@ -58,15 +58,15 @@ public class Stage1 : Stage
         // };
         // GameManager.Instance.ControlStart = true;
         // 태양 전투
-        episodeStep = new EpisodeStep()
-        {
-            episodeTitle = 1,
-            dialogStep = 7,
-            playerStep = 4,
-            customMoveStep = 3,
-            eventStep = 4,
-        };
-        GameManager.Instance.ControlStart = true;
+        // episodeStep = new EpisodeStep()
+        // {
+        //     episodeTitle = 1,
+        //     dialogStep = 6,
+        //     playerStep = 4,
+        //     customMoveStep = 3,
+        //     eventStep = 4,
+        // };
+        // GameManager.Instance.ControlStart = true;
 
         LoadEpisode();
         StepCharacterSetting();
@@ -342,14 +342,14 @@ public class Stage1 : Stage
                 monsterTransform = dialogMonster2.transform;
             }
             
-            GameManager.Instance.MainCamera.SetTarget(monsterTransform);
+            GameManager.Instance.SetCameraTarget(monsterTransform);
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
                 return;
 
             SpawnSpeechFrame(speechFrame1[0], new Vector2(monsterSpeech.x, monsterSpeech.y - 1.0f), dialog1);
             await NextDialog(speechFrame1[0]);
             
-            GameManager.Instance.MainCamera.SetTarget(GameManager.Instance.CurPlayer.transform);
+            GameManager.Instance.SetCameraTarget(GameManager.Instance.CurPlayer.transform);
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
                 return;
             
@@ -695,7 +695,9 @@ public class Stage1 : Stage
             await NextDialog(speechFrame1[0]);
         }
 
-        var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, GameManager.Instance.MainCamera.transform.position).GetComponent<FadeSystem>();
+        var cameraPos = GameManager.Instance.MainCamera.transform.position;
+        var fadePos = new Vector3(cameraPos.x, cameraPos.y, 0);
+        var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, fadePos).GetComponent<FadeSystem>();
         fadeBg.SetParameter(0, 1.0f, 1.5f, false);
         await fadeBg.Fade();
         BgSpriteChange(ConstValues.BgTutorial2);
@@ -811,13 +813,15 @@ public class Stage1 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, GameManager.Instance.MainCamera.transform.position).GetComponent<FadeSystem>();
+            var cameraPos = GameManager.Instance.MainCamera.transform.position;
+            var fadePos = new Vector3(cameraPos.x, cameraPos.y, 0);
+            var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, fadePos).GetComponent<FadeSystem>();
             fadeBg.SetParameter(0, 1.0f, 1.5f, false);
             await fadeBg.Fade();
             BgSpriteChange(ConstValues.BgTutorial);
             foreach (var stageWall in stageWalls)
                 stageWall.SetActive(false);
-            GameManager.Instance.MainCamera.SetTarget(null);
+            GameManager.Instance.SetCameraTarget(null);
             
             var berserkerPos = curPlayer.FontPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog16); 

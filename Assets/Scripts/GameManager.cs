@@ -414,6 +414,12 @@ public class GameManager : Singleton<GameManager>
         var loadedSkillKeyCollection = JsonUtility.FromJson<SkillKeyCollection>(loadJson);
         playerSkillKeyCollection = loadedSkillKeyCollection;
     }
+    public void AddNewSkill()
+    {
+        playerSkillKeyCollection.berserkerSkillKeyList[8] = SetSkillKey(ConstValues.BerserkerCrash, skillKey8);
+        playerSkillKeyCollection.gunnerSkillKeyList[8] = SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8);
+    }
+
     public void SetSkillId(KeyCode keyCode, string skillId)
     {
         if (curPlayer.BasicStat.id == ConstValues.Berserker)
@@ -582,7 +588,7 @@ public class GameManager : Singleton<GameManager>
         mainCamera.Shake(amount, time);
     }
 
-    public Monster SpawnMonster(string id, Vector2 monsterVector, bool isExplosion = true, bool isBoss = false, Action bossProduct = null)
+    public Monster SpawnMonster(string id, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false, Action bossProduct = null)
     {
         var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
@@ -593,7 +599,7 @@ public class GameManager : Singleton<GameManager>
         return monster;
     }
 
-    public Monster ActiveAndHideMonster(string id, Vector2 monsterVector, bool isExplosion = true, bool isBoss = false)
+    public Monster ActiveAndHideMonster(string id, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false)
     {
         var monster = SpawnToPoolInstantiate(id, objectPool, monsterVector).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
@@ -667,7 +673,7 @@ public class GameManager : Singleton<GameManager>
     {
         return SpawnToPool(id, objectPool, objTransform);
     }
-    public GameObject SpawnToObjectPool(string id, Vector2 objVector)
+    public GameObject SpawnToObjectPool(string id, Vector3 objVector)
     {
         return SpawnToPool(id, objectPool, objVector);
     }
@@ -778,7 +784,7 @@ public class GameManager : Singleton<GameManager>
         go.SetActive(true);
         return go;
     }
-    private GameObject SpawnToPool(string id, Transform pool, Vector2 objVector)
+    private GameObject SpawnToPool(string id, Transform pool, Vector3 objVector)
     { 
         var objectName = $"{id}(Clone)";
         var isSearch = objectList.FindAll(x => x.name == objectName);
@@ -807,7 +813,7 @@ public class GameManager : Singleton<GameManager>
         go.SetActive(true);
         return go;
     }
-    private GameObject SpawnToPoolInstantiate(string id, Transform pool, Vector2 objVector)
+    private GameObject SpawnToPoolInstantiate(string id, Transform pool, Vector3 objVector)
     { 
         var objectName = $"{id}(Clone)";
         GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);

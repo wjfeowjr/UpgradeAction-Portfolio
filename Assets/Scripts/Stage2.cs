@@ -36,7 +36,8 @@ public class Stage2 : Stage
         stepTrigger[2].SetAction(() => Product4(2));
         stepTrigger[3].SetAction(Product5);
         stepTrigger[4].SetAction(() => Product7(3));
-
+        GameManager.Instance.AddNewSkill();
+        
         // episodeStep = new EpisodeStep()
         // {
         //     episodeTitle = 1,
@@ -173,6 +174,7 @@ public class Stage2 : Stage
     
     private async UniTask Product1(int idx)
     {
+        GameManager.Instance.SetCameraTarget(curPlayer.transform);
         await UniTask.WaitUntil(()=> episodeStep.episodeTitle > 0);
         SetEventStep(idx);
         
@@ -231,7 +233,7 @@ public class Stage2 : Stage
             //         return;
             // }
             await NextDialog(speechFrame1[0]);
-            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+            GameManager.Instance.SetCameraTarget(curPlayer.transform);
             
             // 게임 시작
             GameManager.Instance.ControlStart = true;
@@ -608,7 +610,7 @@ public class Stage2 : Stage
             gameSystem.gameObject.SetActive(true);
             gameSystem.transform.position = new Vector2(chargeMonster.transform.position.x + 5.0f, chargeMonster.FontPos.position.y);
             gameSystem.SpawnObject(ConstValues.BangEffect, gameSystem.CenterPos.position);
-            GameManager.Instance.MainCamera.SetTarget(gameSystem.transform);
+            GameManager.Instance.SetCameraTarget(gameSystem.transform);
             GameManager.Instance.MainCamera.MaxXAndY = new Vector2(59.0f, GameManager.Instance.MainCamera.MinXAndY.y);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
@@ -640,15 +642,17 @@ public class Stage2 : Stage
             
             chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
             chargeMonster.Flip(-1);
-            GameManager.Instance.MainCamera.SetTarget(chargeMonster.transform);
+            GameManager.Instance.SetCameraTarget(chargeMonster.transform);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
             // 저희 되살아났습니다!
+            float zPos = 0.0f;
             for (int i = 0; i < 35; i++)
             {
                 var randX = Random.Range(-monsterInterval2, monsterInterval2);
-                var randPos = new Vector2(monsterPos[1].position.x + randX, monsterPos[0].position.y);
+                var randPos = new Vector3(monsterPos[1].position.x + randX, monsterPos[0].position.y, zPos);
+                zPos += 0.1f;
 
                 var rand = Random.Range(0, 2);
                 var randMonster = ConstValues.MonsterSpinach;
@@ -709,7 +713,7 @@ public class Stage2 : Stage
             // 카메라 위치 변경 및 캐릭터 세팅
             GameManager.Instance.MainCamera.MinXAndY = new Vector2(82f, GameManager.Instance.MainCamera.MinXAndY.y);
             GameManager.Instance.MainCamera.MaxXAndY = new Vector2(82f, GameManager.Instance.MainCamera.MinXAndY.y);
-            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+            GameManager.Instance.SetCameraTarget(curPlayer.transform);
             // 이곳에서 광전사와 거너의 주도권이 바낌
             GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
             curPlayer = GameManager.Instance.CurPlayer;
@@ -955,7 +959,7 @@ public class Stage2 : Stage
             gunner.transform.position = berserkerPos;
             await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
             
-            GameManager.Instance.MainCamera.SetTarget(gunner.transform);
+            GameManager.Instance.SetCameraTarget(gunner.transform);
 
             dialogCancellation = new CancellationTokenSource();
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
@@ -1015,7 +1019,7 @@ public class Stage2 : Stage
                 berserker.SpawnObject(ConstValues.BangEffect, berserker.CenterPos.position);
                 berserker.gameObject.SetActive(false);
             }
-            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+            GameManager.Instance.SetCameraTarget(curPlayer.transform);
             
             // 게임 시작
             GameManager.Instance.SetMonster(chargeMonster, false, false);
@@ -1046,7 +1050,7 @@ public class Stage2 : Stage
         {
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-            GameManager.Instance.MainCamera.SetTarget(chargeMonster.transform);
+            GameManager.Instance.SetCameraTarget(chargeMonster.transform);
         }
         
         await UniTask.WaitUntil(() => chargeMonster.NormalState == ENormalState.Down);
@@ -1074,7 +1078,7 @@ public class Stage2 : Stage
         {
             string dialog2 = "너네도!\n짜증나는 플랫폼도!\n다 부숴버릴 테다!!";
             
-            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+            GameManager.Instance.SetCameraTarget(curPlayer.transform);
             await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
             
             // 항상 광전사가 플레이어의 위치에 있어야함
@@ -1092,7 +1096,7 @@ public class Stage2 : Stage
             gunner.transform.position = berserkerPos;
             await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
             
-            GameManager.Instance.MainCamera.SetTarget(berserker.transform);
+            GameManager.Instance.SetCameraTarget(berserker.transform);
             
             CameraShake(0.5f, 0.5f); 
             PlaySound(ConstValues.FighterStrongPunch);
@@ -1164,7 +1168,7 @@ public class Stage2 : Stage
                 berserker.SpawnObject(ConstValues.BangEffect, berserker.CenterPos.position);
                 berserker.gameObject.SetActive(false);
             }
-            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+            GameManager.Instance.SetCameraTarget(curPlayer.transform);
             
             // 게임 시작
             GameManager.Instance.ControlStart = true;
@@ -1186,7 +1190,7 @@ public class Stage2 : Stage
             
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-            GameManager.Instance.MainCamera.SetTarget(chargeBoss.transform);
+            GameManager.Instance.SetCameraTarget(chargeBoss.transform);
             
             dialogCancellation = new CancellationTokenSource();
             if (await NormalDelay(3.0f, dialogCancellation).SuppressCancellationThrow())
@@ -1196,7 +1200,7 @@ public class Stage2 : Stage
             if (await NormalDelay(dialogDelay1, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            GameManager.Instance.MainCamera.SetTarget(curPlayer.transform);
+            GameManager.Instance.SetCameraTarget(curPlayer.transform);
 
             await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
             
@@ -1214,7 +1218,7 @@ public class Stage2 : Stage
             gunner.gameObject.SetActive(true);
             gunner.transform.position = berserkerPos;
             await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
-            GameManager.Instance.MainCamera.SetTarget(berserker.transform);
+            GameManager.Instance.SetCameraTarget(berserker.transform);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 

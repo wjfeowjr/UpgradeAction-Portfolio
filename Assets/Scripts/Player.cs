@@ -206,6 +206,7 @@ public abstract class Player : Character
     {
         var myName = name.Split('(')[0];
         var targetStat = TableManager.Instance.playerTable.Player.Find(x => x.id == myName);
+        immortal = false;
         
         basicStat = new BasicStat()
         {

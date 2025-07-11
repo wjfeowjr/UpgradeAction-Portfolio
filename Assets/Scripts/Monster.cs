@@ -520,27 +520,25 @@ public class Monster : Character
     // 등장(연출 포함)
     public virtual async void Appear(Action bossProduct)
     {
-        if(IsDamaged())
-            return;
+        if (IsDamaged())
+        {
+            Debug.Log("꽥");
+            normalState = ENormalState.Idle;
+        }
         
         StandHitBox();
         StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
         MoveStateSetting(EMoveState.Stopping);
         LandingStateSetting(ELandingState.Ground);
 
-        stateCancellation = new CancellationTokenSource();
-        if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-            return;
-
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         myBoxCollider.enabled = true;
         GravityChange(myGravity);
-
-        myAnimator.transform.localScale = new Vector3(defaultAnimatorScale.x, defaultAnimatorScale.y * 2.6f, defaultAnimatorScale.z);
+        
+        stateCancellation = new CancellationTokenSource();
         bool finishSuccess = true;
-
         finishSuccess = await AppearMotion();
-
+        
         if (finishSuccess)
         {
             SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
@@ -568,6 +566,8 @@ public class Monster : Character
         if(appearMotions.Length == 0)
             return false;
 
+        myAnimator.transform.localScale = new Vector3(defaultAnimatorScale.x, defaultAnimatorScale.y * 2.6f, defaultAnimatorScale.z);
+        
         foreach (var appearMotion in appearMotions)
         {
             appearMotion.gameObject.SetActive(true);
@@ -578,8 +578,10 @@ public class Monster : Character
         float alpha = 1.0f;
         while (yScale > defaultAnimatorScale.y)
         {
-            yScale -= 0.35f * defaultAnimatorScale.y;
-            alpha -= 0.26f;
+            // 0.35f
+            // 0.26f
+            yScale -= 25 * defaultAnimatorScale.y * Time.deltaTime;
+            alpha -= 20 * Time.deltaTime;
             myAnimator.transform.localScale = new Vector3(myAnimator.transform.localScale.x, yScale, 1);
             foreach (var appearMotion in appearMotions)
             {

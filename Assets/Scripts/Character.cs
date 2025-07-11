@@ -165,7 +165,11 @@ public abstract class Character : MonoBehaviour
         set => isDie = value;
     }
 
-    public ENormalState NormalState => normalState;
+    public ENormalState NormalState
+    {
+        get => normalState;
+        set => normalState = value;
+    }
     public EMoveState MoveState => moveState;
 
     // 상태 설정
@@ -1382,14 +1386,14 @@ public abstract class Character : MonoBehaviour
     // 바라보기
     public virtual void LookAt(float xPos)
     {
-        // xPos가 내 위치보다 오른쪽에 있고 내가 왼쪽을 보고 있을 때
-        if (xPos > transform.position.x && transform.localScale.x < 0)
+        // xPos가 내 위치보다 오른쪽에 있고 내가 왼쪽을 보고 있을 때  && transform.localScale.x < 0
+        if (xPos > transform.position.x)
         {
             // 오른쪽으로 돈다
             transform.localScale = defaultScale; // 스케일의 값이 바뀌어 방향이 바뀐다
         }
-        // xPos가 내 위치보다 왼쪽에 있고 내가 오른쪽을 보고 있을 때
-        else if (xPos < transform.position.x && transform.localScale.x > 0)
+        // xPos가 내 위치보다 왼쪽에 있고 내가 오른쪽을 보고 있을 때 && transform.localScale.x > 0
+        if (xPos < transform.position.x)
         {
             // 왼쪽으로 돈다
             transform.localScale = reverseScale; // 스케일의 값이 바뀌어 방향이 바뀐다

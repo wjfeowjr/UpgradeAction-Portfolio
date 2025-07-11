@@ -14,7 +14,7 @@ public class StageManager : Singleton<StageManager>
     protected override void Awake()
     {
         if (!SceneChanger.Instance)
-            SceneManager.LoadScene(ConstValues.TitleScene);
+            SceneManager.LoadScene(ConstValues.TitleScene); 
 
         if (GameManager.Instance)
             GameManager.Instance.InitCamera(mainCamera);

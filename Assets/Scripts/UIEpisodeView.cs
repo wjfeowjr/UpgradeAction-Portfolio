@@ -77,6 +77,7 @@ public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
     
     public async void EpisodeProduct(Action soundAction)
     {
+        gameObject.SetActive(true);
         episodeCancellation = new CancellationTokenSource();
         
         // 페이드 인
