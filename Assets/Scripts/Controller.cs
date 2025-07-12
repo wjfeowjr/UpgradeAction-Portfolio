@@ -24,6 +24,9 @@ public class Controller : Singleton<Controller>
         //         isRightMove = false;
         //     return;
         // }
+        
+        StopControl();
+        
         if(!GameManager.Instance.ControlStart)
             return;
         
@@ -74,7 +77,10 @@ public class Controller : Singleton<Controller>
             if(isLeftMove)
                 isLeftMove = false;
         }
+    }
 
+    private void StopControl()
+    {
         if (Input.GetKeyUp(GameManager.Instance.leftMoveKey))
         {
             isLeftMove = false;

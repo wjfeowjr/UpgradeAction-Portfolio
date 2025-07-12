@@ -366,7 +366,6 @@ public class GameManager : Singleton<GameManager>
     private void DefaultKeySetting()
     {
         PlayerPrefs.DeleteAll();
-
         StageBinding.LoadStage();
 
         escKey = KeyCode.Escape;
