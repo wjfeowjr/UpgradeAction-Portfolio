@@ -565,6 +565,12 @@ public abstract class Player : Character
         CancelMotion();
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
     }
+    
+    public void ForceJump()
+    {
+        CancelMotion();
+        StateSetting(ENormalState.Idle, ConstValues.Jump, ConstValues.Jump);
+    }
 
     public void MoveSetting(Vector2 dir)
     {
@@ -828,7 +834,6 @@ public abstract class Player : Character
         }
         await NormalDelay(1.0f, stateCancellation);
     }
-    
     public async void JumpToChange()
     {
         stateCancellation = new CancellationTokenSource();
@@ -839,6 +844,38 @@ public abstract class Player : Character
         }
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
     }
+    public async UniTask EntranceJump()
+    {
+        CancelMotion();
+        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+        LandingStateSetting(ELandingState.Air);
+            
+        jumpLimitY = transform.position.y + 2;
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 20); 
+            
+        stateCancellation = new CancellationTokenSource();
+        while (transform.position.y < jumpLimitY)
+        {
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
+        
+        while (normalState != Idle)
+        {
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+    }
+    public async UniTask EntranceDown()
+    {
+        while (normalState != Idle)
+        {
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+    }
+
     // 도약
     protected async void Leap(float xVelocity, float yVelocity, float leapHeight)
     {

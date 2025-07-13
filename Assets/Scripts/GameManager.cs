@@ -254,6 +254,7 @@ public class GameManager : Singleton<GameManager>
     
     // 카메라
     private FollowCamera mainCamera;
+    [SerializeField] private FollowCamera miniMapCamera;
     [SerializeField] private Canvas uiObjectCanvas;
 
     // 프로퍼티
@@ -1007,6 +1008,7 @@ public class GameManager : Singleton<GameManager>
 
         RefreshSkill();
         SetCameraTarget(curPlayer.transform);
+        SetMiniMapCameraTarget(curPlayer.transform);
     }
 
     // 단독 => 단독
@@ -1022,11 +1024,16 @@ public class GameManager : Singleton<GameManager>
         
         RefreshSkill();
         SetCameraTarget(curPlayer.transform);
+        SetMiniMapCameraTarget(curPlayer.transform);
     }
 
     public void SetCameraTarget(Transform targetTransform)
     {
         mainCamera.SetTarget(targetTransform);
+    }
+    public void SetMiniMapCameraTarget(Transform targetTransform)
+    {
+        miniMapCamera.SetTarget(targetTransform);
     }
 
     private void RefreshSkill()

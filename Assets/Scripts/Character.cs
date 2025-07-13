@@ -249,11 +249,11 @@ public abstract class Character : MonoBehaviour
     
     protected virtual void UpdateBungee()
     {
-        if (!isDie && transform.position.y < ConstValues.BungeePosY)
-        {
-            TakeDamage(basicStat.maxHp);
-            Die();
-        }
+        // if (!isDie && transform.position.y < ConstValues.BungeePosY)
+        // {
+        //     TakeDamage(basicStat.maxHp);
+        //     Die();
+        // }
     }
     
     protected void UpdateBuff()
@@ -450,7 +450,7 @@ public abstract class Character : MonoBehaviour
     {
         myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
     }
-    protected void ZeroVelocity()
+    public void ZeroVelocity()
     {
         myRigidbody.linearVelocity = new Vector2(0, 0);
     }
@@ -1082,7 +1082,7 @@ public abstract class Character : MonoBehaviour
     }
     
     // 중력값 변경
-    protected void GravityChange(float value)
+    public void GravityChange(float value)
     {
         myRigidbody.gravityScale = value;
     }

@@ -79,20 +79,27 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.ControlStart = false;
         await RoomManager.Instance.EntranceFadeOut();
-        GameManager.Instance.CurPlayer.ForceIdle();
+
         switch (dir)
         {
             case EntranceDir.Left:
                 SetLeftPlayerPos();
+                GameManager.Instance.CurPlayer.ForceIdle();
                 break;
             case EntranceDir.Right:
                 SetRightPlayerPos();
+                GameManager.Instance.CurPlayer.ForceIdle();
                 break;
             case EntranceDir.Up:
                 SetUpPlayerPos();
+                GameManager.Instance.CurPlayer.ZeroVelocity();
+                GameManager.Instance.CurPlayer.GravityChange(0);
                 break;
             case EntranceDir.Down:
                 SetDownPlayerPos();
+                GameManager.Instance.CurPlayer.ForceJump();
+                GameManager.Instance.CurPlayer.ZeroVelocity();
+                GameManager.Instance.CurPlayer.GravityChange(0);
                 break;
         }
         SetCameraLimit();
@@ -101,9 +108,21 @@ public class Room : MonoBehaviour
         fadeCancellation = new CancellationTokenSource();
         if (await NormalDelay(0.5f, fadeCancellation).SuppressCancellationThrow())
             return;
+
+        await RoomManager.Instance.EntranceFadeIn();
+        
+        GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
+        switch (dir)
+        {
+            case EntranceDir.Up:
+                await GameManager.Instance.CurPlayer.EntranceDown();
+                break;
+            case EntranceDir.Down:
+                await GameManager.Instance.CurPlayer.EntranceJump();
+                break;
+        }
         
         GameManager.Instance.ControlStart = true;
-        await RoomManager.Instance.EntranceFadeIn();
     }
     
     private void SetLeftPlayerPos()
@@ -119,6 +138,7 @@ public class Room : MonoBehaviour
     private void SetUpPlayerPos()
     {
         GameManager.Instance.CurPlayer.transform.position = upPlayerPos.position;
+        
     }
     
     private void SetDownPlayerPos()
