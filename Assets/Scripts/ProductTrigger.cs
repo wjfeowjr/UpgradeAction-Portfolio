@@ -2,7 +2,7 @@ using System;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-public class StepTrigger : MonoBehaviour
+public class ProductTrigger : MonoBehaviour
 {
     [SerializeField] private BoxCollider2D triggerCollider;
     

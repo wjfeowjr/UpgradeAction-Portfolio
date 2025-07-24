@@ -67,16 +67,16 @@ public class FadeSystem : MonoBehaviour
             mySpriteRenderer.color = spriteRendererColor;
         }
         
-        await UniTask.Delay(TimeSpan.FromSeconds(startDelay), cancellationToken: fadeCancellation.Token);
+        await UniTask.Delay(TimeSpan.FromSeconds(startDelay), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
 
         if (loopCount == -1)
         {
             foreach (var myImage in myImages)
-                myImage.DOFade(endAlpha, duration).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
+                myImage.DOFade(endAlpha, duration).SetUpdate(true).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
             foreach (var myText in myTexts)
-                myText.DOFade(endAlpha, duration).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
+                myText.DOFade(endAlpha, duration).SetUpdate(true).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
             foreach (var mySpriteRenderer in mySpriteRenderers)
-                mySpriteRenderer.DOFade(endAlpha, duration).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
+                mySpriteRenderer.DOFade(endAlpha, duration).SetUpdate(true).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
         }
         else
         {
@@ -84,28 +84,28 @@ public class FadeSystem : MonoBehaviour
             while (true)
             {
                 foreach (var myImage in myImages)
-                    myImage.DOFade(endAlpha, duration).SetEase(myEase);
+                    myImage.DOFade(endAlpha, duration).SetUpdate(true).SetEase(myEase);
                 foreach (var myText in myTexts)
-                    myText.DOFade(endAlpha, duration).SetEase(myEase);
+                    myText.DOFade(endAlpha, duration).SetUpdate(true).SetEase(myEase);
                 foreach (var mySpriteRenderer in mySpriteRenderers)
-                    mySpriteRenderer.DOFade(endAlpha, duration).SetEase(myEase);
+                    mySpriteRenderer.DOFade(endAlpha, duration).SetUpdate(true).SetEase(myEase);
                 
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: fadeCancellation.Token);
-                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
                 // 반복횟수를 넘어가면 즉시 빠져나옴
                 currentLoop += 1;
                 if (currentLoop >= loopCount)
                     break;
                 
                 foreach (var myImage in myImages)
-                    myImage.DOFade(startAlpha, duration).SetEase(myEase);
+                    myImage.DOFade(startAlpha, duration).SetUpdate(true).SetEase(myEase);
                 foreach (var myText in myTexts)
-                    myText.DOFade(startAlpha, duration).SetEase(myEase);
+                    myText.DOFade(startAlpha, duration).SetUpdate(true).SetEase(myEase);
                 foreach (var mySpriteRenderer in mySpriteRenderers)
-                    mySpriteRenderer.DOFade(startAlpha, duration).SetEase(myEase);
+                    mySpriteRenderer.DOFade(startAlpha, duration).SetUpdate(true).SetEase(myEase);
                 
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), cancellationToken: fadeCancellation.Token);
-                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
                 // 반복횟수를 넘어가면 즉시 빠져나옴
                 currentLoop += 1;
                 if (currentLoop >= loopCount)

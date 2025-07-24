@@ -85,18 +85,32 @@ public class Controller : Singleton<Controller>
         {
             isLeftMove = false;
             if (Input.GetKey(GameManager.Instance.rightMoveKey))
-                isRightMove = true;
+            {
+                if (GameManager.Instance.ControlStart)
+                {
+                    isRightMove = true;
+                }
+            }
             else
+            {
                 GameManager.Instance.CurPlayer.StopVelocity();
+            }
         }
 
         if (Input.GetKeyUp(GameManager.Instance.rightMoveKey))
         {
             isRightMove = false;
-            if(Input.GetKey(GameManager.Instance.leftMoveKey))
-                isLeftMove = true;
+            if (Input.GetKey(GameManager.Instance.leftMoveKey))
+            {
+                if (GameManager.Instance.ControlStart)
+                {
+                    isLeftMove = true;
+                }
+            }
             else
+            {
                 GameManager.Instance.CurPlayer.StopVelocity();
+            }
         }
     }
 

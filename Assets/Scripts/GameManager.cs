@@ -11,6 +11,7 @@ using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
+using UnityEngine.UI;
 
 public static class KeyBinding
 {
@@ -20,7 +21,7 @@ public static class KeyBinding
         PlayerPrefs.SetInt(prefKey, (int)key);
         PlayerPrefs.Save();
     }
-
+  
     // 불러올 때 (디폴트 키도 지정 가능)
     public static KeyCode LoadKey(string prefKey, KeyCode defaultKey)
     {
@@ -89,6 +90,58 @@ public static class StageBinding
             Debug.Log($"스테이지 최초 저장");
             SaveStage(0);
             return 0;
+        }
+    }
+}
+
+public static class GoldBinding
+{
+    // 저장할 때
+    public static void SaveGold(int count)
+    {
+        PlayerPrefs.SetInt(ConstValues.Gold, count);
+        PlayerPrefs.Save();
+    }
+
+    // 불러올 때
+    public static void LoadGold()
+    {
+        if (PlayerPrefs.HasKey(ConstValues.Gold))
+        {
+            Debug.Log($"저장된 골드가 존재{PlayerPrefs.GetInt(ConstValues.Gold)}");
+            
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"골드 최초 저장");
+            SaveGold(0);
+        }
+    }
+}
+
+public static class SavePointBinding
+{
+    // 저장할 때
+    public static void SaveSavePoint(string prefKey, string savePointName)
+    {
+        PlayerPrefs.SetString(prefKey, savePointName);
+        PlayerPrefs.Save();
+    }
+  
+    // 불러올 때
+    public static string LoadSavePoint()
+    {
+        if (PlayerPrefs.HasKey(ConstValues.SavePoint))
+        {
+            Debug.Log($"저장된 세이브 포인트가 존재{PlayerPrefs.GetString(ConstValues.SavePoint)}");
+            return PlayerPrefs.GetString(ConstValues.SavePoint);
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"세이브 포인트 없음, 1번 맵으로 생성");
+            return default;
         }
     }
 }
@@ -189,6 +242,7 @@ public enum eUIType
     // 팝업
     Popup_GameOver,
     Popup_Guide,
+    Popup_Minimap,
 }
 
 public class GameManager : Singleton<GameManager>
@@ -197,9 +251,12 @@ public class GameManager : Singleton<GameManager>
     public Material hitMaterial;
     
     public KeyCode escKey;
+    public KeyCode tabKey;
+    public KeyCode spaceKey;
     
     public KeyCode leftMoveKey;
     public KeyCode rightMoveKey;
+
     public KeyCode attackKey;
     public KeyCode jumpKey;
     public KeyCode downKey;
@@ -233,6 +290,11 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
+
+    private UI_Interface uiInterface;
+    
+    // 재화
+    private int gold;
     
     private string episodeName;
 
@@ -242,7 +304,7 @@ public class GameManager : Singleton<GameManager>
     private int comboCount;
     private int groundLayerMask;
     private float groundPosY;
-    
+
     // 등록된 스킬 목록
     private SettingSkill changeSkill;
     [SerializeField] private SkillKeyCollection playerSkillKeyCollection;
@@ -254,7 +316,7 @@ public class GameManager : Singleton<GameManager>
     
     // 카메라
     private FollowCamera mainCamera;
-    [SerializeField] private FollowCamera miniMapCamera;
+    [SerializeField] private Transform miniMapCamera;
     [SerializeField] private Canvas uiObjectCanvas;
 
     // 프로퍼티
@@ -264,8 +326,12 @@ public class GameManager : Singleton<GameManager>
         set => curPlayer = value;
     }
 
-    public Player[] Players => players;
-
+    public int Gold
+    {
+        get => gold;
+        set => gold = value;
+    }
+    
     public string EpisodeName
     {
         get => episodeName;
@@ -283,7 +349,7 @@ public class GameManager : Singleton<GameManager>
         get => secondPlayer;
     }
 
-    public bool ControlStart
+    public bool ControlStart 
     {
         get => controlStart;
         set => controlStart = value;
@@ -304,6 +370,8 @@ public class GameManager : Singleton<GameManager>
     public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
 
     public SettingSkill ChangeSkill => changeSkill;
+    
+    public Transform ObjectPool => objectPool;
 
     public List<Monster> MonsterList
     {
@@ -317,6 +385,14 @@ public class GameManager : Singleton<GameManager>
         set => mainCamera = value;
     }
 
+    public Transform MiniMapCamera
+    {
+        get => miniMapCamera;
+        set => miniMapCamera = value;
+    }
+
+    //public UI_Interface UIInterface => uiInterface;
+    
     protected override void Awake()
     {
         base.Awake();
@@ -366,10 +442,13 @@ public class GameManager : Singleton<GameManager>
 
     private void DefaultKeySetting()
     {
-        PlayerPrefs.DeleteAll();
+        //PlayerPrefs.DeleteAll();
         StageBinding.LoadStage();
+        GoldBinding.LoadGold();
 
         escKey = KeyCode.Escape;
+        tabKey = KeyCode.Tab;
+        spaceKey = KeyCode.Space;
         
         leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
@@ -381,14 +460,14 @@ public class GameManager : Singleton<GameManager>
         dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
         optionKey = KeyBinding.LoadKey(ConstValues.OptionKey, KeyCode.Escape);
         
-        skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.Q);
-        skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.W);
-        skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.E);
-        skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.R);
-        skillKey5 = KeyBinding.LoadKey(ConstValues.SkillKey5, KeyCode.A);
-        skillKey6 = KeyBinding.LoadKey(ConstValues.SkillKey6, KeyCode.S);
-        skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.D);
-        skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.F);
+        skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.A);
+        skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
+        skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
+        skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
+        skillKey5 = KeyBinding.LoadKey(ConstValues.SkillKey5, KeyCode.Q);
+        skillKey6 = KeyBinding.LoadKey(ConstValues.SkillKey6, KeyCode.W);
+        skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.E);
+        skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.R);
 
         InitSkillCollection();
     }
@@ -411,10 +490,12 @@ public class GameManager : Singleton<GameManager>
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey3));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey4));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey5));
-        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerUpperSlash, skillKey6));
-        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey7));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey6));
+        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey7));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey8));
         
+        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerUpperSlash, skillKey6));
+        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey7));
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey8));
         playerSkillKeyCollection.berserkerSkillKeyList = berserkerSkillKeyList;
@@ -426,10 +507,12 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey3));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey4));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey5));
-        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey6));
-        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey6));
+        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey7));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey8));
         
+        //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey6));
+        //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
         playerSkillKeyCollection.gunnerSkillKeyList = gunnerSkillKeyList;
@@ -445,6 +528,43 @@ public class GameManager : Singleton<GameManager>
     {
         playerSkillKeyCollection.berserkerSkillKeyList[8] = SetSkillKey(ConstValues.BerserkerCrash, skillKey8);
         playerSkillKeyCollection.gunnerSkillKeyList[8] = SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8);
+    }
+
+    public void AddNewSkill(string id)
+    {
+        var skillData = TableManager.Instance.skillTable.Skill.Find(x => x.id == id);
+        switch (skillData.caster)
+        {
+            case ConstValues.Berserker:
+            {
+                int idx = EmptySkillIdx(playerSkillKeyCollection.berserkerSkillKeyList);
+                playerSkillKeyCollection.berserkerSkillKeyList[idx].skillId = id;
+                break;
+            }
+            case ConstValues.Gunner:
+            {
+                int idx = EmptySkillIdx(playerSkillKeyCollection.gunnerSkillKeyList);
+                playerSkillKeyCollection.gunnerSkillKeyList[idx].skillId = id;
+                break;
+            }
+        }
+        RefreshSkill();
+        // 저장
+        string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
+        SkillBinding.SaveKey(json);
+    }
+    private int EmptySkillIdx(List<SkillKey> skillKeyList)
+    {
+        int idx = 1;
+        for (int i = 1; i < skillKeyList.Count; i++)
+        {
+            if (string.IsNullOrEmpty(skillKeyList[i].skillId))
+            {
+                idx = i;
+                break;
+            }
+        }
+        return idx;
     }
 
     public void SetSkillId(KeyCode keyCode, string skillId)
@@ -497,11 +617,6 @@ public class GameManager : Singleton<GameManager>
         }
 
         return settingSkillList;
-    }
-
-    public int LoadStage()
-    {
-        return StageBinding.LoadStage();
     }
 
     private void InitAtlas(SpriteAtlas spriteAtlas)
@@ -589,7 +704,12 @@ public class GameManager : Singleton<GameManager>
     private void ActivePlayer(string playerName)
     {
         foreach (var player in players)
+        {
             player.gameObject.SetActive(player.name == playerName);
+            
+            if (player.name == playerName)
+                player.Flip(1);
+        }
     }
 
     public void ArrivePlayer()
@@ -726,26 +846,22 @@ public class GameManager : Singleton<GameManager>
     public GameObject SpawnToUIPool(eUIType type, Transform objTransform)
     {
         var go = SpawnToPool(type.ToString(), uiPool, objTransform);
-        SetUIorPopup(type, go);
         return go;
     }
     public GameObject SpawnToUIPool(eUIType type, Vector2 objVector)
     {
         var go = SpawnToPool(type.ToString(), uiPool, objVector);
-        SetUIorPopup(type, go);
         return go;
     }
     // UI팝업화면
     public GameObject SpawnToPopupPool(eUIType type, Transform objTransform)
     {
         var go = SpawnToPool(type.ToString(), popupPool, objTransform);
-        SetUIorPopup(type, go);
         return go;
     }
     public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector)
     {
         var go = SpawnToPool(type.ToString(), popupPool, objVector);
-        SetUIorPopup(type, go);
         return go;
     }
     // 최상위 UI오브젝트
@@ -845,7 +961,7 @@ public class GameManager : Singleton<GameManager>
         go.SetActive(true);
         return go;
     }
-    private GameObject SpawnToPoolInstantiate(string id, Transform pool, Vector3 objVector)
+    public GameObject SpawnToPoolInstantiate(string id, Transform pool, Vector3 objVector)
     { 
         var objectName = $"{id}(Clone)";
         GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
@@ -857,75 +973,53 @@ public class GameManager : Singleton<GameManager>
     }
     
     // UI관련 코드
-    // 바인딩(변하지 않는 UI만)
-    private async void BindPresenter(eUIType type, UIBase uiBase)
+    public void SpawnGameInterface()
     {
-        switch (type)
+        if (!uiInterface)
         {
-            case eUIType.UI_Interface:
-                if (uiBase is UI_Interface interfaceView)
-                {
-                    var comboInterface = interfaceView.ComboView.ConvertTo<IUIComboView>();
-                    var comboModel = new UIComboModel()
-                    {
-                        comboCount = 0
-                    };
-                    var comboPresenter = new UIComboPresenter(comboInterface, comboModel);
-                    interfaceView.SetComboPresenter(comboPresenter);
-                    comboPresenter.SetCombo();
-                    
-                    var hpInterface = interfaceView.HpView.ConvertTo<IUIHpView>();
-                    var hpModel = new UIHpModel()
-                    {
-                        character = CurPlayer
-                    };
-                    var hpPresenter = new UIHpPresenter(hpInterface, hpModel);
-                    interfaceView.SetHpPresenter(hpPresenter);
-                    hpPresenter.SetHp();
-                    hpPresenter.SetHpText();
-                    
-                    var bossHpInterface = interfaceView.BossHpView.ConvertTo<IUIBossHpView>();
-                    var bossHpPresenter = new UIBossHpPresenter(bossHpInterface);
-                    interfaceView.SetBossHpPresenter(bossHpPresenter);
-                    bossHpPresenter.HideHp();
-
-                    // 뷰 리스트를 인터페이스로 변환
-                    var changeInterface = interfaceView.ChangeCharacter.ConvertTo<IUISkillView>();
-                    var skillInterfaces = interfaceView.SkillViews.ConvertAll(v => (IUISkillView)v);
-                    var skillModel = new UISkillModel
-                    {
-                        changeSkill = this.changeSkill,
-                        settingSkillList = GetSettingSkillList()
-                    };
-                    var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
-                    interfaceView.SetSkillPresenter(skillPresenter);
-                    skillPresenter.SetSkillInfo();
-                }
-                break;
-
-            case eUIType.Popup_GameOver:
-                if (uiBase is Popup_GameOver gameOverPopup)
-                {
-                    var gameOverInterface = gameOverPopup.GameOverView.ConvertTo<IUIGameOverView>();
-                    var hpModel = new PopupGameOverModel()
-                    {
-                        title = "게임 오버",
-                        message = "다시 하기(Space)",
-                        confirmAction = () =>
-                        {
-                            GoScene(ConstValues.BattleScene);
-                            uiBase.Close();
-                            controlStart = true;
-                            Time.timeScale = 1;
-                            BgmManager.Instance.ReplayBgm();
-                            StageManager.Instance.CurrentStage.CancelTask();
-                        }
-                    };
-                    var gameOverPresenter = new PopupGameOverPresenter(gameOverInterface, hpModel);
-                    gameOverPresenter.SetPopup();
-                }
-                break;
+            uiInterface = SpawnToUIPool(eUIType.UI_Interface, Vector2.zero).GetComponent<UI_Interface>();
+            uiInterface.Setup(eUIType.UI_Interface);
         }
+
+        var comboInterface = uiInterface.ComboView.ConvertTo<IUIComboView>();
+        var comboModel = new UIComboModel()
+        {
+            comboCount = 0
+        };
+        var comboPresenter = new UIComboPresenter(comboInterface, comboModel);
+        uiInterface.SetComboPresenter(comboPresenter);
+        comboPresenter.SetCombo();
+
+        RefreshPlayerHp();
+                    
+        var bossHpInterface = uiInterface.BossHpView.ConvertTo<IUIBossHpView>();
+        var bossHpPresenter = new UIBossHpPresenter(bossHpInterface);
+        uiInterface.SetBossHpPresenter(bossHpPresenter);
+        bossHpPresenter.HideHp();
+            
+        var changeInterface = uiInterface.ChangeCharacter.ConvertTo<IUISkillView>();
+        var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
+        var skillModel = new UISkillModel
+        {
+            changeSkill = this.changeSkill,
+            settingSkillList = GetSettingSkillList()
+        };
+        var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
+        uiInterface.SetSkillPresenter(skillPresenter);
+        skillPresenter.SetSkillInfo();
+    }
+
+    public void RefreshPlayerHp()
+    {
+        var hpInterface = uiInterface.HpView.ConvertTo<IUIHpView>();
+        var hpModel = new UIHpModel()
+        {
+            character = CurPlayer
+        };
+        var hpPresenter = new UIHpPresenter(hpInterface, hpModel);
+        uiInterface.SetHpPresenter(hpPresenter);
+        hpPresenter.SetHp();
+        hpPresenter.SetHpText();
     }
 
     public GameObject GetUI(eUIType type)
@@ -940,15 +1034,6 @@ public class GameManager : Singleton<GameManager>
             }
         }
         return result;
-    }
-
-    // 비활성화 된 UI나 Popup을 활성화 후, 바인딩
-    private void SetUIorPopup(eUIType uiType, GameObject uiObject)
-    {
-        var uiBase = uiObject.GetComponent<UIBase>();
-        uiBase.Setup(uiType);
-        if (uiBase != null)
-            BindPresenter(uiType, uiBase); 
     }
 
     private void InitChangeSkill()
@@ -1008,7 +1093,6 @@ public class GameManager : Singleton<GameManager>
 
         RefreshSkill();
         SetCameraTarget(curPlayer.transform);
-        SetMiniMapCameraTarget(curPlayer.transform);
     }
 
     // 단독 => 단독
@@ -1024,16 +1108,11 @@ public class GameManager : Singleton<GameManager>
         
         RefreshSkill();
         SetCameraTarget(curPlayer.transform);
-        SetMiniMapCameraTarget(curPlayer.transform);
     }
 
     public void SetCameraTarget(Transform targetTransform)
     {
         mainCamera.SetTarget(targetTransform);
-    }
-    public void SetMiniMapCameraTarget(Transform targetTransform)
-    {
-        miniMapCamera.SetTarget(targetTransform);
     }
 
     private void RefreshSkill()

@@ -168,6 +168,8 @@ public class Monster_Sun : Monster
     
     public override async void Die()
     {
+        base.Die();
+        
         myBoxCollider.enabled = false;
         faceSpin.StopAndReset();
         faceReduction.StopAndReset();
@@ -175,7 +177,8 @@ public class Monster_Sun : Monster
         CancelMotion();
         MoveStateSetting(EMoveState.Stopping);
         isDie = true;
-        GameManager.Instance.RemoveMonster(this);
+        //removeAction?.Invoke();
+        //GameManager.Instance.RemoveMonster(this);
         
         if (StageManager.Instance.GetStageDialogStep() >= 7)
         {
@@ -207,6 +210,7 @@ public class Monster_Sun : Monster
         base.DieExplosion();
         faceSpin.enabled = false;
         faceReduction.enabled = false;
+        goldAction?.Invoke(myStat.gold, centerPos.position);
     }
 
     private void BombEffect()

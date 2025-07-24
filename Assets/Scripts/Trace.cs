@@ -25,6 +25,11 @@ public class Trace : MonoBehaviour
             transform.eulerAngles = target.eulerAngles;
     }
 
+    public bool IsTargetNull()
+    {
+        return target == null;
+    }
+
     public void SetTarget(Transform targetTransform)
     {
         target = targetTransform;

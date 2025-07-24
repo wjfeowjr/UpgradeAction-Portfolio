@@ -3,7 +3,7 @@ using UnityEngine;
 public class Popup_Guide : UIBase
 {
     // 가이드 팝업
-    public IUIGuideView GuideView => guideView;
+    public IPopupGuideView GuideView => guideView;
     
     [SerializeField] private PopupGuideView guideView;
     private PopupGuidePresenter popupGuidePresenter;
@@ -15,6 +15,6 @@ public class Popup_Guide : UIBase
     
     private void Update()
     {
-        popupGuidePresenter?.EscClose();
+        popupGuidePresenter?.CloseGuide();
     }
 }

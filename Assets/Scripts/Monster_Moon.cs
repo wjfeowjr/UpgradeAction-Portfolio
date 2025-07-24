@@ -195,6 +195,8 @@ public class Monster_Moon : Monster
 
     public override void Die()
     {
+        base.Die();
+        
         myBoxCollider.enabled = false;
         faceSpin.StopAndReset();
         faceReduction.StopAndReset();
@@ -202,7 +204,8 @@ public class Monster_Moon : Monster
         CancelMotion();
         MoveStateSetting(EMoveState.Stopping);
         isDie = true;
-        GameManager.Instance.RemoveMonster(this);
+        //removeAction?.Invoke();
+        //GameManager.Instance.RemoveMonster(this);
     }
 
     public async void DieBomb()
@@ -222,5 +225,6 @@ public class Monster_Moon : Monster
     {
         dieCancellation?.Cancel();
         base.DieExplosion();
+        goldAction?.Invoke(myStat.gold, centerPos.position);
     }
 }

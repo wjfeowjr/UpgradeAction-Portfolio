@@ -184,6 +184,7 @@ public abstract class Player : Character
         base.Update();
         UpdateFlip();
         UpdateJumpDown();
+        UpdateLanding();
         UpdateGlobalCoolTime();
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
@@ -432,6 +433,26 @@ public abstract class Player : Character
         
         if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Jump) && myRigidbody.linearVelocity.y < 0)
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+    }
+
+    // 일반점프 후 착지에만 관여
+    private void UpdateLanding()
+    {
+        if (normalState is not ENormalState.Jump)
+            return;
+        
+        var distance = 1.0f;
+        var down = Physics2D.Raycast(transform.position, Vector2.down, distance, groundAndPlatformLayerMask);
+        Debug.DrawRay(transform.position, Vector2.down * distance, ConstValues.RedColor, 0.02f);
+
+        if (down.collider != null && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
+        {
+            LandingStateSetting(ELandingState.Ground);
+            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            myRigidbody.linearVelocity = Vector2.zero;
+            jumpAttackCount = 0;
+            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        }
     }
 
     private void UpdateGlobalCoolTime()
@@ -1059,8 +1080,8 @@ public abstract class Player : Character
 
     protected void OnCollisionEnter2D(Collision2D col)
     {
-        // 착지 col.gameObject == groundObject (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform) || col.gameObject.CompareTag(ConstValues.Wall))
-        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
+        // 점프를 제외한 착지 관여
+        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && normalState != ENormalState.Dash && landingState == ELandingState.Air)
         {
             if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)
                 return;
@@ -1068,10 +1089,10 @@ public abstract class Player : Character
             LandingStateSetting(ELandingState.Ground);
             myRigidbody.bodyType = RigidbodyType2D.Dynamic;
             myRigidbody.linearVelocity = Vector2.zero;
-
-            groundObject = col.gameObject;
             jumpAttackCount = 0;
-
+            
+            groundObject = col.gameObject;
+    
             // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
             switch (normalState)
             {

@@ -122,7 +122,13 @@ public class ConstValues : Singleton<ConstValues>
     public const string PlayerSkill = "PlayerSkill";
     public const string Dash = "Dash";
     public const string DashEffect = "DashEffect";
-
+    
+    public const string Rooms = "Rooms";
+    public const string Minimap = "Minimap";
+    public const string MiniMapVisitedCells = "MiniMapVisitedCells";
+    public const string MiniMapCheckers = "MiniMapCheckers";
+    public const string SavePoint = "SavePoint";
+    
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
     public const string Grabbed = "Grabbed";
@@ -149,6 +155,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string StageWallRight = "StageWallRight";
     public const string Platform = "Platform";
     public const string DestroyPlatform = "DestroyPlatform";
+
+    public const string Gold = "Gold";
+    public const string FollowGold = "FollowGold";
 
     public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";

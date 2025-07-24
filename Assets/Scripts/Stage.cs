@@ -29,7 +29,7 @@ public abstract class Stage : MonoBehaviour
     
     [SerializeField] protected EpisodeStep episodeStep;
     [SerializeField] protected Transform[] playerPos;
-    [SerializeField] protected StepTrigger[] stepTrigger;
+    [SerializeField] protected ProductTrigger[] stepTrigger;
     [SerializeField] protected Transform[] customMovePos;
     [SerializeField] protected Transform[] monsterPos;
     [SerializeField] protected Transform[] stageWallPos;
@@ -64,7 +64,7 @@ public abstract class Stage : MonoBehaviour
     {
         if (GameManager.Instance)
         {
-            GameManager.Instance.ClearMonsterList();
+            //GameManager.Instance.ClearMonsterList();
             GameManager.Instance.DisActiveObjectList();
             CashingSpeechFrame();
         }
@@ -96,14 +96,14 @@ public abstract class Stage : MonoBehaviour
     // 맵에 있는 모든 몹을 잡았을 경우 발생하는 액션
     protected async void MonsterClearAction(Action action)
     {
-        if (await WaitUntil(() => !monsterSpawning && GameManager.Instance.MonsterList.Count == 0, waitCancellation).SuppressCancellationThrow())
-            return;
+        // if (await WaitUntil(() => !monsterSpawning && GameManager.Instance.MonsterList.Count == 0, waitCancellation).SuppressCancellationThrow())
+        //     return;
         action?.Invoke();
     }
     protected async void MonsterClearAction(Func<UniTask> asyncAction)
     {
-        if (await WaitUntil(() => !monsterSpawning && GameManager.Instance.MonsterList.Count == 0, waitCancellation).SuppressCancellationThrow())
-            return;
+        // if (await WaitUntil(() => !monsterSpawning && GameManager.Instance.MonsterList.Count == 0, waitCancellation).SuppressCancellationThrow())
+        //     return;
         asyncAction?.Invoke();
     }
     
@@ -272,7 +272,7 @@ public abstract class Stage : MonoBehaviour
         // 바인딩
         if (uiBase is Popup_Guide guideView)
         {
-            var guideInterface = guideView.GuideView.ConvertTo<IUIGuideView>();
+            var guideInterface = guideView.GuideView.ConvertTo<IPopupGuideView>();
             var guideModel = new PopupGuideModel()
             {
                 closeAction = () => { uiBase.ReductionClose(true); }
@@ -293,7 +293,7 @@ public abstract class Stage : MonoBehaviour
         if (await NormalDelay(1.0f, dieCancellation).SuppressCancellationThrow())
             return;
 
-        GameManager.Instance.SpawnToPopupPool(eUIType.Popup_GameOver, Vector2.zero);
+        RoomManager.Instance.SpawnGameOver();
         Time.timeScale = 0;
     }
 

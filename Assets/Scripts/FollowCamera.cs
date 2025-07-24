@@ -123,7 +123,7 @@ public class FollowCamera : MonoBehaviour
         targetX = transform.position.x;
         targetY = transform.position.y;
 
-        // 플레이어가 x 마진을 넘어서 움직 였다면
+        // 플레이어가 x 마진을 넘어서 움직 였다면  
         if (CheckXMargin())
             // 대상 x 좌표는 카메라의 현재 x 위치와 플레이어의 현재 x 위치 사이의 Lerp 여야합니다.
             targetX = Mathf.Lerp(transform.position.x, target.transform.position.x, xSmooth * Time.deltaTime);

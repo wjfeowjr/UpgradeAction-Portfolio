@@ -145,6 +145,7 @@ public class MonsterData
     public float attackSpeed;
     public float criticalChance;
     public float criticalDamage;
+    public int gold;
     public float weight;
     public int stagger;
     public float staggerTime;
@@ -194,6 +195,22 @@ public class SkillDataList
     public List<SkillData> Skill;
 }
 
+[Serializable]
+public class RoomsData
+{
+    public string id;
+    public int productCount;
+    public string productIdx;
+    public string skill;
+    public string treasureBox;
+    public string namedMonster;
+}
+[Serializable]
+public class RoomsDataList
+{
+    public List<RoomsData> Rooms;
+}
+
 public class TableManager : SingletonMono<TableManager>
 {
     public SpawnedObjectDataList spawnedObjectTable;
@@ -204,7 +221,8 @@ public class TableManager : SingletonMono<TableManager>
     public PlayerDataList playerTable;
     public MonsterDataList monsterTable;
     public SkillDataList skillTable;
-
+    public RoomsDataList roomsTable;
+    
     public void Init()
     {
         spawnedObjectTable = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject);
@@ -215,6 +233,7 @@ public class TableManager : SingletonMono<TableManager>
         playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
         monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
         skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);
+        roomsTable = LoadDataFromJson<RoomsDataList>(ConstValues.Rooms);
         
         Debug.Log($"{name} 초기화 완료");
     }

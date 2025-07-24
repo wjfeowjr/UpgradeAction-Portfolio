@@ -101,8 +101,8 @@ public abstract class Character : MonoBehaviour
     protected SpriteRenderer[] mySpriteRenderers;
     [SerializeField] protected GameObject groundObject;
     
-    protected Vector3 defaultScale;
-    protected Vector3 reverseScale;
+    [SerializeField] protected Vector3 defaultScale;
+    [SerializeField] protected Vector3 reverseScale;
     
     protected Vector3 defaultAnimatorScale;
 
@@ -224,7 +224,7 @@ public abstract class Character : MonoBehaviour
     {
         defaultScale = transform.localScale;
         reverseScale = new Vector3(-defaultScale.x, defaultScale.y, defaultScale.z);
-
+        
         defaultAnimatorScale = myAnimator.transform.localScale;
     }
     

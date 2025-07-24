@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IUIGameOverView
+public interface IPopupGameOverView
 {
     void SetMessage(string title, string message, Action confirmAction);
 }
@@ -13,15 +13,15 @@ public class PopupGameOverModel
 {
     public string title;
     public string message;
-    public Action confirmAction;
+    public Action replayAction;
 }
 
 public class PopupGameOverPresenter
 {
-    private IUIGameOverView _gameOverView;
+    private IPopupGameOverView _gameOverView;
     private PopupGameOverModel _model;
 
-    public PopupGameOverPresenter(IUIGameOverView gameOverView,  PopupGameOverModel model)
+    public PopupGameOverPresenter(IPopupGameOverView gameOverView,  PopupGameOverModel model)
     {
         _gameOverView = gameOverView;
         _model = model;
@@ -29,11 +29,17 @@ public class PopupGameOverPresenter
 
     public void SetPopup()
     {
-        _gameOverView.SetMessage(_model.title, _model.message, _model.confirmAction);
+        _gameOverView.SetMessage(_model.title, _model.message, _model.replayAction);
+    }
+    
+    public void Restart()
+    {
+        if (Input.GetKeyDown(GameManager.Instance.spaceKey))
+            _model.replayAction?.Invoke();
     }
 }
 
-public class PopupGameOverView : MonoBehaviour, IUIGameOverView
+public class PopupGameOverView : MonoBehaviour, IPopupGameOverView
 {
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text messageText;
@@ -52,10 +58,5 @@ public class PopupGameOverView : MonoBehaviour, IUIGameOverView
         {
             action();
         });
-    }
-
-    public void InvokeAction()
-    {
-        action.Invoke();
     }
 }

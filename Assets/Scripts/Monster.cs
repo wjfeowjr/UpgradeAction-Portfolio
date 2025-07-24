@@ -21,6 +21,7 @@ public class MonsterStat
     public float appearDelay;
     public float firstCoolTime;
     public float globalCoolTime;
+    public int gold;
     public List<Vector2> attackRange = new List<Vector2>();
     public Vector2 agroRange;
     public Vector2 jumpRange;
@@ -83,7 +84,13 @@ public class Monster : Character
     [SerializeField] protected TotalBar totalBar;
     [SerializeField] private SpriteRenderer[] appearMotions;      // 등장 연출 이미지
     protected CancellationTokenSource dieCancellation;
+    protected Action<int, Vector2> goldAction;
     
+    private bool patrolMoving = false;
+    private float patrolTimer = 0f;
+    private float limitLeft;
+    private float limitRight;
+
     // 프로퍼티
     public bool IsExplosion
     {
@@ -97,6 +104,18 @@ public class Monster : Character
         set => isBoss = value;
     }
 
+    public float LimitLeft
+    {
+        get => limitLeft;
+        set => limitLeft = value;
+    }
+    
+    public float LimitRight
+    {
+        get => limitRight;
+        set => limitRight = value;
+    }
+    
     protected override void OnEnable()
     {
         base.OnEnable();
@@ -111,13 +130,16 @@ public class Monster : Character
 
         base.Update();
 
-        // if (agroState == EAgroState.Agro)
-        // {
-        //     Trace();
-        //     Move();
-        // }
-        Trace();
-        Move();
+        if (agroState == EAgroState.Agro)
+        {
+            Trace();
+            Move();
+        }
+        else
+        {
+            Patrol();
+        }
+        
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
         UpdateBuff();
@@ -142,6 +164,7 @@ public class Monster : Character
         PlayerInJumpRangeCheck();
         PlayerInDropRangeCheck();
         UpdateStandingCheck();
+        UpdateRoomLimit();
     }
 
     private void OnDisable()
@@ -273,6 +296,7 @@ public class Monster : Character
             myStat.appearDelay = targetStat.appearDelay;
             myStat.firstCoolTime = targetStat.firstCoolTime;
             myStat.globalCoolTime = targetStat.globalCoolTime;
+            myStat.gold = targetStat.gold;
 
             var totalAttackRangeArray = targetStat.attackRange.Split('ㅗ');
             foreach (var totalRange in totalAttackRangeArray)
@@ -418,6 +442,11 @@ public class Monster : Character
         }
     }
 
+    public void SetGoldAction(Action<int, Vector2> action)
+    {
+        goldAction = action;
+    }
+
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
     {
         normalState = changeNormalState;
@@ -560,8 +589,16 @@ public class Monster : Character
         bossProduct?.Invoke();
         FirstCoolTimeReduce();
     }
+
+    public void MonsterAwake()
+    {
+        stateCancellation = new CancellationTokenSource();
+        IdleOrMove();
+        FirstCoolTimeReduce();
+    }
+    
     // 등장모션
-    protected async UniTask<bool> AppearMotion()
+    private async UniTask<bool> AppearMotion()
     {
         if(appearMotions.Length == 0)
             return false;
@@ -624,10 +661,31 @@ public class Monster : Character
         // {
         //     
         // }
-        
         // 움직이기
         if (moveState != EMoveState.Moving)
             return;
+        
+        if (agroState == EAgroState.Normal)
+        {
+            var rayVector = CenterPos.transform.position;
+            var distance = myBoxCollider.size.x * 0.5f + 0.2f;
+            
+            // 오른쪽
+            if (transform.localScale.x > 0)
+            {
+                RaycastHit2D rightRay = Physics2D.Raycast(rayVector, Vector2.right, distance, groundAndPlatformLayerMask);
+                Debug.DrawRay(rayVector, Vector2.right * distance, ConstValues.CyanColor, 0.02f);
+                if (rightRay.collider != null)
+                    Flip(-1);
+            }
+            else
+            {
+                RaycastHit2D leftRay = Physics2D.Raycast(rayVector, Vector2.left, distance, groundAndPlatformLayerMask);
+                Debug.DrawRay(rayVector, Vector2.left * distance, ConstValues.CyanColor, 0.02f);
+                if (leftRay.collider != null)
+                    Flip(1);
+            }
+        }
         
         float targetSpeedX = basicStat.moveSpeed;
         if (transform.localScale.x < 0)
@@ -651,6 +709,44 @@ public class Monster : Character
         {
             if (GameManager.Instance.CurPlayer.transform.position.x > transform.position.x + myStat.traceLength)
                 LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+        }
+    }
+    
+    private void Patrol()
+    {
+        if (patrolTimer <= 0f)
+        {
+            patrolMoving = !patrolMoving;
+            
+            // Random.Range(5f, 5f);
+            patrolTimer = 3.0f;
+
+            if (patrolMoving)
+            {
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                MoveStateSetting(EMoveState.Moving);
+                switch (transform.localScale.x)
+                {
+                    case > 0:
+                        Flip(-1);
+                        break;
+                    case < 0:
+                        Flip(1);
+                        break;
+                }
+            }
+            else
+            {
+                StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+                MoveStateSetting(EMoveState.Stopping);
+            }
+        }
+        
+        patrolTimer -= Time.deltaTime;
+        
+        if (patrolMoving)
+        {
+            Move();
         }
     }
     
@@ -757,13 +853,12 @@ public class Monster : Character
     public override void Die()
     {
         base.Die();
-        GameManager.Instance.RemoveMonster(this);
+        //removeAction?.Invoke();
+        //GameManager.Instance.RemoveMonster(this);
+        goldAction?.Invoke(myStat.gold, centerPos.position);
         
-        if (isExplosion || transform.position.y < ConstValues.BungeePosY)
-        {
-            SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-            gameObject.SetActive(false);
-        }
+        if (isExplosion)
+            DieExplosion();
 
         if (!totalBar)
             return;
@@ -1012,6 +1107,34 @@ public class Monster : Character
             LookAt(GameManager.Instance.CurPlayer.transform.position.x);
     }
     
+    private void UpdateRoomLimit()
+    {
+        // 1) 절반 크기
+        float halfWidth  = physicsCollider.size.x * 0.5f;
+
+        // 3) 플레이어 센터 기준으로 클램프 경계 계산
+        float leftLimit  = limitLeft + halfWidth;
+        float rightLimit = limitRight - halfWidth;
+
+        Vector3 pos = transform.position;
+        Vector2 vel = myRigidbody.linearVelocity;
+        
+        if (pos.x < leftLimit)
+        {
+            pos.x = leftLimit;
+            if (vel.x < 0)
+                vel.x = 0;
+        }
+        else if (pos.x > rightLimit)
+        {
+            pos.x = rightLimit;
+            if (vel.x > 0)
+                vel.x = 0;
+        }
+        
+        myRigidbody.linearVelocity = vel;
+    }
+    
     // 패턴 사이클
     private void PatternCycle()
     {
@@ -1176,32 +1299,48 @@ public class Monster : Character
 
                 if (verticalRay.collider != null)
                 {
-                    Vector2 start = transform.position;
-                    var arrivePos = new Vector2(verticalRay.point.x + 1.0f, transform.position.y);
-                    if (transform.localScale.x < 0)
-                        arrivePos = new Vector2(verticalRay.point.x - 1.0f, transform.position.y);
+                    if (agroState == EAgroState.Agro)
+                    {
+                        Vector2 start = transform.position;
+                        var arrivePos = new Vector2(verticalRay.point.x + 1.0f, transform.position.y);
+                        if (transform.localScale.x < 0)
+                            arrivePos = new Vector2(verticalRay.point.x - 1.0f, transform.position.y);
                     
-                    Vector2 end = new Vector2(arrivePos.x, arrivePos.y);
+                        Vector2 end = new Vector2(arrivePos.x, arrivePos.y);
 
-                    if (Vector2.Distance(start, end) < 0.01f)
-                        return;
+                        if (Vector2.Distance(start, end) < 0.01f)
+                            return;
                 
-                    CancelMotion();
-                    LookAt(arrivePos.x);
-                    stateCancellation = new CancellationTokenSource();
-                    StateSetting(ENormalState.Landing, ConstValues.Landing, ConstValues.Landing);
-                    MoveStateSetting(EMoveState.Stopping);
+                        CancelMotion();
+                        LookAt(arrivePos.x);
+                        stateCancellation = new CancellationTokenSource();
+                        StateSetting(ENormalState.Landing, ConstValues.Landing, ConstValues.Landing);
+                        MoveStateSetting(EMoveState.Stopping);
 
-                    var delay1 = 0.2f;
-                    if(await AttackDelay(delay1).SuppressCancellationThrow())
-                        return;
+                        var delay1 = 0.2f;
+                        if(await AttackDelay(delay1).SuppressCancellationThrow())
+                            return;
                 
-                    PlaySound(ConstValues.Jump1, 2.0f);
-                    LookAt(arrivePos.x);
-                    StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
-                    float travelTime = 0.5f;
-                    Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
-                    myRigidbody.linearVelocity = velocity;
+                        PlaySound(ConstValues.Jump1, 2.0f);
+                        LookAt(arrivePos.x);
+                        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+                        float travelTime = 0.5f;
+                        Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
+                        myRigidbody.linearVelocity = velocity;
+                    }
+                    // 평소에 절벽이 있으면 뒤를 돌기
+                    else if (agroState == EAgroState.Normal)
+                    {
+                        switch (transform.localScale.x)
+                        {
+                            case > 0:
+                                Flip(-1);
+                                break;
+                            case < 0:
+                                Flip(1);
+                                break;
+                        }
+                    }
                 }
             }
         }

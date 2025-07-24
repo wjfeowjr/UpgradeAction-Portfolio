@@ -3,7 +3,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IUIGuideView
+public interface IPopupGuideView
 {
     void SetModel(string guideMessage, string imgName);
     void SetAction(Action closeAction);
@@ -18,12 +18,12 @@ public class PopupGuideModel
 
 public class PopupGuidePresenter
 {
-    private IUIGuideView guideView;
+    private IPopupGuideView _guideView;
     private PopupGuideModel _model;
 
-    public PopupGuidePresenter(IUIGuideView guideView, PopupGuideModel model)
+    public PopupGuidePresenter(IPopupGuideView guideView, PopupGuideModel model)
     {
-        this.guideView = guideView;
+        _guideView = guideView;
         _model = model;
     }
 
@@ -36,23 +36,23 @@ public class PopupGuidePresenter
     {
         _model.guideMessage = guideMessage;
         _model.imgName = imgName;
-        guideView.SetModel(_model.guideMessage, _model.imgName);
+        _guideView.SetModel(_model.guideMessage, _model.imgName);
     }
     
     public void SetAction(Action action)
     {
         _model.closeAction = action;
-        guideView.SetAction(_model.closeAction);
+        _guideView.SetAction(_model.closeAction);
     }
     
-    public void EscClose()
+    public void CloseGuide()
     {
         if (Input.GetKeyDown(GameManager.Instance.escKey))
             _model.closeAction?.Invoke();
     }
 }
 
-public class PopupGuideView : MonoBehaviour, IUIGuideView
+public class PopupGuideView : MonoBehaviour, IPopupGuideView
 {
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text explainText;

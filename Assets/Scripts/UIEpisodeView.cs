@@ -9,7 +9,7 @@ using UnityEngine.UI;
 public interface IUIEpisodeView
 {
     void SetEpisode(string episodeName);
-    void EpisodeProduct(Action soundAction);
+    UniTask EpisodeProduct(Action soundAction);
     event Action EpisodeEnd;
 }
 
@@ -34,9 +34,9 @@ public class UIEpisodePresenter
         _episodeview.SetEpisode(_model.episodeName);
     }
 
-    public void EpisodeProduct(Action soundAction)
+    public UniTask EpisodeProduct(Action soundAction)
     {
-        _episodeview.EpisodeProduct(soundAction);
+        return _episodeview.EpisodeProduct(soundAction);
     }
 
     public void HandelEpisodeEnd(Action action)
@@ -75,7 +75,7 @@ public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
         fadeImage.color = new Color(fadeImage.color.r, fadeImage.color.g, fadeImage.color.b, 0);
     }
     
-    public async void EpisodeProduct(Action soundAction)
+    public async UniTask EpisodeProduct(Action soundAction)
     {
         gameObject.SetActive(true);
         episodeCancellation = new CancellationTokenSource();

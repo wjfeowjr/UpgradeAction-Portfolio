@@ -172,12 +172,15 @@ public class Monster_BigCharge : Monster
     
     public override async void Die()
     {
+        base.Die();
+        
         if (GameManager.Instance.EpisodeName == ConstValues.Episode2)
         {
             CancelMotion();
             ClearObjectList(buffObject);
             isDie = true;
-            GameManager.Instance.RemoveMonster(this);
+            //removeAction?.Invoke();
+            //GameManager.Instance.RemoveMonster(this);
             
             var delay = 0.12f;
             StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
@@ -192,22 +195,20 @@ public class Monster_BigCharge : Monster
                     return;
             }
         }
-        else
-        {
-            base.Die();
-        }
     }
 
     public void DieAirborne(Vector2 endPos)
     {
         dieCancellation?.Cancel();
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-        GameManager.Instance.RemoveMonster(this);
+        //removeAction?.Invoke();
+        //GameManager.Instance.RemoveMonster(this);
         Vector2 start = transform.position;
         Vector2 end = endPos;
         float travelTime = 0.6f;
         Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
         Airborne(velocity.x, velocity.y);
         //myRigidbody.linearVelocity = velocity;
+        goldAction?.Invoke(myStat.gold, centerPos.position);
     }
 }
