@@ -3,13 +3,12 @@ using UnityEngine;
 
 public class RoomSkillAndPassive : MonoBehaviour
 {
-    private SpriteRenderer mySpriteRenderer;
+    [SerializeField] private SpriteRenderer mySpriteRenderer;
     private Action action;
     private string skillId;
 
     public void SetSprite(string id, bool alreadyGet)
     {
-        mySpriteRenderer = GetComponent<SpriteRenderer>();
         mySpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(id);
         skillId = id;
         

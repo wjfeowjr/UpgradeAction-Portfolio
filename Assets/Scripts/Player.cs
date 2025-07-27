@@ -10,10 +10,9 @@ using static ENormalState;
 [Serializable]
 public class PlayerSkill
 {
-    public string skillName;
+    public string id;
     public List<float> maxCoolTime = new List<float>();
     public List<float> curCoolTime = new List<float>();
-    public string icon;
     public string name;
     public string explain;
 
@@ -441,7 +440,7 @@ public abstract class Player : Character
         if (normalState is not ENormalState.Jump)
             return;
         
-        var distance = 1.0f;
+        var distance = 0.2f;
         var down = Physics2D.Raycast(transform.position, Vector2.down, distance, groundAndPlatformLayerMask);
         Debug.DrawRay(transform.position, Vector2.down * distance, ConstValues.RedColor, 0.02f);
 
@@ -593,6 +592,18 @@ public abstract class Player : Character
         StateSetting(ENormalState.Idle, ConstValues.Jump, ConstValues.Jump);
     }
 
+    public void ForceProduct()
+    {
+        if (landingState == ELandingState.Air)
+        {
+            ForceJump();
+        }
+        else
+        {
+            ForceIdle();
+        }
+    }
+
     public void MoveSetting(Vector2 dir)
     {
         if (!canMove)
@@ -682,7 +693,7 @@ public abstract class Player : Character
         if (targetSkill.IsOnCooldown)
         {
             var coolTimeList = targetSkill.GetRemainingCooldown();
-            Debug.Log($"{targetSkill.skillName} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
+            Debug.Log($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
             return false;
         }
 
@@ -715,9 +726,9 @@ public abstract class Player : Character
         {
             var coolTimeList = targetSkill.GetRemainingCooldown();
             if(coolTimeList.Count > 1)
-                Debug.Log($"{targetSkill.skillName} 기본 쿨타임 {coolTimeList[0]:F1}초 남음, 스택 쿨타임 {coolTimeList[1]:F1}초 남음, 남은 스택 개수 {coolTimeList[2]:F1}개");
+                Debug.Log($"{targetSkill.id} 기본 쿨타임 {coolTimeList[0]:F1}초 남음, 스택 쿨타임 {coolTimeList[1]:F1}초 남음, 남은 스택 개수 {coolTimeList[2]:F1}개");
             else
-                Debug.Log($"{targetSkill.skillName} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
+                Debug.Log($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
             
             return false;
         }
@@ -749,7 +760,7 @@ public abstract class Player : Character
     protected void UseSkill(string id)
     {
         var targetSkill = GetSkill(id);
-        Debug.Log($"{targetSkill.skillName} 사용!");
+        Debug.Log($"{targetSkill.id} 사용!");
         targetSkill.SetCoolTime();
     }
 
@@ -897,6 +908,12 @@ public abstract class Player : Character
         }
     }
 
+    public void SetJumpState()
+    {
+        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+        LandingStateSetting(ELandingState.Air);
+    }
+
     // 도약
     protected async void Leap(float xVelocity, float yVelocity, float leapHeight)
     {
@@ -949,19 +966,18 @@ public abstract class Player : Character
     {
         foreach (var skill in TableManager.Instance.skillTable.Skill)
         {
-            if (skill.caster != basicStat.id)
+            if (skill.caster != ConstValues.All && skill.caster != basicStat.id)
                 continue;
             
             PlayerSkill addedSkill = new PlayerSkill();
             
-            addedSkill.skillName = skill.id;
+            addedSkill.id = skill.id;
             var coolTimeArray = skill.coolTime.Split(',');
             foreach (var coolTime in coolTimeArray)
             {
                 addedSkill.maxCoolTime.Add(float.Parse(coolTime));
                 addedSkill.curCoolTime.Add(float.Parse(coolTime));
             }
-            addedSkill.icon = skill.icon;
             addedSkill.name = skill.name;
             addedSkill.explain = skill.explain;
             skillList.Add(addedSkill);
@@ -975,7 +991,7 @@ public abstract class Player : Character
 
     public PlayerSkill GetSkill(string id)
     {
-        return skillList.Find(x => x.skillName == id);
+        return skillList.Find(x => x.id == id);
     }
 
     // 캐릭터 교체
@@ -1120,6 +1136,29 @@ public abstract class Player : Character
 
             // if (col.gameObject.CompareTag(ConstValues.Platform))
             //     IgnorePlatform();
+        }
+    }
+
+    protected void OnTriggerEnter2D(Collider2D col)
+    {
+        if (col.CompareTag(ConstValues.SaveObject))
+        {
+            if (col.GetComponent<SaveObject>())
+            {
+                var saveObject = col.GetComponent<SaveObject>();
+                saveObject.Expansion();
+            }
+        }
+    }
+    protected void OnTriggerExit2D(Collider2D col)
+    {
+        if (col.CompareTag(ConstValues.SaveObject))
+        {
+            if (col.GetComponent<SaveObject>())
+            {
+                var saveObject = col.GetComponent<SaveObject>();
+                saveObject.Reduce();
+            }
         }
     }
 }

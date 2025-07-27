@@ -50,6 +50,7 @@ public class AttackData
     public float effectTime;
     public bool ignoreSuperArmor;
     public bool continuous;
+    public bool duplicate;
     public string directionType;
     public int coefficient;
     public int stagger;
@@ -185,7 +186,6 @@ public class SkillData
     public string type;
     public string caster;
     public string coolTime;
-    public string icon;
     public string name;
     public string explain;
 }

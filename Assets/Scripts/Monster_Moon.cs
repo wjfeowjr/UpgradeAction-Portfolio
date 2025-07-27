@@ -8,10 +8,8 @@ public class Monster_Moon : Monster
     [SerializeField] private Transform attackPos;
     [SerializeField] private Spin faceSpin;
     [SerializeField] private Reduction faceReduction;
-
-    private float pointA;
-    private float pointB;
-    private Vector2 dir;
+    
+    private Vector2 dir = Vector2.left;
 
     protected override void MonsterPattern(int idx)
     {
@@ -30,46 +28,34 @@ public class Monster_Moon : Monster
         }
     }
 
-    private void PatrolRay()
-    {
-        var leftRay = Physics2D.Raycast(CenterPos.position, Vector2.left, 20f, wallLayerMask);
-        Debug.DrawRay(CenterPos.position, Vector2.left * 20f, ConstValues.RedColor, 0.1f);
-        pointA = leftRay.point.x + physicsCollider.size.x;
-        
-        var rightRay = Physics2D.Raycast(CenterPos.position, Vector2.right, 20f, wallLayerMask);
-        Debug.DrawRay(CenterPos.position, Vector2.right * 20f, ConstValues.BlueColor, 0.1f);
-        pointB = rightRay.point.x - physicsCollider.size.x;
-        
-        dir = Vector2.left;
-    }
-    
     protected override void Move()
     {
         // 움직이기
         if (moveState != EMoveState.Moving)
             return;
-        
-        float targetSpeedX = basicStat.moveSpeed * dir.x;
-        float targetSpeedY = myRigidbody.linearVelocity.y;
 
+        var rayVector = CenterPos.transform.position;
+        var distance = myBoxCollider.size.x * 0.5f + 1f;
+        
+        // 왼쪽
         if (dir == Vector2.left)
         {
-            if (Vector2.Distance(transform.position, new Vector2(pointA, transform.position.y)) < 0.1f)
-            {
+            RaycastHit2D leftRay = Physics2D.Raycast(rayVector, Vector2.left, distance, wallLayerMask);
+            Debug.DrawRay(rayVector, Vector2.left * distance, ConstValues.CyanColor, 0.02f);
+            if (leftRay.collider != null)
                 dir = Vector2.right;
-                StopVelocity();
-            }
         }
-        else if (dir == Vector2.right)
+        // 오른쪽
+        if (dir == Vector2.right)
         {
-            if (Vector2.Distance(transform.position, new Vector2(pointB, transform.position.y)) < 0.1f)
-            {
+            
+            RaycastHit2D rightRay = Physics2D.Raycast(rayVector, Vector2.right, distance, wallLayerMask);
+            Debug.DrawRay(rayVector, Vector2.right * distance, ConstValues.CyanColor, 0.02f);
+            if (rightRay.collider != null)
                 dir = Vector2.left;
-                StopVelocity();
-            }
         }
-        
-        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+
+        myRigidbody.linearVelocity = dir * basicStat.moveSpeed;
     }
     
     // 얼음 낙하
@@ -164,7 +150,7 @@ public class Monster_Moon : Monster
     }
     
     // 등장
-    public override async void Appear(Action bossProduct)
+    public override async void Appear(Action<string> bossProduct)
     {
         faceSpin.enabled = true;
         faceSpin.StopAndReset();
@@ -189,8 +175,7 @@ public class Monster_Moon : Monster
         IdleOrMove();
         FirstCoolTimeReduce();
         myBoxCollider.enabled = true;
-        PatrolRay();
-        bossProduct?.Invoke();
+        bossProduct?.Invoke(basicStat.name);
     }
 
     public override void Die()

@@ -26,6 +26,7 @@ public class AttackInfo
     public float effectTime;
     public bool ignoreSuperArmor;
     public bool continuous;
+    public bool duplicate;
     public EDirectionType directionType;
     public int coefficient;
     public int stagger;
@@ -65,6 +66,7 @@ public class Attack : MonoBehaviour
         attackInfo.effectTime = attackData.effectTime;
         attackInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
         attackInfo.continuous = attackData.continuous;
+        attackInfo.duplicate = attackData.duplicate;
         attackInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
         attackInfo.coefficient = attackData.coefficient;
         attackInfo.stagger = attackData.stagger;
@@ -124,9 +126,9 @@ public class Attack : MonoBehaviour
         while (gameObject.activeSelf)
         {
             myCollider.enabled = true;
-            await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
+            await UniTask.Delay(TimeSpan.FromSeconds(0.05f));
             myCollider.enabled = false;
-            await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
+            await UniTask.Delay(TimeSpan.FromSeconds(0.05f));
         }
     }
     
@@ -273,7 +275,8 @@ public class Attack : MonoBehaviour
                 hitTarget.Airborne(upperPowerX, upperPowerY);
                 return;
             }
-            IgnoreCol(col);
+            if (!attackInfo.duplicate)
+                IgnoreCol(col);
 
             hitTarget.TakeStagger(attackInfo.stagger);
             if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)

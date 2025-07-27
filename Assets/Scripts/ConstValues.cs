@@ -128,6 +128,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MiniMapVisitedCells = "MiniMapVisitedCells";
     public const string MiniMapCheckers = "MiniMapCheckers";
     public const string SavePoint = "SavePoint";
+    public const string SaveObject = "SaveObject";
     
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
@@ -258,6 +259,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string TrapPillar = "Trap_Pillar";
     
     public static readonly Color WhiteColor = Color.white;
+    public static readonly Color WhiteColorAlpha0 = new Color(1, 1, 1, 0);
     public static readonly Color BlackColor = Color.black;
     public static readonly Color GrayColor = Color.gray;
     public static readonly Color RedColor = Color.red;

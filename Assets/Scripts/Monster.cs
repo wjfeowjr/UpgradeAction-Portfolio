@@ -130,16 +130,18 @@ public class Monster : Character
 
         base.Update();
 
-        if (agroState == EAgroState.Agro)
-        {
-            Trace();
-            Move();
-        }
-        else
-        {
-            Patrol();
-        }
+        // if (agroState == EAgroState.Agro)
+        // {
+        //     Trace();
+        //     Move();
+        // }
+        // else
+        // {
+        //     Patrol();
+        // }
         
+        Trace();
+        Move();
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
         UpdateBuff();
@@ -245,9 +247,9 @@ public class Monster : Character
     public async void InitBasicStat()
     {
         //await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
-        var myName = name.Split('(')[0];
+        var myName = name.Split(' ')[0];
         var targetStat = TableManager.Instance.monsterTable.Monster.Find(x => x.id == myName);
-        
+
         basicStat = new BasicStat()
         {
             id = targetStat.id,
@@ -547,7 +549,7 @@ public class Monster : Character
     }
 
     // 등장(연출 포함)
-    public virtual async void Appear(Action bossProduct)
+    public virtual async void Appear(Action<string> bossProduct)
     {
         if (IsDamaged())
         {
@@ -586,7 +588,7 @@ public class Monster : Character
             // AppearShake();
             IdleOrMove();
         }
-        bossProduct?.Invoke();
+        bossProduct?.Invoke(basicStat.name);
         FirstCoolTimeReduce();
     }
 
@@ -866,6 +868,7 @@ public class Monster : Character
         totalBar.gameObject.SetActive(false);
         totalBar = null;
     }
+
     public async void DieShake()
     {
         anotherCancellation = new CancellationTokenSource();
@@ -887,6 +890,9 @@ public class Monster : Character
     // 공격 딜레이
     protected async UniTask AttackDelay(float attackDelay)
     {
+        if (stateCancellation == null)
+            stateCancellation = new CancellationTokenSource();
+        
         float delay = 0;
         while (delay < attackDelay)
         {
@@ -1071,6 +1077,8 @@ public class Monster : Character
         if (IsCanAttackAndJump() && patternInfo[idx].canPattern && patternInfo[idx].playerInAttackRange)
         {
             // 특정 행동이 끝나는 즉시 행동하면 애니메이션 갭이 일어나서 1프레임 뒤에 실행
+            if(stateCancellation == null)
+                stateCancellation = new CancellationTokenSource();
             if(await YieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
             
@@ -1164,7 +1172,7 @@ public class Monster : Character
         {
             currentSkillIdx = patternIdx[0];
             MonsterAttack(patternIdx[0]);
-            //Debug.Log($"나올 수 있는 패턴이 {currentSkillIdx}패턴 뿐이다");
+            Debug.Log($"나올 수 있는 패턴이 {currentSkillIdx}패턴 뿐이다");
         }
         else if (patternIdx.Count > 1)
         {
@@ -1192,14 +1200,14 @@ public class Monster : Character
                 int rand = Random.Range(0, patternIdx.Count);
                 currentSkillIdx = patternIdx[rand];
                 MonsterAttack(currentSkillIdx);
-                //Debug.Log($"우선순위가 같은 스킬들이 {patternIdx.Count}개다, 최종적으로 나온건 {currentSkillIdx}");
+                Debug.Log($"우선순위가 같은 스킬들이 {patternIdx.Count}개다, 최종적으로 나온건 {currentSkillIdx}");
             }
             // 들어있는 패턴들의 우선순위가 하나라도 다를 때
             else
             {
                 // 가장 높은 우선순위의 패턴이 발동한다
                 MonsterAttack(currentSkillIdx);
-                //Debug.Log($"가장 높은 우선순위{currentSkillIdx}발동");
+                Debug.Log($"가장 높은 우선순위{currentSkillIdx}발동");
             }
         }
     }
@@ -1454,7 +1462,6 @@ public class Monster : Character
         stateCancellation = new CancellationTokenSource();
         while (Math.Abs(transform.position.y - movePos.y) > 0.1f)
         {
-            // basicStat.moveSpeed
             if(normalState == ENormalState.Idle)
                 StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
             

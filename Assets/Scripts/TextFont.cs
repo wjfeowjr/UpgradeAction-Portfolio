@@ -103,7 +103,7 @@ public class TextFont : MonoBehaviour
             expansionTween = transform.DOScale(expansionScale, upSecond).SetAutoKill(false).SetRecyclable(true);
         else
             expansionTween.Restart();
-        
+
         if(fadeTween == null)
             fadeTween = myText.DOFade(1, upSecond).SetAutoKill(false).SetRecyclable(true);
         else

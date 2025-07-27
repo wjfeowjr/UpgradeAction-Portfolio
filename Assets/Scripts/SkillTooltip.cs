@@ -12,7 +12,7 @@ public class SkillTooltip : MonoBehaviour
 
     public void SetTooltip(PlayerSkill playerSkill)
     {
-        skillImage.sprite = GameManager.Instance.GetAtlasSprite(playerSkill.icon);
+        skillImage.sprite = GameManager.Instance.GetAtlasSprite(playerSkill.id);
         skillName.text = playerSkill.name;
         
         skillCoolTime.text = $"쿨타임 : {playerSkill.maxCoolTime[0]}초";

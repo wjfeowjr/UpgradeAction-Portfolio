@@ -34,13 +34,13 @@ public class LaserBeam : MonoBehaviour
     [SerializeField] private float limitPrefabScale;
 
     [SerializeField] private float second;
-    private int groundLayerMask;
+    private int layerMask;
 
     private void Awake()
     {
         myLineRenderer = beamLineRendererPrefab.GetComponent<LineRenderer>();
         myBoxCollider = GetComponent<BoxCollider2D>();
-        groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
+        layerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground) | 1 << LayerMask.NameToLayer(ConstValues.Platform) | 1 << LayerMask.NameToLayer(ConstValues.Wall);
     }
 
     private void OnEnable()
@@ -70,7 +70,7 @@ public class LaserBeam : MonoBehaviour
     private void BeamShot(float targetBeamLength)
     {
         Quaternion quaternion = Quaternion.Euler(0, 0, transform.eulerAngles.z);
-        RaycastHit2D hit = Physics2D.Raycast(transform.position, quaternion * Vector2.up, targetBeamLength, groundLayerMask);
+        RaycastHit2D hit = Physics2D.Raycast(transform.position, quaternion * Vector2.up, targetBeamLength, layerMask);
         Debug.DrawRay(transform.position, quaternion * Vector2.up * targetBeamLength, ConstValues.RedColor, 0.025f);
         if (hit.collider != null)
             targetBeamLength = Vector2.Distance(transform.position, hit.point);

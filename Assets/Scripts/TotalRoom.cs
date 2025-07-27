@@ -2,13 +2,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 
 public class TotalRoom : MonoBehaviour
 {
-     [Header("디자인 타일이 미리 그려진 미니맵 Tilemap")]
-    public Tilemap minimapTilemap;
-
+    [Header("디자인 타일이 미리 그려진 미니맵 Tilemap")]
+    public Tilemap minimapFrameTilemap;
+    public Tilemap minimapInTilemap;
+    
     [Header("카메라 & 저장키")]
     public Camera gameCamera;
 
@@ -29,16 +31,27 @@ public class TotalRoom : MonoBehaviour
             gameCamera = Camera.main;
 
         // 1. 모든 그려진 타일 위치 저장 및 비활성화
-        var bounds = minimapTilemap.cellBounds;
-        foreach (var pos in bounds.allPositionsWithin)
+        var frameBounds = minimapFrameTilemap.cellBounds;
+        foreach (var pos in frameBounds.allPositionsWithin)
         {
-            if (minimapTilemap.HasTile(pos))
+            if (minimapFrameTilemap.HasTile(pos))
             {
                 allRoomCells.Add(pos);
-                originalTiles[pos] = minimapTilemap.GetTile(pos);
+                originalTiles[pos] = minimapFrameTilemap.GetTile(pos);
             }
         }
-        minimapTilemap.ClearAllTiles();
+        minimapFrameTilemap.ClearAllTiles();
+        
+        var inBounds = minimapInTilemap.cellBounds;
+        foreach (var pos in inBounds.allPositionsWithin)
+        {
+            if (minimapInTilemap.HasTile(pos))
+            {
+                allRoomCells.Add(pos);
+                originalTiles[pos] = minimapInTilemap.GetTile(pos);
+            }
+        }
+        minimapInTilemap.ClearAllTiles();
         
         checkerLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Minimap);
     }
@@ -49,7 +62,8 @@ public class TotalRoom : MonoBehaviour
         if (!PlayerPrefs.HasKey(ConstValues.MiniMapVisitedCells))
         {
             // 저장 데이터 없음: 모든 타일 비활성화
-            minimapTilemap.ClearAllTiles();
+            minimapFrameTilemap.ClearAllTiles();
+            minimapInTilemap.ClearAllTiles();
         }
         else
         {
@@ -57,8 +71,11 @@ public class TotalRoom : MonoBehaviour
             LoadVisitedCells();
             foreach (var cell in visitedCells)
             {
-                if (originalTiles.TryGetValue(cell, out var tile))
-                    minimapTilemap.SetTile(cell, tile);
+                if (originalTiles.TryGetValue(cell, out var frameTile))
+                    minimapFrameTilemap.SetTile(cell, frameTile);
+                
+                if (originalTiles.TryGetValue(cell, out var inTile))
+                    minimapInTilemap.SetTile(cell, inTile);
             }
         }
 
@@ -89,17 +106,18 @@ public class TotalRoom : MonoBehaviour
     {
         Vector3 camPos = gameCamera.transform.position;
         float halfH = gameCamera.orthographicSize;
+        
         float halfW = halfH * gameCamera.aspect;
         Rect viewRect = new Rect(
             camPos.x - halfW, camPos.y - halfH,
             halfW * 2, halfH * 2
         );
         
-        float extraV = minimapTilemap.cellSize.y;
+        float extraV = minimapFrameTilemap.cellSize.y;
         viewRect.yMin += extraV * 2;
-        viewRect.yMax += extraV;
+        viewRect.yMax += extraV * 3;
 
-        Vector2 halfCell = minimapTilemap.cellSize; // * 0.5f minimapTilemap.cellSize
+        Vector2 halfCell = minimapFrameTilemap.cellSize; // * 0.5f minimapTilemap.cellSize
         
         bool anyNew = false;
 
@@ -108,7 +126,7 @@ public class TotalRoom : MonoBehaviour
             if (visitedCells.Contains(cell))
                 continue;
 
-            Vector3 center = minimapTilemap.GetCellCenterWorld(cell);
+            Vector3 center = minimapFrameTilemap.GetCellCenterWorld(cell);
             Vector2 min = new Vector2(center.x - halfCell.x, center.y - halfCell.y);
             Vector2 max = new Vector2(center.x + halfCell.x, center.y + halfCell.y);
 
@@ -117,7 +135,8 @@ public class TotalRoom : MonoBehaviour
                 max.y >= viewRect.yMin && min.y <= viewRect.yMax)
             {
                 visitedCells.Add(cell);
-                minimapTilemap.SetTile(cell, originalTiles[cell]);
+                minimapFrameTilemap.SetTile(cell, originalTiles[cell]);
+                minimapInTilemap.SetTile(cell, originalTiles[cell]);
                 anyNew = true;
             }
         }

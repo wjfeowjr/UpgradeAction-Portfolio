@@ -122,7 +122,7 @@ public class Monster_BigCharge : Monster
     }
     
     // 등장(연출 포함)
-    public override async void Appear(Action bossProduct)
+    public override async void Appear(Action<string> bossProduct)
     {
         if (GameManager.Instance.EpisodeName == ConstValues.Episode2)
         {
@@ -162,7 +162,7 @@ public class Monster_BigCharge : Monster
             FirstCoolTimeReduce();
             IdleOrMove();
             myBoxCollider.enabled = true;
-            bossProduct?.Invoke();
+            bossProduct?.Invoke(basicStat.name);
         }
         else
         {

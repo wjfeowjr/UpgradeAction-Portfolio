@@ -123,9 +123,9 @@ public static class GoldBinding
 public static class SavePointBinding
 {
     // 저장할 때
-    public static void SaveSavePoint(string prefKey, string savePointName)
+    public static void SaveSavePoint(string savePointName)
     {
-        PlayerPrefs.SetString(prefKey, savePointName);
+        PlayerPrefs.SetString(ConstValues.SavePoint, savePointName);
         PlayerPrefs.Save();
     }
   
@@ -243,6 +243,7 @@ public enum eUIType
     Popup_GameOver,
     Popup_Guide,
     Popup_Minimap,
+    Popup_Warning,
 }
 
 public class GameManager : Singleton<GameManager>
@@ -292,6 +293,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
 
     private UI_Interface uiInterface;
+    private Popup_Warning popupWarning;
     
     // 재화
     private int gold;
@@ -609,7 +611,7 @@ public class GameManager : Singleton<GameManager>
         var playerSkillList = curPlayer.GetSkillList();
         foreach (var playerSkill in playerSkillList)
         {
-            var matchSkillList = settingSkillList.FindAll(x => x.skillId == playerSkill.skillName);
+            var matchSkillList = settingSkillList.FindAll(x => x.skillId == playerSkill.id);
             foreach (var matchSkill in matchSkillList)
             {
                 matchSkill.playerSkill = playerSkill;
@@ -740,7 +742,7 @@ public class GameManager : Singleton<GameManager>
         mainCamera.Shake(amount, time);
     }
 
-    public Monster SpawnMonster(string id, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false, Action bossProduct = null)
+    public Monster SpawnMonster(string id, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false, Action<string> bossProduct = null)
     {
         var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
@@ -760,7 +762,7 @@ public class GameManager : Singleton<GameManager>
         monsterList.Add(monster);
         return monster;
     }
-    public void ActiveMonster(Monster monster, Action bossProduct = null)
+    public void ActiveMonster(Monster monster, Action<string> bossProduct = null)
     {
         monster.gameObject.SetActive(true);
         monster.SpawnHpBar();
@@ -774,7 +776,7 @@ public class GameManager : Singleton<GameManager>
         monster.SpawnHpBar();
         monsterList.Add(monster);
     }
-    
+
     public void RemoveMonster(Monster monster)
     {
         monsterList.Remove(monster);
@@ -789,32 +791,36 @@ public class GameManager : Singleton<GameManager>
     
     public void SpawnTrap(string id, Vector2 pos)
     {
-        var trap = SpawnToObjectPool(id, pos); 
-        
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        var trap = SpawnToObjectPool(id, pos);
+        InputDataTrap(id, trap);
+    }
+    public void InputDataTrap(string trapId, GameObject trapObject)
+    {
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == trapId);
         if (objectData != null)
         {
-            var spawnedObject = trap.GetComponent<SpawnedObject>();
+            var spawnedObject = trapObject.GetComponent<SpawnedObject>();
             if (!spawnedObject)
-                spawnedObject = trap.AddComponent<SpawnedObject>();
+                spawnedObject = trapObject.AddComponent<SpawnedObject>();
             
             spawnedObject.SetupData(objectData, transform.localScale.x);
             spawnedObject.EnableSetting();
         }
 
-        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
+        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == trapId);
         if (attackData != null)
         {
-            var attack = trap.GetComponent<Attack>();
+            var attack = trapObject.GetComponent<Attack>();
             if (!attack)
             {
-                attack = trap.AddComponent<Attack>();
+                attack = trapObject.AddComponent<Attack>();
                 attack.SetupData(null, attackData);
             }
 
             attack.EnableSetting();
         }
     }
+
     public void DisActiveObjectList()
     {
         foreach (var obj in objectList)
@@ -872,6 +878,11 @@ public class GameManager : Singleton<GameManager>
     public GameObject SpawnToHighestPool(string id, Vector2 objVector)
     {
         return SpawnToPool(id, highestPool, objVector);
+    }
+    public GameObject SpawnToHighestPool(eUIType type, Vector2 objVector)
+    {
+        var go = SpawnToPool(type.ToString(), highestPool, objVector);
+        return go;
     }
     
     public GameObject SpawnToRaw(string id, Vector2 objVector)
@@ -1009,6 +1020,35 @@ public class GameManager : Singleton<GameManager>
         skillPresenter.SetSkillInfo();
     }
 
+    public async UniTask SpawnWarningPopup(string message)
+    {
+        if (popupWarning)
+        {
+            popupWarning.gameObject.SetActive(true);
+        }
+        else
+        {
+            popupWarning = SpawnToHighestPool(eUIType.Popup_Warning, Vector3.zero).GetComponent<Popup_Warning>();
+        }
+        
+        var warningInterface = popupWarning.WarningView.ConvertTo<IPopupWarningView>();
+        var warningModel = new PopupWarningModel()
+        {
+            message = message,
+        };
+        var warningPresenter = new PopupWarningPresenter(warningInterface, warningModel);
+        popupWarning.SetMinimapPresenter(warningPresenter);
+        await popupWarning.PopupWarningPresenter.SetMessage();
+    }
+
+    public void RefillPlayerHp()
+    {
+        foreach (var player in players)
+            player.BasicStat.hp = player.BasicStat.maxHp;
+
+        RefreshPlayerHp();
+    }
+
     public void RefreshPlayerHp()
     {
         var hpInterface = uiInterface.HpView.ConvertTo<IUIHpView>();
@@ -1050,20 +1090,34 @@ public class GameManager : Singleton<GameManager>
                 continue;
             
             PlayerSkill addedSkill = new PlayerSkill();
-            addedSkill.skillName = skill.id;
+            addedSkill.id = skill.id;
             var coolTimeArray = skill.coolTime.Split(',');
             foreach (var coolTime in coolTimeArray)
             {
                 addedSkill.maxCoolTime.Add(float.Parse(coolTime));
                 addedSkill.curCoolTime.Add(float.Parse(coolTime));
             }
-
-            addedSkill.icon = skill.icon;
+            
             addedSkill.name = skill.name;
             addedSkill.explain = skill.explain;
             changeSkill.playerSkill = addedSkill;
             break;
         }
+    }
+
+    public string GetSkillName(string id)
+    {
+        string skillName = default;
+        foreach (var skill in TableManager.Instance.skillTable.Skill)
+        {
+            if (skill.id != id)
+                continue;
+
+            skillName = skill.name;
+            break;
+        }
+
+        return skillName;
     }
 
     public void CharacterChange(bool changeAttack = true)

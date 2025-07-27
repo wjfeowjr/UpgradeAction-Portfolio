@@ -10,13 +10,12 @@ using UnityEngine.SceneManagement;
 public class RoomManager : Singleton<RoomManager>
 {
     [SerializeField] private FollowCamera mainCamera;
+    [SerializeField] private SpriteRenderer bgSprite;
     [SerializeField] private Room[] roomArray;
     [SerializeField] private Room currentRoom;
     [SerializeField] private FadeSystem fadeUI;
     [SerializeField] private TotalRoom totalRoom;
-    private Monster sunObject;
-    private Monster moonObject;
-    
+
     private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
     private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
     private SpeechFrame speechFrameStrong;
@@ -32,8 +31,6 @@ public class RoomManager : Singleton<RoomManager>
         get => currentRoom;
         set => currentRoom = value;
     }
-
-    public Monster SunObject => sunObject;
 
     public List<SpeechFrame> SpeechFrame1 => speechFrame1;
     public List<SpeechFrame> SpeechFrame2 => speechFrame2;
@@ -63,8 +60,7 @@ public class RoomManager : Singleton<RoomManager>
 
         fadeUI = GameManager.Instance.SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
         fadeUI.gameObject.SetActive(false);
-
-        CashingSunObject();
+        
         CashingSpeechFrame();
         
         foreach (var room in roomArray)
@@ -106,17 +102,13 @@ public class RoomManager : Singleton<RoomManager>
     {
         GameManager.Instance.ReduceSkillPlayer();
 
-        if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.tabKey))
+        if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && GameManager.Instance.ControlStart && Input.GetKeyDown(GameManager.Instance.tabKey))
             SpawnMinimap();
     }
-    
-    private void CashingSunObject()
+
+    public void BgSpriteChange(string spriteName)
     {
-        if (!sunObject)
-        {
-            sunObject = GameManager.Instance.SpawnToObjectPool(ConstValues.MonsterSun, Vector2.zero).GetComponent<Monster>();
-            sunObject.gameObject.SetActive(false);
-        }
+        bgSprite.sprite =  GameManager.Instance.GetAtlasSprite(spriteName);
     }
     
     // 페이드 아웃
@@ -182,25 +174,6 @@ public class RoomManager : Singleton<RoomManager>
         }
     }
 
-    protected void SpawnGuide(PopupGuideModel model)
-    {
-        var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero).GetComponent<UIBase>();
-        // 바인딩
-        if (uiBase is Popup_Guide popupGuide)
-        {
-            var guideInterface = popupGuide.GuideView.ConvertTo<IPopupGuideView>();
-            var guideModel = new PopupGuideModel()
-            {
-                closeAction = () => { uiBase.ReductionClose(true); }
-            };
-            var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
-            popupGuide.SetGuidePresenter(guidePresenter);
-            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true); });
-            guidePresenter.SetModel(model.guideMessage, model.imgName);
-            guidePresenter.SetAction(guideModel.closeAction);
-        }
-    }
-    
     private void SpawnMinimap()
     {
         var playerPos = GameManager.Instance.CurPlayer.CenterPos.position;
@@ -323,5 +296,64 @@ public class RoomManager : Singleton<RoomManager>
     protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+    }
+    
+    /// <summary>
+    /// 가이드 구현 구간
+    /// </summary>
+    private void SpawnGuide(PopupGuideModel model)
+    {
+        var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero).GetComponent<UIBase>();
+        // 바인딩
+        if (uiBase is Popup_Guide popupGuide)
+        {
+            var guideInterface = popupGuide.GuideView.ConvertTo<IPopupGuideView>();
+            var guideModel = new PopupGuideModel()
+            {
+                closeAction = () => { uiBase.ReductionClose(true); }
+            };
+            var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
+            popupGuide.SetGuidePresenter(guidePresenter);
+            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true); });
+            guidePresenter.SetModel(model.guideMessage, model.imgName);
+            guidePresenter.SetAction(guideModel.closeAction);
+        }
+    }
+    public void Guide(int idx)
+    {
+        var guideModel = new PopupGuideModel();
+        
+        switch (idx)
+        {
+            case 1:
+                guideModel = new PopupGuideModel()
+                {
+                    guideMessage = "<color=#F36B6B>'Z'</color>키를 입력하여 대시를 할 수 있습니다.\n대시 도중에는 <color=#F36B6B>'무적'</color>입니다.\n<color=#F36B6B>피격, 넘어짐 상태에서도 사용할 수 있습니다.</color>",
+                    imgName = "Guide1",
+                };
+                break;
+            case 2:
+                guideModel = new PopupGuideModel()
+                {
+                    guideMessage = "지역을 탐험하며 새로운 스킬을 획득 할 수 있습니다.\n스킬은 퀵슬롯에 등록되며, 다른 키에 등록하여 사용 할 수도 있습니다.",
+                    imgName = "Guide2",
+                };
+                break;
+            case 3:
+                guideModel = new PopupGuideModel()
+                {
+                    guideMessage = "<color=#F36B6B>'Tab'</color>키를 입력하여 미니맵을 볼 수 있습니다.\n플레이어가 지나왔던 구역의 시야가 밝혀집니다.</color>",
+                    imgName = "Guide3",
+                };
+                break;
+            case 4:
+                guideModel = new PopupGuideModel()
+                {
+                    guideMessage = "세이브 포인트에서 <color=#F36B6B>'↑'</color>키를 입력하여 체크포인트를 설정 할 수 있습니다.\n세이브 시 모든 체력이 회복됩니다.",
+                    imgName = "Guide4",
+                };
+                break;
+        }
+        SpawnGuide(guideModel);
     }
 }

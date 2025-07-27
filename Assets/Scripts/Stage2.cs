@@ -1110,7 +1110,7 @@ public class Stage2 : Stage
         Camera cam = GameManager.Instance.MainCamera.MyCamera;
         float startY = cam.ViewportToWorldPoint(new Vector3(1, 1, 0)).y;
         var bossPos = new Vector2(monsterPos[3].transform.position.x, startY + 5);
-        chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, bossPos, false, true, () => { SpawnBossMessage(chargeBoss.BasicStat.name); });
+        chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, bossPos, false, true, SpawnBossMessage);
         monsterSpawning = false;
         
         if (episodeStep.dialogStep == 3)

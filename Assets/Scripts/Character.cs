@@ -220,6 +220,12 @@ public abstract class Character : MonoBehaviour
         FindGroundObject();
     }
 
+    private void OnDisable()
+    {
+        ClearObjectList(controlObject);
+        ClearObjectList(normalObject);
+    }
+
     private void ScaleSetting()
     {
         defaultScale = transform.localScale;
