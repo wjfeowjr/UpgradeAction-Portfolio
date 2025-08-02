@@ -8,7 +8,7 @@ using UnityEngine.UI;
 
 public interface IUIBossMessageView
 {
-    void SetBossMessage(string episodeName);
+    void SetBossMessage(string bossName);
     void BossMessageProduct(Action soundAction);
 }
 
@@ -49,6 +49,7 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
     private float finish = 1.0f;
 
     [SerializeField] private Transform bossMessageTransform;
+    [SerializeField] private TMP_Text bossNameText;
     [SerializeField] private Transform startTransform;
     [SerializeField] private Transform stopTransform;
     [SerializeField] private Transform endTransform;
@@ -60,9 +61,10 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
         await UniTask.Delay(TimeSpan.FromSeconds(second), ignoreTimeScale: true, cancellationToken: bossMessageCancellation.Token);
     }
     
-    public void SetBossMessage(string episodeName)
+    public void SetBossMessage(string bossName)
     {
         bossMessageTransform.position = startTransform.transform.position;
+        bossNameText.text = bossName;
         fadeImage.color = new Color(fadeImage.color.r, fadeImage.color.g, fadeImage.color.b, 0);
     }
 

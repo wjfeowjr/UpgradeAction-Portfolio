@@ -66,7 +66,7 @@ public class Monster_Moon : Monster
         
         var playerPos = GameManager.Instance.CurPlayer.transform.position;
         var firePos = new Vector2(playerPos.x, playerPos.y + 10.0f);
-        var endPos = new Vector2(playerPos.x, GameManager.Instance.GroundPosY);
+        var endPos = new Vector2(playerPos.x, RoomManager.Instance.GroundPosY);
         Vector3 warningAngle = new Vector3(0, 0, 90);
         var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterMoonAttack1Object);
         var moonEffect = SpawnObject(ConstValues.MonsterMoonEffect, CenterPos);
@@ -101,7 +101,11 @@ public class Monster_Moon : Monster
         {
             faceReduction.StopAndReset();
             spinObject.DeleteSpinObject(i);
-            var attackObject = SpawnAttackObject(ConstValues.MonsterMoonAttack2, attackPos).GetComponent<Missile>();
+            
+            int missileDir = 1;
+            if (GameManager.Instance.CurPlayer.CenterPos.position.x < transform.position.x)
+                missileDir = -1;
+            var attackObject = SpawnAttackObject(ConstValues.MonsterMoonAttack2, attackPos, 0, missileDir).GetComponent<Missile>();
             attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
             
             if(await AttackDelay(delay2).SuppressCancellationThrow())

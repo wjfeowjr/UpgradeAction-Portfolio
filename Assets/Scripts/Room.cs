@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.Tilemaps;
 
 public enum EntranceDir
 {
@@ -43,9 +45,26 @@ public class TreasureBox
 public class Room : MonoBehaviour
 {
     private bool isFading;
+    private bool nearBossRoom;
     private int productViewIdx;
     private float dialogDelay1 = 2.5f;
     private float dialogDelay2 = 1.0f;
+    
+    [Header("디자인 타일이 미리 그려진 미니맵 Tilemap")]
+    [SerializeField] private Tilemap minimapFrameTilemap;
+    [SerializeField] private Tilemap minimapInTilemap;
+    
+    [Header("카메라 & 저장키")]
+    private Camera gameCamera;
+
+    // 내부 저장용
+    private string saveMinimapName;
+    private HashSet<Vector3Int> allRoomCells = new HashSet<Vector3Int>();
+    private Dictionary<Vector3Int, TileBase> originalTiles = new Dictionary<Vector3Int, TileBase>();
+    private HashSet<Vector3Int> visitedCells = new HashSet<Vector3Int>();
+
+    [SerializeField] private bool isBossRoom;
+    [SerializeField] private GameObject roomGameObject;
     
     [SerializeField] protected RoomInfo roomInfo;
     
@@ -58,7 +77,12 @@ public class Room : MonoBehaviour
     [SerializeField] private Transform maxCameraLimitY;
 
     [SerializeField] private SaveObject saveObject;
-
+    
+    [SerializeField] private GameObject leftBossGate;
+    [SerializeField] private GameObject rightBossGate;
+    [SerializeField] private GameObject upBossGate;
+    [SerializeField] private GameObject downBossGate;
+    
     [SerializeField] private Transform leftPlayerPos;
     [SerializeField] private Transform rightPlayerPos;
     [SerializeField] private Transform upPlayerPos;
@@ -104,7 +128,39 @@ public class Room : MonoBehaviour
     private RoomsData roomsData;
 
     // 프로퍼티
-    public RoomInfo RoomInfo => roomInfo;
+    public bool IsBossRoom => isBossRoom;
+
+    private void Awake()
+    {
+        if (!RoomManager.Instance.MainCamera)
+            return;
+        
+        gameCamera = RoomManager.Instance.MainCamera;
+        saveMinimapName = $"{ConstValues.MiniMapVisitedCells}_{name}";
+
+        // 1. 모든 그려진 타일 위치 저장 및 비활성화
+        var frameBounds = minimapFrameTilemap.cellBounds;
+        foreach (var pos in frameBounds.allPositionsWithin)
+        {
+            if (minimapFrameTilemap.HasTile(pos))
+            {
+                allRoomCells.Add(pos);
+                originalTiles[pos] = minimapFrameTilemap.GetTile(pos);
+            }
+        }
+        minimapFrameTilemap.ClearAllTiles();
+        
+        var inBounds = minimapInTilemap.cellBounds;
+        foreach (var pos in inBounds.allPositionsWithin)
+        {
+            if (minimapInTilemap.HasTile(pos))
+            {
+                allRoomCells.Add(pos);
+                originalTiles[pos] = minimapInTilemap.GetTile(pos);
+            }
+        }
+        minimapInTilemap.ClearAllTiles();
+    }
 
     private void OnEnable()
     {
@@ -112,6 +168,31 @@ public class Room : MonoBehaviour
         BossSetting();
     }
 
+    private void Start()
+    {
+        StartMinimap();
+    }
+
+    private void Update()
+    {
+        if(roomGameObject.activeSelf)
+            RevealCellsInView();
+        // if (Input.GetKeyDown(KeyCode.Space))
+        // {
+        //     SaveVisitedCells();
+        // }
+    }
+
+    private void OnApplicationQuit()
+    {
+        SaveVisitedCells();
+    }
+
+    public void ObjectActive(bool active)
+    {
+        roomGameObject.SetActive(active);
+    }
+    
     // 세이브 포인트가 없을때만 적용, 1번맵 전용
     public async void FirstStart()
     {
@@ -122,7 +203,8 @@ public class Room : MonoBehaviour
         SetCameraLimit();
         SetTrap();
         SetSavePoint();
-        await RoomManager.Instance.EntranceFadeIn();
+        SetBossGate();
+        await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         GameManager.Instance.ControlStart = true;
         isFading = false;
     }
@@ -136,9 +218,15 @@ public class Room : MonoBehaviour
         SetCameraLimit();
         SetTrap();
         SetSavePoint();
-        await RoomManager.Instance.EntranceFadeIn();
+        SetBossGate();
+        await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         GameManager.Instance.ControlStart = true;
         isFading = false;
+    }
+
+    public void SetGroundVector()
+    {
+        RoomManager.Instance.SetGroundVector();
     }
 
     public void SpeechFrameSetting()
@@ -152,13 +240,13 @@ public class Room : MonoBehaviour
     public void EntranceSetting()
     {
         if(leftEntrance)
-            leftEntrance.SetAction(() => leftRoom.SettingRoom(EntranceDir.Right, gameObject));
+            leftEntrance.SetAction(() => leftRoom.SettingRoom(EntranceDir.Right, this));
         if(rightEntrance)
-            rightEntrance.SetAction(() => rightRoom.SettingRoom(EntranceDir.Left, gameObject));
+            rightEntrance.SetAction(() => rightRoom.SettingRoom(EntranceDir.Left, this));
         if(upEntrance)
-            upEntrance.SetAction(() => upRoom.SettingRoom(EntranceDir.Down, gameObject));
+            upEntrance.SetAction(() => upRoom.SettingRoom(EntranceDir.Down, this));
         if(downEntrance)
-            downEntrance.SetAction(() => downRoom.SettingRoom(EntranceDir.Up, gameObject));
+            downEntrance.SetAction(() => downRoom.SettingRoom(EntranceDir.Up, this));
     }
 
     public void InfoSetting()
@@ -229,8 +317,12 @@ public class Room : MonoBehaviour
         // 연출을 봤다면, 다시 나오지 않게 조정
         if (productCount > 0)
         {
-            if(roomInfo.productCount >= productCount)
+            if (roomInfo.productCount >= productCount)
+            {
                 productTrigger[0].gameObject.SetActive(false);
+                if(isBossRoom)
+                    BgmManager.Instance.Play();
+            }
         }
 
         // 스킬 및 패시브를 획득했으면, 나오지 않게 조정
@@ -275,12 +367,13 @@ public class Room : MonoBehaviour
         }
     }
 
-    private async void SettingRoom(EntranceDir dir, GameObject pastRoom)
+    private async void SettingRoom(EntranceDir dir, Room pastRoom)
     {
         isFading = true;
         GameManager.Instance.ControlStart = false;
-
-        await RoomManager.Instance.EntranceFadeOut();
+        GameManager.Instance.RoomMoveSetting();
+        
+        await RoomManager.Instance.FadeOut(ConstValues.BlackColor);
 
         switch (dir)
         {
@@ -305,22 +398,28 @@ public class Room : MonoBehaviour
                 GameManager.Instance.CurPlayer.GravityChange(0);
                 break;
         }
+        GameManager.Instance.CurPlayer.RoomMoveState();
+
         SetCameraLimit();
-        pastRoom.SetActive(false);
-        gameObject.SetActive(true);
+        pastRoom.ObjectActive(false);
+        ObjectActive(true);
         RoomManager.Instance.CurrentRoom = this;
+        RoomManager.Instance.CurrentRoom.SetGroundVector();
+        
         // 여기서 몹 소환
         SpawnMonster();
         // 여기서 트랩 데이터 넣기
         SetTrap();
         // 여기서 세이브포인트 데이터 넣기
         SetSavePoint();
+        // 여기서 인접 방 확인하기
+        SetBossGate();
 
         fadeCancellation = new CancellationTokenSource();
         if (await NormalDelay(0.5f, fadeCancellation).SuppressCancellationThrow())
             return;
         
-        await RoomManager.Instance.EntranceFadeIn();
+        await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
         switch (dir)
         {
@@ -380,6 +479,9 @@ public class Room : MonoBehaviour
 
     private void PlusGold(int gold, Vector2 goldPos)
     {
+        if (gold == 0)
+            return;
+        
         var plusGold = GameManager.Instance.Gold + gold;
         GoldBinding.SaveGold(plusGold);
         // 골드가 날아가는 연출
@@ -418,7 +520,43 @@ public class Room : MonoBehaviour
             SavePointBinding.SaveSavePoint(name);
             GameManager.Instance.SpawnWarningPopup("세이브 포인트가 저장되었습니다.").Forget();
             GameManager.Instance.RefillPlayerHp();
+            SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
         });
+    }
+    
+    private void SetBossGate()
+    {
+        bool alreadyBoss = false;
+        if (leftBossGate)
+        {
+            alreadyBoss = leftRoom && leftRoom.isBossRoom;
+            leftBossGate.SetActive(alreadyBoss);
+        }
+        if (!alreadyBoss && rightBossGate)
+        {
+            alreadyBoss = rightRoom && rightRoom.isBossRoom;
+            rightBossGate.SetActive(alreadyBoss);
+        }
+        if (!alreadyBoss && upBossGate)
+        {
+            alreadyBoss = upRoom && upRoom.isBossRoom;
+            upBossGate.SetActive(alreadyBoss);
+        }
+        if (!alreadyBoss && downBossGate)
+        {
+            alreadyBoss = downRoom && downRoom.isBossRoom;
+            downBossGate.SetActive(alreadyBoss);
+        }
+
+        if (isBossRoom)
+            alreadyBoss = true;
+        
+        nearBossRoom = alreadyBoss;
+        
+        if(nearBossRoom)
+            BgmManager.Instance.Stop();
+        else if (!BgmManager.Instance.IsPlaying())
+            BgmManager.Instance.Play();
     }
 
     private void BossSetting()
@@ -553,9 +691,9 @@ public class Room : MonoBehaviour
     {
         SoundManager.Instance.PlaySound(bgmName);
     }
-    private void CameraShake(float amount, float time)
+    private void CameraShake(float amountX, float amountY, float time)
     {
-        GameManager.Instance.CameraShake(amount, time);
+        GameManager.Instance.CameraShake(amountX, amountY, time);
     }
     private void SetTimeScale(float value)
     {
@@ -608,6 +746,108 @@ public class Room : MonoBehaviour
             bossMessageView.ViewActive();
             bossMessagePresenter.SetBossMessage();
             bossMessagePresenter.BossMessageProduct(() => { SoundManager.Instance.PlaySound(ConstValues.WarningSound); });
+        }
+    }
+
+    /// <summary>
+    /// 미니맵 구현 구간
+    /// </summary>
+    /// 
+
+    // 2. 저장된 데이터 유무에 따라 초기 복원
+    private void StartMinimap()
+    {
+        // 저장 데이터 없음: 모든 타일 비활성화
+        if (!PlayerPrefs.HasKey(saveMinimapName))
+        {
+            minimapFrameTilemap.ClearAllTiles();
+            minimapInTilemap.ClearAllTiles();
+        }
+        // 저장 데이터 있음: 불러와서 해당 셀만 활성화
+        else
+        {
+            LoadVisitedCells();
+            foreach (var cell in visitedCells)
+            {
+                if (originalTiles.TryGetValue(cell, out var frameTile))
+                    minimapFrameTilemap.SetTile(cell, frameTile);
+                
+                if (originalTiles.TryGetValue(cell, out var inTile))
+                    minimapInTilemap.SetTile(cell, inTile);
+            }
+        }
+    }
+    // 3. 카메라 뷰 영역에 조금이라도 겹치면 활성화
+    private void RevealCellsInView()
+    {
+        Vector3 camPos = gameCamera.transform.position;
+        float halfH = gameCamera.orthographicSize;
+        
+        float halfW = halfH * gameCamera.aspect;
+        Rect viewRect = new Rect(camPos.x - halfW, camPos.y - halfH, halfW * 2, halfH * 2);
+        
+        float extraV = minimapFrameTilemap.cellSize.y;
+        viewRect.yMin += extraV * -1;
+        viewRect.yMax += extraV * 3;
+
+        Vector2 halfCell = minimapFrameTilemap.cellSize; // * 0.5f minimapTilemap.cellSize
+        
+        bool anyNew = false;
+
+        foreach (var cell in allRoomCells)
+        {
+            if (visitedCells.Contains(cell))
+                continue;
+
+            Vector3 center = minimapFrameTilemap.GetCellCenterWorld(cell);
+            Vector2 min = new Vector2(center.x - halfCell.x, center.y - halfCell.y);
+            Vector2 max = new Vector2(center.x + halfCell.x, center.y + halfCell.y);
+
+            // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
+            if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
+                max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+            {
+                visitedCells.Add(cell);
+                minimapFrameTilemap.SetTile(cell, originalTiles[cell]);
+                minimapInTilemap.SetTile(cell, originalTiles[cell]);
+                anyNew = true;
+            }
+        }
+
+        if (anyNew)
+            SaveVisitedCells();
+    }
+
+    // 5. PlayerPrefs에 방문 셀 저장
+    private void SaveVisitedCells()
+    {
+        var sb = new StringBuilder();
+        foreach (var c in visitedCells)
+            sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
+
+        PlayerPrefs.SetString(saveMinimapName, sb.ToString());
+        PlayerPrefs.Save();
+        //Debug.Log("미니맵 저장!");
+    }
+
+    // 2. 저장된 방문 셀 로드
+    private void LoadVisitedCells()
+    {
+        string data = PlayerPrefs.GetString(saveMinimapName, "");
+        if (string.IsNullOrEmpty(data))
+            return;
+
+        var entries = data.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
+        foreach (var e in entries)
+        {
+            var p = e.Split('_');
+            if (p.Length == 3
+             && int.TryParse(p[0], out int x)
+             && int.TryParse(p[1], out int y)
+             && int.TryParse(p[2], out int z))
+            {
+                visitedCells.Add(new Vector3Int(x, y, z));
+            }
         }
     }
 
@@ -667,7 +907,7 @@ public class Room : MonoBehaviour
 
         PlayBGM(ConstValues.BGMEpisode1);
         PlaySound(ConstValues.PlayerScream);
-        CameraShake(0.4f, 1.0f);
+        CameraShake(0.4f, 0.4f, 1.0f);
         SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), dialog3);
         for (int i = 0; i < 2; i++)
         {
@@ -841,6 +1081,7 @@ public class Room : MonoBehaviour
         DoorActive(true);
         // 태양 보스 소환
         SpawnBoss(bosses[0], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y + 3.5f));
+        BgmManager.Instance.Play();
         
         // 대화하는 주체들
         Vector2 berserkerSpeechPos;
@@ -890,6 +1131,7 @@ public class Room : MonoBehaviour
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
+            GameManager.Instance.CurPlayer.ForceIdle();
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
             
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog4); 
@@ -986,7 +1228,7 @@ public class Room : MonoBehaviour
             await NextDialog(speechFrame2[0]);
         
             PlaySound(ConstValues.PlayerScream);
-            CameraShake(0.4f, 1.0f);
+            CameraShake(0.4f, 0.4f, 1.0f);
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog15);
             for (int i = 0; i < 2; i++)
             {
@@ -1097,10 +1339,12 @@ public class Room : MonoBehaviour
     {
         var skillName = GameManager.Instance.GetSkillName(id);
         string getMessage = $"{skillName}을(를) 획득하였다!";
+        GameManager.Instance.CurPlayer.SpawnObject(ConstValues.GetSkillExplosion, roomSkillAndPassive[0].transform.position);
         
         if (id == ConstValues.BerserkerUpperSlash)
         {
             UIOff();
+            GameManager.Instance.CurPlayer.ForceProduct();
             await GameManager.Instance.SpawnWarningPopup(getMessage);
             dialogCancellation = new CancellationTokenSource();
 

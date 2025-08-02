@@ -213,7 +213,7 @@ public class Player_Berserker : Player
             SpawnAttack(ConstValues.BerserkerJumpAttack2, jumpAttack2Pos);
             float dropForce = 30.0f;
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
-            while (GetJumpState())
+            while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f)
             {
                 if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                     return false;

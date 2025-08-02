@@ -148,9 +148,9 @@ public class Monster : Character
         PatternCycle();
         
         // 점프 관련
-        MonsterJump();
-        MonsterDownJump();
-        MonsterBridgeJump();
+        //MonsterJump();
+        //MonsterDownJump();
+        //MonsterBridgeJump();
         JumpCoolTimeReduce();
         DownJumpCoolTimeReduce();
     }
@@ -173,6 +173,9 @@ public class Monster : Character
     {
         dieCancellation?.Cancel();
         stateCancellation?.Cancel();
+        
+        ClearObjectList(controlObject);
+        ClearObjectList(normalObject);
         
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         MoveStateSetting(EMoveState.Stopping);
@@ -699,7 +702,7 @@ public class Monster : Character
     // 추적
     private void Trace()
     {
-        if (moveState != EMoveState.Moving || basicStat.moveSpeed <= 0)
+        if (moveState != EMoveState.Moving)
             return;
         
         if (transform.localScale.x > 0)
@@ -857,7 +860,8 @@ public class Monster : Character
         base.Die();
         //removeAction?.Invoke();
         //GameManager.Instance.RemoveMonster(this);
-        goldAction?.Invoke(myStat.gold, centerPos.position);
+        if(!isBoss)
+            goldAction?.Invoke(myStat.gold, centerPos.position);
         
         if (isExplosion)
             DieExplosion();
@@ -1249,7 +1253,7 @@ public class Monster : Character
                 PlaySound(ConstValues.Jump1, 2.0f);
                 LookAt(playerPos.x);
                 StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
-                float travelTime = 0.6f;
+                float travelTime = 0.5f;
                 Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
                 myRigidbody.linearVelocity = velocity;
             }

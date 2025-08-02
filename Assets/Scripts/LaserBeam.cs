@@ -133,8 +133,11 @@ public class LaserBeam : MonoBehaviour
                 }
             }
 
-            myLineRenderer.startWidth = laserScale;
-            myLineRenderer.endWidth = laserScale;
+            if (myLineRenderer)
+            {
+                myLineRenderer.startWidth = laserScale;
+                myLineRenderer.endWidth = laserScale;
+            }
             await UniTask.Yield();
         }        
     }

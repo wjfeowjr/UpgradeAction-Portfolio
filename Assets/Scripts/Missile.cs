@@ -26,7 +26,7 @@ public class MissileInfo
 }
 public class Missile : MonoBehaviour
 {
-    private Vector2 dir;
+    [SerializeField] private Vector2 dir;
     private float limitPosX;
     private float limitPosY;
     private bool isDelete;
@@ -150,6 +150,7 @@ public class Missile : MonoBehaviour
                 
                 if (limitPosX == 0)
                     return;
+                
                 if (dir == Vector2.left)
                 {
                     if (transform.position.x <= limitPosX)
@@ -189,40 +190,40 @@ public class Missile : MonoBehaviour
     }
     
     // 물리값 이동(FixedUpdate에서 사용)
-    private void Move2()
-    {
-        if (isDelete)
-            return;
-        
-        float targetSpeedX = missileInfo.speed * dir.x;
-        float targetSpeedY = myRigidbody.linearVelocity.y;
-    
-        if (limitPosX == 0)
-            return;
-        
-        if (dir == Vector2.left)
-        {
-            if (transform.position.x <= limitPosX)
-            {
-                Delete(false);
-            }
-            else
-            {
-                myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-            }
-        }
-        else if (dir == Vector2.right)
-        {
-            if (transform.position.x >= limitPosX)
-            {
-                Delete(false);
-            }
-            else
-            {
-                myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-            }
-        }
-    }
+    // private void Move2()
+    // {
+    //     if (isDelete)
+    //         return;
+    //     
+    //     float targetSpeedX = missileInfo.speed * dir.x;
+    //     float targetSpeedY = myRigidbody.linearVelocity.y;
+    //
+    //     if (limitPosX == 0)
+    //         return;
+    //     
+    //     if (dir == Vector2.left)
+    //     {
+    //         if (transform.position.x <= limitPosX)
+    //         {
+    //             Delete(false);
+    //         }
+    //         else
+    //         {
+    //             myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+    //         }
+    //     }
+    //     else if (dir == Vector2.right)
+    //     {
+    //         if (transform.position.x >= limitPosX)
+    //         {
+    //             Delete(false);
+    //         }
+    //         else
+    //         {
+    //             myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+    //         }
+    //     }
+    // }
 
     private async void Delete(bool isCollision)
     {
@@ -259,7 +260,7 @@ public class Missile : MonoBehaviour
         if(dir == Vector2.left)
             transform.LookAt2D(target, -180);
         else if(dir == Vector2.right)
-            transform.LookAt2D(target); 
+            transform.LookAt2D(target);
     }
 
     // 미사일 소멸에만 관여(공격판정은 여기서 정하지 않는다)

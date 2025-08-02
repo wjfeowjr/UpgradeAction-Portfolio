@@ -17,6 +17,7 @@ public class SpawnObjectInfo
     public List<string> soundList = new List<string>();
     public float soundVolume;
     public Vector2 cameraShake;
+    public float shakeTime;
 }
 
 public class SpawnedObject : MonoBehaviour
@@ -87,7 +88,8 @@ public class SpawnedObject : MonoBehaviour
         
         var cameraShakeArray = objectData.cameraShake.Split(';');
         spawnObjectInfo.cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
-
+        
+        spawnObjectInfo.shakeTime = objectData.shakeTime;
         dir = dirX;
     }
     
@@ -136,11 +138,16 @@ public class SpawnedObject : MonoBehaviour
             SoundManager.Instance.PlaySound(sound, spawnObjectInfo.soundVolume);
         
         if(spawnObjectInfo.cameraShake != Vector2.zero)
-            GameManager.Instance.CameraShake(spawnObjectInfo.cameraShake.x, spawnObjectInfo.cameraShake.y);
+            GameManager.Instance.CameraShake(spawnObjectInfo.cameraShake.x, spawnObjectInfo.cameraShake.y, spawnObjectInfo.shakeTime);
     }
      
     private void ObjectTimer()
     {
+        if (spawnObjectInfo == null)
+        {
+            Debug.Log(name);
+        }
+        
         if (spawnObjectInfo.objectTime == 0)
             return;
         

@@ -6,10 +6,15 @@ using Cysharp.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 
 public class RoomManager : Singleton<RoomManager>
 {
-    [SerializeField] private FollowCamera mainCamera;
+    private int groundLayerMask;
+    private float groundPosY;
+    
+    [SerializeField] private Camera mainCamera;
+    [SerializeField] private FollowCamera mainCameraFollow;
     [SerializeField] private SpriteRenderer bgSprite;
     [SerializeField] private Room[] roomArray;
     [SerializeField] private Room currentRoom;
@@ -26,6 +31,14 @@ public class RoomManager : Singleton<RoomManager>
     private CancellationTokenSource dieCancellation;
 
     // 프로퍼티
+    public float GroundPosY
+    {
+        get => groundPosY;
+        set => groundPosY = value;
+    }
+
+    public Camera MainCamera => mainCamera;
+    
     public Room CurrentRoom
     {
         get => currentRoom;
@@ -40,20 +53,24 @@ public class RoomManager : Singleton<RoomManager>
     protected override void Awake()
     {
         if (!SceneChanger.Instance)
-            SceneManager.LoadScene(ConstValues.TitleScene); 
+        {
+            SceneManager.LoadScene(ConstValues.TitleScene);
+            return;
+        }
 
         if (GameManager.Instance)
-            GameManager.Instance.InitCamera(mainCamera);
+            GameManager.Instance.InitCamera(mainCameraFollow);
+        
+        groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
     }
 
     public void Start()
     {
         BgmManager.Instance.Play();
         // 최초 캐릭터 세팅
-        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, ConstValues.Gunner); // default
+        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default); // ConstValues.Gunner
 
         GameManager.Instance.SpawnGameInterface();
-        GameManager.Instance.SetGroundVector();
         GameManager.Instance.InitPlayerStat();
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer);
         GameManager.Instance.RefreshPlayerHp();
@@ -70,13 +87,13 @@ public class RoomManager : Singleton<RoomManager>
             room.InfoSetting();
             room.MonsterPosSetting();
             room.BossPosSetting();
-            room.gameObject.SetActive(false);
+            room.ObjectActive(false);
         }
 
         if (string.IsNullOrEmpty(SavePointBinding.LoadSavePoint()))
         {
             currentRoom = roomArray[0];
-            currentRoom.gameObject.SetActive(true);
+            currentRoom.ObjectActive(true);
             currentRoom.FirstStart();
         }
         else
@@ -88,7 +105,7 @@ public class RoomManager : Singleton<RoomManager>
                     continue;
                 
                 currentRoom = room;
-                currentRoom.gameObject.SetActive(true);
+                currentRoom.ObjectActive(true);
                 currentRoom.SaveStart();
                 break;
             }
@@ -110,23 +127,31 @@ public class RoomManager : Singleton<RoomManager>
     {
         bgSprite.sprite =  GameManager.Instance.GetAtlasSprite(spriteName);
     }
+    public void SetGroundVector()
+    {
+        var downRay = Physics2D.Raycast(currentRoom.transform.position, Vector2.down, 100f, groundLayerMask);
+        if (downRay.collider != null)
+            groundPosY = downRay.point.y;
+    }
     
     // 페이드 아웃
-    public async UniTask EntranceFadeOut()
+    public async UniTask FadeOut(Color settingColor)
     {
+        fadeUI.ColorInput(settingColor);
         fadeUI.gameObject.SetActive(true);
         fadeUI.SetParameter(0, 1, 0.25f, false);
         await fadeUI.Fade();
     }
     
     // 페이드 인
-    public async UniTask EntranceFadeIn()
+    public async UniTask FadeIn(Color settingColor)
     {
+        fadeUI.ColorInput(settingColor);
         fadeUI.gameObject.SetActive(true);
         fadeUI.SetParameter(1, 0, 0.25f, false);
         await fadeUI.Fade();
     }
-    
+
     // 페이드 루프
     public async UniTask EntranceFadeLoop()
     {
@@ -190,8 +215,8 @@ public class RoomManager : Singleton<RoomManager>
             var minimapInterface = popupMinimap.MinimapView.ConvertTo<IPopupMinimapView>();
             var minimapModel = new PopupMinimapModel()
             {
-                checkString = "마크",
-                closeString = "닫기",
+                checkString = "마크: Enter",
+                closeString = "닫기: Esc",
                 moveAction = MinimapCameraMove,
                 checkAction = SpawnCheckMark,
             };
@@ -209,7 +234,7 @@ public class RoomManager : Singleton<RoomManager>
         var minimapCameraPos = GameManager.Instance.MiniMapCamera.position;
         
         float leftLimit = -100;
-        float rightLimit = 100;
+        float rightLimit = 200;
         float upLimit = 50;
         float downLimit = -50;
         

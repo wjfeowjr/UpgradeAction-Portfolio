@@ -57,6 +57,7 @@ public class FollowGold : MonoBehaviour
         if (col.CompareTag(ConstValues.Player))
         {
             getAction?.Invoke();
+            GameManager.Instance.CurPlayer.SpawnObject(ConstValues.GoldExplosion, transform.position);
             Debug.Log($"현재 골드: {GameManager.Instance.Gold}");
             gameObject.SetActive(false);
         }

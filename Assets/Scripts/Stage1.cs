@@ -73,7 +73,7 @@ public class Stage1 : Stage
         
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
-        GameManager.Instance.SetGroundVector();
+        //GameManager.Instance.SetGroundVector();
 
         CashingSunObject();
         SpawnEpisode(episodeTitle);
@@ -128,7 +128,7 @@ public class Stage1 : Stage
             
             PlayBGM(ConstValues.BGMEpisode1);
             PlaySound(ConstValues.PlayerScream);
-            CameraShake(0.4f, 1.0f);
+            CameraShake(0.4f, 0.4f, 1.0f);
             SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), dialog3);
             for (int i = 0; i < 2; i++)
             {
@@ -194,8 +194,8 @@ public class Stage1 : Stage
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            var pillarVector = new Vector2(trapPos[0].position.x, GameManager.Instance.GroundPosY);
-            sunObject.SpawnObject(ConstValues.MonsterSunPillar, pillarVector);
+            //var pillarVector = new Vector2(trapPos[0].position.x, GameManager.Instance.GroundPosY);
+            //sunObject.SpawnObject(ConstValues.MonsterSunPillar, pillarVector);
 
             AccumulatedStep();
 
@@ -295,7 +295,7 @@ public class Stage1 : Stage
             await NextDialog(speechFrame1[0]);
             
             PlaySound(ConstValues.PlayerScream);
-            CameraShake(0.4f, 1.0f);
+            CameraShake(0.4f, 0.4f, 1.0f);
             SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerSpeechPos.x, berserkerSpeechPos.y), dialog8);
             for (int i = 0; i < 2; i++)
             {
@@ -361,7 +361,7 @@ public class Stage1 : Stage
             await NextDialog(speechFrame1[0]);
             
             PlaySound(ConstValues.MonsterBigTreeLog);
-            CameraShake(0.1f, 0.2f);
+            CameraShake(0.1f, 0.1f, 0.2f);
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[0].position, dialog4);
         }
         
@@ -407,13 +407,13 @@ public class Stage1 : Stage
             await NextDialog(speechFrameStrong);
             
             PlaySound(ConstValues.MonsterBigTreeLog);
-            CameraShake(0.1f, 0.2f);
+            CameraShake(0.1f, 0.1f, 0.2f);
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[0].position, dialog5);
             await NextDialog(speechFrameStrong);
 
             var berserkerSpeechPos = curPlayer.FontPos.position;
             PlaySound(ConstValues.PlayerScream);
-            CameraShake(0.4f, 1.0f);
+            CameraShake(0.4f, 0.4f, 1.0f);
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog6);
             for (int i = 0; i < 2; i++)
             {
@@ -755,7 +755,7 @@ public class Stage1 : Stage
             await NextDialog(speechFrame2[0]);
 
             PlaySound(ConstValues.PlayerScream);
-            CameraShake(0.4f, 1.0f);
+            CameraShake(0.4f, 0.4f, 1.0f);
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog14);
             for (int i = 0; i < 2; i++)
             {

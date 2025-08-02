@@ -190,7 +190,7 @@ public class Monster_BigCharge : Monster
             while (true)
             {
                 SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
-                GameManager.Instance.CameraShake(0.1f, 0.1f);
+                GameManager.Instance.CameraShake(0.1f, 0.1f, 0.1f);
                 if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
                     return;
             }

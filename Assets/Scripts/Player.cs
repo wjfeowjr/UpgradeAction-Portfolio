@@ -184,6 +184,7 @@ public abstract class Player : Character
         UpdateFlip();
         UpdateJumpDown();
         UpdateLanding();
+        UpdateDown();
         UpdateGlobalCoolTime();
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
@@ -437,7 +438,7 @@ public abstract class Player : Character
     // 일반점프 후 착지에만 관여
     private void UpdateLanding()
     {
-        if (normalState is not ENormalState.Jump)
+        if (normalState is not ENormalState.Jump || downJumping)
             return;
         
         var distance = 0.2f;
@@ -446,11 +447,32 @@ public abstract class Player : Character
 
         if (down.collider != null && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
         {
+            Debug.Log("UpdateLanding");
             LandingStateSetting(ELandingState.Ground);
             myRigidbody.bodyType = RigidbodyType2D.Dynamic;
             myRigidbody.linearVelocity = Vector2.zero;
             jumpAttackCount = 0;
             StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        }
+    }
+
+    private void UpdateDown()
+    {
+        if (normalState is not ENormalState.Airborne)
+            return;
+        
+        var distance = 0.2f;
+        var down = Physics2D.Raycast(transform.position, Vector2.down, distance, groundAndPlatformLayerMask);
+        Debug.DrawRay(transform.position, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
+
+        if (down.collider != null && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
+        {
+            Debug.Log("UpdateDown");
+            LandingStateSetting(ELandingState.Ground);
+            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            myRigidbody.linearVelocity = Vector2.zero;
+            jumpAttackCount = 0;
+            DownAndStand();
         }
     }
 
@@ -532,6 +554,12 @@ public abstract class Player : Character
     private void DeleteDashFrameUI()
     {
         dashFrameUI.SetActive(false);
+    }
+
+    public void RoomMoveState()
+    {
+        StandHitBox();
+        DeleteDashFrameUI();
     }
 
     private void UpdateCameraLimit()
@@ -665,6 +693,7 @@ public abstract class Player : Character
     public override void Die()
     {
         base.Die();
+        DeleteDashFrameUI();
         StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
         MoveStateSetting(EMoveState.Stopping);
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
@@ -835,8 +864,18 @@ public abstract class Player : Character
         
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         LandingStateSetting(ELandingState.Air);
-
+        
         stateCancellation = new CancellationTokenSource();
+
+        // 짧은 시간동안 좌우 움직임 봉인
+        canMove = false;
+        if (await NormalDelay(0.1f, stateCancellation).SuppressCancellationThrow())
+        {
+            canMove = true;
+            return;
+        }
+        canMove = true;
+        
         while (transform.position.y >= groundObject.transform.position.y)
         {
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
@@ -1106,7 +1145,6 @@ public abstract class Player : Character
             myRigidbody.bodyType = RigidbodyType2D.Dynamic;
             myRigidbody.linearVelocity = Vector2.zero;
             jumpAttackCount = 0;
-            
             groundObject = col.gameObject;
     
             // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리

@@ -159,7 +159,11 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string Gold = "Gold";
     public const string FollowGold = "FollowGold";
-
+    public const string GoldExplosion = "GoldExplosion";
+    public const string SlotEquip = "SlotEquip";
+    
+    public const string GetSkillExplosion = "GetSkillExplosion";
+    
     public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";
 

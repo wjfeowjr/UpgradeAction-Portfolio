@@ -26,6 +26,7 @@ public class SaveObject : MonoBehaviour
     
     private CancellationTokenSource waitCancellation;
 
+    private bool isFading;
     private bool isExpansion;
 
     public Transform SavePointPos => savePointPos;
@@ -37,8 +38,9 @@ public class SaveObject : MonoBehaviour
 
     private void Update()
     {
-        if (isExpansion && Input.GetKeyDown(KeyCode.UpArrow))
+        if (!isFading && isExpansion && Input.GetKeyDown(KeyCode.UpArrow))
         {
+            FadeOut();
             saveAction();
         }
     }
@@ -46,6 +48,13 @@ public class SaveObject : MonoBehaviour
     public void SetSaveAction(Action action)
     {
         saveAction = action;
+    }
+
+    private async void FadeOut()
+    {
+        isFading = true;
+        await RoomManager.Instance.FadeIn(ConstValues.WhiteColor);
+        isFading = false;
     }
 
     private void StartSetting()

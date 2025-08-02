@@ -62,7 +62,7 @@ public class Monster_Sun : Monster
         float delay2 = 0.5f;
         float fadeSpeed = 0.4f;
         
-        var firePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, GameManager.Instance.GroundPosY);
+        var firePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, RoomManager.Instance.GroundPosY);
         var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterSunAttack1);
         SpawnObject(ConstValues.FireFlash, CenterPos);
         
@@ -102,9 +102,13 @@ public class Monster_Sun : Monster
         {
             faceReduction.StopAndReset();
             spinObject.DeleteSpinObject(i);
-            var attackObject = SpawnAttackObject(ConstValues.MonsterSunAttack2, attackPos).GetComponent<Missile>();
-            attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
             
+            int missileDir = 1;
+            if (GameManager.Instance.CurPlayer.CenterPos.position.x < transform.position.x)
+                missileDir = -1;
+            var attackObject = SpawnAttackObject(ConstValues.MonsterSunAttack2, attackPos, 0, missileDir).GetComponent<Missile>();
+            attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
+
             if(await AttackDelay(delay2).SuppressCancellationThrow())
                 return;
             
@@ -200,6 +204,6 @@ public class Monster_Sun : Monster
     {
         HitMaterial();
         SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
-        GameManager.Instance.CameraShake(0.1f, 0.1f);
+        GameManager.Instance.CameraShake(0.1f, 0.1f, 0.1f);
     }
 }

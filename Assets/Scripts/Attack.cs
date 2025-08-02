@@ -41,7 +41,7 @@ public class Attack : MonoBehaviour
     private Character castChar;
     private Transform traceTransform;
     private Collider2D myCollider;
-    protected List<Collider2D> targetColliders = new List<Collider2D>();
+    private List<Collider2D> targetColliders = new List<Collider2D>();
     
     [SerializeField] private int dir;
     private float leftColliderTime;
@@ -54,6 +54,11 @@ public class Attack : MonoBehaviour
     private void Update()
     {
         ColliderTimer();
+    }
+
+    private void OnDisable()
+    {
+        TargetColReset();
     }
 
     public void SetupData(Character character, AttackData attackData)
@@ -288,7 +293,7 @@ public class Attack : MonoBehaviour
             
             if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
             {
-                if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.OriginStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
+                if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                     hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                 
                 switch (attackInfo.effectType)
@@ -304,7 +309,7 @@ public class Attack : MonoBehaviour
                 switch (attackInfo.effectType)
                 {
                     case EEffectType.Airborne:
-                        if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.OriginStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
+                        if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                             hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                         break;
             
@@ -314,7 +319,7 @@ public class Attack : MonoBehaviour
                         break;
             
                     case EEffectType.Damaged:
-                        if (hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.OriginStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
+                        if (hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                         {
                             hitTarget.Damaged(attackInfo.effectTime);
                             hitTarget.KnockBack(knockBackX);

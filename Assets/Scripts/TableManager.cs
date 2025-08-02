@@ -19,6 +19,7 @@ public class SpawnedObjectData
     public string sound;
     public float soundVolume;
     public string cameraShake;
+    public float shakeTime;
 }
 [Serializable]
 public class SpawnedObjectDataList

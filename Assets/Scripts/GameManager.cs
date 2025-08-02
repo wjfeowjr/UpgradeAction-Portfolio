@@ -304,8 +304,6 @@ public class GameManager : Singleton<GameManager>
     private string secondPlayer = default;
     [SerializeField] private bool controlStart;
     private int comboCount;
-    private int groundLayerMask;
-    private float groundPosY;
 
     // 등록된 스킬 목록
     private SettingSkill changeSkill;
@@ -363,12 +361,6 @@ public class GameManager : Singleton<GameManager>
         set => comboCount = value;
     }
 
-    public float GroundPosY
-    {
-        get => groundPosY;
-        set => groundPosY = value;
-    }
-
     public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
 
     public SettingSkill ChangeSkill => changeSkill;
@@ -400,7 +392,6 @@ public class GameManager : Singleton<GameManager>
         base.Awake();
         //QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
-        groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         DefaultKeySetting();
         InitManager();
         InitAtlas(uiAtlas);
@@ -435,17 +426,10 @@ public class GameManager : Singleton<GameManager>
         SceneManager.LoadScene(sceneName);
     }
 
-    public void SetGroundVector()
-    {
-        var downRay = Physics2D.Raycast(transform.position, Vector2.down, 100f, groundLayerMask);
-        if (downRay.collider != null)
-            groundPosY = downRay.point.y;
-    }
-
     private void DefaultKeySetting()
-    {
+    { 
         //PlayerPrefs.DeleteAll();
-        StageBinding.LoadStage();
+        //StageBinding.LoadStage();
         GoldBinding.LoadGold();
 
         escKey = KeyCode.Escape;
@@ -737,9 +721,9 @@ public class GameManager : Singleton<GameManager>
         uiObjectCanvas.worldCamera = targetCamera.GetComponent<Camera>();
     }
 
-    public void CameraShake(float amount, float time)
+    public void CameraShake(float amountX, float amountY, float time)
     {
-        mainCamera.Shake(amount, time);
+        mainCamera.Shake(amountX, amountY, time);
     }
 
     public Monster SpawnMonster(string id, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false, Action<string> bossProduct = null)
@@ -951,6 +935,8 @@ public class GameManager : Singleton<GameManager>
         GameObject go;
         if (isSearch.Count == 0)
         {
+            if(prefabList.Find(x => x.name == id) == null)
+                Debug.LogWarning($"{id}가 프리팹 리스트에 없다");
             go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
             objectList.Add(go);
         }
@@ -974,7 +960,7 @@ public class GameManager : Singleton<GameManager>
     }
     public GameObject SpawnToPoolInstantiate(string id, Transform pool, Vector3 objVector)
     { 
-        var objectName = $"{id}(Clone)";
+        var objectName = $"{id} (Clone)";
         GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
         objectList.Add(go);
         
@@ -1217,5 +1203,14 @@ public class GameManager : Singleton<GameManager>
         }
         
         return frameClass;
+    }
+
+    public void RoomMoveSetting()
+    {
+        foreach (var list in objectList)
+        {
+            if(list.activeSelf && list.GetComponent<Missile>())
+                list.SetActive(false);
+        }
     }
 }

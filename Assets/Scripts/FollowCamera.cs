@@ -8,7 +8,8 @@ using Random = UnityEngine.Random;
 public class FollowCamera : MonoBehaviour
 {
     private Camera myCamera;
-    private float shakeAmount;
+    private float shakeAmountX;
+    private float shakeAmountY;
     private float shakeTime;
     private Vector2 shakeVector;
     private Vector3 initialPosition;
@@ -90,9 +91,10 @@ public class FollowCamera : MonoBehaviour
         return Mathf.Abs(transform.position.y - target.position.y) > yMargin;
     }
 
-    public void Shake(float amount, float time)
+    public void Shake(float amountX, float amountY, float time)
     {
-        shakeAmount = amount;
+        shakeAmountX = amountX;
+        shakeAmountY = amountY;
         shakeTime = time;
     }
 
@@ -105,7 +107,7 @@ public class FollowCamera : MonoBehaviour
         {
             if (Time.timeScale > 0)
             {
-                shakeVector = new Vector2(Random.insideUnitSphere.x * shakeAmount, Random.insideUnitSphere.y * shakeAmount);
+                shakeVector = new Vector2(Random.insideUnitSphere.x * shakeAmountX, Random.insideUnitSphere.y * shakeAmountY);
                 shakeTime -= Time.deltaTime;
             }
             else

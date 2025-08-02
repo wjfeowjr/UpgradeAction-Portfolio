@@ -29,7 +29,7 @@ public class StageManager : Singleton<StageManager>
         GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default); // default
 
         //GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
-        GameManager.Instance.SetGroundVector();
+        //GameManager.Instance.SetGroundVector();
         GameManager.Instance.InitPlayerStat();
     }
     

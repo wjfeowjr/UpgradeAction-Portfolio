@@ -37,7 +37,7 @@ public class BgmManager : Singleton<BgmManager>
         myAudioSource.resource = bgmDic[uniqueId];
         myAudioSource.Play();
     }
-    
+
     public void Play()
     {
         myAudioSource.Play();
@@ -46,6 +46,11 @@ public class BgmManager : Singleton<BgmManager>
     public void Stop()
     {
         myAudioSource.Stop();
+    }
+
+    public bool IsPlaying()
+    {
+        return myAudioSource.isPlaying;
     }
 
     public void ReplayBgm()

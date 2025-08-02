@@ -79,7 +79,7 @@ public class Stage2 : Stage
 
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
-        GameManager.Instance.SetGroundVector();
+        //GameManager.Instance.SetGroundVector();
 
         StartSetting();
         SpawnEpisode(episodeTitle);
@@ -487,7 +487,7 @@ public class Stage2 : Stage
             citizen.CustomAnimTrigger(ENormalState.Idle, ConstValues.Arrive);
             citizen.Flip(1);
             BgmManager.Instance.PlayBgm(ConstValues.BGMEpisode2Battle);
-            CameraShake(0.5f, 0.5f); 
+            CameraShake(0.5f, 0.5f, 0.5f); 
             PlaySound(ConstValues.FighterStrongPunch);
             
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[0].position, dialog15);
@@ -668,7 +668,7 @@ public class Stage2 : Stage
                 return;
 
             PlaySound(ConstValues.MonsterBigTreeLog);
-            CameraShake(0.1f, 0.2f);
+            CameraShake(0.1f, 0.1f, 0.2f);
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[1].position, dialog32);
             await NextDialog(speechFrameStrong);
 
@@ -686,7 +686,7 @@ public class Stage2 : Stage
             
             // 근데 제가 너무 많아요!
             PlaySound(ConstValues.MonsterBigTreeLog);
-            CameraShake(0.1f, 0.2f);
+            CameraShake(0.1f, 0.1f, 0.2f);
             
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[1].position, dialog35);
             await NextDialog(speechFrameStrong);
@@ -965,7 +965,7 @@ public class Stage2 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            CameraShake(0.5f, 0.5f); 
+            CameraShake(0.5f,0.5f, 0.5f); 
             PlaySound(ConstValues.FighterStrongPunch);
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[2].position, dialog1);
             await NextDialog(speechFrameStrong);
@@ -1098,7 +1098,7 @@ public class Stage2 : Stage
             
             GameManager.Instance.SetCameraTarget(berserker.transform);
             
-            CameraShake(0.5f, 0.5f); 
+            CameraShake(0.5f, 0.5f, 0.5f); 
             PlaySound(ConstValues.FighterStrongPunch);
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[3].position, dialog2);
             await NextDialog(speechFrameStrong);
@@ -1126,7 +1126,7 @@ public class Stage2 : Stage
 
             var bossSpeechPos = chargeBoss.FontPos.position;
             
-            CameraShake(0.5f, 0.5f); 
+            CameraShake(0.5f, 0.5f, 0.5f); 
             PlaySound(ConstValues.FighterStrongPunch);
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[3].position, dialog3);
             await NextDialog(speechFrameStrong);

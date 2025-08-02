@@ -348,9 +348,9 @@ public abstract class Stage : MonoBehaviour
     {
         SoundManager.Instance.PlaySound(bgmName);
     }
-    protected void CameraShake(float amount, float time)
+    protected void CameraShake(float amountX, float amountY, float time)
     {
-        GameManager.Instance.CameraShake(amount, time);
+        GameManager.Instance.CameraShake(amountX, amountY, time);
     }
     protected void SetTimeScale(float value)
     {

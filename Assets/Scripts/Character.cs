@@ -141,7 +141,7 @@ public abstract class Character : MonoBehaviour
     protected int groundAndPlatformLayerMask;
     protected int wallLayerMask;
 
-    protected bool immortal;
+    [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
 
     // 프로퍼티
@@ -218,12 +218,6 @@ public abstract class Character : MonoBehaviour
     {
         UpdateVelocity();
         FindGroundObject();
-    }
-
-    private void OnDisable()
-    {
-        ClearObjectList(controlObject);
-        ClearObjectList(normalObject);
     }
 
     private void ScaleSetting()
@@ -533,7 +527,7 @@ public abstract class Character : MonoBehaviour
     }
     
     // 공격 소환(데이터 삽입용)
-    protected GameObject SpawnAttackObject(string id, Transform attackTransform, int zAngle = 0)
+    protected GameObject SpawnAttackObject(string id, Transform attackTransform, int zAngle = 0, int missileDir = 0)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform); 
         
@@ -588,10 +582,19 @@ public abstract class Character : MonoBehaviour
             var missile = obj.GetComponent<Missile>();
             if (!missile)
                 missile = obj.AddComponent<Missile>();
+
+            Vector2 dir;
+            if (missileDir == 0)
+            {
+                dir = Vector2.right;
+                if(transform.localScale.x < 0)
+                    dir = Vector2.left;
+            }
+            else
+            {
+                dir = new Vector2(missileDir, 0);
+            }
             
-            var dir = Vector2.right;
-            if(transform.localScale.x < 0)
-                dir = Vector2.left;
             missile.SetupData(missileData, dir, SpawnAttack);
         }
         
@@ -611,76 +614,8 @@ public abstract class Character : MonoBehaviour
 
         return obj;
     }
-    protected GameObject SpawnAttackObject(string id, Vector2 pos, int zAngle = 0)
-    {
-        var obj = GameManager.Instance.SpawnToObjectPool(id, pos); 
-        
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if (objectData != null)
-        {
-            var spawnedObject = obj.GetComponent<SpawnedObject>();
-            if (!spawnedObject)
-                spawnedObject = obj.AddComponent<SpawnedObject>();
-            
-            spawnedObject.SetupData(objectData, transform.localScale.x);
-            spawnedObject.EnableSetting();
-            if (zAngle != 0)
-            {
-                var finalAngle = zAngle;
-                if (transform.localScale.x < 0)
-                    finalAngle = -zAngle;
-            
-                var objectAngle = spawnedObject.transform.eulerAngles;
-                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
-            }
-            
-            if(spawnedObject.GetObjectTime() == 0)
-                AddObjectList(controlObject, obj);
-        }
 
-        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
-        if (attackData != null)
-        {
-            var attack = obj.GetComponent<Attack>();
-            if (!attack)
-            {
-                attack = obj.AddComponent<Attack>();
-                attack.SetupData(this, attackData);
-            }
-
-            attack.EnableSetting();
-        }
-        
-        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
-        if (missileData != null)
-        {
-            var missile = obj.GetComponent<Missile>();
-            if (!missile)
-                missile = obj.AddComponent<Missile>();
-            
-            var dir = Vector2.right;
-            if(transform.localScale.x < 0)
-                dir = Vector2.left;
-            missile.SetupData(missileData, dir, SpawnAttack);
-        }
-        
-        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
-        if (grenadeData != null)
-        {
-            var grenade = obj.GetComponent<Grenade>();
-            if (!grenade)
-                grenade = obj.AddComponent<Grenade>();
-            
-            var dir = Vector2.right;
-            if(transform.localScale.x < 0)
-                dir = Vector2.left;
-            grenade.SetupData(grenadeData, dir, SpawnAttack);
-            grenade.Throw();
-        }
-        return obj;
-    }
-
-    // 공격 소환(데이터 삽입용)
+    // 공격 소환
     protected void SpawnAttack(string id, Transform attackTransform, int zAngle = 0)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform); 
@@ -722,11 +657,9 @@ public abstract class Character : MonoBehaviour
         {
             var attack = obj.GetComponent<Attack>();
             if (!attack)
-            {
                 attack = obj.AddComponent<Attack>();
-                attack.SetupData(this, attackData);
-            }
 
+            attack.SetupData(this, attackData);
             attack.EnableSetting();
         }
         
@@ -1093,7 +1026,7 @@ public abstract class Character : MonoBehaviour
         myRigidbody.gravityScale = value;
     }
     // 히트박스 기상 사이즈로 변경
-    protected virtual void StandHitBox()
+    protected void StandHitBox()
     {
         myBoxCollider.size = standHitBoxSize;
         myBoxCollider.offset = new Vector2(standOffset.x, standOffset.y);

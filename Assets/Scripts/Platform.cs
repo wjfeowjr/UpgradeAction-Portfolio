@@ -14,7 +14,7 @@ public class Platform : MonoBehaviour
     public async void DestroyBomb()
     {
         SoundManager.Instance.PlaySound(ConstValues.FighterStrongPunch);
-        GameManager.Instance.CameraShake(0.3f, 0.3f);
+        GameManager.Instance.CameraShake(0.3f, 0.3f, 0.3f);
         foreach (var platform in platformSpriteList)
         {
             SpawnObject(ConstValues.PlatformExplosion, platform.transform.position);
