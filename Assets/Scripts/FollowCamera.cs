@@ -71,7 +71,7 @@ public class FollowCamera : MonoBehaviour
             return;
         
         xSmooth = 8;
-        ySmooth = 8;
+        ySmooth = 3;
     }
     
     public void SetTarget(Transform targetTransform)

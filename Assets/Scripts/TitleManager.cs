@@ -54,7 +54,10 @@ public class TitleManager : MonoBehaviour
     private void AnyKeyStart()
     {
         if (Input.GetKeyDown(KeyCode.F1))
+        {
             PlayerPrefs.DeleteAll();
+            GameManager.Instance.DefaultKeySetting();
+        }
         
         if (Input.anyKeyDown)
             GameManager.Instance.GoScene(ConstValues.BattleScene);

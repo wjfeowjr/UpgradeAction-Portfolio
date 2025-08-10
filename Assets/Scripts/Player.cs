@@ -610,6 +610,7 @@ public abstract class Player : Character
 
     public void ForceIdle()
     {
+        MoveStateSetting(EMoveState.Stopping);
         CancelMotion();
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
     }

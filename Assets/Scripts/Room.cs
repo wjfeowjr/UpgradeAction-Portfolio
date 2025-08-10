@@ -460,6 +460,15 @@ public class Room : MonoBehaviour
         GameManager.Instance.MainCamera.MinXAndY = new Vector2(minCameraLimitX.position.x, minCameraLimitY.position.y);
     }
 
+    public float SetCenterX()
+    {
+        return (maxCameraLimitX.position.x + minCameraLimitX.position.x) / 2;
+    }
+    public float SetCenterY()
+    {
+        return (maxCameraLimitY.position.y + minCameraLimitY.position.y) / 2;
+    }
+    
     public void CancelTask()
     {
         dialogCancellation?.Cancel();
@@ -1203,6 +1212,8 @@ public class Room : MonoBehaviour
         }
 
         RoomManager.Instance.BgSpriteChange(ConstValues.BgTutorial2);
+        RoomManager.Instance.BgDecoActive(false);
+        
         fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
         await fadeBg.Fade();
         fadeBg.gameObject.SetActive(false);
@@ -1282,6 +1293,8 @@ public class Room : MonoBehaviour
             return;
         
         RoomManager.Instance.BgSpriteChange(ConstValues.BgTutorial);
+        RoomManager.Instance.BgDecoActive(true);
+        
         fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
         await fadeBg.Fade();
         

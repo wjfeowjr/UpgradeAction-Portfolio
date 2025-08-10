@@ -70,6 +70,7 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
 
     public async void BossMessageProduct(Action soundAction)
     {
+        GameManager.Instance.BossProduct = true;
         Time.timeScale = 0;
         soundAction?.Invoke();
         bossMessageCancellation = new CancellationTokenSource();
@@ -102,5 +103,6 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
         
         Time.timeScale = 1;
         gameObject.SetActive(false);
+        GameManager.Instance.BossProduct = false;
     }
 }

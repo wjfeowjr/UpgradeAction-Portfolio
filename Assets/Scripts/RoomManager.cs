@@ -16,6 +16,7 @@ public class RoomManager : Singleton<RoomManager>
     [SerializeField] private Camera mainCamera;
     [SerializeField] private FollowCamera mainCameraFollow;
     [SerializeField] private SpriteRenderer bgSprite;
+    [SerializeField] private GameObject bgDeco;
     [SerializeField] private Room[] roomArray;
     [SerializeField] private Room currentRoom;
     [SerializeField] private FadeSystem fadeUI;
@@ -119,7 +120,7 @@ public class RoomManager : Singleton<RoomManager>
     {
         GameManager.Instance.ReduceSkillPlayer();
 
-        if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && GameManager.Instance.ControlStart && Input.GetKeyDown(GameManager.Instance.tabKey))
+        if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.tabKey))
             SpawnMinimap();
     }
 
@@ -127,6 +128,12 @@ public class RoomManager : Singleton<RoomManager>
     {
         bgSprite.sprite =  GameManager.Instance.GetAtlasSprite(spriteName);
     }
+
+    public void BgDecoActive(bool active)
+    {
+        bgDeco.SetActive(active);
+    }
+    
     public void SetGroundVector()
     {
         var downRay = Physics2D.Raycast(currentRoom.transform.position, Vector2.down, 100f, groundLayerMask);

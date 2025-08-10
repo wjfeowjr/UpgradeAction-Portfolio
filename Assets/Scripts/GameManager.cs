@@ -302,7 +302,8 @@ public class GameManager : Singleton<GameManager>
 
     private string firstPlayer;
     private string secondPlayer = default;
-    [SerializeField] private bool controlStart;
+    private bool controlStart;
+    private bool bossProduct;
     private int comboCount;
 
     // 등록된 스킬 목록
@@ -353,6 +354,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => controlStart;
         set => controlStart = value;
+    }
+
+    public bool BossProduct
+    {
+        get => bossProduct;
+        set => bossProduct = value;
     }
 
     public int ComboCount
@@ -426,7 +433,7 @@ public class GameManager : Singleton<GameManager>
         SceneManager.LoadScene(sceneName);
     }
 
-    private void DefaultKeySetting()
+    public void DefaultKeySetting()
     { 
         //PlayerPrefs.DeleteAll();
         //StageBinding.LoadStage();
