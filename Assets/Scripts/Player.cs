@@ -1185,7 +1185,7 @@ public abstract class Player : Character
             if (col.GetComponent<SaveObject>())
             {
                 var saveObject = col.GetComponent<SaveObject>();
-                saveObject.Expansion();
+                saveObject.SpawnInteractionObject();
             }
         }
     }
@@ -1196,7 +1196,7 @@ public abstract class Player : Character
             if (col.GetComponent<SaveObject>())
             {
                 var saveObject = col.GetComponent<SaveObject>();
-                saveObject.Reduce();
+                saveObject.ReduceInteractionObject();
             }
         }
     }

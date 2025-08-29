@@ -835,6 +835,7 @@ public class GameManager : Singleton<GameManager>
     {
         return SpawnToPool(id, uiObjectPool, objVector);
     }
+
     // UI화면
     public GameObject SpawnToUIPool(string id, Vector2 objVector)
     {

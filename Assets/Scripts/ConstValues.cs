@@ -129,6 +129,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MiniMapCheckers = "MiniMapCheckers";
     public const string SavePoint = "SavePoint";
     public const string SaveObject = "SaveObject";
+    public const string InteractionUI = "InteractionUI";
     
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
