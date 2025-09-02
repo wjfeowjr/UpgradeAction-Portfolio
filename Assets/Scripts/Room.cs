@@ -102,6 +102,7 @@ public class Room : MonoBehaviour
     [SerializeField] protected List<Vector2> firstMonsterPosList = new List<Vector2>();
     [SerializeField] protected Monster[] bosses;
     [SerializeField] protected List<Vector2> firstBossPosList = new List<Vector2>();
+    [SerializeField] protected Npc[] npc;
     [SerializeField] protected GameObject[] traps;
 
     [SerializeField] protected Transform monsterLimitLeft;
@@ -257,6 +258,7 @@ public class Room : MonoBehaviour
             return;
         
         var productCount = roomsData.productCount;
+        var npcAppearProductIdx = roomsData.npcAppearProductIdx;
         var productIdxArray = roomsData.productIdx.Split(',');
         List<int> productIdxList = new List<int>();
         foreach (var productIdx in productIdxArray)
@@ -324,6 +326,10 @@ public class Room : MonoBehaviour
                     BgmManager.Instance.Play();
             }
         }
+        
+        // 여기서 npc 활성화
+        foreach (var arr in npc)
+            arr.gameObject.SetActive(roomInfo.productCount >= npcAppearProductIdx);
 
         // 스킬 및 패시브를 획득했으면, 나오지 않게 조정
         for (var i = 0; i < roomSkillAndPassive.Length; i++)
@@ -1081,10 +1087,9 @@ public class Room : MonoBehaviour
         string dialog17 = "난 돌아올 것이다!!!";
         string dialog18 = "진짜 어둠이 찾아왔다..";
         string dialog19 = "이제 가야지";
-        string dialog20 = "9시간 뒤..";
-        string dialog21 = "바보 같은 놈";
-        string dialog22 = "밤이라서 잠깐\n없어진 거야";
-        string dialog23 = "ㅋ";
+        string dialog20 = "바보 같은 놈";
+        string dialog21 = "밤이라서 잠깐\n없어진 거야";
+        string dialog22 = "ㅋ";
         
         // 문 닫기
         DoorActive(true);
@@ -1295,56 +1300,58 @@ public class Room : MonoBehaviour
         RoomManager.Instance.BgSpriteChange(ConstValues.BgTutorial);
         RoomManager.Instance.BgDecoActive(true);
         
+        // fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
+        // await fadeBg.Fade();
+        // UIOn();
+        // BgmManager.Instance.Play();
+
+        // 이곳에서 세이브 포인트 연출
+
+        //GameManager.Instance.SetCameraTarget(null);
+        berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog18); 
+        await NextDialog(speechFrame1[0]);
+        
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog19); 
+        await NextDialog(speechFrame1[0]);
+        
+        // var movePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x + 15.0f, GameManager.Instance.CurPlayer.transform.position.y);
+        // await GameManager.Instance.CurPlayer.EpisodeMove(movePos, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
+        // if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
+        //     return;
+        
+        // var titleSpeechPos = Vector3.zero;
+        // SpawnSpeechFrame(speechFrameTitle, titleSpeechPos, dialog20); 
+        // await NextDialog(speechFrameTitle);
+        
+        BgmManager.Instance.Play();
+        PlaySound(ConstValues.ChickenCock);
         fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
         await fadeBg.Fade();
         
-        UIOn();
-        BgmManager.Instance.Play();
+        PlaySound(ConstValues.RewardPage);
+        //npc[0].gameObject.transform.position = new Vector2(bossPos[2].transform.position.x + 3.5f, bossPos[2].transform.position.y);
+        npc[0].gameObject.SetActive(true);
+        npc[0].transform.localScale = new Vector3(-1, 1, 1);
+        //await bosses[0].EpisodeMove_X(bossPos[2].transform.position, bosses[0].BasicStat.moveSpeed, -1);
+        
+        sunSpeechPos = npc[0].SpeechPos.position;
+        
+        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog20); 
+        await NextDialog(speechFrame2[0]);
+        
+        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog21); 
+        await NextDialog(speechFrame2[0]);
+        
+        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog22); 
+        await NextDialog(speechFrame2[0]);
+
         // 문 열기
         DoorActive(false);
         roomInfo.productCount += 1;
         SaveRoom();
         
-        // 이곳에서 세이브 포인트 연출
-
-        // GameManager.Instance.SetCameraTarget(null);
-        // var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
-        // SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog18); 
-        // await NextDialog(speechFrame1[0]);
-        //
-        // SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog19); 
-        // await NextDialog(speechFrame1[0]);
-        //
-        // var movePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x + 15.0f, GameManager.Instance.CurPlayer.transform.position.y);
-        // await GameManager.Instance.CurPlayer.EpisodeMove(movePos, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
-        // if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-        //     return;
-        //
-        // var titleSpeechPos = Vector3.zero;
-        // SpawnSpeechFrame(speechFrameTitle, titleSpeechPos, dialog20); 
-        // await NextDialog(speechFrameTitle);
-        //
-        // BgmManager.Instance.Play();
-        // PlaySound(ConstValues.ChickenCock);
-        // fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
-        // await fadeBg.Fade();
-        //
-        // PlaySound(ConstValues.RewardPage);
-        // bosses[0].gameObject.transform.position = new Vector2(bossPos[2].transform.position.x + 3.5f, bossPos[2].transform.position.y);
-        // bosses[0].gameObject.SetActive(true);
-        // await bosses[0].EpisodeMove_X(bossPos[2].transform.position, bosses[0].BasicStat.moveSpeed, -1);
-        //
-        // SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog21); 
-        // await NextDialog(speechFrame2[0]);
-        //
-        // SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog22); 
-        // await NextDialog(speechFrame2[0]);
-        //
-        // SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog23); 
-        // await NextDialog(speechFrame2[0]);
-
-        // roomInfo.productCount += 1;
-        // SaveRoom();
+        UIOn();
     }
     
     // 스킬을 획득 연출

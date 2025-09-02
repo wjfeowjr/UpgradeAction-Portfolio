@@ -5,6 +5,10 @@ using UnityEngine;
 
 public class Npc : Character
 {
+    [SerializeField] private Transform speechPos;
+
+    public Transform SpeechPos => speechPos;
+
     protected override void Update()
     {
         if (isDie || basicStat.hp <= 0 || !GameManager.Instance.ControlStart)

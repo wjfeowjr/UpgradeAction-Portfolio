@@ -131,6 +131,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string SaveObject = "SaveObject";
     public const string InteractionUI = "InteractionUI";
     
+    public const string Npc = "Npc";
+    public const string Dialogue = "Dialogue";
+    public const string DialogueChoice = "DialogueChoice";
+    
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
     public const string Grabbed = "Grabbed";

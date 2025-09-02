@@ -1119,8 +1119,8 @@ public abstract class Player : Character
             CustomMoving_X(dir, speed);
             await FixedYieldDelay(stateCancellation);
         }
-
-        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        await FixedYieldDelay(stateCancellation);
+        
         switch (finishDir)
         {
             case -1:

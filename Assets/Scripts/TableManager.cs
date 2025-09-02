@@ -205,11 +205,56 @@ public class RoomsData
     public string skill;
     public string treasureBox;
     public string namedMonster;
+    public int npcAppearProductIdx;
 }
 [Serializable]
 public class RoomsDataList
 {
     public List<RoomsData> Rooms;
+}
+
+[Serializable]
+public class NpcData
+{
+    public string id;
+    public string startDialog;
+}
+[Serializable]
+public class NpcDataList
+{
+    public List<NpcData> Npc;
+}
+
+[Serializable]
+public class DialogueData
+{
+    public string id;
+    public bool isSpeaker;
+    public string speechText;
+    public string nextSpeechText;
+    public string choiceGroupId;
+    public string checkKey;
+    public int checkKeyValue;
+    public string endEvent;
+    public string reward;
+}
+[Serializable]
+public class DialogueDataList
+{
+    public List<DialogueData> Dialogue;
+}
+
+[Serializable]
+public class DialogueChoiceData
+{
+    public string id;
+    public int choiceIdx;
+    public string choiceText;
+}
+[Serializable]
+public class DialogueChoiceDataList
+{
+    public List<DialogueChoiceData> DialogueChoice;
 }
 
 public class TableManager : SingletonMono<TableManager>
@@ -223,6 +268,9 @@ public class TableManager : SingletonMono<TableManager>
     public MonsterDataList monsterTable;
     public SkillDataList skillTable;
     public RoomsDataList roomsTable;
+    public NpcDataList npcTable;
+    public DialogueDataList dialogueTable;
+    public DialogueChoiceDataList dialogueChoiceTable;
     
     public void Init()
     {
@@ -235,6 +283,9 @@ public class TableManager : SingletonMono<TableManager>
         monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
         skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);
         roomsTable = LoadDataFromJson<RoomsDataList>(ConstValues.Rooms);
+        npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);
+        dialogueTable = LoadDataFromJson<DialogueDataList>(ConstValues.Dialogue);
+        dialogueChoiceTable = LoadDataFromJson<DialogueChoiceDataList>(ConstValues.DialogueChoice);
         
         Debug.Log($"{name} 초기화 완료");
     }
