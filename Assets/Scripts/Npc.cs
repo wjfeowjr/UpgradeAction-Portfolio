@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
@@ -6,9 +7,30 @@ using UnityEngine;
 public class Npc : Character
 {
     [SerializeField] private Transform speechPos;
+    [SerializeField] private Transform uiPos;
+    
+    private InteractionObject interactionObject;
+    private InteractionSelect interactionSelect;
+
+    private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
+    private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
+    private SpeechFrame speechFrameStrong;
+    private SpeechFrame speechFrameTitle;
+    
+    private NpcData npcData;
+    private List<Action> dialogueAction = new List<Action>();
+
+    private bool isFirstTalk;
 
     public Transform SpeechPos => speechPos;
 
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        DataSetting();
+        SpeechFrameSetting();
+    }
+    
     protected override void Update()
     {
         if (isDie || basicStat.hp <= 0 || !GameManager.Instance.ControlStart)
@@ -16,7 +38,185 @@ public class Npc : Character
 
         base.Update();
     }
+
+    private void DataSetting()
+    {
+        if(npcData == null)
+            npcData = TableManager.Instance.npcTable.Npc.Find(x => x.id == name);
+    }
     
+    private void SpeechFrameSetting()
+    {
+        speechFrame1 = RoomManager.Instance.SpeechFrame1;
+        speechFrame2 = RoomManager.Instance.SpeechFrame2;
+        speechFrameStrong = RoomManager.Instance.SpeechFrameStrong;
+        speechFrameTitle = RoomManager.Instance.SpeechFrameTitle;
+    }
+
+    public void SpawnInteractionObject()
+    {
+        interactionObject.gameObject.SetActive(true);
+        interactionObject.transform.position = uiPos.position;
+        interactionObject.Expansion();
+    }
+
+    public void ReduceInteractionObject()
+    {
+        interactionObject.Reduce();
+    }
+    
+    public void SetInteractionAction()
+    {
+        if (interactionObject == null)
+        {
+            interactionObject = SpawnInteraction(ConstValues.InteractionUI, uiPos).GetComponent<InteractionObject>();
+            interactionObject.SetInteractionAction(StartDialogue);
+            interactionObject.SetText("대화", "↑");
+            interactionObject.gameObject.SetActive(false);
+        }
+    }
+
+    public void SetSelectAction()
+    {
+        if (interactionSelect == null)
+        {
+            interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, uiPos).GetComponent<InteractionSelect>();
+            
+            var selectList = TableManager.Instance.dialogueChoiceTable.DialogueChoice.FindAll(x => x.npc == npcData.id);
+            
+            List<string> choiceList = new List<string>();
+            foreach (var select in selectList)
+                choiceList.Add(select.choiceText);
+            
+            List<string> idList = new List<string>();
+            foreach (var select in selectList)
+                idList.Add(select.id);
+            
+            interactionSelect.StartSetting(choiceList, idList);
+            interactionSelect.gameObject.SetActive(false);
+        }
+    }
+
+    public void SetStartTalkAction()
+    {
+        isFirstTalk = false;
+    }
+
+    private async void SetDialogueAction(string choice)
+    {
+        interactionSelect.gameObject.SetActive(false);
+        
+        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice);
+        string checkKey = talkDataList[0].checkKey;
+        string endEvent = talkDataList[0].endEvent;
+        string eventReward = talkDataList[0].reward;
+        int checkKeyValue = GetCheckKey(checkKey);
+        
+        List<DialogueData> talkList = new List<DialogueData>();
+        if (checkKey == ConstValues.None)
+        {
+            talkList.AddRange(talkDataList);
+        }
+        else
+        {
+            talkList.AddRange(talkDataList.FindAll(x => x.checkKey == checkKey && x.checkKeyValue == checkKeyValue));
+        }
+
+        foreach (var talk in talkList)
+        {
+            SpawnSpeechFrame(speechFrame2[0], speechPos.position, talk.speechText);
+            await NextDialog(speechFrame2[0]);
+            if (talk.isEnd)
+                break;
+        }
+        GameManager.Instance.ControlStart = true;
+
+        if (endEvent == ConstValues.None)
+        {
+            SpawnInteractionObject();
+        }
+        else
+        {
+            if(checkKeyValue == 0)
+                PlayEndEvent(checkKey, endEvent, eventReward);
+            else
+                SpawnInteractionObject();
+        }
+    }
+
+    private int GetCheckKey(string checkKey)
+    {
+        if(!PlayerPrefs.HasKey(checkKey))
+            PlayerPrefs.SetInt(checkKey, 0);
+        
+        Debug.Log($"키:{checkKey}, 값:{PlayerPrefs.GetInt(checkKey)}");
+        return PlayerPrefs.GetInt(checkKey);
+    }
+
+    private void SetCheckKey(string checkKey, int value)
+    {
+        PlayerPrefs.SetInt(checkKey, value);
+    }
+
+    private void PlayEndEvent(string checkKey, string eventKey, string reward)
+    {
+        switch (eventKey)
+        {
+            case ConstValues.GetSkill:
+                SetCheckKey(checkKey, 1);
+                GameManager.Instance.AddNewSkill(reward);
+                GameManager.Instance.GetSkillProduct(reward, GetSkillDialogue);
+                break;
+        }
+    }
+    
+    private void SetCloseAction()
+    {
+        interactionSelect.gameObject.SetActive(false);
+        GameManager.Instance.ControlStart = true;
+        SpawnInteractionObject();
+    }
+    
+    private void SpawnSpeechFrame(SpeechFrame speechFrame, Vector2 speechPos, string dialog)
+    {
+        speechFrame.SetPos(speechPos);
+        speechFrame.Speech(dialog);
+    }
+
+    private async UniTask NextDialog(SpeechFrame speechFrame)
+    {
+        speechFrame.NextObjectActive();
+        // 스페이스바를 누르면 넘어간다
+        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.DialogCancellation.Token).SuppressCancellationThrow())
+        {
+            speechFrame.SpeechEnd();
+            return;
+        }
+        speechFrame.SpeechEnd();
+    }
+
+    private async void StartDialogue()
+    {
+        //interactionObject.gameObject.SetActive(false);
+        ReduceInteractionObject();
+        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.ControlStart = false;
+        
+        // 최초응답
+        if (!isFirstTalk)
+        {
+            var firstTalk = TableManager.Instance.dialogueTable.Dialogue.Find(x => x.id == npcData.startDialog);
+            SpawnSpeechFrame(speechFrame2[0], speechPos.position, firstTalk.speechText);
+            await NextDialog(speechFrame2[0]);
+            isFirstTalk = true;
+        }
+
+        // 대화 선택지 및 선택 액션
+        interactionSelect.gameObject.SetActive(true);
+        interactionSelect.SetAction(SetDialogueAction, SetCloseAction);
+        interactionSelect.SetDelay();
+    }
+
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
     {
         normalState = changeNormalState;
@@ -30,6 +230,33 @@ public class Npc : Character
     protected override void StateRecovery()
     {
         
+    }
+    
+    private GameObject SpawnInteraction(string id, Transform uiTransform)
+    {
+        var obj = GameManager.Instance.SpawnToUIObjectPoolInstantiate(id, uiTransform);
+        
+        var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        if (uiData == null)
+            return obj;
+        
+        var spawnedObject = obj.GetComponent<SpawnedObject>();
+        if (!spawnedObject)
+            spawnedObject = obj.AddComponent<SpawnedObject>();
+        
+        spawnedObject.SetupData(uiData, transform.localScale.x);
+        spawnedObject.EnableSetting();
+        
+        if (spawnedObject.GetTrace())
+        {
+            var trace = obj.GetComponent<Trace>();
+            if(!trace)
+                trace = obj.AddComponent<Trace>();
+            
+            trace.SetTarget(uiTransform);
+        }
+
+        return obj;
     }
 
     // 커스텀
@@ -93,6 +320,13 @@ public class Npc : Character
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         Stop();
         StopVelocity();
+    }
+    
+    // 스킬을 획득 후 독백 이벤트
+    private async void GetSkillDialogue(string id, string skillName)
+    {
+        string getMessage = $"{skillName}을(를) 획득하였다!";
+        await GameManager.Instance.SpawnWarningPopup(getMessage);
     }
     
     protected virtual void OnCollisionEnter2D(Collision2D col)

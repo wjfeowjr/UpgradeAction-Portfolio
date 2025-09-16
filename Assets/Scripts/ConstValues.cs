@@ -130,6 +130,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SavePoint = "SavePoint";
     public const string SaveObject = "SaveObject";
     public const string InteractionUI = "InteractionUI";
+    public const string InteractionSelectUI = "InteractionSelectUI";
     
     public const string Npc = "Npc";
     public const string Dialogue = "Dialogue";
@@ -167,6 +168,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string GoldExplosion = "GoldExplosion";
     public const string SlotEquip = "SlotEquip";
     
+    public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";
     
     public const string SpawnedObject = "SpawnedObject";

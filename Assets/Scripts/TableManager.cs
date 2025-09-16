@@ -231,7 +231,7 @@ public class DialogueData
     public string id;
     public bool isSpeaker;
     public string speechText;
-    public string nextSpeechText;
+    public bool isEnd;
     public string choiceGroupId;
     public string checkKey;
     public int checkKeyValue;
@@ -248,7 +248,7 @@ public class DialogueDataList
 public class DialogueChoiceData
 {
     public string id;
-    public int choiceIdx;
+    public string npc;
     public string choiceText;
 }
 [Serializable]

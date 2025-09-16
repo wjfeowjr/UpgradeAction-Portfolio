@@ -9,9 +9,11 @@ public class SaveObject : MonoBehaviour
 {
     [SerializeField] private Transform savePointPos;
     [SerializeField] private Transform uiPos;
-    [SerializeField] private InteractionObject interactionObject;
+    
+    private InteractionObject interactionObject;
     private Action saveAction;
     
+    public InteractionObject InteractionObject => interactionObject;
     public Transform SavePointPos => savePointPos;
 
     public void SpawnInteractionObject()
@@ -31,7 +33,7 @@ public class SaveObject : MonoBehaviour
         if (interactionObject == null)
         {
             interactionObject = SpawnUIObject(ConstValues.InteractionUI, uiPos).GetComponent<InteractionObject>();
-            interactionObject.SetSaveAction(action);
+            interactionObject.SetInteractionAction(action);
             interactionObject.SetText("저장", "↑");
             interactionObject.gameObject.SetActive(false);
         }
@@ -39,7 +41,7 @@ public class SaveObject : MonoBehaviour
 
     private GameObject SpawnUIObject(string id, Transform uiTransform)
     {
-        var obj = GameManager.Instance.SpawnToUIObjectPool(id, uiTransform);
+        var obj = GameManager.Instance.SpawnToUIObjectPoolInstantiate(id, uiTransform);
         
         var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (uiData == null)

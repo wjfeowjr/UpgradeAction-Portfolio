@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEditor;
@@ -320,6 +321,10 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private Transform miniMapCamera;
     [SerializeField] private Canvas uiObjectCanvas;
 
+    private CancellationTokenSource dialogCancellation;
+    private CancellationTokenSource fadeCancellation;
+    private CancellationTokenSource waitCancellation;
+
     // 프로퍼티
     public Player CurPlayer
     {
@@ -392,7 +397,9 @@ public class GameManager : Singleton<GameManager>
         set => miniMapCamera = value;
     }
 
-    //public UI_Interface UIInterface => uiInterface;
+    public CancellationTokenSource DialogCancellation => dialogCancellation;
+    public CancellationTokenSource FadeCancellation => fadeCancellation;
+    public CancellationTokenSource WaitCancellation => waitCancellation;
     
     protected override void Awake()
     {
@@ -835,6 +842,10 @@ public class GameManager : Singleton<GameManager>
     {
         return SpawnToPool(id, uiObjectPool, objVector);
     }
+    public GameObject SpawnToUIObjectPoolInstantiate(string id, Transform objTransform)
+    {
+        return SpawnToPoolInstantiate(id, uiObjectPool, objTransform);
+    }
 
     // UI화면
     public GameObject SpawnToUIPool(string id, Vector2 objVector)
@@ -966,6 +977,17 @@ public class GameManager : Singleton<GameManager>
         go.SetActive(true);
         return go;
     }
+    public GameObject SpawnToPoolInstantiate(string id, Transform pool, Transform objTransform)
+    { 
+        var objectName = $"{id} (Clone)";
+        GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
+        objectList.Add(go);
+        
+        go.transform.position = objTransform.transform.position;
+        go.SetActive(true);
+        return go;
+    }
+    
     public GameObject SpawnToPoolInstantiate(string id, Transform pool, Vector3 objVector)
     { 
         var objectName = $"{id} (Clone)";
@@ -1220,5 +1242,30 @@ public class GameManager : Singleton<GameManager>
             if(list.activeSelf && list.GetComponent<Missile>())
                 list.SetActive(false);
         }
+    }
+
+    public void InitDialogueCancellation()
+    {
+        dialogCancellation = new CancellationTokenSource();
+    }
+    public void InitFadeCancellation()
+    {
+        fadeCancellation = new CancellationTokenSource();
+    }
+    public void InitWaitCancellation()
+    {
+        waitCancellation = new CancellationTokenSource();
+    }
+    
+    public async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+    }
+
+    public void GetSkillProduct(string id, Action<string, string> customAction)
+    {
+        var skillName = GetSkillName(id);
+        CurPlayer.SpawnObject(ConstValues.GetSkillExplosion, CurPlayer.CenterPos.position);
+        customAction.Invoke(id, skillName);
     }
 }

@@ -13,7 +13,7 @@ public class InteractionObject : MonoBehaviour
     
     private Vector3 reduceScale = new Vector3(1, 0, 0);
     private Vector3 expansionScale = new Vector3(1, 1, 0);
-    private Action saveAction;
+    private Action interactionAction;
     
     private Tween fadeTween1;
     private Tween fadeTween2;
@@ -35,10 +35,9 @@ public class InteractionObject : MonoBehaviour
 
     private void Update()
     {
-        if (!isFading && isExpansion && Input.GetKeyDown(KeyCode.UpArrow))
+        if (GameManager.Instance.CurPlayer.NormalState == ENormalState.Idle && !isFading && isExpansion && Input.GetKeyDown(KeyCode.UpArrow))
         {
-            FadeOut();
-            saveAction();
+            interactionAction();
         }
     }
 
@@ -48,12 +47,12 @@ public class InteractionObject : MonoBehaviour
         myTexts[1].text = key;
     }
 
-    public void SetSaveAction(Action action)
+    public void SetInteractionAction(Action action)
     {
-        saveAction = action;
+        interactionAction = action;
     }
 
-    private async void FadeOut()
+    public async void FadeOut()
     {
         isFading = true;
         await RoomManager.Instance.FadeIn(ConstValues.WhiteColor);

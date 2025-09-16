@@ -1180,6 +1180,7 @@ public abstract class Player : Character
 
     protected void OnTriggerEnter2D(Collider2D col)
     {
+        // 세이브 포인트
         if (col.CompareTag(ConstValues.SaveObject))
         {
             if (col.GetComponent<SaveObject>())
@@ -1188,15 +1189,36 @@ public abstract class Player : Character
                 saveObject.SpawnInteractionObject();
             }
         }
+
+        // 대화 상호작용
+        if (col.CompareTag(ConstValues.Npc))
+        {
+            if (col.GetComponent<Npc>())
+            {
+                var npc = col.GetComponent<Npc>();
+                npc.SpawnInteractionObject();
+            }
+        }
     }
     protected void OnTriggerExit2D(Collider2D col)
     {
+        // 세이브 포인트
         if (col.CompareTag(ConstValues.SaveObject))
         {
             if (col.GetComponent<SaveObject>())
             {
                 var saveObject = col.GetComponent<SaveObject>();
                 saveObject.ReduceInteractionObject();
+            }
+        }
+
+        // 대화 상호작용
+        if (col.CompareTag(ConstValues.Npc))
+        {
+            if (col.GetComponent<Npc>())
+            {
+                var npc = col.GetComponent<Npc>();
+                npc.ReduceInteractionObject();
             }
         }
     }
