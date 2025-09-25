@@ -50,6 +50,7 @@ public class AttackData
     public string effectType;
     public float effectTime;
     public bool ignoreSuperArmor;
+    public bool ignoreImmortal;
     public bool continuous;
     public bool duplicate;
     public string directionType;
@@ -57,6 +58,7 @@ public class AttackData
     public int stagger;
     public float knockBack;
     public string upperPower;
+    public int customDir;
     public float colliderTime;
     public string hitEffectId;
 }
@@ -205,7 +207,7 @@ public class RoomsData
     public string skill;
     public string treasureBox;
     public string namedMonster;
-    public int npcAppearProductIdx;
+    public string npcAppearProductIdx;
 }
 [Serializable]
 public class RoomsDataList
@@ -233,6 +235,11 @@ public class DialogueData
     public string speechText;
     public bool isEnd;
     public string choiceGroupId;
+    public string speechFrame;
+    public string speechPose;
+    public string sound;
+    public string cameraShake;
+    public float shakeTime;
     public string checkKey;
     public int checkKeyValue;
     public string endEvent;
@@ -257,6 +264,18 @@ public class DialogueChoiceDataList
     public List<DialogueChoiceData> DialogueChoice;
 }
 
+[Serializable]
+public class ProductDialogueData
+{
+    public string id;
+    public string talk;
+}
+[Serializable]
+public class ProductDialogueDataList
+{
+    public List<ProductDialogueData> ProductDialogue;
+}
+
 public class TableManager : SingletonMono<TableManager>
 {
     public SpawnedObjectDataList spawnedObjectTable;
@@ -271,6 +290,7 @@ public class TableManager : SingletonMono<TableManager>
     public NpcDataList npcTable;
     public DialogueDataList dialogueTable;
     public DialogueChoiceDataList dialogueChoiceTable;
+    public ProductDialogueDataList productDialogueTable;
     
     public void Init()
     {
@@ -286,6 +306,7 @@ public class TableManager : SingletonMono<TableManager>
         npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);
         dialogueTable = LoadDataFromJson<DialogueDataList>(ConstValues.Dialogue);
         dialogueChoiceTable = LoadDataFromJson<DialogueChoiceDataList>(ConstValues.DialogueChoice);
+        productDialogueTable = LoadDataFromJson<ProductDialogueDataList>(ConstValues.ProductDialogue);
         
         Debug.Log($"{name} 초기화 완료");
     }

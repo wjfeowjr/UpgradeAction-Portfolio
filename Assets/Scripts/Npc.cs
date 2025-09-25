@@ -67,7 +67,7 @@ public class Npc : Character
     
     public void SetInteractionAction()
     {
-        if (interactionObject == null)
+        if (interactionObject == null && uiPos)
         {
             interactionObject = SpawnInteraction(ConstValues.InteractionUI, uiPos).GetComponent<InteractionObject>();
             interactionObject.SetInteractionAction(StartDialogue);
@@ -78,7 +78,7 @@ public class Npc : Character
 
     public void SetSelectAction()
     {
-        if (interactionSelect == null)
+        if (interactionSelect == null && uiPos)
         {
             interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, uiPos).GetComponent<InteractionSelect>();
             
@@ -121,11 +121,44 @@ public class Npc : Character
         {
             talkList.AddRange(talkDataList.FindAll(x => x.checkKey == checkKey && x.checkKeyValue == checkKeyValue));
         }
-
+        
         foreach (var talk in talkList)
         {
-            SpawnSpeechFrame(speechFrame2[0], speechPos.position, talk.speechText);
-            await NextDialog(speechFrame2[0]);
+            var speechFrame = speechFrame1[0];
+            switch (talk.speechFrame)
+            {
+                case ConstValues.SpeechFrame2:
+                    speechFrame = speechFrame2[0];
+                    break;
+            }
+
+            var speechVector = speechPos.position;
+            var speechPose = ConstValues.Idle;
+            if (speechPose != ConstValues.None)
+                speechPose = talk.speechPose;
+            
+            if (talk.isSpeaker)
+            {
+                CustomAnimTrigger(ENormalState.Idle, speechPose);
+                // 포즈를 지었으면, 다시 원위치 시킴 다음컷에서
+                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+            }
+            else
+            {
+                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, speechPose);
+                speechVector = GameManager.Instance.CurPlayer.FontPos.position;
+            }
+
+            if(talk.sound != ConstValues.None)
+                SoundManager.Instance.PlaySound(talk.sound);
+            
+            var cameraShakeArray = talk.cameraShake.Split(';');
+            var cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
+            if(cameraShake != Vector2.zero)
+                GameManager.Instance.CameraShake(cameraShake.x, cameraShake.y, talk.shakeTime);
+            
+            SpawnSpeechFrame(speechFrame, speechVector, talk.speechText);
+            await NextDialog(speechFrame);
             if (talk.isEnd)
                 break;
         }
@@ -206,8 +239,16 @@ public class Npc : Character
         if (!isFirstTalk)
         {
             var firstTalk = TableManager.Instance.dialogueTable.Dialogue.Find(x => x.id == npcData.startDialog);
-            SpawnSpeechFrame(speechFrame2[0], speechPos.position, firstTalk.speechText);
-            await NextDialog(speechFrame2[0]);
+            var speechFrame = speechFrame1[0];
+            switch (firstTalk.speechFrame)
+            {
+                case ConstValues.SpeechFrame2:
+                    speechFrame = speechFrame2[0];
+                    break;
+            }
+            
+            SpawnSpeechFrame(speechFrame, speechPos.position, firstTalk.speechText);
+            await NextDialog(speechFrame);
             isFirstTalk = true;
         }
 
@@ -295,7 +336,7 @@ public class Npc : Character
                 break;
         }
         Stop();
-        StopVelocity();
+        StopVelocity_X();
     }
     public async UniTask EpisodeMove_Y(Vector2 movePos, float speed)
     {
@@ -309,21 +350,21 @@ public class Npc : Character
         stateCancellation = new CancellationTokenSource();
         while (Math.Abs(transform.position.y - movePos.y) > 0.1f)
         {
-            // basicStat.moveSpeed
             if(normalState == ENormalState.Idle)
                 StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
             
             CustomMoving_Y(dir, speed);
             await FixedYieldDelay(stateCancellation);
         }
+        transform.position = new Vector2(transform.position.x, movePos.y);
 
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         Stop();
-        StopVelocity();
+        StopVelocity_Y();
     }
     
     // 스킬을 획득 후 독백 이벤트
-    private async void GetSkillDialogue(string id, string skillName)
+    private async void GetSkillDialogue(string skillName)
     {
         string getMessage = $"{skillName}을(를) 획득하였다!";
         await GameManager.Instance.SpawnWarningPopup(getMessage);

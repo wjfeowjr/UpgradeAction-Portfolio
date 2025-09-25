@@ -608,8 +608,12 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = vel;
     }
 
-    public void ForceIdle()
+    public async void ForceIdle()
     {
+        stateCancellation = new CancellationTokenSource();
+        if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+            return;
+        
         MoveStateSetting(EMoveState.Stopping);
         CancelMotion();
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
@@ -1050,8 +1054,7 @@ public abstract class Player : Character
     protected async UniTask<bool> Dash()
     {
         StateSetting(ENormalState.Dash, ConstValues.Dash, ConstValues.Dash);
-        //immortal = true;
-        myBoxCollider.enabled = false;
+        immortal = true;
         StandHitBox();
         GravityChange(0);
         myRigidbody.linearVelocity = Vector2.zero;
@@ -1082,8 +1085,7 @@ public abstract class Player : Character
         ClearObjectList(normalObject, 0.3f);
         
         // 대시 끝
-        //immortal = false;
-        myBoxCollider.enabled = true;
+        immortal = false;
         return chargeFinish;
     }
 
@@ -1131,7 +1133,7 @@ public abstract class Player : Character
                 break;
         }
         Stop();
-        StopVelocity();
+        StopVelocity_X();
     }
 
     protected void OnCollisionEnter2D(Collision2D col)
@@ -1180,6 +1182,9 @@ public abstract class Player : Character
 
     protected void OnTriggerEnter2D(Collider2D col)
     {
+        if (!GameManager.Instance.ControlStart)
+            return;
+        
         // 세이브 포인트
         if (col.CompareTag(ConstValues.SaveObject))
         {
@@ -1197,6 +1202,17 @@ public abstract class Player : Character
             {
                 var npc = col.GetComponent<Npc>();
                 npc.SpawnInteractionObject();
+            }
+        }
+        
+        // 보물상자 상호작용
+        if (col.CompareTag(ConstValues.TreasureBox))
+        {
+            if (col.GetComponent<RoomTreasureBox>())
+            {
+                var treasureBox = col.GetComponent<RoomTreasureBox>();
+                if(!treasureBox.IsOpen)
+                    treasureBox.SpawnInteractionObject();
             }
         }
     }
@@ -1219,6 +1235,16 @@ public abstract class Player : Character
             {
                 var npc = col.GetComponent<Npc>();
                 npc.ReduceInteractionObject();
+            }
+        }
+        
+        // 보물상자 상호작용
+        if (col.CompareTag(ConstValues.TreasureBox))
+        {
+            if (col.GetComponent<RoomTreasureBox>())
+            {
+                var treasureBox = col.GetComponent<RoomTreasureBox>();
+                treasureBox.ReduceInteractionObject();
             }
         }
     }

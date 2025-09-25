@@ -121,6 +121,32 @@ public static class GoldBinding
     }
 }
 
+public static class PassivePointBinding
+{
+    // 저장할 때
+    public static void SavePassivePoint(int count)
+    {
+        PlayerPrefs.SetInt(ConstValues.PassivePoint, count);
+        PlayerPrefs.Save();
+    }
+
+    // 불러올 때
+    public static void LoadPassivePoint()
+    {
+        if (PlayerPrefs.HasKey(ConstValues.PassivePoint))
+        {
+            Debug.Log($"저장된 패시브 포인트가 존재{PlayerPrefs.GetInt(ConstValues.PassivePoint)}");
+            
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"패시브 포인트 최초 저장");
+            SavePassivePoint(0);
+        }
+    }
+}
+
 public static class SavePointBinding
 {
     // 저장할 때
@@ -223,6 +249,81 @@ public static class RoomBinding
     }
 }
 
+public static class FirstGetSkillBinding
+{
+    // 저장할 때
+    public static void SaveFirstGetSkill(int alreadyGet)
+    {
+        PlayerPrefs.SetInt(ConstValues.FirstGetSkill, alreadyGet);
+        PlayerPrefs.Save();
+    }
+
+    // 불러올 때
+    public static int LoadFirstGetSkill()
+    {
+        if (PlayerPrefs.HasKey(ConstValues.FirstGetSkill))
+        {
+            Debug.Log($"최초로 스킬을 획득한적이 있음");
+            return PlayerPrefs.GetInt(ConstValues.FirstGetSkill);
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"아무 스킬도 획득한 적이 없음");
+            SaveFirstGetSkill(0);
+            return 0;
+        }
+    }
+}
+
+public static class CharacterOrderBinding
+{
+    // 저장할 때
+    public static void SaveFirstCharacter(string first)
+    {
+        PlayerPrefs.SetString(ConstValues.FirstCharacter, first);
+        PlayerPrefs.Save();
+    }
+    public static void SaveSecondCharacter(string second)
+    {
+        PlayerPrefs.SetString(ConstValues.SecondCharacter, second);
+        PlayerPrefs.Save();
+    }
+
+    // 불러올 때
+    public static string LoadFirstCharacter()
+    {
+        if (PlayerPrefs.HasKey(ConstValues.FirstCharacter))
+        {
+            Debug.Log($"첫 번째 캐릭터: {PlayerPrefs.GetString(ConstValues.FirstCharacter)}");
+            return PlayerPrefs.GetString(ConstValues.FirstCharacter);
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"최초 첫 캐릭터");
+            SaveFirstCharacter(ConstValues.Berserker);
+            return ConstValues.Berserker;
+        }
+    }
+    
+    public static string LoadSecondCharacter()
+    {
+        if (PlayerPrefs.HasKey(ConstValues.SecondCharacter))
+        {
+            Debug.Log($"두 번째 캐릭터: {PlayerPrefs.GetString(ConstValues.SecondCharacter)}");
+            return PlayerPrefs.GetString(ConstValues.SecondCharacter);
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"아직 두 번째 캐릭터 존재 안함");
+            SaveSecondCharacter(default);
+            return default;
+        }
+    }
+}
+
 public enum ePoolType
 {
     None,
@@ -298,11 +399,12 @@ public class GameManager : Singleton<GameManager>
     
     // 재화
     private int gold;
+    private int passivePoint;
     
     private string episodeName;
 
     private string firstPlayer;
-    private string secondPlayer = default;
+    private string secondPlayer;
     private bool controlStart;
     private bool bossProduct;
     private int comboCount;
@@ -336,6 +438,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => gold;
         set => gold = value;
+    }
+
+    public int PassivePoint
+    {
+        get => passivePoint;
+        set => passivePoint = value;
     }
     
     public string EpisodeName
@@ -407,6 +515,7 @@ public class GameManager : Singleton<GameManager>
         //QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
         DefaultKeySetting();
+        LoadPlayerPrefs();
         InitManager();
         InitAtlas(uiAtlas);
         InitAtlas(bgAtlas);
@@ -445,6 +554,7 @@ public class GameManager : Singleton<GameManager>
         //PlayerPrefs.DeleteAll();
         //StageBinding.LoadStage();
         GoldBinding.LoadGold();
+        PassivePointBinding.LoadPassivePoint();
 
         escKey = KeyCode.Escape;
         tabKey = KeyCode.Tab;
@@ -636,7 +746,14 @@ public class GameManager : Singleton<GameManager>
         return atlasDic[id];
     }
 
-    private async void InitManager() 
+    private void LoadPlayerPrefs()
+    {
+        FirstGetSkillBinding.LoadFirstGetSkill();
+        firstPlayer = CharacterOrderBinding.LoadFirstCharacter();
+        secondPlayer = CharacterOrderBinding.LoadSecondCharacter();
+    }
+    
+    private void InitManager() 
     {
         tableManager = TableManager.Instance;
         tableManager.Init();
@@ -787,11 +904,6 @@ public class GameManager : Singleton<GameManager>
         monsterList.Clear();
     }
     
-    public void SpawnTrap(string id, Vector2 pos)
-    {
-        var trap = SpawnToObjectPool(id, pos);
-        InputDataTrap(id, trap);
-    }
     public void InputDataTrap(string trapId, GameObject trapObject)
     {
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == trapId);
@@ -1164,8 +1276,7 @@ public class GameManager : Singleton<GameManager>
         RefreshSkill();
         SetCameraTarget(curPlayer.transform);
     }
-
-    // 단독 => 단독
+    
     public void SetCharacterOrder(string first, string second)
     {
         var pastPlayer = curPlayer;
@@ -1261,11 +1372,17 @@ public class GameManager : Singleton<GameManager>
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
+    
+    // 대기 딜레이
+    public async UniTask WaitUntilDelay(Func<bool> condition, CancellationTokenSource tokenSource)
+    {
+        await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
+    }
 
-    public void GetSkillProduct(string id, Action<string, string> customAction)
+    public void GetSkillProduct(string id, Action<string> customAction)
     {
         var skillName = GetSkillName(id);
         CurPlayer.SpawnObject(ConstValues.GetSkillExplosion, CurPlayer.CenterPos.position);
-        customAction.Invoke(id, skillName);
+        customAction.Invoke(skillName);
     }
 }

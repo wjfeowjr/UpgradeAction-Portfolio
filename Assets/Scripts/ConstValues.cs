@@ -30,7 +30,8 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string PrefabFolder = "Assets/Prefab";
     public const string SoundFolder = "Assets/Sound";
-
+    public const string RoomFolder = "Assets/Room";
+    
     public const string AtlasClone = "(Clone)";
     public const string BgTutorial = "Bg_Tutorial";
     public const string BgTutorial2 = "Bg_Tutorial2";
@@ -74,6 +75,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string Explosion = "Explosion";
     public const string DashEffectUI = "DashEffectUI";
     public const string DashFrameUI = "DashFrameUI";
+    public const string Guide = "Guide";
+
+    public const string Object = "Object";
 
     public const string Berserker = "Berserker";
     public const string Gunner = "Gunner";
@@ -123,6 +127,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string Dash = "Dash";
     public const string DashEffect = "DashEffect";
     
+    public const string TreasureBoxOpen = "TreasureBox_Open";
+    public const string TreasureBoxClose = "TreasureBox_Close";
+    
     public const string Rooms = "Rooms";
     public const string Minimap = "Minimap";
     public const string MiniMapVisitedCells = "MiniMapVisitedCells";
@@ -135,6 +142,19 @@ public class ConstValues : Singleton<ConstValues>
     public const string Npc = "Npc";
     public const string Dialogue = "Dialogue";
     public const string DialogueChoice = "DialogueChoice";
+    public const string ProductDialogue = "ProductDialogue";
+    public const string TreasureBox = "TreasureBox";
+
+    public const string FirstCharacter = "FirstCharacter";
+    public const string SecondCharacter = "SecondCharacter";
+    
+    public const string Episode1Title = "Episode1_Title";
+    public const string FirstGetSkill = "FirstGetSkill";
+    public const string Product1 = "Product1";
+    public const string Product2 = "Product2";
+    public const string Product3 = "Product3";
+    public const string Product4 = "Product4";
+    public const string Product5 = "Product5";
     
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
@@ -167,6 +187,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string FollowGold = "FollowGold";
     public const string GoldExplosion = "GoldExplosion";
     public const string SlotEquip = "SlotEquip";
+    public const string PassivePoint = "PassivePoint";
     
     public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";
@@ -183,6 +204,7 @@ public class ConstValues : Singleton<ConstValues>
     // 직업 공용
     public const string DownDust = "DownDust";
     public const string FireFlash = "FireFlash";
+    public const string GreenFlash = "GreenFlash";
     public const string WarningArea = "WarningArea";
     public const string PlatformFragments = "PlatformFragments";
     public const string PlatformExplosion = "PlatformExplosion";

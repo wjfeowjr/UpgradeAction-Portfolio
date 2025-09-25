@@ -69,7 +69,7 @@ public class RoomManager : Singleton<RoomManager>
     {
         BgmManager.Instance.Play();
         // 최초 캐릭터 세팅
-        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default); // ConstValues.Gunner
+        GameManager.Instance.SetPlayerOrder(GameManager.Instance.FirstPlayer, GameManager.Instance.SecondPlayer);
 
         GameManager.Instance.SpawnGameInterface();
         GameManager.Instance.InitPlayerStat();
@@ -354,35 +354,43 @@ public class RoomManager : Singleton<RoomManager>
     public void Guide(int idx)
     {
         var guideModel = new PopupGuideModel();
-        
+        string guideName = $"{ConstValues.Guide}{idx}";
+
         switch (idx)
         {
             case 1:
                 guideModel = new PopupGuideModel()
                 {
                     guideMessage = "<color=#F36B6B>'Z'</color>키를 입력하여 대시를 할 수 있습니다.\n대시 도중에는 <color=#F36B6B>'무적'</color>입니다.\n<color=#F36B6B>피격, 넘어짐 상태에서도 사용할 수 있습니다.</color>",
-                    imgName = "Guide1",
+                    imgName = guideName,
                 };
                 break;
             case 2:
                 guideModel = new PopupGuideModel()
                 {
                     guideMessage = "지역을 탐험하며 새로운 스킬을 획득 할 수 있습니다.\n스킬은 퀵슬롯에 등록되며, 다른 키에 등록하여 사용 할 수도 있습니다.",
-                    imgName = "Guide2",
+                    imgName = guideName,
                 };
                 break;
             case 3:
                 guideModel = new PopupGuideModel()
                 {
                     guideMessage = "<color=#F36B6B>'Tab'</color>키를 입력하여 미니맵을 볼 수 있습니다.\n플레이어가 지나왔던 구역의 시야가 밝혀집니다.</color>",
-                    imgName = "Guide3",
+                    imgName = guideName,
                 };
                 break;
             case 4:
                 guideModel = new PopupGuideModel()
                 {
                     guideMessage = "세이브 포인트에서 <color=#F36B6B>'↑'</color>키를 입력하여 체크포인트를 설정 할 수 있습니다.\n세이브 시 모든 체력이 회복됩니다.",
-                    imgName = "Guide4",
+                    imgName = guideName,
+                };
+                break;
+            case 5:
+                guideModel = new PopupGuideModel()
+                {
+                    guideMessage = "<color=#F36B6B>'Shift'</color>키를 입력하여 캐릭터를 교체 할 수 있습니다.\n<color=#F36B6B>캐릭터의 체력은 서로 공유됩니다.</color>",
+                    imgName = guideName,
                 };
                 break;
         }

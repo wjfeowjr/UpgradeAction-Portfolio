@@ -94,7 +94,7 @@ public class Controller : Singleton<Controller>
             else
             {
                 if(GameManager.Instance.CurPlayer.MoveState == EMoveState.Moving)
-                    GameManager.Instance.CurPlayer.StopVelocity();
+                    GameManager.Instance.CurPlayer.StopVelocity_X();
             }
         }
 
@@ -111,7 +111,7 @@ public class Controller : Singleton<Controller>
             else
             {
                 if(GameManager.Instance.CurPlayer.MoveState == EMoveState.Moving)
-                    GameManager.Instance.CurPlayer.StopVelocity();
+                    GameManager.Instance.CurPlayer.StopVelocity_X();
             }
         }
     }

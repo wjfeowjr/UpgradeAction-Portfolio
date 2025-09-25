@@ -21,6 +21,7 @@ public enum EntranceDir
 public class RoomInfo
 {
     public int productCount;
+    public bool bossClear;
     public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
     public List<TreasureBox> treasureBox = new List<TreasureBox>();
 }
@@ -49,6 +50,10 @@ public class Room : MonoBehaviour
     private int productViewIdx;
     private float dialogDelay1 = 2.5f;
     private float dialogDelay2 = 1.0f;
+    
+    // ProductManager 참조 제거 (싱글톤 사용)
+    // [Header("연출 시스템")]
+    // [SerializeField] private ProductManager productManager;
     
     [Header("디자인 타일이 미리 그려진 미니맵 Tilemap")]
     [SerializeField] private Tilemap minimapFrameTilemap;
@@ -101,6 +106,8 @@ public class Room : MonoBehaviour
     [SerializeField] protected Monster[] monsters;
     [SerializeField] protected List<Vector2> firstMonsterPosList = new List<Vector2>();
     [SerializeField] protected Monster[] bosses;
+    [SerializeField] protected Transform[] bossPos;
+    
     [SerializeField] protected List<Vector2> firstBossPosList = new List<Vector2>();
     [SerializeField] protected Npc[] npc;
     [SerializeField] protected GameObject[] traps;
@@ -110,7 +117,6 @@ public class Room : MonoBehaviour
     
     [SerializeField] protected ProductTrigger[] productTrigger;
     [SerializeField] protected Transform[] customMovePos;
-    [SerializeField] protected Transform[] bossPos;
     [SerializeField] protected Transform[] strongSpeechPos;
     
     [SerializeField] protected SpriteRenderer[] bgSpriteRenderers;
@@ -159,11 +165,11 @@ public class Room : MonoBehaviour
         minimapInTilemap.ClearAllTiles();
     }
 
-    private void OnEnable()
-    {
-        // 여기서 보스 비활성화
-        BossSetting();
-    }
+    // private void OnEnable()
+    // {
+    //     // 여기서 보스 비활성화
+    //     BossSetting();
+    // }
 
     private void Start()
     {
@@ -188,6 +194,9 @@ public class Room : MonoBehaviour
     public void ObjectActive(bool active)
     {
         roomGameObject.SetActive(active);
+        if(active)
+            // 여기서 보스 비활성화
+            BossSetting();
     }
     
     // 세이브 포인트가 없을때만 적용, 1번맵 전용
@@ -254,8 +263,12 @@ public class Room : MonoBehaviour
             return;
         
         var productCount = roomsData.productCount;
-        var npcAppearProductIdx = roomsData.npcAppearProductIdx;
-        var productIdxArray = roomsData.productIdx.Split(',');
+        var npcAppearProductIdxArray = roomsData.npcAppearProductIdx.Split(';');
+        List<int> npcAppearProductIdxList = new List<int>();
+        foreach (var productIdx in npcAppearProductIdxArray)
+            npcAppearProductIdxList.Add(int.Parse(productIdx));
+        
+        var productIdxArray = roomsData.productIdx.Split(';');
         List<int> productIdxList = new List<int>();
         foreach (var productIdx in productIdxArray)
             productIdxList.Add(int.Parse(productIdx));
@@ -270,23 +283,47 @@ public class Room : MonoBehaviour
             });
         }
 
-        var skillArray = roomsData.skill.Split(';');
-        var treasureBoxArray = roomsData.treasureBox.Split('ㅗ');
-        
-        // 저장된 데이터가 없는 경우
-        if (!PlayerPrefs.HasKey(name))
+        // 저장된 데이터가 있는 경우
+        if (PlayerPrefs.HasKey(name))
+        {
+            Debug.Log("불러오기");
+            LoadRoom();
+            // 저장단계 커스텀
+            // if (name == "Room_Boss_2")
+            // {
+            //     roomInfo.productCount = 0;
+            //     SaveRoom();
+            // }
+        }
+        // 저장된 데이터가 없는경우
+        else
         {
             roomInfo.productCount = 0;
-            for (var i = 0; i < roomSkillAndPassive.Length; i++)
+        }
+        
+        // 맵에 널려있는 스킬 세팅
+        var skillArray = roomsData.skill.Split(';');
+        if (roomInfo.skillAndPassive.Count != skillArray.Length)
+        {
+            if (skillArray[0] != ConstValues.None)
             {
-                var skillAndPassive = new SkillAndPassive()
+                roomInfo.skillAndPassive.Clear();
+                for (var i = 0; i < roomSkillAndPassive.Length; i++)
                 {
-                    id = skillArray[i],
-                    alreadyGet = false,
-                };
-                roomInfo.skillAndPassive.Add(skillAndPassive);
+                    var skillAndPassive = new SkillAndPassive()
+                    {
+                        id = skillArray[i],
+                        alreadyGet = false,
+                    };
+                    roomInfo.skillAndPassive.Add(skillAndPassive);
+                }
             }
-
+        }
+        
+        // 맵에 널려있는 보물상자 세팅
+        var treasureBoxArray = roomsData.treasureBox.Split('ㅗ');
+        if (roomInfo.treasureBox.Count != treasureBoxArray.Length)
+        {
             if (treasureBoxArray[0] != ConstValues.None)
             {
                 for (int i = 0; i < treasureBoxArray.Length; i++)
@@ -299,18 +336,13 @@ public class Room : MonoBehaviour
                     {
                         id = treasure,
                         count = treasureCount,
-                        alreadyGet = false,
+                        alreadyGet = false, 
                     };
                     roomInfo.treasureBox.Add(treasureBox);
                 }
             }
-            SaveRoom();
         }
-        else
-        {
-            Debug.Log("불러오기");
-            LoadRoom();
-        }
+        SaveRoom();
 
         // 연출을 봤다면, 다시 나오지 않게 조정
         if (productCount > 0)
@@ -318,15 +350,17 @@ public class Room : MonoBehaviour
             if (roomInfo.productCount >= productCount)
             {
                 productTrigger[0].gameObject.SetActive(false);
-                if(isBossRoom)
-                    BgmManager.Instance.Play();
+                // if(isBossRoom)
+                //     BgmManager.Instance.Play();
             }
         }
-        
+
         // 여기서 npc 활성화
         foreach (var arr in npc)
         {
-            arr.gameObject.SetActive(roomInfo.productCount >= npcAppearProductIdx);
+            foreach (var npcAppearProductIdx in npcAppearProductIdxList)
+                arr.gameObject.SetActive(roomInfo.productCount == npcAppearProductIdx);
+
             arr.SetInteractionAction();
             arr.SetSelectAction();
             arr.SetStartTalkAction();
@@ -342,9 +376,28 @@ public class Room : MonoBehaviour
             {
                 roomSkillAndPassive[i].SetAction(() =>
                 {
-                    GameManager.Instance.AddNewSkill(roomInfo.skillAndPassive[idx].id);
                     roomInfo.skillAndPassive[idx].alreadyGet = true;
+                    GameManager.Instance.AddNewSkill(roomInfo.skillAndPassive[idx].id);
                     GameManager.Instance.GetSkillProduct(roomInfo.skillAndPassive[idx].id, GetSkillDialogue);
+                    SaveRoom();
+                });
+            }
+        }
+        
+        // 보물상자를 열었으면, 열린 상태로 나오게 조정
+        for (var i = 0; i < roomTreasureBox.Length; i++)
+        {
+            int idx = i;
+            
+            roomTreasureBox[i].SetSprite(roomInfo.treasureBox[idx].alreadyGet);
+            roomTreasureBox[i].SetInteractionAction();
+            
+            if (!roomInfo.treasureBox[idx].alreadyGet)
+            {
+                roomTreasureBox[i].SetAction(() =>
+                {
+                    roomInfo.treasureBox[idx].alreadyGet = true;
+                    GetTreasureBoxItem(roomInfo.treasureBox[idx].id, roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position);
                     SaveRoom();
                 });
             }
@@ -393,9 +446,9 @@ public class Room : MonoBehaviour
                 break;
             case EntranceDir.Up:
                 SetUpPlayerPos();
+                GameManager.Instance.CurPlayer.SetJumpState();
                 GameManager.Instance.CurPlayer.ZeroVelocity();
                 GameManager.Instance.CurPlayer.GravityChange(0);
-                GameManager.Instance.CurPlayer.SetJumpState();
                 break;
             case EntranceDir.Down:
                 SetDownPlayerPos();
@@ -427,6 +480,7 @@ public class Room : MonoBehaviour
         
         await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
+
         switch (dir)
         {
             case EntranceDir.Up:
@@ -498,6 +552,32 @@ public class Room : MonoBehaviour
         followGold.SetAction(() => { GameManager.Instance.Gold = PlayerPrefs.GetInt(ConstValues.Gold);});
     }
 
+    private void GetTreasureBoxItem(string id, int count, Vector2 itemVector)
+    {
+        switch (id)
+        {
+            case ConstValues.Gold:
+                PlusGold(count, itemVector);
+                break;
+            case ConstValues.PassivePoint:
+                PlusPassivePoint(count);
+                break;
+        }
+    }
+
+    private void PlusPassivePoint(int passivePoint)
+    {
+        var plusPassivePoint = GameManager.Instance.PassivePoint + passivePoint;
+        PassivePointBinding.SavePassivePoint(plusPassivePoint);
+        Debug.Log($"저장된 {ConstValues.PassivePoint} = {plusPassivePoint}");
+    }
+    private void ReducePassivePoint(int passivePoint)
+    {
+        var plusPassivePoint = GameManager.Instance.PassivePoint - passivePoint;
+        PassivePointBinding.SavePassivePoint(plusPassivePoint);
+        Debug.Log($"저장된 {ConstValues.PassivePoint} = {plusPassivePoint}");
+    }
+
     private void SpawnMonster(bool isExplosion = true)
     {
         for (var i = 0; i < monsters.Length; i++)
@@ -516,7 +596,7 @@ public class Room : MonoBehaviour
     private void SetTrap()
     {
         foreach (var trap in traps)
-            GameManager.Instance.InputDataTrap(ConstValues.TrapPillar, trap);
+            GameManager.Instance.InputDataTrap(trap.name, trap);
     }
 
     private void SetSavePoint()
@@ -540,33 +620,33 @@ public class Room : MonoBehaviour
         if (leftBossGate)
         {
             alreadyBoss = leftRoom && leftRoom.isBossRoom;
-            leftBossGate.SetActive(alreadyBoss);
+            leftBossGate.SetActive(alreadyBoss && !leftRoom.roomInfo.bossClear);
         }
         if (!alreadyBoss && rightBossGate)
         {
             alreadyBoss = rightRoom && rightRoom.isBossRoom;
-            rightBossGate.SetActive(alreadyBoss);
+            rightBossGate.SetActive(alreadyBoss && !rightRoom.roomInfo.bossClear);
         }
         if (!alreadyBoss && upBossGate)
         {
             alreadyBoss = upRoom && upRoom.isBossRoom;
-            upBossGate.SetActive(alreadyBoss);
+            upBossGate.SetActive(alreadyBoss && !upRoom.roomInfo.bossClear);
         }
         if (!alreadyBoss && downBossGate)
         {
             alreadyBoss = downRoom && downRoom.isBossRoom;
-            downBossGate.SetActive(alreadyBoss);
+            downBossGate.SetActive(alreadyBoss && !downRoom.roomInfo.bossClear);
         }
 
-        if (isBossRoom)
-            alreadyBoss = true;
+        // if (isBossRoom)
+        //     alreadyBoss = true;
         
-        nearBossRoom = alreadyBoss;
-        
-        if(nearBossRoom)
-            BgmManager.Instance.Stop();
-        else if (!BgmManager.Instance.IsPlaying())
-            BgmManager.Instance.Play();
+        // nearBossRoom = alreadyBoss;
+        //
+        // if(nearBossRoom)
+        //     BgmManager.Instance.Stop();
+        // else if (!BgmManager.Instance.IsPlaying())
+        //     BgmManager.Instance.Play();
     }
 
     private void BossSetting()
@@ -708,6 +788,7 @@ public class Room : MonoBehaviour
     // 대화 연출
     private void ProductAction(int idx)
     {
+        // 기존 방식 (폴백)
         switch (idx)
         {
             case 1:
@@ -722,7 +803,16 @@ public class Room : MonoBehaviour
             case 4:
                 Product4();
                 break;
+            case 5:
+                Product5();
+                break;
+            case 6:
+                Product6();
+                break;
         }
+        
+        roomInfo.productCount += 1;
+        SaveRoom();
     }
     
     // BGM실행
@@ -891,26 +981,28 @@ public class Room : MonoBehaviour
         
         // 에피소드 팝업부터 시작
         GameManager.Instance.ControlStart = false;
-        await RoomManager.Instance.ProductEpisode("에피소드1: 날씨 좋은 날");
-        string dialog1 = "날씨 참 좋다...";
-        string dialog2 = "저 거지같은 태양만\n빼고말이야!";
-        string dialog3 = "뿌셔버릴거야!!!";
-        string dialog4 = "나 잡아봐라~";
         
+        string title = TableManager.Instance.productDialogueTable.ProductDialogue.Find(x => x.id == ConstValues.Episode1Title).talk;
+        var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product1);
+        List<string> talkList = new List<string>();
+        foreach (var productDialogue in productDialogueList)
+            talkList.Add(productDialogue.talk);
+
+        await RoomManager.Instance.ProductEpisode(title);
         GameManager.Instance.InitDialogueCancellation();
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
         var berserkerPos = GameManager.Instance.CurPlayer.FontPos.position;
-        SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog1);
+        SpawnSpeechFrame(speechFrame1[0], berserkerPos, talkList[0]);
         await NextDialog(speechFrame1[0]);
 
-        SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog2);
+        SpawnSpeechFrame(speechFrame1[0], berserkerPos, talkList[1]);
         await NextDialog(speechFrame1[0]);
 
         PlayBGM(ConstValues.BGMEpisode1);
         PlaySound(ConstValues.PlayerScream);
         CameraShake(0.4f, 0.4f, 1.0f);
-        SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), dialog3);
+        SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), talkList[2]);
         for (int i = 0; i < 2; i++)
         {
             GameManager.Instance.CurPlayer.CustomJump(new Vector2(0, 6.0f));
@@ -923,7 +1015,7 @@ public class Room : MonoBehaviour
         await NextDialog(speechFrame1[0]);
 
         var sunPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
-        SpawnSpeechFrame(speechFrame2[0], sunPos, dialog4);
+        SpawnSpeechFrame(speechFrame2[0], sunPos, talkList[3]);
         await NextDialog(speechFrame2[0]);
 
         PlaySound(ConstValues.MonsterSunLaugh);
@@ -991,9 +1083,10 @@ public class Room : MonoBehaviour
         GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitDialogueCancellation();
         
-        string dialog1 = "그런데 여기가 어디야?";
-        string dialog2 = "맞다! 나한테 지도가 있었지";
-        string dialog3 = "이걸 확인해 봐야겠군";
+        var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product2);
+        List<string> talkList = new List<string>();
+        foreach (var productDialogue in productDialogueList)
+            talkList.Add(productDialogue.talk);
         
         UIOff();
             
@@ -1002,13 +1095,10 @@ public class Room : MonoBehaviour
         
         var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
 
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog1);
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
         await NextDialog(speechFrame1[0]);
-        
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog2);
-        await NextDialog(speechFrame1[0]);
-        
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog3);
+
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[1]);
         await NextDialog(speechFrame1[0]);
 
         RoomManager.Instance.Guide(3);
@@ -1024,25 +1114,20 @@ public class Room : MonoBehaviour
         GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitDialogueCancellation();
         
-        string dialog1 = "이게 뭐여?\n옛날 물건 같은데";
-        string dialog2 = "제작자의 연령대를\n알 수 있겠구만..";
-        string dialog3 = "이곳에서 쉬어 갈 수 있겠어";
-        
+        var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product3);
+        List<string> talkList = new List<string>();
+        foreach (var productDialogue in productDialogueList)
+            talkList.Add(productDialogue.talk);
+
         UIOff();
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
             return;
         
         var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
         
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog1);
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
         await NextDialog(speechFrame1[0]);
-        
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog2);
-        await NextDialog(speechFrame1[0]);
-        
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog3);
-        await NextDialog(speechFrame1[0]);
-        
+
         RoomManager.Instance.Guide(4);
         UIOn();
         roomInfo.productCount += 1;
@@ -1054,36 +1139,17 @@ public class Room : MonoBehaviour
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitDialogueCancellation();
-
-        string dialog1 = "넌 표정이 마음에 안 들었어!";
-        string dialog2 = "산산조각 내 주마!";
-        string dialog3 = "덤벼보던가!";
-        string dialog4 = "어허헝!! 태양은\n죽지 않아!!!";
-        string dialog5 = "ㅋ";
-        string dialog6 = "어!?";
-        string dialog7 = "오오???!";
-        string dialog8 = "무식하긴 ㅋ";
-        string dialog9 = "이 세상에 영원한 건 없다.";
-        string dialog10 = "흙으로 돌아가라 태양..";
-        string dialog11 = "어둠이 찾아왔다..";
-        string dialog12 = "?";
-        string dialog13 = "으아아악!\n내 친구 태양을 뿌셔버리다니!";
-        string dialog14 = "태양의 복수를 하러\n내가 찾아왔다!";
-        string dialog15 = "악!!!!!!!";
-        string dialog16 = "으아아아아악!!!!";
-        string dialog17 = "난 돌아올 것이다!!!";
-        string dialog18 = "진짜 어둠이 찾아왔다..";
-        string dialog19 = "이제 가야지";
-        string dialog20 = "바보 같은 놈";
-        string dialog21 = "밤이라서 잠깐\n없어진 거야";
-        string dialog22 = "ㅋ";
         
+        var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product4);
+        List<string> talkList = new List<string>();
+        foreach (var productDialogue in productDialogueList)
+            talkList.Add(productDialogue.talk);
+
         // 문 닫기
         DoorActive(true);
         // 태양 보스 소환
         SpawnBoss(bosses[0], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y + 3.5f));
-        BgmManager.Instance.Play();
-        
+
         // 대화하는 주체들
         Vector2 berserkerSpeechPos;
         Vector2 sunSpeechPos;
@@ -1100,20 +1166,19 @@ public class Room : MonoBehaviour
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
 
             GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog1);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
             await NextDialog(speechFrame1[0]);
             
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog2);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[1]);
             await NextDialog(speechFrame1[0]);
 
             
-            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog3); 
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[2]); 
             await NextDialog(speechFrame2[0]);
 
             // 게임 시작
             GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
             UIOn();
-            roomInfo.productCount += 1;
             SaveRoom();
         }
         
@@ -1135,10 +1200,10 @@ public class Room : MonoBehaviour
             GameManager.Instance.CurPlayer.ForceIdle();
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
             
-            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog4); 
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[3]); 
             await NextDialog(speechFrame2[0]);
 
-            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog5); 
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[4]); 
             await NextDialog(speechFrame2[0]);
         }
         
@@ -1150,32 +1215,35 @@ public class Room : MonoBehaviour
             berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
             
-            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog6);
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[5]);
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(1, 0);
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
-            await NextDialog(speechFrame2[0]);
 
-            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog7);
+            SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[6]);
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.3f);
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.2f);
             bosses[0].DieShake();
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(10, 0.1f);
-            await NextDialog(speechFrame2[0]);
-            bosses[0].DieExplosion();
-            if (await WaitUntil(() => !bosses[0].gameObject.activeSelf, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
+            
+            bosses[0].DieExplosion();
+            speechFrame2[0].SpeechEnd();
+            
+            // if (await WaitUntil(() => !bosses[0].gameObject.activeSelf, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            //     return;
 
             if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
 
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog8);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[7]);
             await NextDialog(speechFrame1[0]);
 
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog9);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[8]);
             await NextDialog(speechFrame1[0]);
 
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog10);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[9]);
             await NextDialog(speechFrame1[0]);
         }
         else
@@ -1197,10 +1265,10 @@ public class Room : MonoBehaviour
         {
             berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
 
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog11);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[10]);
             await NextDialog(speechFrame1[0]);
 
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog12);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[11]);
         }
 
         RoomManager.Instance.BgSpriteChange(ConstValues.BgTutorial2);
@@ -1224,15 +1292,15 @@ public class Room : MonoBehaviour
             
             await NextDialog(speechFrame1[0]);
 
-            SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, dialog13); 
+            SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, talkList[12]); 
             await NextDialog(speechFrame2[0]);
             
-            SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, dialog14); 
+            SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, talkList[13]); 
             await NextDialog(speechFrame2[0]);
         
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 0.4f, 1.0f);
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog15);
+            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[14]);
             for (int i = 0; i < 2; i++)
             {
                 GameManager.Instance.CurPlayer.CustomJump(new Vector2(0, 6.0f));
@@ -1261,16 +1329,15 @@ public class Room : MonoBehaviour
         moonSpeechPos = new Vector2(bosses[1].CenterPos.position.x - 2.0f, bosses[1].CenterPos.position.y);
         
         bosses[1].Flip(-1);
-        await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position,
-            GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
+        await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
 
         bosses[1].DieShake();
         bosses[1].GetComponent<Monster_Moon>().DieBomb();
 
-        SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, dialog16);
+        SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, talkList[15]);
         await NextDialog(speechFrame2[0]);
 
-        SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, dialog17);
+        SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, talkList[16]);
         await NextDialog(speechFrame2[0]);
 
         bosses[1].DieExplosion();
@@ -1287,85 +1354,138 @@ public class Room : MonoBehaviour
         RoomManager.Instance.BgSpriteChange(ConstValues.BgTutorial);
         RoomManager.Instance.BgDecoActive(true);
         
-        // fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
-        // await fadeBg.Fade();
-        // UIOn();
-        // BgmManager.Instance.Play();
-
-        // 이곳에서 세이브 포인트 연출
-
-        //GameManager.Instance.SetCameraTarget(null);
         berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog18); 
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[17]); 
         await NextDialog(speechFrame1[0]);
         
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog19); 
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[18]); 
         await NextDialog(speechFrame1[0]);
-        
-        // var movePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x + 15.0f, GameManager.Instance.CurPlayer.transform.position.y);
-        // await GameManager.Instance.CurPlayer.EpisodeMove(movePos, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
-        // if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
-        //     return;
-        
-        // var titleSpeechPos = Vector3.zero;
-        // SpawnSpeechFrame(speechFrameTitle, titleSpeechPos, dialog20); 
-        // await NextDialog(speechFrameTitle);
-        
+
         BgmManager.Instance.Play();
         PlaySound(ConstValues.ChickenCock);
         fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
         await fadeBg.Fade();
         
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[19]); 
+        await NextDialog(speechFrame1[0]);
+        
         PlaySound(ConstValues.RewardPage);
-        //npc[0].gameObject.transform.position = new Vector2(bossPos[2].transform.position.x + 3.5f, bossPos[2].transform.position.y);
         npc[0].gameObject.SetActive(true);
         npc[0].transform.localScale = new Vector3(-1, 1, 1);
-        //await bosses[0].EpisodeMove_X(bossPos[2].transform.position, bosses[0].BasicStat.moveSpeed, -1);
-        
+        var npcArrivePos = npc[0].transform.position;
+        npc[0].gameObject.transform.position = new Vector2(npc[0].transform.position.x, npc[0].transform.position.y + 3.5f);
+        await npc[0].EpisodeMove_Y(npcArrivePos, bosses[0].BasicStat.moveSpeed);
         sunSpeechPos = npc[0].SpeechPos.position;
         
-        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog20); 
+        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[20]); 
         await NextDialog(speechFrame2[0]);
         
-        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog21); 
+        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[21]); 
         await NextDialog(speechFrame2[0]);
         
-        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, dialog22); 
+        SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[22]); 
         await NextDialog(speechFrame2[0]);
 
         // 문 열기
         DoorActive(false);
         roomInfo.productCount += 1;
+        roomInfo.bossClear = true;
         SaveRoom();
         
         UIOn();
     }
 
+    private async void Product5()
+    {
+        GameManager.Instance.CurPlayer.ForceProduct();
+        GameManager.Instance.InitWaitCancellation();
+        GameManager.Instance.InitDialogueCancellation();
+        
+        var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product5);
+        List<string> talkList = new List<string>();
+        foreach (var productDialogue in productDialogueList)
+            talkList.Add(productDialogue.talk);
+
+        UIOff();
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            return;
+        
+        var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+        var gunnerSpeechPos = npc[0].FontPos.position;
+        
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
+        await NextDialog(speechFrame1[0]);
+        
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[1]);
+        await NextDialog(speechFrame1[0]);
+        
+        npc[0].Flip(-1);
+        
+        SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, talkList[2]);
+        await NextDialog(speechFrame1[0]);
+        
+        SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, talkList[3]);
+        await NextDialog(speechFrame1[0]);
+        
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[4]);
+        await NextDialog(speechFrame1[0]);
+        
+        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[5]);
+        await NextDialog(speechFrame1[0]);
+        
+        SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, talkList[6]);
+        await NextDialog(speechFrame1[0]);
+        
+        npc[0].SpawnObject(ConstValues.BangEffect, npc[0].CenterPos.position);
+        npc[0].gameObject.SetActive(false);
+        
+        // 2인 캐릭터 설정 및 저장
+        GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
+        CharacterOrderBinding.SaveFirstCharacter(ConstValues.Berserker);
+        CharacterOrderBinding.SaveSecondCharacter(ConstValues.Gunner);
+        RoomManager.Instance.Guide(5);
+        
+        UIOn();
+        roomInfo.productCount += 1;
+        SaveRoom();
+    }
+    
+    private async void Product6()
+    {
+        GameManager.Instance.CurPlayer.ForceProduct();
+        GameManager.Instance.InitWaitCancellation();
+        GameManager.Instance.InitDialogueCancellation();
+
+        // 문 닫기
+        DoorActive(true);
+        // 쥐새끼 보스 소환
+        SpawnBoss(bosses[0], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y));
+        
+        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+            return;
+
+        // 문 열기
+        DoorActive(false);
+        roomInfo.productCount += 1;
+        roomInfo.bossClear = true;
+        SaveRoom();
+        UIOn();
+    }
+    
     // 스킬을 획득 후 독백 이벤트
-    private async void GetSkillDialogue(string id, string skillName)
+    private async void GetSkillDialogue(string skillName)
     {
         string getMessage = $"{skillName}을(를) 획득하였다!";
         
-        if (id == ConstValues.BerserkerUpperSlash)
+        if (FirstGetSkillBinding.LoadFirstGetSkill() == 0)
         {
+            FirstGetSkillBinding.SaveFirstGetSkill(1);
+            
             UIOff();
             GameManager.Instance.CurPlayer.ForceProduct();
             await GameManager.Instance.SpawnWarningPopup(getMessage);
-            GameManager.Instance.InitDialogueCancellation();
-
-            string dialog1 = "새로운 스킬이다!";
-            string dialog2 = "나는 더 강해졌다!";
-            
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
-
-            var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
-
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog1);
-            await NextDialog(speechFrame1[0]);
-        
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog2);
-            await NextDialog(speechFrame1[0]);
 
             RoomManager.Instance.Guide(2);
             UIOn();
@@ -1374,5 +1494,31 @@ public class Room : MonoBehaviour
         {
             await GameManager.Instance.SpawnWarningPopup(getMessage);
         }
+    }
+
+    // ProductManager가 접근할 수 있도록 public 메서드들 추가
+    public SpeechFrame GetSpeechFrame1(int index) 
+    { 
+        return speechFrame1 != null && index < speechFrame1.Count ? speechFrame1[index] : null; 
+    }
+    
+    public SpeechFrame GetSpeechFrame2(int index) 
+    { 
+        return speechFrame2 != null && index < speechFrame2.Count ? speechFrame2[index] : null; 
+    }
+    
+    public Transform GetBossPos(int index) 
+    { 
+        return bossPos != null && index < bossPos.Length ? bossPos[index] : null; 
+    }
+    
+    public Monster GetBoss(int index) 
+    { 
+        return bosses != null && index < bosses.Length ? bosses[index] : null; 
+    }
+    
+    public Vector2 GetPlayerFontPos() 
+    { 
+        return GameManager.Instance?.CurPlayer?.FontPos?.position ?? Vector2.zero; 
     }
 }

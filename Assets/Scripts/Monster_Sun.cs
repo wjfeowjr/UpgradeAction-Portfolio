@@ -138,7 +138,7 @@ public class Monster_Sun : Monster
         MoveStateSetting(EMoveState.Stopping);
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         
-        myBoxCollider.enabled = false;
+        immortal = true;
         MoveStateSetting(EMoveState.Stopping);
         GravityChange(myGravity);
         PlaySound(ConstValues.RewardPage);
@@ -151,7 +151,7 @@ public class Monster_Sun : Monster
         
         IdleOrMove();
         FirstCoolTimeReduce();
-        myBoxCollider.enabled = true;
+        immortal = false;
         bossProduct?.Invoke(basicStat.name);
     }
     
@@ -159,7 +159,7 @@ public class Monster_Sun : Monster
     {
         base.Die();
         
-        myBoxCollider.enabled = false;
+        immortal = true;
         faceSpin.StopAndReset();
         faceReduction.StopAndReset();
         

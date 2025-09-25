@@ -165,7 +165,7 @@ public class Monster_Moon : Monster
         MoveStateSetting(EMoveState.Stopping);
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         
-        myBoxCollider.enabled = false;
+        immortal = true;
         MoveStateSetting(EMoveState.Stopping);
         GravityChange(myGravity);
         PlaySound(ConstValues.RewardPage);
@@ -178,7 +178,7 @@ public class Monster_Moon : Monster
         
         IdleOrMove();
         FirstCoolTimeReduce();
-        myBoxCollider.enabled = true;
+        immortal = false;
         bossProduct?.Invoke(basicStat.name);
     }
 
@@ -186,7 +186,7 @@ public class Monster_Moon : Monster
     {
         base.Die();
         
-        myBoxCollider.enabled = false;
+        immortal = true;
         faceSpin.StopAndReset();
         faceReduction.StopAndReset();
 

@@ -25,6 +25,7 @@ public class AttackInfo
     public EEffectType effectType;
     public float effectTime;
     public bool ignoreSuperArmor;
+    public bool ignoreImmortal;
     public bool continuous;
     public bool duplicate;
     public EDirectionType directionType;
@@ -32,6 +33,7 @@ public class AttackInfo
     public int stagger;
     public float knockBack;
     public Vector2 upperPower;
+    public int customDir;
     public float colliderTime;
     public string hitEffectId;
 }
@@ -70,6 +72,7 @@ public class Attack : MonoBehaviour
         attackInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
         attackInfo.effectTime = attackData.effectTime;
         attackInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
+        attackInfo.ignoreImmortal = attackData.ignoreImmortal;
         attackInfo.continuous = attackData.continuous;
         attackInfo.duplicate = attackData.duplicate;
         attackInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
@@ -87,6 +90,7 @@ public class Attack : MonoBehaviour
             attackInfo.upperPower = new Vector2(float.Parse(upperPowerSplit[0]), float.Parse(upperPowerSplit[1]));
         }
 
+        attackInfo.customDir = attackData.customDir;
         attackInfo.colliderTime = attackData.colliderTime;
         attackInfo.hitEffectId = attackData.hitEffectId;
     }
@@ -102,6 +106,11 @@ public class Attack : MonoBehaviour
             dir = castChar.transform.localScale.x > 0 ? 1 : -1;
             if(attackInfo.upperPower.x < 0)
                 dir = castChar.transform.localScale.x > 0 ? -1 : 1;
+        }
+        else
+        {
+            if (attackInfo.customDir != 0)
+                dir = attackInfo.customDir;
         }
         
         ContinuousCollider();
@@ -193,7 +202,7 @@ public class Attack : MonoBehaviour
         var hitTarget = col.GetComponent<Character>();
         if (hitTarget != null)
         {
-            if(hitTarget.Immortal || hitTarget.IsDie)
+            if((hitTarget.Immortal && !attackInfo.ignoreImmortal) || hitTarget.IsDie)
                 return;
             
             // 플레이어의 공격

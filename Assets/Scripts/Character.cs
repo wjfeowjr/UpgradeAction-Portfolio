@@ -92,18 +92,18 @@ public class BasicStat
 public abstract class Character : MonoBehaviour
 {
     [SerializeField] protected BasicStat originStat; // 원본 스텟
-    [SerializeField] protected BasicStat basicStat;  // 내 스텟(변동되어야 함)
-    
+    [SerializeField] protected BasicStat basicStat; // 내 스텟(변동되어야 함)
+
     protected Rigidbody2D myRigidbody;
     protected BoxCollider2D myBoxCollider;
     protected BoxCollider2D physicsCollider;
     protected Animator myAnimator;
     protected SpriteRenderer[] mySpriteRenderers;
     [SerializeField] protected GameObject groundObject;
-    
+
     [SerializeField] protected Vector3 defaultScale;
     [SerializeField] protected Vector3 reverseScale;
-    
+
     protected Vector3 defaultAnimatorScale;
 
     protected CancellationTokenSource stateCancellation;
@@ -119,24 +119,24 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected EMoveState moveState;
     [SerializeField] protected ELandingState landingState;
     [SerializeField] protected List<Buff> buffList = new List<Buff>();
-    
+
     [SerializeField] protected Transform diePos;
     [SerializeField] protected Transform buffEffectPos;
     [SerializeField] protected Transform centerPos;
     [SerializeField] protected Transform fontPos;
-    
+
     [SerializeField] protected Vector2 standHitBoxSize;
     [SerializeField] protected Vector2 downHitBoxSize;
     [SerializeField] protected Vector2 standOffset;
     [SerializeField] protected Vector2 downOffset;
-    
+
     protected Vector2 chargeVector;
     protected int jumpAttackCount;
     [SerializeField] protected bool isDie;
     [SerializeField] protected float myGravity;
     protected bool downJumping;
-    
-    private int airborneCount;     // 에어본 카운트
+
+    private int airborneCount; // 에어본 카운트
     private int platformLayerMask;
     protected int groundAndPlatformLayerMask;
     protected int wallLayerMask;
@@ -158,7 +158,9 @@ public abstract class Character : MonoBehaviour
         get => immortal;
         set => immortal = value;
     }
+
     public bool ImmuneStagger => immuneStagger;
+
     public bool IsDie
     {
         get => isDie;
@@ -170,6 +172,7 @@ public abstract class Character : MonoBehaviour
         get => normalState;
         set => normalState = value;
     }
+
     public EMoveState MoveState => moveState;
 
     // 상태 설정
@@ -182,7 +185,7 @@ public abstract class Character : MonoBehaviour
     {
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
-        
+
         myBoxCollider = GetComponent<BoxCollider2D>();
         foreach (var component in GetComponentsInChildren<BoxCollider2D>())
         {
@@ -192,12 +195,14 @@ public abstract class Character : MonoBehaviour
                 break;
             }
         }
+
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
-        groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
+        groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) |
+                                     (1 << LayerMask.NameToLayer(ConstValues.Platform));
         wallLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
-        
+
         ScaleSetting();
         ColSizeSetting();
     }
@@ -224,10 +229,10 @@ public abstract class Character : MonoBehaviour
     {
         defaultScale = transform.localScale;
         reverseScale = new Vector3(-defaultScale.x, defaultScale.y, defaultScale.z);
-        
+
         defaultAnimatorScale = myAnimator.transform.localScale;
     }
-    
+
     private void ColSizeSetting()
     {
         var hitBoxSize = myBoxCollider.size;
@@ -238,7 +243,7 @@ public abstract class Character : MonoBehaviour
         standOffset = new Vector2(hitBoxOffset.x, hitBoxOffset.y);
         downOffset = new Vector2(hitBoxOffset.x, hitBoxOffset.y - hitBoxOffset.y * 0.4f);
     }
-    
+
     protected void UpdateAirborneDown()
     {
         if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Airborne) && myRigidbody.linearVelocity.y < 0)
@@ -246,7 +251,7 @@ public abstract class Character : MonoBehaviour
             SetTriggerAnimator(ConstValues.AirborneDown);
         }
     }
-    
+
     protected virtual void UpdateBungee()
     {
         // if (!isDie && transform.position.y < ConstValues.BungeePosY)
@@ -255,7 +260,7 @@ public abstract class Character : MonoBehaviour
         //     Die();
         // }
     }
-    
+
     protected void UpdateBuff()
     {
         int expiredCount = 0;
@@ -275,14 +280,14 @@ public abstract class Character : MonoBehaviour
         {
             buffList.Remove(expiredDeBuff);
             var removeEffect = buffObject.Find(x => x.name == $"{expiredDeBuff.buffType}{ConstValues.Effect}(Clone)");
-            if(removeEffect != null) 
+            if (removeEffect != null)
                 RemoveObjectList(buffObject, removeEffect);
-            
+
             // 스턴, 무력화 상태 회복
             if (expiredDeBuff.buffType is EBuffType.Stun or EBuffType.Stagger)
             {
                 StateCheck();
-                if(normalState is ENormalState.Stun or ENormalState.Stagger)
+                if (normalState is ENormalState.Stun or ENormalState.Stagger)
                 {
                     StateRecovery();
                 }
@@ -301,7 +306,7 @@ public abstract class Character : MonoBehaviour
     {
         if (groundObject && !downJumping)
             return;
-        
+
         var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
         var rayVector2 = new Vector2(transform.position.x, transform.position.y);
         var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
@@ -318,7 +323,7 @@ public abstract class Character : MonoBehaviour
         if (downRay.collider != null)
             groundObject = downRay.collider.gameObject;
     }
-    
+
     protected void IgnorePlatform(Vector2 dir, float distance)
     {
         var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
@@ -332,7 +337,7 @@ public abstract class Character : MonoBehaviour
                 Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
             }
         }
-        
+
         var rayVector2 = new Vector2(transform.position.x, transform.position.y);
         var downRay2 = Physics2D.Raycast(rayVector2, dir, distance, platformLayerMask);
         Debug.DrawRay(rayVector2, dir * distance, ConstValues.BlueColor, 0.02f);
@@ -344,7 +349,7 @@ public abstract class Character : MonoBehaviour
                 Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
             }
         }
-        
+
         var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
         var downRay3 = Physics2D.Raycast(rayVector3, dir, distance, platformLayerMask);
         Debug.DrawRay(rayVector3, dir * distance, ConstValues.BlueColor, 0.02f);
@@ -378,6 +383,7 @@ public abstract class Character : MonoBehaviour
             {
                 LandingStateSetting(ELandingState.Air);
             }
+
             return false;
         }
         else
@@ -388,6 +394,7 @@ public abstract class Character : MonoBehaviour
                 // if (transform.position.y > downRay.point.y)
                 //     transform.position = new Vector2(transform.position.x, downRay.point.y);
             }
+
             return true;
         }
     }
@@ -395,7 +402,7 @@ public abstract class Character : MonoBehaviour
     // 반동
     protected void Rebound(float force)
     {
-        if(transform.localScale.x > 0)
+        if (transform.localScale.x > 0)
             myRigidbody.linearVelocity = new Vector2(-force, myRigidbody.linearVelocity.y);
         else
             myRigidbody.linearVelocity = new Vector2(force, myRigidbody.linearVelocity.y);
@@ -405,6 +412,7 @@ public abstract class Character : MonoBehaviour
     {
         return normalState == ENormalState.Airborne;
     }
+
     public bool GetJumpState()
     {
         return landingState == ELandingState.Air;
@@ -419,6 +427,7 @@ public abstract class Character : MonoBehaviour
     {
         myAnimator.SetTrigger(parameter);
     }
+
     protected virtual void ResetTriggerAnimator(string parameter)
     {
         myAnimator.ResetTrigger(parameter);
@@ -429,27 +438,34 @@ public abstract class Character : MonoBehaviour
     {
         var valuePercent = percent * 0.01f;
         var addSpeed = originStat.attackSpeed * valuePercent;
-        
+
         // 최종적으로 도출되는 공격속도 계수
         basicStat.attackSpeed += addSpeed;
         var animSpeed = basicStat.attackSpeed / originStat.attackSpeed;
         myAnimator.SetFloat(ConstValues.AttackSpeed, animSpeed);
-    } 
+    }
+
     // 이동속도 설정
     private void SetMoveSpeed(float percent)
     {
         var valuePercent = percent * 0.01f;
         var value = (basicStat.moveSpeed / originStat.moveSpeed) + valuePercent;
-        
+
         // 최종적으로 도출되는 공격속도 계수
         basicStat.moveSpeed = originStat.moveSpeed * value;
         myAnimator.SetFloat(ConstValues.MoveSpeed, value);
     }
-    
-    public void StopVelocity()
+
+    public void StopVelocity_X()
     {
         myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
     }
+
+    public void StopVelocity_Y()
+    {
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocityX, 0);
+    }
+
     public void ZeroVelocity()
     {
         myRigidbody.linearVelocity = new Vector2(0, 0);
@@ -459,7 +475,7 @@ public abstract class Character : MonoBehaviour
     {
         if (damage == 0)
             return;
-        
+
         // 체력 다는 알고리즘 삽입
         basicStat.hp -= damage;
         if (basicStat.hp < 0)
@@ -470,7 +486,7 @@ public abstract class Character : MonoBehaviour
     {
         if (immuneStagger)
             return;
-        
+
         basicStat.stagger -= stagger;
         if (basicStat.stagger <= 0)
             basicStat.stagger = 0;
@@ -480,64 +496,66 @@ public abstract class Character : MonoBehaviour
     {
         if (damage == 0)
             return;
-        
+
         var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, fontPos).GetComponent<TextFont>();
         StringBuilder damageText = new StringBuilder();
         damageText.Append(damage);
-        
+
         if (critical)
         {
-            if(GetComponent<Player>())
+            if (GetComponent<Player>())
                 textFont.ColorSetting(EFontType.EnemyCritical);
-            else if(GetComponent<Monster>())
+            else if (GetComponent<Monster>())
                 textFont.ColorSetting(EFontType.MyCritical);
-            
+
             damageText.Append("!");
         }
         else
         {
-            if(GetComponent<Player>())
+            if (GetComponent<Player>())
                 textFont.ColorSetting(EFontType.EnemyDamage);
-            else if(GetComponent<Monster>())
+            else if (GetComponent<Monster>())
                 textFont.ColorSetting(EFontType.MyDamage);
         }
-        
+
         textFont.DisplayFont(55, damageText.ToString());
     }
 
     public void SpawnHitEffect(string id, float minScale = 1.0f, float maxScale = 1.0f)
     {
         var randomVector = Vector3.one;
-        
+
         float effectRangeX = myBoxCollider.size.x * 0.5f;
         float effectRangeY = myBoxCollider.size.y * 0.5f;
 
         float randXpos = Random.Range(-effectRangeX, effectRangeX);
         float randYpos = Random.Range(-effectRangeY, effectRangeY);
 
-        Vector2 finalVector = new Vector2(transform.position.x + randXpos, transform.position.y + myBoxCollider.offset.y + randYpos);
+        Vector2 finalVector = new Vector2(transform.position.x + randXpos,
+            transform.position.y + myBoxCollider.offset.y + randYpos);
         var effectObj = SpawnObject(id, finalVector);
-        
+
         if (minScale < 1.0f)
         {
             var randomScale = Random.Range(minScale, maxScale);
             randomVector = new Vector3(randomScale, randomScale, randomScale);
         }
+
         effectObj.transform.localScale = randomVector;
     }
-    
+
     // 공격 소환(데이터 삽입용)
     protected GameObject SpawnAttackObject(string id, Transform attackTransform, int zAngle = 0, int missileDir = 0)
     {
-        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform); 
-        
+        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
+
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (objectData != null)
         {
             var spawnedObject = obj.GetComponent<SpawnedObject>();
             if (!spawnedObject)
                 spawnedObject = obj.AddComponent<SpawnedObject>();
-            
+
             spawnedObject.SetupData(objectData, transform.localScale.x);
             spawnedObject.EnableSetting();
             if (zAngle != 0)
@@ -545,20 +563,21 @@ public abstract class Character : MonoBehaviour
                 var finalAngle = zAngle;
                 if (transform.localScale.x < 0)
                     finalAngle = -zAngle;
-            
+
                 var objectAngle = spawnedObject.transform.eulerAngles;
-                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+                spawnedObject.transform.eulerAngles =
+                    new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
             }
-            
-            if(spawnedObject.GetObjectTime() == 0)
+
+            if (spawnedObject.GetObjectTime() == 0)
                 AddObjectList(controlObject, obj);
 
             if (spawnedObject.GetTrace())
             {
                 var trace = obj.GetComponent<Trace>();
-                if(!trace)
+                if (!trace)
                     trace = obj.AddComponent<Trace>();
-                
+
                 trace.SetTarget(attackTransform);
             }
         }
@@ -575,7 +594,7 @@ public abstract class Character : MonoBehaviour
 
             attack.EnableSetting();
         }
-        
+
         var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
         if (missileData != null)
         {
@@ -587,26 +606,26 @@ public abstract class Character : MonoBehaviour
             if (missileDir == 0)
             {
                 dir = Vector2.right;
-                if(transform.localScale.x < 0)
+                if (transform.localScale.x < 0)
                     dir = Vector2.left;
             }
             else
             {
                 dir = new Vector2(missileDir, 0);
             }
-            
+
             missile.SetupData(missileData, dir, SpawnAttack);
         }
-        
+
         var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
         if (grenadeData != null)
         {
             var grenade = obj.GetComponent<Grenade>();
             if (!grenade)
                 grenade = obj.AddComponent<Grenade>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             grenade.SetupData(grenadeData, dir, SpawnAttack);
             grenade.Throw();
@@ -618,15 +637,15 @@ public abstract class Character : MonoBehaviour
     // 공격 소환
     protected void SpawnAttack(string id, Transform attackTransform, int zAngle = 0)
     {
-        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform); 
-        
+        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
+
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (objectData != null)
         {
             var spawnedObject = obj.GetComponent<SpawnedObject>();
             if (!spawnedObject)
                 spawnedObject = obj.AddComponent<SpawnedObject>();
-            
+
             spawnedObject.SetupData(objectData, transform.localScale.x);
             spawnedObject.EnableSetting();
             if (zAngle != 0)
@@ -634,20 +653,21 @@ public abstract class Character : MonoBehaviour
                 var finalAngle = zAngle;
                 if (transform.localScale.x < 0)
                     finalAngle = -zAngle;
-            
+
                 var objectAngle = spawnedObject.transform.eulerAngles;
-                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+                spawnedObject.transform.eulerAngles =
+                    new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
             }
-            
-            if(spawnedObject.GetObjectTime() == 0)
+
+            if (spawnedObject.GetObjectTime() == 0)
                 AddObjectList(controlObject, obj);
 
             if (spawnedObject.GetTrace())
             {
                 var trace = obj.GetComponent<Trace>();
-                if(!trace)
+                if (!trace)
                     trace = obj.AddComponent<Trace>();
-                
+
                 trace.SetTarget(attackTransform);
             }
         }
@@ -662,45 +682,46 @@ public abstract class Character : MonoBehaviour
             attack.SetupData(this, attackData);
             attack.EnableSetting();
         }
-        
+
         var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
         if (missileData != null)
         {
             var missile = obj.GetComponent<Missile>();
             if (!missile)
                 missile = obj.AddComponent<Missile>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             missile.SetupData(missileData, dir, SpawnAttack);
         }
-        
+
         var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
         if (grenadeData != null)
         {
             var grenade = obj.GetComponent<Grenade>();
             if (!grenade)
                 grenade = obj.AddComponent<Grenade>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             grenade.SetupData(grenadeData, dir, SpawnAttack);
             grenade.Throw();
         }
     }
+
     protected void SpawnAttack(string id, Vector2 pos, int zAngle = 0)
     {
-        var obj = GameManager.Instance.SpawnToObjectPool(id, pos); 
-        
+        var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
+
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (objectData != null)
         {
             var spawnedObject = obj.GetComponent<SpawnedObject>();
             if (!spawnedObject)
                 spawnedObject = obj.AddComponent<SpawnedObject>();
-            
+
             spawnedObject.SetupData(objectData, transform.localScale.x);
             spawnedObject.EnableSetting();
             if (zAngle != 0)
@@ -708,12 +729,13 @@ public abstract class Character : MonoBehaviour
                 var finalAngle = zAngle;
                 if (transform.localScale.x < 0)
                     finalAngle = -zAngle;
-            
+
                 var objectAngle = spawnedObject.transform.eulerAngles;
-                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+                spawnedObject.transform.eulerAngles =
+                    new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
             }
-            
-            if(spawnedObject.GetObjectTime() == 0)
+
+            if (spawnedObject.GetObjectTime() == 0)
                 AddObjectList(controlObject, obj);
         }
 
@@ -729,48 +751,48 @@ public abstract class Character : MonoBehaviour
 
             attack.EnableSetting();
         }
-        
+
         var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
         if (missileData != null)
         {
             var missile = obj.GetComponent<Missile>();
             if (!missile)
                 missile = obj.AddComponent<Missile>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             missile.SetupData(missileData, dir, SpawnAttack);
         }
-        
+
         var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
         if (grenadeData != null)
         {
             var grenade = obj.GetComponent<Grenade>();
             if (!grenade)
                 grenade = obj.AddComponent<Grenade>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             grenade.SetupData(grenadeData, dir, SpawnAttack);
             grenade.Throw();
         }
     }
-    
+
     // 공격판정이 없는 오브젝트 소환
     protected GameObject SpawnObject(string id, Transform attackTransform, int zAngle = 0, bool isBuff = false)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
-        
+
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (objectData == null)
             return obj;
-        
+
         var spawnedObject = obj.GetComponent<SpawnedObject>();
         if (!spawnedObject)
             spawnedObject = obj.AddComponent<SpawnedObject>();
-            
+
         spawnedObject.SetupData(objectData, transform.localScale.x);
         spawnedObject.EnableSetting();
         if (zAngle != 0)
@@ -778,14 +800,14 @@ public abstract class Character : MonoBehaviour
             var finalAngle = zAngle;
             if (transform.localScale.x < 0)
                 finalAngle = -zAngle;
-            
+
             var objectAngle = spawnedObject.transform.eulerAngles;
             spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
         }
 
         if (spawnedObject.GetObjectTime() == 0)
         {
-            if(isBuff)
+            if (isBuff)
                 AddObjectList(buffObject, obj);
             else
                 AddObjectList(normalObject, obj);
@@ -794,52 +816,54 @@ public abstract class Character : MonoBehaviour
         if (spawnedObject.GetTrace())
         {
             var trace = obj.GetComponent<Trace>();
-            if(!trace)
+            if (!trace)
                 trace = obj.AddComponent<Trace>();
-            
+
             trace.SetTarget(attackTransform);
         }
-        
+
         var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
         if (missileData != null)
         {
             var missile = obj.GetComponent<Missile>();
             if (!missile)
                 missile = obj.AddComponent<Missile>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             missile.SetupData(missileData, dir, SpawnAttack);
         }
-        
+
         var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
         if (grenadeData != null)
         {
             var grenade = obj.GetComponent<Grenade>();
             if (!grenade)
                 grenade = obj.AddComponent<Grenade>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             grenade.SetupData(grenadeData, dir, SpawnAttack);
             grenade.Throw();
         }
+
         return obj;
     }
+
     public GameObject SpawnObject(string id, Vector2 pos, int zAngle = 0)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
-        
+
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (objectData == null)
             return obj;
-        
+
         var spawnedObject = obj.GetComponent<SpawnedObject>();
         if (!spawnedObject)
             spawnedObject = obj.AddComponent<SpawnedObject>();
-            
+
         spawnedObject.SetupData(objectData, transform.localScale.x);
         spawnedObject.EnableSetting();
         if (zAngle != 0)
@@ -847,33 +871,33 @@ public abstract class Character : MonoBehaviour
             var finalAngle = zAngle;
             if (transform.localScale.x < 0)
                 finalAngle = -zAngle;
-            
+
             var objectAngle = spawnedObject.transform.eulerAngles;
             spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
         }
-        
+
         var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
         if (missileData != null)
         {
             var missile = obj.GetComponent<Missile>();
             if (!missile)
                 missile = obj.AddComponent<Missile>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             missile.SetupData(missileData, dir, SpawnAttack);
         }
-        
+
         var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
         if (grenadeData != null)
         {
             var grenade = obj.GetComponent<Grenade>();
             if (!grenade)
                 grenade = obj.AddComponent<Grenade>();
-            
+
             var dir = Vector2.right;
-            if(transform.localScale.x < 0)
+            if (transform.localScale.x < 0)
                 dir = Vector2.left;
             grenade.SetupData(grenadeData, dir, SpawnAttack);
             grenade.Throw();
@@ -881,67 +905,77 @@ public abstract class Character : MonoBehaviour
 
         return obj;
     }
+
     protected GameObject SpawnUIObject(string id, Transform uiTransform)
     {
         var obj = GameManager.Instance.SpawnToUIObjectPool(id, uiTransform);
-        
+
         var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (uiData == null)
             return obj;
-        
+
         var spawnedObject = obj.GetComponent<SpawnedObject>();
         if (!spawnedObject)
             spawnedObject = obj.AddComponent<SpawnedObject>();
-        
+
         spawnedObject.SetupData(uiData, transform.localScale.x);
         spawnedObject.EnableSetting();
-        
+
         if (spawnedObject.GetTrace())
         {
             var trace = obj.GetComponent<Trace>();
-            if(!trace)
+            if (!trace)
                 trace = obj.AddComponent<Trace>();
-            
+
             trace.SetTarget(uiTransform);
         }
 
         return obj;
     }
+
     protected GameObject SpawnUI(string id, Vector2 objectVector)
     {
         var obj = GameManager.Instance.SpawnToUIPool(id, objectVector);
-        
+
         var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (uiData == null)
             return obj;
-        
+
         var spawnedObject = obj.GetComponent<SpawnedObject>();
         if (!spawnedObject)
             spawnedObject = obj.AddComponent<SpawnedObject>();
-        
+
         spawnedObject.SetupData(uiData, transform.localScale.x);
         spawnedObject.EnableSetting();
 
         return obj;
     }
-    
+
     // 1프레임 딜레이
     protected async UniTask YieldDelay(CancellationTokenSource tokenSource)
     {
         await UniTask.Yield(cancellationToken: tokenSource.Token);
     }
+
     protected async UniTask FixedYieldDelay(CancellationTokenSource tokenSource)
     {
         await UniTask.WaitForFixedUpdate(cancellationToken: tokenSource.Token);
     }
+
     // 일반 딜레이
     protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
-    
+
+    // 대기 딜레이
+    protected async UniTask WaitUntilDelay(Func<bool> condition, CancellationTokenSource tokenSource)
+    {
+        await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
+    }
+
     // 행동 캔슬
-    protected void CancelMotion()
+    protected virtual void CancelMotion()
     {
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
@@ -956,17 +990,17 @@ public abstract class Character : MonoBehaviour
         switch (normalState)
         {
             case ENormalState.Dash:
-                //immortal = false;
-                myBoxCollider.enabled = true;
+                immortal = false;
                 break;
         }
     }
 
     private void AddObjectList(List<GameObject> list, GameObject obj)
     {
-        if(!list.Contains(obj))
+        if (!list.Contains(obj))
             list.Add(obj);
     }
+
     protected void RemoveObjectList(List<GameObject> list, GameObject obj)
     {
         var removeObj = list.Find(x => x == obj);
@@ -975,17 +1009,18 @@ public abstract class Character : MonoBehaviour
         if (removeObj != null)
             list.Remove(removeObj);
     }
+
     protected async void ClearObjectList(List<GameObject> list, float timer = 0.0f)
     {
         if (timer > 0)
             await UniTask.WaitForSeconds(timer);
-        
+
         foreach (var obj in list)
             obj.gameObject.SetActive(false);
-        
+
         list.Clear();
     }
-    
+
     public void Flip(int dir)
     {
         switch (dir)
@@ -993,56 +1028,63 @@ public abstract class Character : MonoBehaviour
             case -1:
                 transform.localScale = reverseScale;
                 break;
-            
+
             case 1:
                 transform.localScale = defaultScale;
                 break;
         }
     }
-    
+
     protected void MoveStateSetting(EMoveState changeState)
     {
         moveState = changeState;
     }
+
     protected void LandingStateSetting(ELandingState changeState)
     {
         if (changeState == ELandingState.Ground)
             downJumping = false;
-        
+
         landingState = changeState;
     }
+
     protected void BodyTypeSetting(string bodyTypeName)
     {
         basicStat.bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), bodyTypeName);
     }
+
     protected bool SameBodyType(string bodyTypeName)
     {
         return basicStat.bodyType.ToString() == bodyTypeName;
     }
-    
+
     // 중력값 변경
     public void GravityChange(float value)
     {
         myRigidbody.gravityScale = value;
     }
+
     // 히트박스 기상 사이즈로 변경
     protected void StandHitBox()
     {
         myBoxCollider.size = standHitBoxSize;
         myBoxCollider.offset = new Vector2(standOffset.x, standOffset.y);
     }
+
     // 히트박스 다운 사이즈로 변경
     protected virtual void DownHitBox()
     {
         myBoxCollider.size = downHitBoxSize;
         myBoxCollider.offset = new Vector2(downOffset.x, downOffset.y);
     }
-    
+
     // 피해를 입고있는 모션인가?
     protected bool IsDamaged()
     {
-        return normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun or ENormalState.Damaged;
+        return normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun
+            or ENormalState.Damaged;
     }
+
     // 군중제어에 걸렸는가?
     protected bool IsCc()
     {
@@ -1050,26 +1092,27 @@ public abstract class Character : MonoBehaviour
         bool buffCondition = FindBuff(EBuffType.Stun);
         return normalCondition || buffCondition;
     }
+
     private bool FindBuff(EBuffType buffType)
     {
         return buffList.Find(x => x.buffType == buffType) != null;
     }
-    
+
     // 지형을 무시하는 돌진 (기본스피드, 가속 배율, 돌진거리, 가속되는 시점)
     protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float accelPercent)
     {
         // 1) 초기 계산
         float realDashSpeed = basicSpeed;
-        float targetSpeed   = basicSpeed * limitMag;  
-        Vector2 startPos    = transform.position;
-        Vector2 direction   = (chargeVector - startPos).normalized;
-        float totalDist     = chargeLength;
+        float targetSpeed = basicSpeed * limitMag;
+        Vector2 startPos = transform.position;
+        Vector2 direction = (chargeVector - startPos).normalized;
+        float totalDist = chargeLength;
         if (totalDist <= 0f)
             return false;
 
         // 2) 전체 돌진 시간 계산 (평균 속도 = (basic + target) / 2)
         float duration = totalDist / ((basicSpeed + targetSpeed) * 0.5f);
-        float elapsed  = 0f;
+        float elapsed = 0f;
 
         // 3) FixedUpdate 루프: elapsed < duration 동안 실행
         while (elapsed < duration)
@@ -1095,7 +1138,7 @@ public abstract class Character : MonoBehaviour
             // FixedYieldDelay 대기, 취소 시 false 반환
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
-            
+
             // 대시 레이체크
             var rayVector1 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
             var rayVector2 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
@@ -1104,11 +1147,89 @@ public abstract class Character : MonoBehaviour
                 rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
                 rayVector2 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
             }
-            if(!GroundAndPlatformRay(rayVector1))
+
+            if (!GroundAndPlatformRay(rayVector1))
                 GroundAndPlatformRay(rayVector2);
         }
 
         // 4) 돌진 종료 후 정지
+        myRigidbody.linearVelocity = Vector2.zero;
+        return true;
+    }
+
+    /// <summary>
+    /// 목표 좌표까지 무조건 돌진
+    /// </summary>
+    /// <param name="basicSpeed">시작 속도</param>
+    /// <param name="limitMag">최고 속도 배율</param>
+    /// <param name="accelPercent">가속 시작 비율 (0~1)</param>
+    /// <param name="targetPos">돌진할 목표 좌표</param>
+    /// <param name="tolerance">목표 도달 허용 오차</param>
+    protected async UniTask<bool> ChargeToTarget(
+        float basicSpeed,
+        float limitMag,
+        float accelPercent,
+        Vector2 targetPos,
+        float limitTime,
+        float tolerance = 0.2f)
+    {
+        if (basicSpeed <= 0f || limitMag <= 0f)
+            return false;
+
+        Vector2 startPos = transform.position;
+        Vector2 dir = (targetPos - startPos).normalized;
+        if (dir.sqrMagnitude < 0.0001f)
+            return false;
+
+        float realDashSpeed = basicSpeed;
+        float targetSpeed   = basicSpeed * limitMag;
+        float elapsed       = 0f;
+        float totalDist     = Vector2.Distance(startPos, targetPos);
+        float time = 0f;
+
+        if (totalDist <= 0f)
+            return false;
+
+        float duration = totalDist / ((basicSpeed + targetSpeed) * 0.5f);
+
+        // 루프
+        while (true)
+        {
+            if (stateCancellation.IsCancellationRequested)
+                return false;
+
+            elapsed += Time.fixedDeltaTime;
+            time += Time.fixedDeltaTime;
+            
+            // 가속 처리
+            float normTime = Mathf.Clamp01(elapsed / duration);
+            if (normTime > accelPercent)
+            {
+                float t = (normTime - accelPercent) / (1f - accelPercent);
+                realDashSpeed = Mathf.Lerp(basicSpeed, targetSpeed, t);
+            }
+            else
+            {
+                realDashSpeed = basicSpeed;
+            }
+
+            // 속도 적용
+            myRigidbody.linearVelocity = dir * realDashSpeed;
+
+            // 목표 도달 체크
+            float remain = Vector2.Distance(transform.position, targetPos);
+            if (remain <= tolerance)
+                break;
+
+            if (time >= limitTime)
+                break;
+
+            // 프레임 대기
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return false;
+        }
+
+        // 종료 처리
         myRigidbody.linearVelocity = Vector2.zero;
         return true;
     }
@@ -1119,21 +1240,22 @@ public abstract class Character : MonoBehaviour
         ClearObjectList(buffObject);
         isDie = true;
     }
+
     public async void Grabbed(Vector3 grabVector)
     {
         CancelMotion();
         StateSetting(ENormalState.Grabbed, ConstValues.Grabbed, ConstValues.Grabbed);
         MoveStateSetting(EMoveState.Stopping);
-        
+
         GravityChange(0);
         myRigidbody.linearVelocity = Vector2.zero;
-        
+
         float grabSpeed = ConstValues.GrabbedSpeed;
         float grabBoundX = ConstValues.GrabbedBoundX;
         float grabBoundY = ConstValues.GrabbedBoundY;
         if (transform.position.x < grabVector.x)
             grabBoundX = -ConstValues.GrabbedBoundX;
-        
+
         stateCancellation = new CancellationTokenSource();
         while (transform.position != grabVector)
         {
@@ -1141,8 +1263,10 @@ public abstract class Character : MonoBehaviour
             if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
+
         Airborne(grabBoundX, grabBoundY);
     }
+
     public virtual void Airborne(float xVelocity, float yVelocity)
     {
         CancelMotion();
@@ -1151,11 +1275,12 @@ public abstract class Character : MonoBehaviour
         LandingStateSetting(ELandingState.Air);
         MoveStateSetting(EMoveState.Stopping);
         ResetTriggerAnimator(ConstValues.Jump);
-        
+
         stateCancellation = new CancellationTokenSource();
         Bound(xVelocity, yVelocity);
         DownHitBox();
     }
+
     private void Bound(float xVelocity, float yVelocity)
     {
         StateSetting(ENormalState.Airborne, ConstValues.Airborne, ConstValues.Airborne);
@@ -1163,19 +1288,20 @@ public abstract class Character : MonoBehaviour
         GravityChange(ConstValues.BasicGravity);
         myRigidbody.linearVelocity = new Vector2(xVelocity, yVelocity);
     }
+
     protected virtual async void DownAndStand()
     {
         StateSetting(ENormalState.Down, ConstValues.Down, ConstValues.Down);
         MoveStateSetting(EMoveState.Stopping);
         SpawnObject(ConstValues.DownDust, transform.position);
-        
+
         // 최초 공중에 떴을 때는, 땅에 닿자마자 다시 공중으로 고정높이만큼 뜬다
         if (airborneCount > 0)
         {
             airborneCount -= 1;
             if (await NormalDelay(ConstValues.ReboundSecond, stateCancellation).SuppressCancellationThrow())
                 return;
-            
+
             Bound(0, ConstValues.ReboundForce);
         }
         // 이후에는 고정된 시간만큼 누워있다가 일어난다
@@ -1184,14 +1310,14 @@ public abstract class Character : MonoBehaviour
             if (isDie)
             {
                 await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
-                if(gameObject.activeSelf)
-                    BlinkDelete();
+                // if (gameObject.activeSelf)
+                //     BlinkDelete();
                 return;
             }
-            
+
             if (await NormalDelay(ConstValues.DownSecond, stateCancellation).SuppressCancellationThrow())
                 return;
-            
+
             StateRecovery();
         }
     }
@@ -1216,12 +1342,12 @@ public abstract class Character : MonoBehaviour
                     break;
                 case EBuffType.Stagger:
                     // 스트롱 아머만 깨짐
-                    if(originStat.bodyType == EBodyType.StrongArmor)
+                    if (originStat.bodyType == EBodyType.StrongArmor)
                         basicStat.bodyType = EBodyType.Normal;
                     SpawnObject($"{buffType.ToString()}{ConstValues.Explosion}", buffEffectPos);
                     break;
             }
-            
+
             SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, 0, true);
         }
         // 해당 디버프가 적용되어 있음
@@ -1236,7 +1362,7 @@ public abstract class Character : MonoBehaviour
             }
         }
     }
-    
+
     // 상태이상
     // 스턴
     public void Stun(float stunTime)
@@ -1244,18 +1370,19 @@ public abstract class Character : MonoBehaviour
         // 스턴 디버프 추가
         AddBuff(EBuffType.Stun, stunTime);
         MoveStateSetting(EMoveState.Stopping);
-        
+
         // 이후 현재 판정에 따라서 애니메이션을 변화함
         if (normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
         {
             Debug.Log($"상위 판정이 존재함: {normalState}");
             return;
         }
-        
+
         CancelMotion();
         stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
     }
+
     // 무력화
     public virtual void Stagger()
     {
@@ -1268,22 +1395,22 @@ public abstract class Character : MonoBehaviour
         StateSetting(ENormalState.Stagger, ConstValues.Stagger, ConstValues.Stagger);
         immuneStagger = true;
     }
-    
-    public virtual async void Damaged(float damagedTime) 
+
+    public virtual async void Damaged(float damagedTime)
     {
         if (normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
         {
             Debug.Log($"상위 판정이 존재함: {normalState}");
             return;
         }
-        
+
         CancelMotion();
         stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Damaged, ConstValues.Damaged, ConstValues.Damaged);
         MoveStateSetting(EMoveState.Stopping);
         if (await NormalDelay(damagedTime, stateCancellation).SuppressCancellationThrow())
             return;
-        
+
         StateRecovery();
     }
 
@@ -1299,9 +1426,9 @@ public abstract class Character : MonoBehaviour
         float duration = ConstValues.KnockBackTime;
 
         // 시작 속도: 거리 / 시간
-        float speed  = Mathf.Abs(knockBackLength) / duration;
-        Vector2 constantVelocity  = dir * speed ;
-        
+        float speed = Mathf.Abs(knockBackLength) / duration;
+        Vector2 constantVelocity = dir * speed;
+
         // 넉백 시작—바로 초기 속도 설정
         myRigidbody.linearVelocity = constantVelocity;
 
@@ -1331,6 +1458,7 @@ public abstract class Character : MonoBehaviour
             // 오른쪽으로 돈다
             transform.localScale = defaultScale; // 스케일의 값이 바뀌어 방향이 바뀐다
         }
+
         // xPos가 내 위치보다 왼쪽에 있고 내가 오른쪽을 보고 있을 때 && transform.localScale.x > 0
         if (xPos < transform.position.x)
         {
@@ -1338,6 +1466,7 @@ public abstract class Character : MonoBehaviour
             transform.localScale = reverseScale; // 스케일의 값이 바뀌어 방향이 바뀐다
         }
     }
+
     public void LookAt(int dir)
     {
         // dir이 1이라면
@@ -1348,7 +1477,7 @@ public abstract class Character : MonoBehaviour
                 // 왼쪽으로 돈다
                 transform.localScale = reverseScale; // 스케일의 값이 바뀌어 방향이 바뀐다
                 break;
-            
+
             // 왼쪽 방향으로 진행된 공격
             case -1:
                 // 오른쪽으로 돈다
@@ -1356,13 +1485,13 @@ public abstract class Character : MonoBehaviour
                 break;
         }
     }
-    
+
     // 맞았을때의 색깔 변화
     public async void HitMaterial()
     {
         if (!gameObject.activeSelf)
             return;
-        
+
         SpriteRendererMaterialChange(GameManager.Instance.hitMaterial);
         await UniTask.Delay(TimeSpan.FromSeconds(ConstValues.WhiteSecond));
         SpriteRendererMaterialChange(GameManager.Instance.defaultMaterial);
@@ -1373,7 +1502,7 @@ public abstract class Character : MonoBehaviour
         foreach (var mySpriteRenderer in mySpriteRenderers)
             mySpriteRenderer.material = material;
     }
-    
+
     // 스프라이트 활성화 / 비활성화
     protected void SpriteRendererSetting(bool active)
     {
@@ -1385,7 +1514,7 @@ public abstract class Character : MonoBehaviour
     {
         SoundManager.Instance.PlaySound(soundId, volumeScale);
     }
-    
+
     // 정지
     public void Stop()
     {
@@ -1394,17 +1523,17 @@ public abstract class Character : MonoBehaviour
             myAnimator.ResetTrigger(ConstValues.Move);
             StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         }
-        
-        if(moveState == EMoveState.Moving)
+
+        if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
     }
-    
+
     // 커스텀
     public void CustomJump(Vector2 jumpVelocity)
     {
         myRigidbody.linearVelocity = jumpVelocity;
     }
-    
+
     protected void CustomMoving_X(Vector2 dir, float speed)
     {
         float targetSpeedX = dir.x * speed;
@@ -1412,6 +1541,7 @@ public abstract class Character : MonoBehaviour
 
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
+
     protected void CustomMoving_Y(Vector2 dir, float speed)
     {
         float targetSpeedX = myRigidbody.linearVelocity.x;
@@ -1419,12 +1549,12 @@ public abstract class Character : MonoBehaviour
 
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
-    
+
     public void CustomAnimTrigger(ENormalState state, string triggerName, string animId = null)
     {
         StateSetting(state, triggerName, animId);
     }
-    
+
     // 깜빡이며 사라지기
     public virtual async void BlinkDelete()
     {
@@ -1435,12 +1565,13 @@ public abstract class Character : MonoBehaviour
                 mySpriteRenderer.enabled = false;
             if (await NormalDelay(ConstValues.BlinkSecond, stateCancellation).SuppressCancellationThrow())
                 return;
-            
+
             foreach (var mySpriteRenderer in mySpriteRenderers)
                 mySpriteRenderer.enabled = true;
             if (await NormalDelay(ConstValues.BlinkSecond, stateCancellation).SuppressCancellationThrow())
                 return;
         }
+
         gameObject.SetActive(false);
     }
 
@@ -1496,7 +1627,7 @@ public abstract class Character : MonoBehaviour
     //
     //     return true;
     // }
-    
+
     // 레이체크(벽 등을 판정하여 최종적으로 도착하는 지점 확인용도)
     // protected Vector2 RayCheckLength(float chargeLengthX, float chargeLengthY)
     // {
@@ -1529,7 +1660,7 @@ public abstract class Character : MonoBehaviour
     //             return new Vector2(transform.position.x + chargeLengthX - (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
     //     }
     // }
-    
+
     // public async void KnockBack(float knockBackLength)
     // {
     //     if(normalState == ENormalState.Down)
@@ -1550,7 +1681,7 @@ public abstract class Character : MonoBehaviour
     //             return;
     //     }
     // }
-    
+
     // private Vector2 RayCheckLength(float chargeLengthX)
     // {
     //     var absLengthX = Mathf.Abs(chargeLengthX);
@@ -1581,7 +1712,7 @@ public abstract class Character : MonoBehaviour
     //             return new Vector2(transform.position.x - absLengthX, transform.position.y);
     //     }
     // }
-    
+
     // public async void KnockBack(float knockBackLength)
     // {
     //     if(normalState == ENormalState.Down)

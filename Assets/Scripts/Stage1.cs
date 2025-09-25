@@ -897,7 +897,7 @@ public class Stage1 : Stage
                 // 카메라 제한
                 GameManager.Instance.MainCamera.MinXAndY = new Vector2(40.5f, GameManager.Instance.MainCamera.MinXAndY.y);
                 // 함정 설치
-                GameManager.Instance.SpawnTrap(ConstValues.TrapPillar, trapPos[0].position);
+                //GameManager.Instance.SpawnTrap(ConstValues.TrapPillar, trapPos[0].position);
                 break;
             case 2:
                 // 카메라 제한

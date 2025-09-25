@@ -134,7 +134,7 @@ public class Monster_BigCharge : Monster
             StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
             MoveStateSetting(EMoveState.Stopping);
             LandingStateSetting(ELandingState.Air);
-            myBoxCollider.enabled = false;
+            immortal = true;
             GravityChange(myGravity);
 
             foreach (var mySpriteRenderer in mySpriteRenderers)
@@ -161,7 +161,7 @@ public class Monster_BigCharge : Monster
             await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
             FirstCoolTimeReduce();
             IdleOrMove();
-            myBoxCollider.enabled = true;
+            immortal = false;
             bossProduct?.Invoke(basicStat.name);
         }
         else
