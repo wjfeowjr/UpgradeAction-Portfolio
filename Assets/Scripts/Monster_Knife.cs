@@ -202,7 +202,6 @@ public class Monster_Knife : Monster
         
         CancelMotion();
         ClearObjectList(buffObject);
-        isDie = true;
 
         int count = 15;
         var delay = 0.12f;
@@ -233,5 +232,7 @@ public class Monster_Knife : Monster
         
         Airborne(xVelocity, yVelocity);
         goldAction?.Invoke(myStat.gold, centerPos.position);
+        
+        isDie = true;
     }
 }

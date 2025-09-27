@@ -17,6 +17,12 @@ public class UI_Interface : UIBase
     private UIHpPresenter uiHpPresenter;
     public UIHpPresenter HpPresenter => uiHpPresenter;
     
+    // 재화
+    public UIGoodsView GoodsView => goodsView;
+    [SerializeField] private UIGoodsView goodsView;
+    private UIGoodsPresenter uiGoodsPresenter;
+    public UIGoodsPresenter GoodsPresenter => uiGoodsPresenter;
+    
     // 보스체력
     public UIBossHpView BossHpView => bossHpView;
     [SerializeField] private UIBossHpView bossHpView;
@@ -49,6 +55,11 @@ public class UI_Interface : UIBase
     public void SetHpPresenter(UIHpPresenter presenter)
     {
         uiHpPresenter = presenter;
+    }
+    
+    public void SetGoodsPresenter(UIGoodsPresenter presenter)
+    {
+        uiGoodsPresenter = presenter;
     }
     
     public void SetBossHpPresenter(UIBossHpPresenter presenter)

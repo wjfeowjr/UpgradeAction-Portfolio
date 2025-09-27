@@ -269,8 +269,8 @@ public class Player_Gunner : Player
     // 수류탄
     private async UniTask<bool> Grenade()
     {
-        var delay1 = 0.12f;
-        var delay2 = 0.08f;
+        var delay1 = 0.15f;
+        var delay2 = 0.1f;
         
         StateSetting(ENormalState.Skill, ConstValues.GunnerGrenade, ConstValues.GunnerGrenade);
 

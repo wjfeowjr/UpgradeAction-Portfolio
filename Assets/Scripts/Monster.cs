@@ -88,7 +88,7 @@ public class Monster : Character
     protected Action<int, Vector2> goldAction;
 
     private float startPosX;
-    private float agroTime = 1.0f;
+    private float agroTime = 5.0f;
     private float currentAgroTime;
     private bool playerInAgroRange;
     
@@ -156,6 +156,7 @@ public class Monster : Character
                     Trace();
                     Move();
                     MonsterLeap();
+                    UpdateStandingCheck();
                     break;
                 case EAgroState.Return:
                     ReturnMoving();
@@ -165,6 +166,7 @@ public class Monster : Character
             AgroSystem();
         }
 
+        UpdateDown();
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
         UpdateBuff();
@@ -188,7 +190,7 @@ public class Monster : Character
         PlayerInAgroRangeCheck();
         PlayerInJumpRangeCheck();
         PlayerInDropRangeCheck();
-        UpdateStandingCheck();
+        // UpdateStandingCheck();
         UpdateRoomLimit();
     }
 
@@ -750,8 +752,23 @@ public class Monster : Character
             
             if (normalState == ENormalState.Idle && moveState == EMoveState.Stopping)
             {
-                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-                MoveStateSetting(EMoveState.Moving);
+                if (myStat.standMotion)
+                {
+                    if (patternInfo[0].playerInAttackRange)
+                    {
+                        IdleOrMove();
+                    }
+                    else
+                    {
+                        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                        MoveStateSetting(EMoveState.Moving);
+                    }
+                }
+                else
+                {
+                    StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                    MoveStateSetting(EMoveState.Moving);
+                }
             }
         }
         else if(agroState == EAgroState.Agro && normalState == ENormalState.Move)
@@ -855,7 +872,6 @@ public class Monster : Character
                     page = i;
             }
         }
-        Debug.Log(page);
 
         if (isBoss)
         {
@@ -1196,7 +1212,7 @@ public class Monster : Character
         if(normalState == ENormalState.Idle)
             LookAt(GameManager.Instance.CurPlayer.transform.position.x);
     }
-    
+
     private void UpdateRoomLimit()
     {
         // 1) 절반 크기
@@ -1752,7 +1768,6 @@ public class Monster : Character
                     IdleOrMove();
                     jumpInfo.coolTime = 0;
                     downJumpInfo.coolTime = 0;
-                    
                     break;
                 
                 case ENormalState.Airborne:
@@ -1764,40 +1779,45 @@ public class Monster : Character
     }
 
     // 버그 방지
-    protected void OnCollisionStay2D(Collision2D col)
-    {
-        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
-        {
-            if (myRigidbody.linearVelocityY != 0)
-                return;
-            
-            LandingStateSetting(ELandingState.Ground);
-            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            myRigidbody.linearVelocity = Vector2.zero;
-            groundObject = col.gameObject;
-            
-            switch (normalState)
-            {
-                case ENormalState.Airborne:
-                    if (!myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Die))
-                        DownAndStand();
-                    break;
-            }
-        }
-    }
+    // protected void OnCollisionStay2D(Collision2D col)
+    // {
+    //     if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Air)
+    //     {
+    //         if (myRigidbody.linearVelocityY != 0)
+    //             return;
+    //         
+    //         LandingStateSetting(ELandingState.Ground);
+    //         myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+    //         myRigidbody.linearVelocity = Vector2.zero;
+    //         groundObject = col.gameObject;
+    //         
+    //         switch (normalState)
+    //         {
+    //             case ENormalState.Airborne:
+    //                 if (!myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Die))
+    //                     DownAndStand();
+    //                 break;
+    //         }
+    //     }
+    //
+    //     if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && landingState == ELandingState.Ground)
+    //     {
+    //         if(myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.AirborneDown) && myRigidbody.linearVelocityY == 0 && airborneCount == 0)
+    //             DownAndStand();
+    //     }
+    // }
 
     protected void OnCollisionExit2D(Collision2D col)
     {
+        // 점프
         if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
         {
-            LandingStateSetting(ELandingState.Air);
-
-            // 점프
-            if(normalState is ENormalState.Idle or ENormalState.Move)
-                StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+            if (myRigidbody.gravityScale != 0 && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
+                return;
             
-            // if (col.gameObject.CompareTag(ConstValues.Platform))
-            //     IgnorePlatform();
+            LandingStateSetting(ELandingState.Air);
+            if (normalState is ENormalState.Idle or ENormalState.Move)
+                StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
         }
     }
 }

@@ -1,18 +1,24 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using UnityEditor;
+using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 
 public class TotalRoom : MonoBehaviour
 {
+    [SerializeField] private Room[] roomArray;
     [SerializeField] private Trace playerPoint;
     [SerializeField] private GameObject[] checkerArray;
+    private Player targetPlayer;
     public List<Vector2> targets = new List<Vector2>();
     
     private int checkerLayerMask;
 
+    public Room[] RoomArray => roomArray;
+    
     private void Awake()
     {
         checkerLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Minimap);
@@ -31,9 +37,21 @@ public class TotalRoom : MonoBehaviour
 
     private void SetPlayerPoint()
     {
-        if (GameManager.Instance.CurPlayer && playerPoint.IsTargetNull())
+        if (targetPlayer)
         {
-            playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
+            if (GameManager.Instance.CurPlayer != targetPlayer)
+            {
+                playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
+                targetPlayer = GameManager.Instance.CurPlayer;
+            }
+        }
+        else
+        {
+            if (GameManager.Instance.CurPlayer && playerPoint.IsTargetNull())
+            {
+                playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
+                targetPlayer = GameManager.Instance.CurPlayer;
+            }
         }
     }
 
@@ -115,5 +133,22 @@ public class TotalRoom : MonoBehaviour
             checkerArray[i].SetActive(true);
         }
         Debug.Log($"[{savedCount}]개 오브젝트 위치 불러오기 완료 (저장된: {savedCount}, 설정된: {targets.Count})");
+    }
+    
+    // 인스펙터 우클릭 메뉴에 “Cache Prefabs” 항목 추가
+    [ContextMenu("Cache Rooms")]
+    private void CachePrefabs()
+    {
+#if UNITY_EDITOR
+        roomArray = GetComponentsInChildren<Room>();
+        Debug.Log($"룸 캐싱 완료");
+        foreach (var room in roomArray)
+            room.CacheObjects();
+        
+        EditorUtility.SetDirty(this);          // 이 스크립트 붙은 객체도 더티
+        EditorSceneManager.MarkSceneDirty(gameObject.scene); // 씬 더티 표시
+#else
+        Debug.LogWarning("CachePrefabs는 에디터 모드에서만 동작합니다.");
+#endif
     }
 }

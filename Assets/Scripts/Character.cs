@@ -136,7 +136,7 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected float myGravity;
     protected bool downJumping;
 
-    private int airborneCount; // 에어본 카운트
+    protected int airborneCount; // 에어본 카운트
     private int platformLayerMask;
     protected int groundAndPlatformLayerMask;
     protected int wallLayerMask;
@@ -1319,6 +1319,26 @@ public abstract class Character : MonoBehaviour
                 return;
 
             StateRecovery();
+        }
+    }
+    
+    protected void UpdateDown()
+    {
+        if (normalState is not ENormalState.Airborne)
+            return;
+        
+        var distance = 0.2f;
+        var down = Physics2D.Raycast(transform.position, Vector2.down, distance, groundAndPlatformLayerMask);
+        Debug.DrawRay(transform.position, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
+
+        if (down.collider != null && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
+        {
+            Debug.Log("UpdateDown");
+            LandingStateSetting(ELandingState.Ground);
+            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            myRigidbody.linearVelocity = Vector2.zero;
+            jumpAttackCount = 0;
+            DownAndStand();
         }
     }
 

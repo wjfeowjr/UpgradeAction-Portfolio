@@ -1190,6 +1190,48 @@ public class GameManager : Singleton<GameManager>
         hpPresenter.SetHpText();
     }
 
+    public void GetGold(int getGold, int totalGold)
+    {
+        var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();
+        var goodsModel = new UIGoodsModel()
+        {
+            getGold = getGold,
+            totalGold = totalGold,
+        };
+        var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);
+        uiInterface.SetGoodsPresenter(goodsPresenter);
+        goodsPresenter.PlusGoldText();
+    }
+    public void GetPassivePoint(int getPassivePoint, int totalPassivePoint)
+    {
+        var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();
+        var goodsModel = new UIGoodsModel()
+        {
+            getPassivePoint = getPassivePoint,
+            totalPassivePoint = totalPassivePoint,
+        };
+        var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);
+        uiInterface.SetGoodsPresenter(goodsPresenter);
+        goodsPresenter.PlusPassiveText();
+    }
+    
+    public void RefreshGoods()
+    {
+        Gold = PlayerPrefs.GetInt(ConstValues.Gold);
+        PassivePoint = PlayerPrefs.GetInt(ConstValues.PassivePoint);
+        
+        var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();
+        var goodsModel = new UIGoodsModel()
+        {
+            totalGold = Gold,
+            totalPassivePoint = PassivePoint,
+        };
+        var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);
+        uiInterface.SetGoodsPresenter(goodsPresenter);
+        goodsPresenter.SetGoldText();
+        goodsPresenter.SetPassiveText();
+    }
+
     public GameObject GetUI(eUIType type)
     {
         GameObject result = null;
@@ -1384,5 +1426,13 @@ public class GameManager : Singleton<GameManager>
         var skillName = GetSkillName(id);
         CurPlayer.SpawnObject(ConstValues.GetSkillExplosion, CurPlayer.CenterPos.position);
         customAction.Invoke(skillName);
+    }
+
+    public string GetThousandCommaText(int data)
+    {
+        if (data == 0)
+            return 0.ToString();
+        
+        return $"{data:#,###}";
     }
 }

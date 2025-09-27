@@ -21,6 +21,7 @@ public enum EntranceDir
 public class RoomInfo
 {
     public int productCount;
+    public int shortcutPoint;
     public bool bossClear;
     public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
     public List<TreasureBox> treasureBox = new List<TreasureBox>();
@@ -50,11 +51,7 @@ public class Room : MonoBehaviour
     private int productViewIdx;
     private float dialogDelay1 = 2.5f;
     private float dialogDelay2 = 1.0f;
-    
-    // ProductManager 참조 제거 (싱글톤 사용)
-    // [Header("연출 시스템")]
-    // [SerializeField] private ProductManager productManager;
-    
+
     [Header("디자인 타일이 미리 그려진 미니맵 Tilemap")]
     [SerializeField] private Tilemap minimapFrameTilemap;
     [SerializeField] private Tilemap minimapInTilemap;
@@ -83,25 +80,25 @@ public class Room : MonoBehaviour
 
     [SerializeField] private SaveObject saveObject;
     
-    [SerializeField] private GameObject leftBossGate;
-    [SerializeField] private GameObject rightBossGate;
-    [SerializeField] private GameObject upBossGate;
-    [SerializeField] private GameObject downBossGate;
+    [SerializeField] private List<GameObject> leftBossGates = new List<GameObject>();
+    [SerializeField] private List<GameObject> rightBossGates = new List<GameObject>();
+    [SerializeField] private List<GameObject> upBossGates = new List<GameObject>();
+    [SerializeField] private List<GameObject> downBossGates = new List<GameObject>();
     
-    [SerializeField] private Transform leftPlayerPos;
-    [SerializeField] private Transform rightPlayerPos;
-    [SerializeField] private Transform upPlayerPos;
-    [SerializeField] private Transform downPlayerPos;
+    [SerializeField] private List<Transform> leftPlayerPos = new List<Transform>();
+    [SerializeField] private List<Transform> rightPlayerPos = new List<Transform>();
+    [SerializeField] private List<Transform> upPlayerPos = new List<Transform>();
+    [SerializeField] private List<Transform> downPlayerPos = new List<Transform>();
 
-    [SerializeField] private Room leftRoom;
-    [SerializeField] private Room rightRoom;
-    [SerializeField] private Room upRoom;
-    [SerializeField] private Room downRoom;
+    [SerializeField] private Room[] leftRooms;
+    [SerializeField] private Room[] rightRooms;
+    [SerializeField] private Room[] upRooms;
+    [SerializeField] private Room[] downRooms;
 
-    [SerializeField] private RoomEntrance leftEntrance;
-    [SerializeField] private RoomEntrance rightEntrance;
-    [SerializeField] private RoomEntrance upEntrance;
-    [SerializeField] private RoomEntrance downEntrance;
+    [SerializeField] private List<RoomEntrance> leftEntrances = new List<RoomEntrance>();
+    [SerializeField] private List<RoomEntrance> rightEntrances = new List<RoomEntrance>();
+    [SerializeField] private List<RoomEntrance> upEntrances = new List<RoomEntrance>();
+    [SerializeField] private List<RoomEntrance> downEntrances = new List<RoomEntrance>();
     
     [SerializeField] protected Monster[] monsters;
     [SerializeField] protected List<Vector2> firstMonsterPosList = new List<Vector2>();
@@ -111,11 +108,12 @@ public class Room : MonoBehaviour
     [SerializeField] protected List<Vector2> firstBossPosList = new List<Vector2>();
     [SerializeField] protected Npc[] npc;
     [SerializeField] protected GameObject[] traps;
-
+    [SerializeField] protected ShortcutObject shortCutObject;
+    
     [SerializeField] protected Transform monsterLimitLeft;
     [SerializeField] protected Transform monsterLimitRight;
     
-    [SerializeField] protected ProductTrigger[] productTrigger;
+    [SerializeField] protected ProductTrigger[] productTriggers;
     [SerializeField] protected Transform[] customMovePos;
     [SerializeField] protected Transform[] strongSpeechPos;
     
@@ -129,9 +127,6 @@ public class Room : MonoBehaviour
     private SpeechFrame speechFrameTitle;
 
     private RoomsData roomsData;
-
-    // 프로퍼티
-    public bool IsBossRoom => isBossRoom;
 
     private void Awake()
     {
@@ -205,7 +200,7 @@ public class Room : MonoBehaviour
         BgmOn();
         isFading = true;
         GameManager.Instance.ControlStart = false;
-        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos.position;
+        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[0].position;
         SetCameraLimit();
         SetTrap();
         SetSavePoint();
@@ -245,14 +240,41 @@ public class Room : MonoBehaviour
 
     public void EntranceSetting()
     {
-        if(leftEntrance)
-            leftEntrance.SetAction(() => leftRoom.SettingRoom(EntranceDir.Right, this));
-        if(rightEntrance)
-            rightEntrance.SetAction(() => rightRoom.SettingRoom(EntranceDir.Left, this));
-        if(upEntrance)
-            upEntrance.SetAction(() => upRoom.SettingRoom(EntranceDir.Down, this));
-        if(downEntrance)
-            downEntrance.SetAction(() => downRoom.SettingRoom(EntranceDir.Up, this));
+        if (leftEntrances.Count > 0)
+        {
+            for (var i = 0; i < leftEntrances.Count; i++)
+            {
+                int idx = i;
+                leftEntrances[idx].SetAction(() => leftRooms[idx].SettingRoom(EntranceDir.Right, idx, this));
+            }
+        }
+        
+        if (rightEntrances.Count > 0)
+        {
+            for (var i = 0; i < rightEntrances.Count; i++)
+            {
+                int idx = i;
+                rightEntrances[idx].SetAction(() => rightRooms[idx].SettingRoom(EntranceDir.Left, idx, this));
+            }
+        }
+        
+        if (upEntrances.Count > 0)
+        {
+            for (var i = 0; i < upEntrances.Count; i++)
+            {
+                int idx = i;
+                upEntrances[idx].SetAction(() => upRooms[idx].SettingRoom(EntranceDir.Down, idx, this));
+            }
+        }
+        
+        if (downEntrances.Count > 0)
+        {
+            for (var i = 0; i < downEntrances.Count; i++)
+            {
+                int idx = i;
+                downEntrances[idx].SetAction(() => downRooms[idx].SettingRoom(EntranceDir.Up, idx, this));
+            }
+        }
     }
 
     public void InfoSetting()
@@ -274,10 +296,10 @@ public class Room : MonoBehaviour
             productIdxList.Add(int.Parse(productIdx));
 
         // 연출 트리거에, 해당하는 인덱스의 프로덕트 연출 삽입
-        for (var i = 0; i < productTrigger.Length; i++)
+        for (var i = 0; i < productTriggers.Length; i++)
         {
             int idx = i;
-            productTrigger[i].SetAction(()=> 
+            productTriggers[i].SetAction(()=> 
             {
                 ProductAction(productIdxList[idx]);
             });
@@ -289,9 +311,15 @@ public class Room : MonoBehaviour
             Debug.Log("불러오기");
             LoadRoom();
             // 저장단계 커스텀
-            // if (name == "Room_Boss_2")
+            if (name == "Room_Boss_2")
+            {
+                roomInfo.productCount = 0;
+                SaveRoom();
+            }
+            // 
+            // if (name == "Room_2_9")
             // {
-            //     roomInfo.productCount = 0;
+            //     roomInfo.skillAndPassive.Clear();
             //     SaveRoom();
             // }
         }
@@ -349,7 +377,7 @@ public class Room : MonoBehaviour
         {
             if (roomInfo.productCount >= productCount)
             {
-                productTrigger[0].gameObject.SetActive(false);
+                productTriggers[0].gameObject.SetActive(false);
                 // if(isBossRoom)
                 //     BgmManager.Instance.Play();
             }
@@ -426,7 +454,7 @@ public class Room : MonoBehaviour
         }
     }
 
-    private async void SettingRoom(EntranceDir dir, Room pastRoom)
+    private async void SettingRoom(EntranceDir dir, int idx, Room pastRoom)
     {
         isFading = true;
         GameManager.Instance.ControlStart = false;
@@ -437,21 +465,21 @@ public class Room : MonoBehaviour
         switch (dir)
         {
             case EntranceDir.Left:
-                SetLeftPlayerPos();
+                SetLeftPlayerPos(idx);
                 GameManager.Instance.CurPlayer.ForceIdle();
                 break;
             case EntranceDir.Right:
-                SetRightPlayerPos();
+                SetRightPlayerPos(idx);
                 GameManager.Instance.CurPlayer.ForceIdle();
                 break;
             case EntranceDir.Up:
-                SetUpPlayerPos();
+                SetUpPlayerPos(idx);
                 GameManager.Instance.CurPlayer.SetJumpState();
                 GameManager.Instance.CurPlayer.ZeroVelocity();
                 GameManager.Instance.CurPlayer.GravityChange(0);
                 break;
             case EntranceDir.Down:
-                SetDownPlayerPos();
+                SetDownPlayerPos(idx);
                 GameManager.Instance.CurPlayer.ForceJump();
                 GameManager.Instance.CurPlayer.ZeroVelocity();
                 GameManager.Instance.CurPlayer.GravityChange(0);
@@ -469,6 +497,8 @@ public class Room : MonoBehaviour
         SpawnMonster();
         // 여기서 트랩 데이터 넣기
         SetTrap();
+        // 여기서 숏컷 제어
+        SetShortCut();
         // 여기서 세이브포인트 데이터 넣기
         SetSavePoint();
         // 여기서 인접 방 확인하기
@@ -494,24 +524,24 @@ public class Room : MonoBehaviour
         GameManager.Instance.ControlStart = true;
     }
     
-    private void SetLeftPlayerPos()
+    private void SetLeftPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos.position;
+        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[idx].position;
     }
     
-    private void SetRightPlayerPos()
+    private void SetRightPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = rightPlayerPos.position;
+        GameManager.Instance.CurPlayer.transform.position = rightPlayerPos[idx].position;
     }
     
-    private void SetUpPlayerPos()
+    private void SetUpPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = upPlayerPos.position;
+        GameManager.Instance.CurPlayer.transform.position = upPlayerPos[idx].position;
     }
     
-    private void SetDownPlayerPos()
+    private void SetDownPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = downPlayerPos.position;
+        GameManager.Instance.CurPlayer.transform.position = downPlayerPos[idx].position;
     }
 
     private void SetCameraLimit()
@@ -545,11 +575,15 @@ public class Room : MonoBehaviour
         if (gold == 0)
             return;
         
-        var plusGold = GameManager.Instance.Gold + gold;
-        GoldBinding.SaveGold(plusGold);
+        var totalGold = GameManager.Instance.Gold + gold;
+        GoldBinding.SaveGold(totalGold);
         // 골드가 날아가는 연출
         var followGold = GameManager.Instance.SpawnToObjectPool(ConstValues.FollowGold, goldPos).GetComponent<FollowGold>();
-        followGold.SetAction(() => { GameManager.Instance.Gold = PlayerPrefs.GetInt(ConstValues.Gold);});
+        followGold.SetAction(() =>
+        {
+            GameManager.Instance.Gold = PlayerPrefs.GetInt(ConstValues.Gold);
+            GameManager.Instance.GetGold(gold, totalGold);
+        });
     }
 
     private void GetTreasureBoxItem(string id, int count, Vector2 itemVector)
@@ -567,15 +601,26 @@ public class Room : MonoBehaviour
 
     private void PlusPassivePoint(int passivePoint)
     {
-        var plusPassivePoint = GameManager.Instance.PassivePoint + passivePoint;
-        PassivePointBinding.SavePassivePoint(plusPassivePoint);
-        Debug.Log($"저장된 {ConstValues.PassivePoint} = {plusPassivePoint}");
+        var totalPassivePoint = GameManager.Instance.PassivePoint + passivePoint;
+        PassivePointBinding.SavePassivePoint(totalPassivePoint);
+        
+        GameManager.Instance.PassivePoint = PlayerPrefs.GetInt(ConstValues.PassivePoint);
+        GameManager.Instance.GetPassivePoint(passivePoint, totalPassivePoint);
+        
+        Debug.Log($"저장된 {ConstValues.PassivePoint} = {totalPassivePoint}");
     }
     private void ReducePassivePoint(int passivePoint)
     {
         var plusPassivePoint = GameManager.Instance.PassivePoint - passivePoint;
         PassivePointBinding.SavePassivePoint(plusPassivePoint);
         Debug.Log($"저장된 {ConstValues.PassivePoint} = {plusPassivePoint}");
+    }
+
+    // 숏컷 뚫기
+    private void UnlockShortCut()
+    {
+        roomInfo.shortcutPoint += 1;
+        SaveRoom();
     }
 
     private void SpawnMonster(bool isExplosion = true)
@@ -599,6 +644,12 @@ public class Room : MonoBehaviour
             GameManager.Instance.InputDataTrap(trap.name, trap);
     }
 
+    private void SetShortCut()
+    {
+        if(shortCutObject)
+            shortCutObject.OpenSetting(roomInfo.shortcutPoint, UnlockShortCut);
+    }
+
     private void SetSavePoint()
     {
         if (!saveObject)
@@ -617,25 +668,37 @@ public class Room : MonoBehaviour
     private void SetBossGate()
     {
         bool alreadyBoss = false;
-        if (leftBossGate)
+        if (leftBossGates.Count > 0)
         {
-            alreadyBoss = leftRoom && leftRoom.isBossRoom;
-            leftBossGate.SetActive(alreadyBoss && !leftRoom.roomInfo.bossClear);
+            for (int i = 0; i < leftBossGates.Count; i++)
+            {
+                alreadyBoss = leftRooms[i].isBossRoom;
+                leftBossGates[i].SetActive(alreadyBoss && !leftRooms[i].roomInfo.bossClear);
+            }
         }
-        if (!alreadyBoss && rightBossGate)
+        if (!alreadyBoss && rightBossGates.Count > 0)
         {
-            alreadyBoss = rightRoom && rightRoom.isBossRoom;
-            rightBossGate.SetActive(alreadyBoss && !rightRoom.roomInfo.bossClear);
+            for (int i = 0; i < rightBossGates.Count; i++)
+            {
+                alreadyBoss = rightRooms[i].isBossRoom;
+                rightBossGates[i].SetActive(alreadyBoss && !rightRooms[i].roomInfo.bossClear);
+            }
         }
-        if (!alreadyBoss && upBossGate)
+        if (!alreadyBoss && upBossGates.Count > 0)
         {
-            alreadyBoss = upRoom && upRoom.isBossRoom;
-            upBossGate.SetActive(alreadyBoss && !upRoom.roomInfo.bossClear);
+            for (int i = 0; i < upBossGates.Count; i++)
+            {
+                alreadyBoss = upRooms[i].isBossRoom;
+                upBossGates[i].SetActive(alreadyBoss && !upRooms[i].roomInfo.bossClear);
+            }
         }
-        if (!alreadyBoss && downBossGate)
+        if (!alreadyBoss && downBossGates.Count > 0)
         {
-            alreadyBoss = downRoom && downRoom.isBossRoom;
-            downBossGate.SetActive(alreadyBoss && !downRoom.roomInfo.bossClear);
+            for (int i = 0; i < downBossGates.Count; i++)
+            {
+                alreadyBoss = downRooms[i].isBossRoom;
+                downBossGates[i].SetActive(alreadyBoss && !downRooms[i].roomInfo.bossClear);
+            }
         }
 
         // if (isBossRoom)
@@ -810,9 +873,6 @@ public class Room : MonoBehaviour
                 Product6();
                 break;
         }
-        
-        roomInfo.productCount += 1;
-        SaveRoom();
     }
     
     // BGM실행
@@ -1463,6 +1523,10 @@ public class Room : MonoBehaviour
         
         if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
             return;
+        
+        GameManager.Instance.InitWaitCancellation();
+        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+            return;
 
         // 문 열기
         DoorActive(false);
@@ -1484,6 +1548,8 @@ public class Room : MonoBehaviour
             UIOff();
             GameManager.Instance.CurPlayer.ForceProduct();
             await GameManager.Instance.SpawnWarningPopup(getMessage);
+            
+            GameManager.Instance.InitDialogueCancellation();
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
 
@@ -1496,29 +1562,171 @@ public class Room : MonoBehaviour
         }
     }
 
-    // ProductManager가 접근할 수 있도록 public 메서드들 추가
-    public SpeechFrame GetSpeechFrame1(int index) 
-    { 
-        return speechFrame1 != null && index < speechFrame1.Count ? speechFrame1[index] : null; 
-    }
-    
-    public SpeechFrame GetSpeechFrame2(int index) 
-    { 
-        return speechFrame2 != null && index < speechFrame2.Count ? speechFrame2[index] : null; 
-    }
-    
-    public Transform GetBossPos(int index) 
-    { 
-        return bossPos != null && index < bossPos.Length ? bossPos[index] : null; 
-    }
-    
-    public Monster GetBoss(int index) 
-    { 
-        return bosses != null && index < bosses.Length ? bosses[index] : null; 
-    }
-    
-    public Vector2 GetPlayerFontPos() 
-    { 
-        return GameManager.Instance?.CurPlayer?.FontPos?.position ?? Vector2.zero; 
+    // 몬스터 및 보스 캐싱
+    public void CacheObjects()
+    {
+        Transform monsterArray = roomGameObject.transform.Find(ConstValues.MonsterArray);
+        if (monsterArray != null)
+            monsters = monsterArray.GetComponentsInChildren<Monster>();
+        
+        Transform bossArray = roomGameObject.transform.Find(ConstValues.BossArray);
+        if (bossArray != null)
+            bosses = bossArray.GetComponentsInChildren<Monster>();
+        
+        Transform npcArray = roomGameObject.transform.Find(ConstValues.NpcArray);
+        if (npcArray != null)
+            npc = npcArray.GetComponentsInChildren<Npc>();
+        
+        Transform productTriggerArray = roomGameObject.transform.Find(ConstValues.ProductTriggerArray);
+        if (productTriggerArray != null)
+            productTriggers = productTriggerArray.GetComponentsInChildren<ProductTrigger>();
+
+        Transform shortcutArray = roomGameObject.transform.Find(ConstValues.ShortcutArray);
+        if (shortcutArray != null)
+        {
+            shortCutObject = shortcutArray.GetComponentInChildren<ShortcutObject>();
+            if (shortCutObject != null)
+            {
+                Transform groundGrid = roomGameObject.transform.Find(ConstValues.GroundGrid);
+                if (groundGrid != null)
+                {
+                    GameObject shortcutTileMap = groundGrid.Find(ConstValues.ShortcutTileMap).gameObject;
+                    shortCutObject.CacheBlocker(shortcutTileMap);
+                }
+            }
+        }
+        
+        Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
+        if (playerPosArray != null)
+        {
+            leftPlayerPos.Clear();
+            rightPlayerPos.Clear();
+            upPlayerPos.Clear();
+            downPlayerPos.Clear();
+            
+            Transform[] possArray = playerPosArray.GetComponentsInChildren<Transform>();
+            foreach (var poss in possArray)
+            {
+                var split = poss.name.Split('_');
+                switch (split[0])
+                {
+                    case ConstValues.LeftPlayerPos:
+                        leftPlayerPos.Add(poss);
+                        break;
+                    
+                    case ConstValues.RightPlayerPos:
+                        rightPlayerPos.Add(poss);
+                        break;
+                    
+                    case ConstValues.UpPlayerPos:
+                        upPlayerPos.Add(poss);
+                        break;
+                    
+                    case ConstValues.DownPlayerPos:
+                        downPlayerPos.Add(poss);
+                        break;
+                }
+            }
+        }
+        
+        Transform entrancePosArray = roomGameObject.transform.Find(ConstValues.EntranceArray);
+        if (entrancePosArray != null)
+        {
+            leftEntrances.Clear();
+            rightEntrances.Clear();
+            upEntrances.Clear();
+            downEntrances.Clear();
+            
+            RoomEntrance[] entranceArray = entrancePosArray.GetComponentsInChildren<RoomEntrance>();
+            foreach (var entrance in entranceArray)
+            {
+                var split = entrance.name.Split('_');
+                switch (split[0])
+                {
+                    case ConstValues.LeftEntrance:
+                        leftEntrances.Add(entrance);
+                        break;
+                    
+                    case ConstValues.RightEntrance:
+                        rightEntrances.Add(entrance);
+                        break;
+                    
+                    case ConstValues.UpEntrance:
+                        upEntrances.Add(entrance);
+                        break;
+                    
+                    case ConstValues.DownEntrance:
+                        downEntrances.Add(entrance);
+                        break;
+                }
+            }
+        }
+        
+        Transform bossGateArray = roomGameObject.transform.Find(ConstValues.BossGateArray);
+        if (bossGateArray != null)
+        {
+            leftBossGates.Clear();
+            rightBossGates.Clear();
+            upBossGates.Clear();
+            downBossGates.Clear();
+            
+            Transform[] gateArray = bossGateArray.GetComponentsInChildren<Transform>();
+            foreach (var gate in gateArray)
+            {
+                var split = gate.name.Split('_');
+                switch (split[0])
+                {
+                    case ConstValues.LeftBossGate:
+                        leftBossGates.Add(gate.gameObject);
+                        break;
+                    
+                    case ConstValues.RightBossGate:
+                        rightBossGates.Add(gate.gameObject);
+                        break;
+                    
+                    case ConstValues.UpBossGate:
+                        upBossGates.Add(gate.gameObject);
+                        break;
+                    
+                    case ConstValues.DownBossGate:
+                        downBossGates.Add(gate.gameObject);
+                        break;
+                }
+            }
+        }
+        
+        // Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
+        // if (playerPosArray != null)
+        // {
+        //     Transform leftPlayerPos = playerPosArray.transform.Find(ConstValues.LeftPlayerPos);
+        //     if (leftPlayerPos != null)
+        //         leftPlayerPos.gameObject.name = $"{ConstValues.LeftPlayerPos}_1";
+        //     Transform rightPlayerPos = playerPosArray.transform.Find(ConstValues.RightPlayerPos);
+        //     if (rightPlayerPos != null)
+        //         rightPlayerPos.gameObject.name = $"{ConstValues.RightPlayerPos}_1";
+        //     Transform upPlayerPos = playerPosArray.transform.Find(ConstValues.UpPlayerPos);
+        //     if (upPlayerPos != null)
+        //         upPlayerPos.gameObject.name = $"{ConstValues.UpPlayerPos}_1";
+        //     Transform downPlayerPos = playerPosArray.transform.Find(ConstValues.DownPlayerPos);
+        //     if (downPlayerPos != null)
+        //         downPlayerPos.gameObject.name = $"{ConstValues.DownPlayerPos}_1";
+        // }
+        //
+        // Transform entranceArray = roomGameObject.transform.Find(ConstValues.EntranceArray);
+        // if (entranceArray != null)
+        // {
+        //     Transform leftEntrance = entranceArray.Find(ConstValues.LeftEntrance);
+        //     if (leftEntrance != null)
+        //         leftEntrance.gameObject.name = $"{ConstValues.LeftEntrance}_1";
+        //     Transform rightEntrance = entranceArray.Find(ConstValues.RightEntrance);
+        //     if (rightEntrance != null)
+        //         rightEntrance.gameObject.name = $"{ConstValues.RightEntrance}_1";
+        //     Transform upEntrance = entranceArray.Find(ConstValues.UpEntrance);
+        //     if (upEntrance != null)
+        //         upEntrance.gameObject.name = $"{ConstValues.UpEntrance}_1";
+        //     Transform downEntrance = entranceArray.Find(ConstValues.DownEntrance);
+        //     if (downEntrance != null)
+        //         downEntrance.gameObject.name = $"{ConstValues.DownEntrance}_1";
+        // }
     }
 }

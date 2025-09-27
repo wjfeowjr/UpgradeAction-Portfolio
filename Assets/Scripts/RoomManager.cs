@@ -17,7 +17,6 @@ public class RoomManager : Singleton<RoomManager>
     [SerializeField] private FollowCamera mainCameraFollow;
     [SerializeField] private SpriteRenderer bgSprite;
     [SerializeField] private GameObject bgDeco;
-    [SerializeField] private Room[] roomArray;
     [SerializeField] private Room currentRoom;
     [SerializeField] private FadeSystem fadeUI;
     [SerializeField] private TotalRoom totalRoom;
@@ -75,13 +74,14 @@ public class RoomManager : Singleton<RoomManager>
         GameManager.Instance.InitPlayerStat();
         GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer);
         GameManager.Instance.RefreshPlayerHp();
+        GameManager.Instance.RefreshGoods();
 
         fadeUI = GameManager.Instance.SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
         fadeUI.gameObject.SetActive(false);
         
         CashingSpeechFrame();
         
-        foreach (var room in roomArray)
+        foreach (var room in totalRoom.RoomArray)
         {
             room.SpeechFrameSetting();
             room.EntranceSetting();
@@ -93,14 +93,14 @@ public class RoomManager : Singleton<RoomManager>
 
         if (string.IsNullOrEmpty(SavePointBinding.LoadSavePoint()))
         {
-            currentRoom = roomArray[0];
+            currentRoom = totalRoom.RoomArray[0];
             currentRoom.ObjectActive(true);
             currentRoom.FirstStart();
         }
         else
         {
             var savePointName = SavePointBinding.LoadSavePoint();
-            foreach (var room in roomArray)
+            foreach (var room in totalRoom.RoomArray)
             {
                 if (room.name != savePointName)
                     continue;

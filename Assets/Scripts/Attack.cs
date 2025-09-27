@@ -48,6 +48,8 @@ public class Attack : MonoBehaviour
     [SerializeField] private int dir;
     private float leftColliderTime;
 
+    public Character CastChar => castChar;
+
     private void Awake()
     {
         myCollider = GetComponent<Collider2D>();

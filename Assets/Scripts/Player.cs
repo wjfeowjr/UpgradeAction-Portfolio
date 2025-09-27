@@ -456,26 +456,6 @@ public abstract class Player : Character
         }
     }
 
-    private void UpdateDown()
-    {
-        if (normalState is not ENormalState.Airborne)
-            return;
-        
-        var distance = 0.2f;
-        var down = Physics2D.Raycast(transform.position, Vector2.down, distance, groundAndPlatformLayerMask);
-        Debug.DrawRay(transform.position, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
-
-        if (down.collider != null && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
-        {
-            Debug.Log("UpdateDown");
-            LandingStateSetting(ELandingState.Ground);
-            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            myRigidbody.linearVelocity = Vector2.zero;
-            jumpAttackCount = 0;
-            DownAndStand();
-        }
-    }
-
     private void UpdateGlobalCoolTime()
     {
         if (curGlobalCoolTime < globalCoolTime)
@@ -568,8 +548,10 @@ public abstract class Player : Character
             return;
         
         // 1) 플레이어 절반 크기
-        float halfWidth  = physicsCollider.size.x * 0.5f;
-        float halfHeight = physicsCollider.size.y * 0.5f;
+        // float halfWidth  = physicsCollider.size.x * 0.5f;
+        // float halfHeight = physicsCollider.size.y * 0.5f;
+        float halfWidth  = 0;
+        float halfHeight = 0;
 
         // 2) 카메라 뷰 포인트를 월드 좌표로 변환
         Camera cam = GameManager.Instance.MainCamera.MyCamera;
@@ -1138,7 +1120,7 @@ public abstract class Player : Character
 
     protected void OnCollisionEnter2D(Collision2D col)
     {
-        // 점프를 제외한 착지 관여
+        // 착지
         if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && normalState != ENormalState.Dash && landingState == ELandingState.Air)
         {
             if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)

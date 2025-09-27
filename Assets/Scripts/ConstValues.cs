@@ -121,7 +121,31 @@ public class ConstValues : Singleton<ConstValues>
     public const string Grenade = "Grenade";
     public const string Player = "Player";
     public const string Monster = "Monster";
-
+    
+    // 룸 하위 오브젝트 이름들
+    public const string MonsterArray = "MonsterArray";
+    public const string BossArray = "BossArray";
+    public const string NpcArray = "NpcArray";
+    public const string PlayerPosArray = "PlayerPosArray";
+    public const string EntranceArray = "EntranceArray";
+    public const string BossGateArray = "BossGateArray";
+    public const string ProductTriggerArray = "ProductTriggerArray";
+    public const string ShortcutArray = "ShortcutArray";
+    public const string GroundGrid = "GroundGrid";
+    public const string ShortcutTileMap = "ShortcutTileMap";
+    public const string LeftPlayerPos = "LeftPlayerPos";
+    public const string RightPlayerPos = "RightPlayerPos";
+    public const string UpPlayerPos = "UpPlayerPos";
+    public const string DownPlayerPos = "DownPlayerPos";
+    public const string LeftEntrance = "LeftEntrance";
+    public const string RightEntrance = "RightEntrance";
+    public const string UpEntrance = "UpEntrance";
+    public const string DownEntrance = "DownEntrance";
+    public const string LeftBossGate = "LeftBossGate";
+    public const string RightBossGate = "RightBossGate";
+    public const string UpBossGate = "UpBossGate";
+    public const string DownBossGate = "DownBossGate";
+    
     public const string Skill = "Skill";
     public const string PlayerSkill = "PlayerSkill";
     public const string Dash = "Dash";
