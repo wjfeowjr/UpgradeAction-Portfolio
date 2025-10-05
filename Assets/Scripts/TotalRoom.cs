@@ -1,8 +1,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEditor.SceneManagement;
+#endif
+
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;

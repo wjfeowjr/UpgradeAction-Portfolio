@@ -189,7 +189,7 @@ public class Player_Berserker : Player
             if (await AttackDelay(jumpAttackDelay2).SuppressCancellationThrow())
                 return false;
             
-            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
+            //myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
             SpawnAttack(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
             if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
                 return false;
@@ -301,7 +301,8 @@ public class Player_Berserker : Player
             return false;
 
         SpawnAttack(ConstValues.BerserkerUpperSlash, upperSlashPos);
-        Leap(6, 20, 1.6f);
+        myRigidbody.linearVelocity = Vector2.zero;
+        //Leap(6, 20, 1.6f);
 
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
@@ -380,15 +381,14 @@ public class Player_Berserker : Player
     private async UniTask<bool> FireStrike()
     {
         StateSetting(ENormalState.Skill, ConstValues.BerserkerFireStrike, ConstValues.BerserkerFireStrike);
-
+        myRigidbody.linearVelocity = Vector2.zero;
+        
         var delay1 = 0.1f;
         var delay2 = 0.2f;
-            
+        
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
-            
-        //PlaySound("Berserker_Attack1");
-            
+
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
             

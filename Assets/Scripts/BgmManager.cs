@@ -7,6 +7,7 @@ public class BgmManager : Singleton<BgmManager>
     private AudioSource myAudioSource;
     private readonly Dictionary<string, AudioClip> bgmDic = new Dictionary<string, AudioClip>();
     public AudioClip[] bgmArray;
+    public string currentBgm;
 
     protected override void Awake()
     {
@@ -32,10 +33,14 @@ public class BgmManager : Singleton<BgmManager>
 
         if (myAudioSource.resource == bgmDic[uniqueId])
             return;
+
+        if (currentBgm == uniqueId)
+            return;
         
         myAudioSource.Stop();
         myAudioSource.resource = bgmDic[uniqueId];
         myAudioSource.Play();
+        currentBgm = uniqueId;
     }
 
     public void Play()
@@ -46,6 +51,7 @@ public class BgmManager : Singleton<BgmManager>
     public void Stop()
     {
         myAudioSource.Stop();
+        currentBgm = default;
     }
 
     public bool IsPlaying()

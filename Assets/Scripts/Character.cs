@@ -23,6 +23,7 @@ public enum ENormalState
     Move,
     Jump,
     Landing,
+    Leap,
     Attack,
     JumpAttack,
     Dash,
@@ -415,7 +416,12 @@ public abstract class Character : MonoBehaviour
 
     public bool GetJumpState()
     {
-        return landingState == ELandingState.Air;
+        bool isHovering = false;
+        var monster = GetComponent<Monster>();
+        if (monster != null)
+            isHovering = monster.IsHovering;
+        
+        return !isHovering && landingState == ELandingState.Air;
     }
 
     public Vector2 GetVelocity()

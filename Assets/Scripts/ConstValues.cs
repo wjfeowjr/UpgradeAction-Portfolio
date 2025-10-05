@@ -86,6 +86,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Move = "Move";
     public const string Jump = "Jump";
     public const string JumpDown = "JumpDown";
+    public const string Leap = "Leap";
     public const string Attack = "Attack";
     public const string Attack1 = "Attack1";
     public const string Attack2 = "Attack2";
@@ -173,6 +174,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SecondCharacter = "SecondCharacter";
     
     public const string Episode1Title = "Episode1_Title";
+    public const string Episode2Title = "Episode2_Title";
     public const string FirstGetSkill = "FirstGetSkill";
     public const string Product1 = "Product1";
     public const string Product2 = "Product2";
@@ -285,6 +287,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterPurple = "Monster_Purple";
     public const string MonsterCharge = "Monster_Charge";
     public const string MonsterChargeEventJumpEffect = "Monster_Charge_EventJumpEffect";
+    public const string MonsterIceWizzardAttack = "Monster_IceWizzard_Attack";
 
     public const string MonsterSun = "Monster_Sun";
     public const string MonsterSunAttack1 = "Monster_Sun_Attack1";

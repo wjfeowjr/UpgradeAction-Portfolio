@@ -241,7 +241,7 @@ public class RoomManager : Singleton<RoomManager>
         var minimapCameraPos = GameManager.Instance.MiniMapCamera.position;
         
         float leftLimit = -100;
-        float rightLimit = 200;
+        float rightLimit = 250;
         float upLimit = 50;
         float downLimit = -50;
         

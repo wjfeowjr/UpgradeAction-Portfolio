@@ -91,16 +91,23 @@ public class Monster : Character
     private float agroTime = 5.0f;
     private float currentAgroTime;
     private bool playerInAgroRange;
+    private float firstHeight;
+    private float leapHeight;
     
     private bool patrolMoving = false;
     private float patrolTimer = 0f;
     private float limitLeft;
     private float limitRight;
-    
+
     private PhysicsMaterial2D _airLowFrictionMat;
     private PhysicsMaterial2D _originalMaterial;
 
     // 프로퍼티
+    public bool IsHovering
+    {
+        get => myStat.hovering;
+    }
+    
     public bool IsExplosion
     {
         get => isExplosion;
@@ -130,6 +137,8 @@ public class Monster : Character
         base.OnEnable();
         InitBasicStat();
         InitAdditionalStat();
+        GravityChange(myGravity);
+        firstHeight = transform.position.y;
         startPosX = transform.position.x;
     }
 
@@ -156,7 +165,6 @@ public class Monster : Character
                     Trace();
                     Move();
                     MonsterLeap();
-                    UpdateStandingCheck();
                     break;
                 case EAgroState.Return:
                     ReturnMoving();
@@ -167,6 +175,7 @@ public class Monster : Character
         }
 
         UpdateDown();
+        UpdateHoveringLeap();
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
         UpdateBuff();
@@ -513,6 +522,13 @@ public class Monster : Character
             MoveStateSetting(EMoveState.Moving);
         }
     }
+    // 호버링 높이까지 도약
+    private void HoveringLeap()
+    {
+        leapHeight = firstHeight;
+        StateSetting(ENormalState.Leap, ConstValues.Leap, ConstValues.Leap);
+        MoveStateSetting(EMoveState.Stopping);
+    }
     
     protected override void StateCheck()
     {
@@ -535,10 +551,16 @@ public class Monster : Character
             switch (landingState)
             {
                 case ELandingState.Air:
-                    StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+                    if(myStat.hovering)
+                        IdleOrMove();
+                    else
+                        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
                     break;
                 case ELandingState.Ground:
-                    IdleOrMove();
+                    if (myStat.hovering)
+                        HoveringLeap();
+                    else
+                        IdleOrMove();
                     break;
             }
         }
@@ -750,20 +772,20 @@ public class Monster : Character
             if(agroState is EAgroState.Normal or EAgroState.Return)
                 agroState = EAgroState.Agro;
             
+            if(normalState == ENormalState.Idle)
+                LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+            
             if (normalState == ENormalState.Idle && moveState == EMoveState.Stopping)
             {
                 if (myStat.standMotion)
                 {
-                    if (patternInfo[0].playerInAttackRange)
-                    {
-                        IdleOrMove();
-                    }
-                    else
+                    if (!patternInfo[0].playerInAttackRange)
                     {
                         StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
                         MoveStateSetting(EMoveState.Moving);
                     }
                 }
+                // 근접몹
                 else
                 {
                     StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
@@ -771,13 +793,23 @@ public class Monster : Character
                 }
             }
         }
-        else if(agroState == EAgroState.Agro && normalState == ENormalState.Move)
+        else if(agroState == EAgroState.Agro)
         {
-            currentAgroTime += Time.deltaTime;
-            if (currentAgroTime >= agroTime)
+            switch (normalState)
             {
-                agroState = EAgroState.Return;
-                currentAgroTime = 0;
+                case ENormalState.Idle:
+                    StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                    MoveStateSetting(EMoveState.Moving);
+                    break;
+                
+                case ENormalState.Move:
+                    currentAgroTime += Time.deltaTime;
+                    if (currentAgroTime >= agroTime)
+                    {
+                        agroState = EAgroState.Return;
+                        currentAgroTime = 0;
+                    }
+                    break;
             }
         }
     }
@@ -982,7 +1014,7 @@ public class Monster : Character
     }
     
     // 공격 딜레이
-    protected async UniTask AttackDelay(float attackDelay)
+    protected async UniTask AttackDelay(float attackDelay, bool lookAtPlayer = false)
     {
         if (stateCancellation == null)
             stateCancellation = new CancellationTokenSource();
@@ -992,6 +1024,8 @@ public class Monster : Character
         {
             //float totalAttackSpeed = finalAttackSpeed;
             delay += Time.deltaTime * basicStat.attackSpeed;
+            if(lookAtPlayer)
+                LookAt(GameManager.Instance.CurPlayer.transform.position.x);
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
         }
     }
@@ -1101,7 +1135,24 @@ public class Monster : Character
         
         currentSkillIdx = 0;
     }
-    
+
+    private void UpdateHoveringLeap()
+    {
+        if (normalState != ENormalState.Leap)
+            return;
+
+        if (transform.position.y < leapHeight)
+        {
+            myRigidbody.linearVelocity = new Vector2(0, 15.0f);
+        }
+        else
+        {
+            transform.position = new Vector2(transform.position.x, leapHeight);
+            myRigidbody.linearVelocity = Vector2.zero;
+            GravityChange(myGravity);
+            IdleOrMove();
+        }
+    }
     private void UpdateGlobalCoolTime()
     {
         if (curGlobalCoolTime < myStat.globalCoolTime)
@@ -1185,32 +1236,6 @@ public class Monster : Character
             LookAt(GameManager.Instance.CurPlayer.transform.position.x);
             MonsterPattern(idx);
         }
-    }
-    
-    // 원거리 몬스터 스탠딩 알고리즘
-    private void UpdateStandingCheck()
-    {
-        if (!myStat.standMotion || (normalState != ENormalState.Move && normalState != ENormalState.Idle) || isDie)
-            return;
-
-        if (patternInfo[0].playerInAttackRange)
-        {
-            if (!patternInfo[0].canPattern)
-            {
-                IdleOrMove();
-            }
-        }
-        else
-        {
-            if (moveState == EMoveState.Stopping)
-            {
-                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-                MoveStateSetting(EMoveState.Moving);
-            }
-        }
-
-        if(normalState == ENormalState.Idle)
-            LookAt(GameManager.Instance.CurPlayer.transform.position.x);
     }
 
     private void UpdateRoomLimit()

@@ -128,8 +128,8 @@ public class Monster_Moon : Monster
     // 추적 냉기 폭파
     private async void TraceFrost()
     {
-        float delay1 = 1.0f;
-        float delay2 = 0.5f;
+        float delay1 = 0.8f;
+        float delay2 = 0.4f;
 
         faceSpin.SpinSwitchOn(true);
         var moonEffect = SpawnObject(ConstValues.MonsterMoonEffect, CenterPos);
