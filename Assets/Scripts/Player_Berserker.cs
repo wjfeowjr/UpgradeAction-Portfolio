@@ -236,7 +236,7 @@ public class Player_Berserker : Player
         if (Time.timeScale == 0)
             return;
 
-        var skillId = GameManager.Instance.PlayerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
+        var skillId = GameManager.Instance.PlayerSkillKey.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
         
@@ -253,6 +253,9 @@ public class Player_Berserker : Player
 
         CancelMotion();
         MotionFlip();
+        // 스킬 특성: 슈퍼아머 체크
+        if(skillKey != GameManager.Instance.dashKey && GameManager.Instance.PlayerSkill.IsBerserkerHaveAttribute(skillId, ConstValues.SuperArmor))
+            BodyTypeSetting(ConstValues.SuperArmor);
         
         stateCancellation = new CancellationTokenSource();
         bool finishSuccess = true;
@@ -300,8 +303,22 @@ public class Player_Berserker : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        SpawnAttack(ConstValues.BerserkerUpperSlash, upperSlashPos);
-        myRigidbody.linearVelocity = Vector2.zero;
+        Attack attackObject = SpawnAttackObject(ConstValues.BerserkerUpperSlash, upperSlashPos).GetComponent<Attack>();
+
+        foreach (var attribute in GameManager.Instance.PlayerSkill.GetBerserkerSkillAttribute(ConstValues.BerserkerUpperSlash))
+        {
+            switch (attribute)
+            {
+                case ConstValues.HighUpper:
+                    attackObject.AttackInfo.upperPower = new Vector2(0, 12);
+                    break;
+                case ConstValues.JumpUpper:
+                    Leap(6, 20, 1.6f);
+                    break;
+            }
+        }
+
+        //myRigidbody.linearVelocity = Vector2.zero;
         //Leap(6, 20, 1.6f);
 
         if (await AttackDelay(delay2).SuppressCancellationThrow())

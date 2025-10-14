@@ -118,6 +118,11 @@ public class ConstValues : Singleton<ConstValues>
     public const string Appear = "Appear";
     public const string AppearEnd = "AppearEnd";
     
+    public const string SuperArmor = "SuperArmor";
+    public const string HighUpper = "HighUpper";
+    public const string JumpUpper = "JumpUpper";
+    public const string Pierce = "Pierce";
+    
     public const string Missile = "Missile";
     public const string Grenade = "Grenade";
     public const string Player = "Player";
@@ -148,7 +153,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string DownBossGate = "DownBossGate";
     
     public const string Skill = "Skill";
+    public const string SkillAttribute = "SkillAttribute";
     public const string PlayerSkill = "PlayerSkill";
+    public const string PlayerSkillKey = "PlayerSkillKey";
     public const string Dash = "Dash";
     public const string DashEffect = "DashEffect";
     
@@ -213,7 +220,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string FollowGold = "FollowGold";
     public const string GoldExplosion = "GoldExplosion";
     public const string SlotEquip = "SlotEquip";
-    public const string PassivePoint = "PassivePoint";
+    public const string AttributePoint = "AttributePoint";
     
     public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";

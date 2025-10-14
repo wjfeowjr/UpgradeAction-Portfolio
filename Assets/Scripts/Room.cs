@@ -607,27 +607,40 @@ public class Room : MonoBehaviour
             case ConstValues.Gold:
                 PlusGold(count, itemVector);
                 break;
-            case ConstValues.PassivePoint:
-                PlusPassivePoint(count);
+            case ConstValues.AttributePoint:
+                PlusAttributePoint(count);
                 break;
         }
     }
 
-    private void PlusPassivePoint(int passivePoint)
+    private void PlusAttributePoint(int attributePoint)
     {
-        var totalPassivePoint = GameManager.Instance.PassivePoint + passivePoint;
-        PassivePointBinding.SavePassivePoint(totalPassivePoint);
+        GameManager.Instance.PlayerSkill.PlusAttributePoint(attributePoint);
+        var totalPassivePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
+        GameManager.Instance.GetAttributePoint(attributePoint, totalPassivePoint);
         
-        GameManager.Instance.PassivePoint = PlayerPrefs.GetInt(ConstValues.PassivePoint);
-        GameManager.Instance.GetPassivePoint(passivePoint, totalPassivePoint);
-        
-        Debug.Log($"저장된 {ConstValues.PassivePoint} = {totalPassivePoint}");
+        string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
+        SkillBinding.SaveSkill(skillJson);
+        Debug.Log($"저장된 {ConstValues.AttributePoint} = {totalPassivePoint}");
     }
-    private void ReducePassivePoint(int passivePoint)
+    private void ReducePassivePoint(string character, int passivePoint)
     {
-        var plusPassivePoint = GameManager.Instance.PassivePoint - passivePoint;
-        PassivePointBinding.SavePassivePoint(plusPassivePoint);
-        Debug.Log($"저장된 {ConstValues.PassivePoint} = {plusPassivePoint}");
+        int currentPoint = 0;
+        switch (character)
+        {
+            case ConstValues.Berserker:
+                GameManager.Instance.PlayerSkill.berserkerSkillSetting.attributePoint -= passivePoint;
+                currentPoint = GameManager.Instance.PlayerSkill.berserkerSkillSetting.attributePoint;
+                break;
+            
+            case ConstValues.Gunner:
+                GameManager.Instance.PlayerSkill.gunnerSkillSetting.attributePoint -= passivePoint;
+                currentPoint = GameManager.Instance.PlayerSkill.gunnerSkillSetting.attributePoint;
+                break;
+        }
+        
+        
+        Debug.Log($"남은 {character}의 포인트: {currentPoint}");
     }
 
     // 숏컷 뚫기

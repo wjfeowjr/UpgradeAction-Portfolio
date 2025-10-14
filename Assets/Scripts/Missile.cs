@@ -16,9 +16,8 @@ public class MissileInfo
     public string id;
     public MissileType type;
     public float speed;
-    public bool piercingBullet;
     public float limitLength;
-    public List<string> hitLayerList;
+    public List<string> hitTagList;
     public string spawnObject;
     public bool hitSpawn;
     public bool afterImage;
@@ -72,13 +71,12 @@ public class Missile : MonoBehaviour
             missileInfo.id = missileData.id;
             missileInfo.type = (MissileType)Enum.Parse(typeof(MissileType), missileData.type);
             missileInfo.speed = missileData.speed;
-            missileInfo.piercingBullet = missileData.piercingBullet;
             missileInfo.limitLength = missileData.limitLength;
         
-            var hitLayerSplit = missileData.hitLayer.Split(',');
-            missileInfo.hitLayerList = new List<string>();
-            foreach (var hitLayer in hitLayerSplit)
-                missileInfo.hitLayerList.Add(hitLayer);
+            var hitTagSplit = missileData.hitTag.Split(',');
+            missileInfo.hitTagList = new List<string>();
+            foreach (var hitLayer in hitTagSplit)
+                missileInfo.hitTagList.Add(hitLayer);
             
             missileInfo.spawnObject = missileData.spawnObject;
             missileInfo.hitSpawn = missileData.hitSpawn;
@@ -266,7 +264,7 @@ public class Missile : MonoBehaviour
     // 미사일 소멸에만 관여(공격판정은 여기서 정하지 않는다)
     private void OnTriggerEnter2D(Collider2D col)
     {
-        foreach (var hitTag in missileInfo.hitLayerList)
+        foreach (var hitTag in missileInfo.hitTagList)
         {
             if (!col.gameObject.CompareTag(hitTag))
                 continue;
@@ -287,7 +285,7 @@ public class Missile : MonoBehaviour
             }
             
             // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
-            if (missileInfo.piercingBullet && hitTag == ConstValues.Wall)
+            if (hitTag == ConstValues.Wall)
             {
                 Vector2 contactPoint = col.ClosestPoint(transform.position);
                 Vector2 myPoint = transform.position;

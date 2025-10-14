@@ -41,29 +41,154 @@ public static class KeyBinding
     }
 }
 
+[Serializable]
+public class Skill
+{
+    public string skillId;
+    public bool isGet;
+    public int level;
+    public List<string> attributeList = new List<string>();
+}
+[Serializable]
+public class SkillSetting
+{
+    public int attributePoint;
+    public List<Skill> skillList;
+}
+[Serializable]
+public class SkillCollection
+{
+    public int totalAttributePoint;
+    public SkillSetting berserkerSkillSetting;
+    public SkillSetting gunnerSkillSetting;
+
+    public void PlusAttributePoint(int point)
+    {
+        totalAttributePoint += point;
+        berserkerSkillSetting.attributePoint += point;
+        gunnerSkillSetting.attributePoint += point;
+    }
+    
+    public bool IsHaveSkill(string skillId)
+    {
+        var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
+        if (berserkerSkill != null)
+        {
+            if (berserkerSkill.isGet)
+                return true;
+            
+            return false;
+        }
+
+        var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
+        if (gunnerSkill != null)
+        {
+            if (gunnerSkill.isGet)
+                return true;
+            
+            return false;
+        }
+
+        return false;
+    }
+
+    public List<string> GetBerserkerSkillAttribute(string id)
+    {
+        return berserkerSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
+    }
+    public bool IsBerserkerHaveAttribute(string skillId, string attributeId)
+    {
+        return berserkerSkillSetting.skillList.Find(x => x.skillId == skillId).attributeList.Contains(attributeId);
+    }
+    public int BerserkerAttributeLv(string skillId)
+    {
+        return berserkerSkillSetting.skillList.Find(x => x.skillId == skillId).level;
+    }
+    
+    public List<string> GetGunnerSkillAttribute(string id)
+    {
+        return gunnerSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
+    }
+    public bool IsGunnerHaveAttribute(string skillId,string attributeId)
+    {
+        return gunnerSkillSetting.skillList.Find(x => x.skillId == skillId).attributeList.Contains(attributeId);
+    }
+    public int GunnerAttributeLv(string skillId)
+    {
+        return gunnerSkillSetting.skillList.Find(x => x.skillId == skillId).level;
+    }
+}
+
 public static class SkillBinding
 {
     // 저장할 때
-    public static void SaveKey(string skillCollection)
+    public static void SaveSkill(string skill)
     {
-        PlayerPrefs.SetString(ConstValues.PlayerSkill, skillCollection);
+        PlayerPrefs.SetString(ConstValues.PlayerSkill, skill);
         PlayerPrefs.Save();
     }
 
     // 불러올 때
-    public static string LoadSkillCollection(string defaultCollection)
+    public static string LoadSkill(string defaultSkill)
     {
         if (PlayerPrefs.HasKey(ConstValues.PlayerSkill))
         {
-            Debug.Log($"저장된 스킬 리스트가 존재");
+            Debug.Log($"저장된 스킬 존재");
             return PlayerPrefs.GetString(ConstValues.PlayerSkill);
         }
         else
         {
             // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"스킬 리스트 최초 생성");
-            SaveKey(defaultCollection);
-            return defaultCollection;
+            Debug.Log($"스킬 최초 생성");
+            SaveSkill(defaultSkill);
+            return defaultSkill;
+        }
+    }
+}
+
+[Serializable]
+public class SkillKey
+{
+    public string skillId;
+    public KeyCode keyCode;
+}
+[Serializable]
+public class SkillKeyCollection
+{
+    public List<SkillKey> berserkerSkillKeyList;
+    public List<SkillKey> gunnerSkillKeyList;
+}
+[Serializable]
+public class SettingSkill
+{
+    public string skillId;
+    public KeyCode keyCode;
+    public PlayerSkill playerSkill;
+}
+
+public static class SkillKeyBinding
+{
+    // 저장할 때
+    public static void SaveKey(string skillKey)
+    {
+        PlayerPrefs.SetString(ConstValues.PlayerSkillKey, skillKey);
+        PlayerPrefs.Save();
+    }
+
+    // 불러올 때
+    public static string LoadSkillKey(string defaultSkillKey)
+    {
+        if (PlayerPrefs.HasKey(ConstValues.PlayerSkillKey))
+        {
+            Debug.Log($"저장된 스킬 키 세팅 존재");
+            return PlayerPrefs.GetString(ConstValues.PlayerSkillKey);
+        }
+        else
+        {
+            // 처음 실행 시 디폴트 키를 저장
+            Debug.Log($"스킬 키 세팅 최초 생성");
+            SaveKey(defaultSkillKey);
+            return defaultSkillKey;
         }
     }
 }
@@ -121,32 +246,6 @@ public static class GoldBinding
     }
 }
 
-public static class PassivePointBinding
-{
-    // 저장할 때
-    public static void SavePassivePoint(int count)
-    {
-        PlayerPrefs.SetInt(ConstValues.PassivePoint, count);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static void LoadPassivePoint()
-    {
-        if (PlayerPrefs.HasKey(ConstValues.PassivePoint))
-        {
-            Debug.Log($"저장된 패시브 포인트가 존재{PlayerPrefs.GetInt(ConstValues.PassivePoint)}");
-            
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"패시브 포인트 최초 저장");
-            SavePassivePoint(0);
-        }
-    }
-}
-
 public static class SavePointBinding
 {
     // 저장할 때
@@ -171,28 +270,6 @@ public static class SavePointBinding
             return default;
         }
     }
-}
-
-[Serializable]
-public class SkillKey
-{
-    public string skillId;
-    public KeyCode keyCode;
-}
-
-[Serializable]
-public class SkillKeyCollection
-{
-    public List<SkillKey> berserkerSkillKeyList;
-    public List<SkillKey> gunnerSkillKeyList;
-}
-
-[Serializable]
-public class SettingSkill
-{
-    public string skillId;
-    public KeyCode keyCode;
-    public PlayerSkill playerSkill;
 }
 
 public static class EpisodeBinding
@@ -346,6 +423,7 @@ public enum eUIType
     Popup_Guide,
     Popup_Minimap,
     Popup_Warning,
+    Popup_Attribute,
 }
 
 public class GameManager : Singleton<GameManager>
@@ -356,6 +434,7 @@ public class GameManager : Singleton<GameManager>
     public KeyCode escKey;
     public KeyCode tabKey;
     public KeyCode spaceKey;
+    public KeyCode attributeKey;
     
     public KeyCode leftMoveKey;
     public KeyCode rightMoveKey;
@@ -396,22 +475,21 @@ public class GameManager : Singleton<GameManager>
 
     private UI_Interface uiInterface;
     private Popup_Warning popupWarning;
-    
+
     // 재화
     private int gold;
-    private int passivePoint;
-    
-    private string episodeName;
 
+    private string episodeName;
     private string firstPlayer;
     private string secondPlayer;
     private bool controlStart;
     private bool bossProduct;
     private int comboCount;
 
-    // 등록된 스킬 목록
+    // 등록된 스킬 및 키 세팅 목록
     private SettingSkill changeSkill;
-    [SerializeField] private SkillKeyCollection playerSkillKeyCollection;
+    [SerializeField] private SkillCollection playerSkill;
+    [SerializeField] private SkillKeyCollection playerSkillKey;
 
     // 매니저들
     public TableManager tableManager;
@@ -440,12 +518,6 @@ public class GameManager : Singleton<GameManager>
         set => gold = value;
     }
 
-    public int PassivePoint
-    {
-        get => passivePoint;
-        set => passivePoint = value;
-    }
-    
     public string EpisodeName
     {
         get => episodeName;
@@ -481,7 +553,8 @@ public class GameManager : Singleton<GameManager>
         set => comboCount = value;
     }
 
-    public SkillKeyCollection PlayerSkillKeyCollection => playerSkillKeyCollection;
+    public SkillCollection PlayerSkill => playerSkill;
+    public SkillKeyCollection PlayerSkillKey => playerSkillKey;
 
     public SettingSkill ChangeSkill => changeSkill;
     
@@ -514,9 +587,13 @@ public class GameManager : Singleton<GameManager>
         base.Awake();
         //QualitySettings.vSyncCount = 0;
         Application.targetFrameRate = 60;
-        DefaultKeySetting();
-        LoadPlayerPrefs();
         InitManager();
+        
+        DefaultSkillSetting();
+        DefaultSkillKeySetting();
+        DefaultGoodsSetting();
+        LoadPlayerPrefs();
+
         InitAtlas(uiAtlas);
         InitAtlas(bgAtlas);
         InitPlayer();
@@ -549,16 +626,60 @@ public class GameManager : Singleton<GameManager>
         SceneManager.LoadScene(sceneName);
     }
 
-    public void DefaultKeySetting()
-    { 
-        //PlayerPrefs.DeleteAll();
-        //StageBinding.LoadStage();
+    public void DefaultGoodsSetting()
+    {
         GoldBinding.LoadGold();
-        PassivePointBinding.LoadPassivePoint();
+    }
 
+    public void DefaultSkillSetting()
+    {
+        playerSkill.totalAttributePoint = 0;
+
+        SkillSetting berserkerSkillSetting = new SkillSetting();
+        berserkerSkillSetting.attributePoint = 0;
+        berserkerSkillSetting.skillList = new List<Skill>();
+        
+        SkillSetting gunnerSkillSetting = new SkillSetting();
+        gunnerSkillSetting.attributePoint = 0;
+        gunnerSkillSetting.skillList = new List<Skill>();
+        
+        foreach (var skill in TableManager.Instance.skillTable.Skill)
+        {
+            if (skill.caster == ConstValues.Berserker && skill.type != ConstValues.Dash)
+            {
+                Skill berserkerSkill = new Skill();
+                berserkerSkill.skillId = skill.id;
+                berserkerSkill.isGet = false;
+                berserkerSkill.level = 0;
+                berserkerSkillSetting.skillList.Add(berserkerSkill);
+            }
+
+            if (skill.caster == ConstValues.Gunner && skill.type != ConstValues.Dash)
+            {
+                Skill gunnerSkill = new Skill();
+                gunnerSkill.skillId = skill.id;
+                gunnerSkill.isGet = false;
+                gunnerSkill.level = 0;
+                gunnerSkillSetting.skillList.Add(gunnerSkill);
+            }
+        }
+        playerSkill.berserkerSkillSetting = berserkerSkillSetting;
+        playerSkill.gunnerSkillSetting = gunnerSkillSetting;
+        
+        // json화
+        string json = JsonUtility.ToJson(playerSkill, true);
+        var loadJson = SkillBinding.LoadSkill(json);
+        
+        var loadedSkillCollection = JsonUtility.FromJson<SkillCollection>(loadJson);
+        playerSkill = loadedSkillCollection;
+    }
+    
+    public void DefaultSkillKeySetting()
+    {
         escKey = KeyCode.Escape;
         tabKey = KeyCode.Tab;
         spaceKey = KeyCode.Space;
+        attributeKey = KeyCode.I;
         
         leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
@@ -579,7 +700,7 @@ public class GameManager : Singleton<GameManager>
         skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.E);
         skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.R);
 
-        InitSkillCollection();
+        InitSkillKey();
     }
 
     private SkillKey SetSkillKey(string skillId, KeyCode keyCode)
@@ -591,7 +712,7 @@ public class GameManager : Singleton<GameManager>
         };
         return skillKey;
     }
-    private void InitSkillCollection()
+    private void InitSkillKey()
     {
         List<SkillKey> berserkerSkillKeyList = new List<SkillKey>();
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
@@ -608,7 +729,7 @@ public class GameManager : Singleton<GameManager>
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey7));
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey8));
-        playerSkillKeyCollection.berserkerSkillKeyList = berserkerSkillKeyList;
+        playerSkillKey.berserkerSkillKeyList = berserkerSkillKeyList;
         
         List<SkillKey> gunnerSkillKeyList = new List<SkillKey>();
         gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerDash, dashKey));
@@ -625,43 +746,55 @@ public class GameManager : Singleton<GameManager>
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
-        playerSkillKeyCollection.gunnerSkillKeyList = gunnerSkillKeyList;
+        playerSkillKey.gunnerSkillKeyList = gunnerSkillKeyList;
         
         // json화
-        string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
-        var loadJson = SkillBinding.LoadSkillCollection(json);
+        string json = JsonUtility.ToJson(playerSkillKey, true);
+        var loadJson = SkillKeyBinding.LoadSkillKey(json);
         
         var loadedSkillKeyCollection = JsonUtility.FromJson<SkillKeyCollection>(loadJson);
-        playerSkillKeyCollection = loadedSkillKeyCollection;
+        playerSkillKey = loadedSkillKeyCollection;
     }
     public void AddNewSkill()
     {
-        playerSkillKeyCollection.berserkerSkillKeyList[8] = SetSkillKey(ConstValues.BerserkerCrash, skillKey8);
-        playerSkillKeyCollection.gunnerSkillKeyList[8] = SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8);
+        playerSkillKey.berserkerSkillKeyList[8] = SetSkillKey(ConstValues.BerserkerCrash, skillKey8);
+        playerSkillKey.gunnerSkillKeyList[8] = SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8);
     }
 
     public void AddNewSkill(string id)
     {
-        var skillData = TableManager.Instance.skillTable.Skill.Find(x => x.id == id);
-        switch (skillData.caster)
+        // 키 저장
+        var skillKeyData = TableManager.Instance.skillTable.Skill.Find(x => x.id == id);
+        switch (skillKeyData.caster)
         {
             case ConstValues.Berserker:
             {
-                int idx = EmptySkillIdx(playerSkillKeyCollection.berserkerSkillKeyList);
-                playerSkillKeyCollection.berserkerSkillKeyList[idx].skillId = id;
+                int idx = EmptySkillIdx(playerSkillKey.berserkerSkillKeyList);
+                playerSkillKey.berserkerSkillKeyList[idx].skillId = id;
                 break;
             }
             case ConstValues.Gunner:
             {
-                int idx = EmptySkillIdx(playerSkillKeyCollection.gunnerSkillKeyList);
-                playerSkillKeyCollection.gunnerSkillKeyList[idx].skillId = id;
+                int idx = EmptySkillIdx(playerSkillKey.gunnerSkillKeyList);
+                playerSkillKey.gunnerSkillKeyList[idx].skillId = id;
                 break;
             }
         }
         RefreshSkill();
-        // 저장
-        string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
-        SkillBinding.SaveKey(json);
+        string skillKeyJson = JsonUtility.ToJson(playerSkillKey, true);
+        SkillKeyBinding.SaveKey(skillKeyJson);
+
+        // 스킬 저장
+        var berserkerSkillData = playerSkill.berserkerSkillSetting.skillList.Find(x => x.skillId == id);
+        if (berserkerSkillData != null)
+            berserkerSkillData.isGet = true;
+        
+        var gunnerSkillData = playerSkill.gunnerSkillSetting.skillList.Find(x => x.skillId == id);
+        if (gunnerSkillData != null)
+            gunnerSkillData.isGet = true;
+        
+        string skillJson = JsonUtility.ToJson(playerSkill, true);
+        SkillBinding.SaveSkill(skillJson);
     }
     private int EmptySkillIdx(List<SkillKey> skillKeyList)
     {
@@ -681,29 +814,29 @@ public class GameManager : Singleton<GameManager>
     {
         if (curPlayer.BasicStat.id == ConstValues.Berserker)
         {
-            var berserkerSkillKey = playerSkillKeyCollection.berserkerSkillKeyList.Find(x => x.keyCode == keyCode);
+            var berserkerSkillKey = playerSkillKey.berserkerSkillKeyList.Find(x => x.keyCode == keyCode);
             if (berserkerSkillKey != null)
                 berserkerSkillKey.skillId = skillId;
         }
         else if (curPlayer.BasicStat.id == ConstValues.Gunner)
         {
-            var gunnerSkillKey = playerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == keyCode);
+            var gunnerSkillKey = playerSkillKey.gunnerSkillKeyList.Find(x => x.keyCode == keyCode);
             if (gunnerSkillKey != null)
                 gunnerSkillKey.skillId = skillId;
         }
         
         // 저장
-        string json = JsonUtility.ToJson(playerSkillKeyCollection, true);
-        SkillBinding.SaveKey(json);
+        string json = JsonUtility.ToJson(playerSkillKey, true);
+        SkillKeyBinding.SaveKey(json);
     }
     public List<SettingSkill> GetSettingSkillList()
     {
         List<SkillKey> keyList = null;
         
         if(curPlayer.BasicStat.id == ConstValues.Berserker)
-            keyList = playerSkillKeyCollection.berserkerSkillKeyList;
+            keyList = playerSkillKey.berserkerSkillKeyList;
         else if(curPlayer.BasicStat.id == ConstValues.Gunner)
-            keyList = playerSkillKeyCollection.gunnerSkillKeyList;
+            keyList = playerSkillKey.gunnerSkillKeyList;
         
         List<SettingSkill> settingSkillList = new List<SettingSkill>();
         foreach (var key in keyList)
@@ -1202,7 +1335,7 @@ public class GameManager : Singleton<GameManager>
         uiInterface.SetGoodsPresenter(goodsPresenter);
         goodsPresenter.PlusGoldText();
     }
-    public void GetPassivePoint(int getPassivePoint, int totalPassivePoint)
+    public void GetAttributePoint(int getPassivePoint, int totalPassivePoint)
     {
         var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();
         var goodsModel = new UIGoodsModel()
@@ -1212,19 +1345,18 @@ public class GameManager : Singleton<GameManager>
         };
         var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);
         uiInterface.SetGoodsPresenter(goodsPresenter);
-        goodsPresenter.PlusPassiveText();
+        goodsPresenter.PlusAttributeText();
     }
     
     public void RefreshGoods()
     {
         Gold = PlayerPrefs.GetInt(ConstValues.Gold);
-        PassivePoint = PlayerPrefs.GetInt(ConstValues.PassivePoint);
-        
+
         var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();
         var goodsModel = new UIGoodsModel()
         {
             totalGold = Gold,
-            totalPassivePoint = PassivePoint,
+            totalPassivePoint = playerSkill.totalAttributePoint,
         };
         var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);
         uiInterface.SetGoodsPresenter(goodsPresenter);

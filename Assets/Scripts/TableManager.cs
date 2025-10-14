@@ -74,9 +74,8 @@ public class MissileData
     public string id;
     public string type;
     public float speed;
-    public bool piercingBullet;
     public float limitLength;
-    public string hitLayer;
+    public string hitTag;
     public string spawnObject;
     public bool hitSpawn;
     public bool afterImage;
@@ -94,7 +93,7 @@ public class GrenadeData
     public string minForce;
     public string maxForce;
     public bool dirObject;
-    public string hitLayer;
+    public string hitTag;
     public string spawnObject;
 }
 [Serializable]
@@ -199,6 +198,21 @@ public class SkillDataList
 }
 
 [Serializable]
+public class SkillAttributeData
+{
+    public string id;
+    public int level;
+    public int cost;
+    public string attribute;
+    public string talk;
+}
+[Serializable]
+public class SkillAttributeDataList
+{
+    public List<SkillAttributeData> SkillAttribute;
+}
+
+[Serializable]
 public class RoomsData
 {
     public string id;
@@ -286,6 +300,7 @@ public class TableManager : SingletonMono<TableManager>
     public PlayerDataList playerTable;
     public MonsterDataList monsterTable;
     public SkillDataList skillTable;
+    public SkillAttributeDataList skillAttributeTable;
     public RoomsDataList roomsTable;
     public NpcDataList npcTable;
     public DialogueDataList dialogueTable;
@@ -302,6 +317,7 @@ public class TableManager : SingletonMono<TableManager>
         playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
         monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
         skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);
+        skillAttributeTable = LoadDataFromJson<SkillAttributeDataList>(ConstValues.SkillAttribute);
         roomsTable = LoadDataFromJson<RoomsDataList>(ConstValues.Rooms);
         npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);
         dialogueTable = LoadDataFromJson<DialogueDataList>(ConstValues.Dialogue);

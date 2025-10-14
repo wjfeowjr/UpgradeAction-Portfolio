@@ -43,7 +43,7 @@ public class UIGoodsPresenter
         _goodsview.SetGoldText(_model.totalGold);
     }
     
-    public void PlusPassiveText()
+    public void PlusAttributeText()
     {
         Debug.Log(_model.getPassivePoint);
         _goodsview.SetPassiveText(_model.totalPassivePoint);

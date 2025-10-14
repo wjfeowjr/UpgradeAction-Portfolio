@@ -12,7 +12,7 @@ public class RoomManager : Singleton<RoomManager>
 {
     private int groundLayerMask;
     private float groundPosY;
-    
+
     [SerializeField] private Camera mainCamera;
     [SerializeField] private FollowCamera mainCameraFollow;
     [SerializeField] private SpriteRenderer bgSprite;
@@ -28,6 +28,7 @@ public class RoomManager : Singleton<RoomManager>
 
     private UI_Episode uiEpisode;
     private Popup_Minimap popupMinimap;
+    private Popup_Attribute popupAttribute;
     private CancellationTokenSource dieCancellation;
 
     // 프로퍼티
@@ -122,6 +123,9 @@ public class RoomManager : Singleton<RoomManager>
 
         if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.tabKey))
             SpawnMinimap();
+
+        if ((!popupAttribute || !popupAttribute.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.attributeKey))
+            SpawnAttribute();
     }
 
     public void BgSpriteChange(string spriteName)
@@ -234,6 +238,33 @@ public class RoomManager : Singleton<RoomManager>
         popupMinimap.PopupMinimapPresenter.OpenAction();
     }
 
+    private void SpawnAttribute()
+    {
+        if (popupAttribute)
+        {
+            popupAttribute.gameObject.SetActive(true);
+        }
+        else
+        {
+            popupAttribute = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Attribute, Vector3.zero).GetComponent<Popup_Attribute>();
+            // 바인딩
+            var attributeInterface = popupAttribute.AttributeView.ConvertTo<IPopupAttributeView>();
+            var attributeModel = new PopupAttributeModel()
+            {
+                playerSkill = GameManager.Instance.PlayerSkill,
+                closeAction = () =>
+                {
+                    popupAttribute.ReductionClose(true);
+                }
+            };
+            var attributePresenter = new PopupAttributePresenter(attributeInterface, attributeModel);
+            popupAttribute.SetAttributePresenter(attributePresenter);
+            popupAttribute.PopupAttributePresenter.SetAction(attributeModel.closeAction);
+        }
+        popupAttribute.PopupAttributePresenter.SetModel(GameManager.Instance.PlayerSkill);
+        popupAttribute.ExpansionOpen(true);
+    }
+
     private void MinimapCameraMove()
     {
         var speed = 60.0f;
@@ -241,7 +272,7 @@ public class RoomManager : Singleton<RoomManager>
         var minimapCameraPos = GameManager.Instance.MiniMapCamera.position;
         
         float leftLimit = -100;
-        float rightLimit = 250;
+        float rightLimit = 350;
         float upLimit = 50;
         float downLimit = -50;
         

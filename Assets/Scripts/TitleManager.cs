@@ -56,7 +56,9 @@ public class TitleManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.F1))
         {
             PlayerPrefs.DeleteAll();
-            GameManager.Instance.DefaultKeySetting();
+            GameManager.Instance.DefaultSkillSetting();
+            GameManager.Instance.DefaultSkillKeySetting();
+            GameManager.Instance.DefaultGoodsSetting();
         }
         
         if (Input.anyKeyDown)

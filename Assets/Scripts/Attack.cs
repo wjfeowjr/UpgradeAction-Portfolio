@@ -48,6 +48,7 @@ public class Attack : MonoBehaviour
     [SerializeField] private int dir;
     private float leftColliderTime;
 
+    public AttackInfo AttackInfo => attackInfo;
     public Character CastChar => castChar;
 
     private void Awake()

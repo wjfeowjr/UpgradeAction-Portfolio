@@ -211,7 +211,7 @@ public class Player_Gunner : Player
         if (Time.timeScale == 0)
             return;
 
-        var skillId = GameManager.Instance.PlayerSkillKeyCollection.gunnerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
+        var skillId = GameManager.Instance.PlayerSkillKey.gunnerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
         
@@ -228,6 +228,9 @@ public class Player_Gunner : Player
 
         CancelMotion();
         MotionFlip();
+        // 스킬 특성: 슈퍼아머 체크
+        if(GameManager.Instance.PlayerSkill.IsGunnerHaveAttribute(skillId, ConstValues.SuperArmor))
+            BodyTypeSetting(ConstValues.SuperArmor);
         
         stateCancellation = new CancellationTokenSource();
         bool finishSuccess = true;

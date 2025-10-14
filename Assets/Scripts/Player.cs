@@ -364,7 +364,7 @@ public abstract class Player : Character
             canMove = animationsData.canMove;
             moveRatio = animationsData.moveRatio;
             
-            if(!SameBodyType(animationsData.bodyType))
+            if(animationsData.bodyType != ConstValues.None && !SameBodyType(animationsData.bodyType))
                 BodyTypeSetting(animationsData.bodyType);
         }
     }

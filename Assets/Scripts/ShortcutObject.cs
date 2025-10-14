@@ -3,6 +3,7 @@ using UnityEngine;
 
 public class ShortcutObject : MonoBehaviour
 {
+    [SerializeField] private BoxCollider2D myBoxCollider;
     [SerializeField] private SpriteRenderer mySpriteRenderer;
     [SerializeField] private Sprite[] leverSprites;
     [SerializeField] private GameObject shortcutBlocker;// 막고 있는 문/벽(콜라이더 포함)
@@ -39,6 +40,7 @@ public class ShortcutObject : MonoBehaviour
 
     private void Open()
     {
+        myBoxCollider.enabled = false;
         mySpriteRenderer.sprite = leverSprites[1];
         opened = true;
         

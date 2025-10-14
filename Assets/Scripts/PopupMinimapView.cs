@@ -89,7 +89,6 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
     [SerializeField] private GameObject[] arrowArray;
     
     [SerializeField] private FadeSystem fadeSystem;
-    [SerializeField] private Texture minimapTexture;
 
     private bool isClosing;
 

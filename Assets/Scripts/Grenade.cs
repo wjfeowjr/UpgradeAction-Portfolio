@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 [Serializable]
@@ -11,7 +12,7 @@ public class GrenadeInfo
     public Vector2 minForce;
     public Vector2 maxForce;
     public bool dirObject;
-    public List<string> hitLayerList;
+    [FormerlySerializedAs("hitLayerList")] public List<string> hitTagList;
     public string spawnObject;
     public Action<string, Transform, int> explosionAction;
 }
@@ -88,10 +89,10 @@ public class Grenade : MonoBehaviour
 
             grenadeInfo.dirObject = grenadeData.dirObject;
 
-            var hitLayerSplit = grenadeData.hitLayer.Split(',');
-            grenadeInfo.hitLayerList = new List<string>();
+            var hitLayerSplit = grenadeData.hitTag.Split(',');
+            grenadeInfo.hitTagList = new List<string>();
             foreach (var hitLayer in hitLayerSplit)
-                grenadeInfo.hitLayerList.Add(hitLayer);
+                grenadeInfo.hitTagList.Add(hitLayer);
             
             grenadeInfo.spawnObject = grenadeData.spawnObject;
             grenadeInfo.explosionAction = action;
@@ -177,7 +178,7 @@ public class Grenade : MonoBehaviour
     // 수류탄 소멸에만 관여(공격판정은 여기서 정하지 않는다)
     private void OnTriggerEnter2D(Collider2D col)
     {
-        foreach (var hitTag in grenadeInfo.hitLayerList)
+        foreach (var hitTag in grenadeInfo.hitTagList)
         {
             if (!col.gameObject.CompareTag(hitTag))
                 continue;
