@@ -12,7 +12,7 @@ public class RoomManager : Singleton<RoomManager>
 {
     private int groundLayerMask;
     private float groundPosY;
-
+    
     [SerializeField] private Camera mainCamera;
     [SerializeField] private FollowCamera mainCameraFollow;
     [SerializeField] private SpriteRenderer bgSprite;
@@ -124,7 +124,7 @@ public class RoomManager : Singleton<RoomManager>
         if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.tabKey))
             SpawnMinimap();
 
-        if ((!popupAttribute || !popupAttribute.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.attributeKey))
+        if (GameManager.Instance.AlreadyAttribute == 1 && (!popupAttribute || !popupAttribute.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.attributeKey))
             SpawnAttribute();
     }
 
@@ -421,6 +421,13 @@ public class RoomManager : Singleton<RoomManager>
                 guideModel = new PopupGuideModel()
                 {
                     guideMessage = "<color=#F36B6B>'Shift'</color>키를 입력하여 캐릭터를 교체 할 수 있습니다.\n<color=#F36B6B>캐릭터의 체력은 서로 공유됩니다.</color>",
+                    imgName = guideName,
+                };
+                break;
+            case 6:
+                guideModel = new PopupGuideModel()
+                {
+                    guideMessage = "<color=#F36B6B>'I'</color>키를 입력하여 캐릭터의 스킬에 특성을 부여 할 수 있습니다.\n특성 포인트는 맵을 탐험하여 획득 할 수 있습니다.",
                     imgName = guideName,
                 };
                 break;

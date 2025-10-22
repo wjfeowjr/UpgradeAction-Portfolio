@@ -19,5 +19,6 @@ public class Popup_Attribute : UIBase
     private void Update()
     {
         PopupAttributePresenter?.CloseAttribute();
+        PopupAttributePresenter?.UpdateNavigation(); // ▼ 추가: 방향키 입력/반복 처리
     }
 }

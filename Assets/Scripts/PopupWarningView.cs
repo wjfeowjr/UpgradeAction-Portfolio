@@ -52,13 +52,13 @@ public class PopupWarningView : MonoBehaviour, IPopupWarningView
         
         messageText.text = message;
         warningLineObject.transform.localScale = reduceScale;
-        scaleTween = warningLineObject.transform.DOScale(expansionScale, duration).SetEase(Ease.Linear);
+        scaleTween = warningLineObject.transform.DOScale(expansionScale, duration).SetEase(Ease.Linear).SetUpdate(true);
         
         warningCancellation = new CancellationTokenSource();
         if (await NormalDelay(delay, warningCancellation).SuppressCancellationThrow())
             return;
         
-        scaleTween = warningLineObject.transform.DOScale(reduceScale, duration).SetEase(Ease.Linear);
+        scaleTween = warningLineObject.transform.DOScale(reduceScale, duration).SetEase(Ease.Linear).SetUpdate(true);
         if (await NormalDelay(duration, warningCancellation).SuppressCancellationThrow())
             return;
         
@@ -67,6 +67,6 @@ public class PopupWarningView : MonoBehaviour, IPopupWarningView
     
     private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
-        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+        await UniTask.Delay(TimeSpan.FromSeconds(second), ignoreTimeScale: true, cancellationToken: tokenSource.Token);
     }
 }

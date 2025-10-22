@@ -121,6 +121,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SuperArmor = "SuperArmor";
     public const string HighUpper = "HighUpper";
     public const string JumpUpper = "JumpUpper";
+    public const string PiercingFire = "PiercingFire";
     public const string Pierce = "Pierce";
     
     public const string Missile = "Missile";
@@ -183,6 +184,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Episode1Title = "Episode1_Title";
     public const string Episode2Title = "Episode2_Title";
     public const string FirstGetSkill = "FirstGetSkill";
+    public const string FirstGetAttribute = "FirstGetAttribute";
     public const string Product1 = "Product1";
     public const string Product2 = "Product2";
     public const string Product3 = "Product3";
@@ -361,7 +363,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Upgrade = "Upgrade";
     public const string Jump1 = "Jump1";
     public const string Jump2 = "Jump2";
-    public const string NormalButton1 = "NormalButton_1";
+    public const string NormalButton = "NormalButton";
     public const string NormalButton2 = "NormalButton_2";
     public const string Popup = "Popup";
     public const string RewardPage = "RewardPage";

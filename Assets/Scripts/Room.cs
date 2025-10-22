@@ -400,7 +400,7 @@ public class Room : MonoBehaviour
                 {
                     roomInfo.skillAndPassive[idx].alreadyGet = true;
                     GameManager.Instance.AddNewSkill(roomInfo.skillAndPassive[idx].id);
-                    GameManager.Instance.GetSkillProduct(roomInfo.skillAndPassive[idx].id, GetSkillDialogue);
+                    GameManager.Instance.GetSkillProduct(roomInfo.skillAndPassive[idx].id, GetSkillEvent);
                     SaveRoom();
                 });
             }
@@ -420,6 +420,7 @@ public class Room : MonoBehaviour
                 {
                     roomInfo.treasureBox[idx].alreadyGet = true;
                     GetTreasureBoxItem(roomInfo.treasureBox[idx].id, roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position);
+                    GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
                     SaveRoom();
                 });
             }
@@ -616,12 +617,10 @@ public class Room : MonoBehaviour
     private void PlusAttributePoint(int attributePoint)
     {
         GameManager.Instance.PlayerSkill.PlusAttributePoint(attributePoint);
-        var totalPassivePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
-        GameManager.Instance.GetAttributePoint(attributePoint, totalPassivePoint);
-        
+
         string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
         SkillBinding.SaveSkill(skillJson);
-        Debug.Log($"저장된 {ConstValues.AttributePoint} = {totalPassivePoint}");
+        Debug.Log($"저장된 {ConstValues.AttributePoint} = {GameManager.Instance.PlayerSkill.totalAttributePoint}");
     }
     private void ReducePassivePoint(string character, int passivePoint)
     {
@@ -1571,14 +1570,15 @@ public class Room : MonoBehaviour
         UIOn();
     }
     
-    // 스킬을 획득 후 독백 이벤트
-    private async void GetSkillDialogue(string skillName)
+    // 스킬을 획득 후 이벤트
+    private async void GetSkillEvent(string skillName)
     {
         string getMessage = $"{skillName}을(를) 획득하였다!";
         
         if (FirstGetSkillBinding.LoadFirstGetSkill() == 0)
         {
             FirstGetSkillBinding.SaveFirstGetSkill(1);
+            GameManager.Instance.AlreadySkill = FirstGetSkillBinding.LoadFirstGetSkill();
             
             UIOff();
             GameManager.Instance.CurPlayer.ForceProduct();
@@ -1589,6 +1589,33 @@ public class Room : MonoBehaviour
                 return;
 
             RoomManager.Instance.Guide(2);
+            UIOn();
+        }
+        else
+        {
+            await GameManager.Instance.SpawnWarningPopup(getMessage);
+        }
+    }
+    
+    // 특성 포인트 획득 후 이벤트
+    private async void GetAttributeEvent(int pointCount)
+    {
+        string getMessage = $"특성 포인트 {pointCount}점을 획득하였다!";
+        
+        if (FirstGetAttributeBinding.LoadFirstGetAttribute() == 0)
+        {
+            FirstGetAttributeBinding.SaveFirstGetAttribute(1);
+            GameManager.Instance.AlreadyAttribute = FirstGetAttributeBinding.LoadFirstGetAttribute();
+            
+            UIOff();
+            GameManager.Instance.CurPlayer.ForceProduct();
+            await GameManager.Instance.SpawnWarningPopup(getMessage);
+            
+            GameManager.Instance.InitDialogueCancellation();
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+                return;
+
+            RoomManager.Instance.Guide(6);
             UIOn();
         }
         else

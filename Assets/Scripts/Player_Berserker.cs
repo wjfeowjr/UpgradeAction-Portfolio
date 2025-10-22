@@ -254,7 +254,7 @@ public class Player_Berserker : Player
         CancelMotion();
         MotionFlip();
         // 스킬 특성: 슈퍼아머 체크
-        if(skillKey != GameManager.Instance.dashKey && GameManager.Instance.PlayerSkill.IsBerserkerHaveAttribute(skillId, ConstValues.SuperArmor))
+        if(skillKey != GameManager.Instance.dashKey && GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SuperArmor))
             BodyTypeSetting(ConstValues.SuperArmor);
         
         stateCancellation = new CancellationTokenSource();
@@ -305,7 +305,7 @@ public class Player_Berserker : Player
 
         Attack attackObject = SpawnAttackObject(ConstValues.BerserkerUpperSlash, upperSlashPos).GetComponent<Attack>();
 
-        foreach (var attribute in GameManager.Instance.PlayerSkill.GetBerserkerSkillAttribute(ConstValues.BerserkerUpperSlash))
+        foreach (var attribute in GameManager.Instance.PlayerSkill.GetSkillAttribute(ConstValues.BerserkerUpperSlash))
         {
             switch (attribute)
             {
@@ -400,17 +400,24 @@ public class Player_Berserker : Player
         StateSetting(ENormalState.Skill, ConstValues.BerserkerFireStrike, ConstValues.BerserkerFireStrike);
         myRigidbody.linearVelocity = Vector2.zero;
         
-        var delay1 = 0.1f;
+        var delay1 = 0.2f;
         var delay2 = 0.2f;
         
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        if (await AttackDelay(delay1).SuppressCancellationThrow())
-            return false;
-            
-        SpawnAttack(ConstValues.BerserkerFireStrike, fireStrikePos);
-        //SpawnObject($"{skillId}_Effect", attackPos[4]);
+        var objectId = ConstValues.BerserkerFireStrike;
+        foreach (var attribute in GameManager.Instance.PlayerSkill.GetSkillAttribute(ConstValues.BerserkerFireStrike))
+        {
+            switch (attribute)
+            {
+                case ConstValues.PiercingFire:
+                    objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Pierce}";
+                    break;
+            }
+        }
+
+        SpawnAttack(objectId, fireStrikePos);
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
 

@@ -41,6 +41,14 @@ public class SoundManager : Singleton<SoundManager>
         lastPlayTime[uniqueId] = now;
         myAudioSource.PlayOneShot(soundDic[uniqueId], volumeScale);
     }
+    
+    public void PlaySoundNotCondition(string uniqueId, float volumeScale = 0.8f)
+    {
+        if (!myAudioSource || uniqueId == ConstValues.None || !soundDic.ContainsKey(uniqueId))
+            return;
+        
+        myAudioSource.PlayOneShot(soundDic[uniqueId], volumeScale);
+    }
 
     public List<AudioClip> GetSoundList()
     {

@@ -229,7 +229,7 @@ public class Player_Gunner : Player
         CancelMotion();
         MotionFlip();
         // 스킬 특성: 슈퍼아머 체크
-        if(GameManager.Instance.PlayerSkill.IsGunnerHaveAttribute(skillId, ConstValues.SuperArmor))
+        if(GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SuperArmor))
             BodyTypeSetting(ConstValues.SuperArmor);
         
         stateCancellation = new CancellationTokenSource();
