@@ -1182,6 +1182,11 @@ public class GameManager : Singleton<GameManager>
 
     public void CameraShake(float amountX, float amountY, float time)
     {
+        if (mainCamera == null)
+        {
+            Debug.LogWarning("[CameraShake] mainCamera == null. InitCamera가 아직 안 됐거나, RoomManager.mainCameraFollow가 비어있습니다.");
+            return;
+        }
         mainCamera.Shake(amountX, amountY, time);
     }
 
@@ -1232,9 +1237,10 @@ public class GameManager : Singleton<GameManager>
         monsterList.Clear();
     }
     
-    public void InputDataTrap(string trapId, GameObject trapObject)
+    public void InputDataTrap(string trapId, BoxCollider2D trapObject)
     {
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == trapId);
+        string originId = trapId.Split(' ')[0];
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == originId);
         if (objectData != null)
         {
             var spawnedObject = trapObject.GetComponent<SpawnedObject>();
@@ -1245,7 +1251,7 @@ public class GameManager : Singleton<GameManager>
             spawnedObject.EnableSetting();
         }
 
-        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == trapId);
+        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == originId);
         if (attackData != null)
         {
             var attack = trapObject.GetComponent<Attack>();

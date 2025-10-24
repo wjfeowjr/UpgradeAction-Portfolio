@@ -133,6 +133,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterArray = "MonsterArray";
     public const string BossArray = "BossArray";
     public const string NpcArray = "NpcArray";
+    public const string TrapArray = "TrapArray";
     public const string PlayerPosArray = "PlayerPosArray";
     public const string EntranceArray = "EntranceArray";
     public const string BossGateArray = "BossGateArray";
@@ -212,7 +213,10 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Ground = "Ground";
     public const string Wall = "Wall";
+    public const string Trap = "Trap";
     public const string Stage = "Stage";
+    public const string Flip = "Flip";
+    public const string Stop = "Stop";
     public const string StageWallLeft = "StageWallLeft";
     public const string StageWallRight = "StageWallRight";
     public const string Platform = "Platform";

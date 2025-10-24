@@ -153,7 +153,7 @@ public class Monster : Character
         if (isBoss)
         {
             Trace();
-            Move();
+            Move(ConstValues.Normal);
         }
         else
         {
@@ -164,19 +164,18 @@ public class Monster : Character
                     break;
                 case EAgroState.Agro:
                     Trace();
-                    Move();
-                    MonsterLeap();
+                    Move(ConstValues.Stop);
+                    //MonsterLeap();
                     break;
                 case EAgroState.Return:
                     ReturnMoving();
-                    MonsterLeap();
+                    //MonsterLeap();
                     break;
             }
 
             AgroSystem();
         }
-
-        UpdateDown();
+        
         UpdateHoveringLeap();
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
@@ -725,7 +724,7 @@ public class Monster : Character
     }
 
     // 이동
-    protected virtual void Move()
+    protected virtual void Move(string mode)
     {
         // 호버링몹 위아래로 움직이게 하기
         // if (myStat.hovering && normalState == ENormalState.Idle)
@@ -741,6 +740,39 @@ public class Monster : Character
             targetSpeedX = -basicStat.moveSpeed;
 
         float targetSpeedY = myRigidbody.linearVelocity.y;
+
+        switch (mode)
+        {
+            case ConstValues.Flip:
+                switch (MonsterCheckWalk())
+                {
+                    case 0:
+                        Flip(-1);
+                        break;
+            
+                    case 1:
+                        Flip(1);
+                        break;
+                }
+                switch (MonsterCheckFall())
+                {
+                    case 0:
+                        Flip(-1);
+                        break;
+            
+                    case 1:
+                        Flip(1);
+                        break;
+                }
+                break;
+            
+            case ConstValues.Stop:
+                if (MonsterCheckWalk() != -1)
+                    targetSpeedX = 0;
+                if (MonsterCheckFall() != -1)
+                    targetSpeedX = 0;
+                break;
+        }
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
 
@@ -833,26 +865,6 @@ public class Monster : Character
     {
         if (patrolTimer <= 0f)
         {
-            // int randomDIr = Random.Range(0, 2);
-            // int randomMoving = Random.Range(0, 2);
-            //
-            // int dir = randomDIr == 0 ? -1 : 0;
-            // patrolMoving = randomMoving != 0;
-            //
-            // patrolTimer = 3.0f;
-            //
-            // if (patrolMoving)
-            // {
-            //     StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-            //     MoveStateSetting(EMoveState.Moving);
-            //     Flip(dir);
-            // }
-            // else
-            // {
-            //     StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-            //     MoveStateSetting(EMoveState.Stopping);
-            // }
-
             patrolMoving = !patrolMoving;
             patrolTimer = patrolMoving ? Random.Range(3.0f, 5.0f) : 3.0f;
             int randomDIr = Random.Range(0, 2);
@@ -875,9 +887,7 @@ public class Monster : Character
 
         if (patrolMoving)
         {
-            Move();
-            MonsterBackWall();
-            MonsterBackFall();
+            Move(ConstValues.Flip);
         }
     }
 
@@ -891,9 +901,9 @@ public class Monster : Character
         base.LookAt(xPos);
     }
 
-    public override void TakeDamage(int damage)
+    public override void TakeDamage(int damage, bool isTrapAttack)
     {
-        base.TakeDamage(damage);
+        base.TakeDamage(damage, isTrapAttack);
 
         if (agroState == EAgroState.Normal)
             agroState = EAgroState.Agro;
@@ -905,9 +915,12 @@ public class Monster : Character
         if (uiInterfaceObj == null)
             return;
 
-        GameManager.Instance.ComboCount += 1;
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
-        uiInterface.ComboPresenter.ComboProduct();
+        if (!isTrapAttack)
+        {
+            GameManager.Instance.ComboCount += 1;
+            uiInterface.ComboPresenter.ComboProduct();
+        }
 
         // 대미지를 입을 시, 페이즈가 넘어가는 체력관리
         if (myStat.pattern.Count > 1)
@@ -1362,9 +1375,9 @@ public class Monster : Character
     }
 
     // 몬스터 뒤돌기
-    private void MonsterBackWall()
+    private int MonsterCheckWalk()
     {
-        var rayVector = CenterPos.transform.position;
+        var rayVector = transform.position;
         var distance = myBoxCollider.size.x * 0.5f + 0.2f;
         float halfWidth = physicsCollider.size.x * 0.5f;
 
@@ -1374,48 +1387,51 @@ public class Monster : Character
         // 오른쪽
         if (transform.localScale.x > 0)
         {
-            RaycastHit2D rightRay = Physics2D.Raycast(rayVector, Vector2.right, distance, groundAndPlatformLayerMask);
+            RaycastHit2D rightRay = Physics2D.Raycast(rayVector, Vector2.right, distance, monsterWalkLayerMask);
             Debug.DrawRay(rayVector, Vector2.right * distance, ConstValues.CyanColor, 0.02f);
             if (transform.position.x >= leftRight || rightRay.collider != null)
             {
-                Flip(-1);
+                return 0;
             }
         }
         else
         {
-            RaycastHit2D leftRay = Physics2D.Raycast(rayVector, Vector2.left, distance, groundAndPlatformLayerMask);
+            RaycastHit2D leftRay = Physics2D.Raycast(rayVector, Vector2.left, distance, monsterWalkLayerMask);
             Debug.DrawRay(rayVector, Vector2.left * distance, ConstValues.CyanColor, 0.02f);
             if (transform.position.x <= leftLimit || leftRay.collider != null)
             {
-                Flip(1);
+                return 1;
             }
         }
+
+        return -1;
     }
 
     // 몬스터 절벽감지
-    private void MonsterBackFall()
+    private int MonsterCheckFall()
     {
-        if (myStat.hovering)
-            return;
+        // if (myStat.hovering)
+        //     return -1;
         
         var rayVector = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
         if (transform.localScale.x < 0)
             rayVector = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
 
-        RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, 3.0f, groundAndPlatformLayerMask);
+        RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, 5.0f, groundAndPlatformLayerMask);
         Debug.DrawRay(rayVector, Vector2.down * 3.0f, ConstValues.OrangeColor, 0.02f);
         if (downRay.collider == null)
         {
             switch (transform.localScale.x)
             {
                 case > 0:
-                    Flip(-1);
+                    return 0;
                     break;
                 case < 0:
                     Flip(1);
-                    break;
+                    return 1;
             }
         }
+        return -1;
     }
 
     // 몬스터 장애물 넘기
@@ -1808,43 +1824,43 @@ public class Monster : Character
         StopVelocity_X();
     }
 
-    protected async void OnCollisionEnter2D(Collision2D col)
-    {
-        // 착지
-        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) &&
-            landingState == ELandingState.Air)
-        {
-            if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)
-                return;
-
-            LandingStateSetting(ELandingState.Ground);
-            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            myRigidbody.linearVelocity = Vector2.zero;
-            groundObject = col.gameObject;
-
-            // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
-            switch (normalState)
-            {
-                case ENormalState.Jump:
-                    StateSetting(ENormalState.Landing, ConstValues.Landing, ConstValues.Landing);
-                    MoveStateSetting(EMoveState.Stopping);
-
-                    var delay1 = 0.3f;
-                    if (await AttackDelay(delay1).SuppressCancellationThrow())
-                        return;
-
-                    IdleOrMove();
-                    jumpInfo.coolTime = 0;
-                    downJumpInfo.coolTime = 0;
-                    break;
-
-                case ENormalState.Airborne:
-                    if (!myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Die))
-                        DownAndStand();
-                    break;
-            }
-        }
-    }
+    // protected async void OnCollisionEnter2D(Collision2D col)
+    // {
+    //     // 착지
+    //     if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) &&
+    //         landingState == ELandingState.Air)
+    //     {
+    //         if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)
+    //             return;
+    //
+    //         LandingStateSetting(ELandingState.Ground);
+    //         myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+    //         myRigidbody.linearVelocity = Vector2.zero;
+    //         groundObject = col.gameObject;
+    //
+    //         // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
+    //         switch (normalState)
+    //         {
+    //             case ENormalState.Jump:
+    //                 StateSetting(ENormalState.Landing, ConstValues.Landing, ConstValues.Landing);
+    //                 MoveStateSetting(EMoveState.Stopping);
+    //
+    //                 var delay1 = 0.3f;
+    //                 if (await AttackDelay(delay1).SuppressCancellationThrow())
+    //                     return;
+    //
+    //                 IdleOrMove();
+    //                 jumpInfo.coolTime = 0;
+    //                 downJumpInfo.coolTime = 0;
+    //                 break;
+    //
+    //             case ENormalState.Airborne:
+    //                 if (!myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Die))
+    //                     DownAndStand();
+    //                 break;
+    //         }
+    //     }
+    // }
 
     // 버그 방지
     // protected void OnCollisionStay2D(Collision2D col)

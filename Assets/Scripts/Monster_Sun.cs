@@ -25,7 +25,7 @@ public class Monster_Sun : Monster
         }
     }
 
-    protected override void Move()
+    protected override void Move(string mode)
     {
         // 움직이기
         if (moveState != EMoveState.Moving)

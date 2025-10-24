@@ -183,8 +183,6 @@ public abstract class Player : Character
         base.Update();
         UpdateFlip();
         UpdateJumpDown();
-        UpdateLanding();
-        UpdateDown();
         UpdateGlobalCoolTime();
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
@@ -435,27 +433,6 @@ public abstract class Player : Character
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
     }
 
-    // 일반점프 후 착지에만 관여
-    private void UpdateLanding()
-    {
-        if (normalState is not ENormalState.Jump || downJumping)
-            return;
-        
-        var distance = 0.2f;
-        var down = Physics2D.Raycast(transform.position, Vector2.down, distance, groundAndPlatformLayerMask);
-        Debug.DrawRay(transform.position, Vector2.down * distance, ConstValues.RedColor, 0.02f);
-
-        if (down.collider != null && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
-        {
-            Debug.Log("UpdateLanding");
-            LandingStateSetting(ELandingState.Ground);
-            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            myRigidbody.linearVelocity = Vector2.zero;
-            jumpAttackCount = 0;
-            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-        }
-    }
-
     private void UpdateGlobalCoolTime()
     {
         if (curGlobalCoolTime < globalCoolTime)
@@ -655,9 +632,9 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
 
-    public override void TakeDamage(int damage)
+    public override void TakeDamage(int damage, bool isTrapAttack)
     {
-        base.TakeDamage(damage);
+        base.TakeDamage(damage, isTrapAttack);
 
         if (damage == 0)
             return;
@@ -837,7 +814,7 @@ public abstract class Player : Character
         }
         
         // 플랫폼 위에서만 작동함
-        if(downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged() || normalState == ENormalState.JumpAttack)
+        if(downJumping || !isOnPlatform || IsDamaged() || normalState == ENormalState.JumpAttack)
             return;
 
         PlaySound(ConstValues.Jump2, 2.0f);
@@ -1118,32 +1095,32 @@ public abstract class Player : Character
         StopVelocity_X();
     }
 
-    protected void OnCollisionEnter2D(Collision2D col)
-    {
-        // 착지
-        if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && normalState != ENormalState.Dash && landingState == ELandingState.Air)
-        {
-            if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)
-                return;
-            
-            LandingStateSetting(ELandingState.Ground);
-            myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            myRigidbody.linearVelocity = Vector2.zero;
-            jumpAttackCount = 0;
-            groundObject = col.gameObject;
-    
-            // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
-            switch (normalState)
-            {
-                case ENormalState.Jump:
-                    StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-                    break;
-                case ENormalState.Airborne:
-                    DownAndStand();
-                    break;
-            }
-        }
-    }
+    // protected void OnCollisionEnter2D(Collision2D col)
+    // {
+    //     // 착지
+    //     if ((col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform)) && normalState != ENormalState.Dash && landingState == ELandingState.Air)
+    //     {
+    //         if (myRigidbody.gravityScale == 0 || myRigidbody.linearVelocityY is >= 0.05f or <= -0.05f)
+    //             return;
+    //         
+    //         LandingStateSetting(ELandingState.Ground);
+    //         myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+    //         myRigidbody.linearVelocity = Vector2.zero;
+    //         jumpAttackCount = 0;
+    //         groundObject = col.gameObject;
+    //
+    //         // 점프도중, 또는 에어본 도중 지면에 닿았을 경우의 애니메이션 처리
+    //         switch (normalState)
+    //         {
+    //             case ENormalState.Jump:
+    //                 StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+    //                 break;
+    //             case ENormalState.Airborne:
+    //                 DownAndStand();
+    //                 break;
+    //         }
+    //     }
+    // }
 
     protected void OnCollisionExit2D(Collision2D col)
     {
@@ -1166,7 +1143,7 @@ public abstract class Player : Character
     {
         if (!GameManager.Instance.ControlStart)
             return;
-        
+
         // 세이브 포인트
         if (col.CompareTag(ConstValues.SaveObject))
         {
@@ -1198,6 +1175,7 @@ public abstract class Player : Character
             }
         }
     }
+
     protected void OnTriggerExit2D(Collider2D col)
     {
         // 세이브 포인트
@@ -1229,5 +1207,9 @@ public abstract class Player : Character
                 treasureBox.ReduceInteractionObject();
             }
         }
+        
+        // 플랫폼 떠나기
+        if (col.CompareTag(ConstValues.Platform) && isOnPlatform)
+            isOnPlatform = false;
     }
 }

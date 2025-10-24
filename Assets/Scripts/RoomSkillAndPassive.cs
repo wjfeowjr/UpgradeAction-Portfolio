@@ -22,7 +22,7 @@ public class RoomSkillAndPassive : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D col)
     {
-        if (col.CompareTag(ConstValues.Player) && !col.isTrigger)
+        if (col.CompareTag(ConstValues.Player) && col.isTrigger)
         {
             action();
             gameObject.SetActive(false);

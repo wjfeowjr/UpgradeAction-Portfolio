@@ -119,7 +119,7 @@ public class Room : MonoBehaviour
     
     [SerializeField] protected List<Vector2> firstBossPosList = new List<Vector2>();
     [SerializeField] protected Npc[] npc;
-    [SerializeField] protected GameObject[] traps;
+    [SerializeField] protected BoxCollider2D[] traps;
     [SerializeField] protected ShortcutObject shortCutObject;
     
     [SerializeField] protected Transform monsterLimitLeft;
@@ -1638,6 +1638,10 @@ public class Room : MonoBehaviour
         Transform npcArray = roomGameObject.transform.Find(ConstValues.NpcArray);
         if (npcArray != null)
             npc = npcArray.GetComponentsInChildren<Npc>();
+        
+        Transform trapArray = roomGameObject.transform.Find(ConstValues.TrapArray);
+        if (trapArray != null)
+            traps = trapArray.GetComponentsInChildren<BoxCollider2D>();
         
         Transform productTriggerArray = roomGameObject.transform.Find(ConstValues.ProductTriggerArray);
         if (productTriggerArray != null)

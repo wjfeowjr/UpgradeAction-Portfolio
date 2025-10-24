@@ -207,6 +207,8 @@ public class Attack : MonoBehaviour
         {
             if((hitTarget.Immortal && !attackInfo.ignoreImmortal) || hitTarget.IsDie)
                 return;
+
+            bool isTrapAttack = false;
             
             // 플레이어의 공격
             if (castChar)
@@ -229,8 +231,10 @@ public class Attack : MonoBehaviour
             // 트랩
             else
             {
-                if (col.GetComponent<Player>() == null)
+                if (col.GetComponent<Player>() == null && col.GetComponent<Monster>() == null)
                     return;
+
+                isTrapAttack = true;
             }
 
             // 피격이팩트 생성
@@ -244,7 +248,7 @@ public class Attack : MonoBehaviour
             damage = (int)(damage * randDmg);
 
             // 피해입기
-            hitTarget.TakeDamage(damage);
+            hitTarget.TakeDamage(damage, isTrapAttack);
             // 폰트소환
             hitTarget.SpawnDamageFont(damage, critical);
 

@@ -107,7 +107,7 @@ public class FollowCamera : MonoBehaviour
         {
             if (Time.timeScale > 0)
             {
-                shakeVector = new Vector2(Random.insideUnitSphere.x * shakeAmountX, Random.insideUnitSphere.y * shakeAmountY);
+                shakeVector = new Vector2(Random.Range(-shakeAmountX, shakeAmountX), Random.Range(-shakeAmountY, shakeAmountY));
                 shakeTime -= Time.deltaTime;
             }
             else
