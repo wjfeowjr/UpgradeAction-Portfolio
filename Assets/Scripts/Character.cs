@@ -1592,7 +1592,7 @@ public abstract class Character : MonoBehaviour
     // 물리 처리(발 콜라이더의 충돌만 감지)
     protected void OnTriggerStay2D(Collider2D col)
     {
-        if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY <= 0.01f)
+        if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
         {
             // 평평한 일자형 지형에 떨어지는 경우만
             if (footTrigger.Distance(col).normal.y < -0.5f)

@@ -700,7 +700,7 @@ public class Stage1 : Stage
         var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, fadePos).GetComponent<FadeSystem>();
         fadeBg.SetParameter(0, 1.0f, 1.5f, false);
         await fadeBg.Fade();
-        BgSpriteChange(ConstValues.BgTutorial2);
+        BgSpriteChange(ConstValues.BgSunHillNight);
         if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
             return;
         
@@ -818,7 +818,7 @@ public class Stage1 : Stage
             var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, fadePos).GetComponent<FadeSystem>();
             fadeBg.SetParameter(0, 1.0f, 1.5f, false);
             await fadeBg.Fade();
-            BgSpriteChange(ConstValues.BgTutorial);
+            BgSpriteChange(ConstValues.BgSunHill);
             foreach (var stageWall in stageWalls)
                 stageWall.SetActive(false);
             GameManager.Instance.SetCameraTarget(null);

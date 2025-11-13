@@ -222,6 +222,8 @@ public class RoomsData
     public string treasureBox;
     public string namedMonster;
     public string npcAppearProductIdx;
+    public string bgSprite;
+    public bool bgDeco;
 }
 [Serializable]
 public class RoomsDataList

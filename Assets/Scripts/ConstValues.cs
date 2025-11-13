@@ -33,8 +33,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string RoomFolder = "Assets/Room";
     
     public const string AtlasClone = "(Clone)";
-    public const string BgTutorial = "Bg_Tutorial";
-    public const string BgTutorial2 = "Bg_Tutorial2";
+    public const string BgSunHill = "Bg_SunHill";
+    public const string BgSunHillNight = "Bg_SunHill_Night";
 
     public const string TitleScene = "Title";
     public const string BattleScene = "Battle";

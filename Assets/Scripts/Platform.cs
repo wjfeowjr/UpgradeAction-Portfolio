@@ -4,14 +4,28 @@ using UnityEngine;
 
 public class Platform : MonoBehaviour
 {
+    [SerializeField] private Sprite[] spriteFirst;
+    [SerializeField] private Sprite[] spriteMiddle;
+    [SerializeField] private Sprite[] spriteEnd;
+    [SerializeField] private int idx;
     private SpriteRenderer[] platformSpriteList;
 
     private void Awake()
     {
         platformSpriteList = GetComponentsInChildren<SpriteRenderer>();
+
+        for (var i = 0; i < platformSpriteList.Length; i++)
+        {
+            if (i == 0)
+                platformSpriteList[i].sprite = spriteFirst[idx];
+            else if(i == platformSpriteList.Length - 1)
+                platformSpriteList[i].sprite = spriteEnd[idx];
+            else
+                platformSpriteList[i].sprite = spriteMiddle[idx];
+        }
     }
 
-    public async void DestroyBomb()
+    public void DestroyBomb()
     {
         SoundManager.Instance.PlaySound(ConstValues.FighterStrongPunch);
         GameManager.Instance.CameraShake(0.3f, 0.3f, 0.3f);

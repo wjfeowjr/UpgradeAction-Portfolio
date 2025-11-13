@@ -15,6 +15,8 @@ public class FollowCamera : MonoBehaviour
     private Vector3 initialPosition;
     
     [SerializeField] private Transform target;
+    [SerializeField] private SpriteRenderer bgSprite;
+    [SerializeField] private GameObject bgDeco;
     [SerializeField] private float xMargin;      // 카메라가 따라 가기 전에 플레이어가 이동할 수있는 x 축의 거리.
     [SerializeField] private float yMargin;      // 카메라가 따라 가기 전에 플레이어가 이동할 수있는 y 축의 거리.
     [SerializeField] private float xSmooth;      // 카메라가 x 축에서 목표 이동을 따라 잡는 것이 얼마나 부드럽게 수행되는지.
@@ -72,6 +74,22 @@ public class FollowCamera : MonoBehaviour
         
         xSmooth = 8;
         ySmooth = 3;
+    }
+
+    public void SetBg(string bgId)
+    {
+        if (bgId == ConstValues.None)
+        {
+            bgSprite.gameObject.SetActive(false);
+            return;
+        }
+        bgSprite.gameObject.SetActive(true);
+        bgSprite.sprite = GameManager.Instance.GetAtlasSprite(bgId);
+    }
+    
+    public void SetBgDeco(bool deco)
+    {
+        bgDeco.SetActive(deco);
     }
     
     public void SetTarget(Transform targetTransform)

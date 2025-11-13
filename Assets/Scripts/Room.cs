@@ -201,9 +201,13 @@ public class Room : MonoBehaviour
     public void ObjectActive(bool active)
     {
         roomGameObject.SetActive(active);
-        if(active)
+        if (active)
+        {
             // 여기서 보스 비활성화
             BossSetting();
+            // 여기서 배경 설정
+            BgSetting();
+        }
     }
     
     // 세이브 포인트가 없을때만 적용, 1번맵 전용
@@ -751,6 +755,16 @@ public class Room : MonoBehaviour
     {
         foreach (var boss in bosses)
             boss.gameObject.SetActive(false);
+    }
+
+    private void BgSetting()
+    {
+        roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
+        if (roomsData != null)
+        {
+            GameManager.Instance.MainCamera.SetBg(roomsData.bgSprite);
+            GameManager.Instance.MainCamera.SetBgDeco(roomsData.bgDeco);
+        }
     }
 
     private void SpawnBoss(Monster boss, Vector2 bossPos)
@@ -1358,7 +1372,7 @@ public class Room : MonoBehaviour
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[11]);
         }
 
-        RoomManager.Instance.BgSpriteChange(ConstValues.BgTutorial2);
+        RoomManager.Instance.BgSpriteChange(ConstValues.BgSunHillNight);
         RoomManager.Instance.BgDecoActive(false);
         
         fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
@@ -1438,7 +1452,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
             return;
         
-        RoomManager.Instance.BgSpriteChange(ConstValues.BgTutorial);
+        RoomManager.Instance.BgSpriteChange(ConstValues.BgSunHill);
         RoomManager.Instance.BgDecoActive(true);
         
         berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
