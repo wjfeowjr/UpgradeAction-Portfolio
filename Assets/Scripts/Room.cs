@@ -23,10 +23,18 @@ public enum EntranceDir
 public class RoomInfo
 {
     public int productCount;
-    public int shortcutPoint;
     public bool bossClear;
+    public List<ShortCut> shortCut = new List<ShortCut>();
     public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
     public List<TreasureBox> treasureBox = new List<TreasureBox>();
+}
+
+[Serializable]
+// 스킬 및 패시브
+public class ShortCut
+{
+    public string type;
+    public bool isOpened;
 }
 
 [Serializable]
@@ -120,7 +128,7 @@ public class Room : MonoBehaviour
     [SerializeField] protected List<Vector2> firstBossPosList = new List<Vector2>();
     [SerializeField] protected Npc[] npc;
     [SerializeField] protected BoxCollider2D[] traps;
-    [SerializeField] protected ShortcutObject shortCutObject;
+    [SerializeField] protected ShortcutObject[] shortCutObjects;
     
     [SerializeField] protected Transform monsterLimitLeft;
     [SerializeField] protected Transform monsterLimitRight;
@@ -327,6 +335,28 @@ public class Room : MonoBehaviour
             roomInfo.productCount = 0;
         }
         
+        // 맵에 있는 숏컷 세팅
+        if (roomInfo.shortCut.Count < shortCutObjects.Length)
+        {
+            foreach (var shortcutObject in shortCutObjects)
+            {
+                ShortCut addShortcut = new ShortCut();
+                addShortcut.type = shortcutObject.Type;
+                addShortcut.isOpened = false;
+                roomInfo.shortCut.Add(addShortcut);
+            }
+        }
+        
+        // 초기화 할 때 쓰는거
+        // roomInfo.shortCut.Clear();
+        // foreach (var shortcutObject in shortCutObjects)
+        // {
+        //     ShortCut addShortcut = new ShortCut();
+        //     addShortcut.type = shortcutObject.Type;
+        //     addShortcut.isOpened = false;
+        //     roomInfo.shortCut.Add(addShortcut);
+        // }
+
         // 맵에 널려있는 스킬 세팅
         var skillArray = roomsData.skill.Split(';');
         if (roomInfo.skillAndPassive.Count != skillArray.Length)
@@ -647,9 +677,39 @@ public class Room : MonoBehaviour
     }
 
     // 숏컷 뚫기
-    private void UnlockShortCut()
+    private void UnlockShortCut(ShortcutType type)
     {
-        roomInfo.shortcutPoint += 1;
+        ShortcutOpen(type);
+
+        switch (type)
+        {
+            case ShortcutType.CrushLeft:
+                leftRoom.ShortcutOpen(ShortcutType.WallRight);
+                break;
+            
+            case ShortcutType.CrushRight:
+                rightRoom.ShortcutOpen(ShortcutType.WallLeft);
+                break;
+            
+            case ShortcutType.CrushUp:
+                upRoom.ShortcutOpen(ShortcutType.WallDown);
+                break;
+            
+            case ShortcutType.CrushDown:
+                downRoom.ShortcutOpen(ShortcutType.WallUp);
+                break;
+        }
+    }
+    
+    // 숏컷정보 저장
+    private void ShortcutOpen(ShortcutType type)
+    {
+        var targetShortcut = roomInfo.shortCut.Find(x => x.type == type.ToString());
+        
+        if (targetShortcut == null)
+            return;
+        
+        targetShortcut.isOpened = true;
         SaveRoom();
     }
 
@@ -676,8 +736,8 @@ public class Room : MonoBehaviour
 
     private void SetShortCut()
     {
-        if(shortCutObject)
-            shortCutObject.OpenSetting(roomInfo.shortcutPoint, UnlockShortCut);
+        for (int i = 0; i < shortCutObjects.Length; i++)
+            shortCutObjects[i].OpenSetting(roomInfo.shortCut[i].isOpened, UnlockShortCut);
     }
 
     private void SetSavePoint()
@@ -1661,21 +1721,6 @@ public class Room : MonoBehaviour
         if (productTriggerArray != null)
             productTriggers = productTriggerArray.GetComponentsInChildren<ProductTrigger>();
 
-        Transform shortcutArray = roomGameObject.transform.Find(ConstValues.ShortcutArray);
-        if (shortcutArray != null)
-        {
-            shortCutObject = shortcutArray.GetComponentInChildren<ShortcutObject>();
-            if (shortCutObject != null)
-            {
-                Transform groundGrid = roomGameObject.transform.Find(ConstValues.GroundGrid);
-                if (groundGrid != null)
-                {
-                    GameObject shortcutTileMap = groundGrid.Find(ConstValues.ShortcutTileMap).gameObject;
-                    shortCutObject.CacheBlocker(shortcutTileMap);
-                }
-            }
-        }
-        
         Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
         if (playerPosArray != null)
         {

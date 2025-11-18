@@ -1,57 +1,107 @@
 using System;
 using UnityEngine;
+using UnityEngine.Serialization;
+
+public enum ShortcutType
+{
+    Lever,
+    CrushLeft,
+    CrushRight,
+    CrushUp,
+    CrushDown,
+    WallLeft,
+    WallRight,
+    WallUp,
+    WallDown,
+}
 
 public class ShortcutObject : MonoBehaviour
 {
-    [SerializeField] private BoxCollider2D myBoxCollider;
-    [SerializeField] private SpriteRenderer mySpriteRenderer;
-    [SerializeField] private Sprite[] leverSprites;
+    [SerializeField] private ShortcutType type;
+    [SerializeField] protected Collider2D myCollider;
     [SerializeField] private GameObject shortcutBlocker;// 막고 있는 문/벽(콜라이더 포함)
 
-    private Action openAction;
+    private Action<ShortcutType> openAction;
     private bool opened;
+    private int hp;
 
-    public void CacheBlocker(GameObject blockerObject)
+    public string Type => type.ToString();
+
+    public void OpenSetting(bool isOpen, Action<ShortcutType> action)
     {
-        shortcutBlocker = blockerObject;
-    }
-    public void OpenSetting(int point, Action action)
-    {
-        if (point == 0)
+        if (!isOpen)
         {
+            if (type == ShortcutType.Lever)
+                hp = 1;
+            else if (type is ShortcutType.WallLeft or ShortcutType.WallRight or ShortcutType.WallUp or ShortcutType.WallDown)
+                hp = 0;
+            else
+                hp = 3;
+            
             openAction = action;
             return;
         }
         
-        OpenShortcutImmediate();
+        OpenImmediate();
     }
 
+    // 숏컷이 열리는 연출
     private void BreakAndOpen()
     {
-        openAction();
-        Open();
-    }
-
-    // 저장 반영으로 이미 열린 경우 즉시 처리
-    private void OpenShortcutImmediate()
-    {
-        Open();
-    }
-
-    private void Open()
-    {
-        myBoxCollider.enabled = false;
-        mySpriteRenderer.sprite = leverSprites[1];
-        opened = true;
+        hp -= 1;
+        if (hp > 0)
+        {
+            HitProduct();
+            return;
+        }
         
+        openAction(type);
+        OpenProduct();
+    }
+
+    protected virtual void HitProduct()
+    {
+        
+    }
+    
+    // 열리는 연출
+    protected virtual void OpenProduct()
+    {
+        OpenImmediate();
+    }
+
+    // 즉시 오픈
+    protected virtual void OpenImmediate()
+    {
+        myCollider.enabled = false;
+        opened = true;
+
         if (shortcutBlocker)
             shortcutBlocker.SetActive(false);
+    }
+    
+    protected GameObject SpawnObject(string id, Vector2 pos)
+    {
+        var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
+        
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        if(objectData == null)
+            return obj;
+
+        var spawnedObject = obj.GetComponent<SpawnedObject>();
+        if (!spawnedObject)
+            spawnedObject = obj.AddComponent<SpawnedObject>();
+
+        spawnedObject.SetupData(objectData, transform.localScale.x);
+        spawnedObject.EnableSetting();
+
+        return obj;
     }
     
     // 공격판정(Attack 오브젝트)와 충돌했을 때
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (opened)
+        if (opened || type is ShortcutType.WallLeft or ShortcutType.WallRight or ShortcutType.WallUp or ShortcutType.WallDown)
             return;
 
         // Attack 컴포넌트로 판정 (프로젝트 구조 기준)

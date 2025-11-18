@@ -230,6 +230,8 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";
+    public const string ShortcutCrashEffect = "ShortcutCrashEffect";
+    public const string ShortcutCrashExplosion = "ShortcutCrashExplosion";
     
     public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";
