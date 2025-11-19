@@ -6,11 +6,15 @@ public enum ShortcutType
 {
     Lever,
     CrushLeft,
+    CrushLeft2,
     CrushRight,
+    CrushRight2,
     CrushUp,
     CrushDown,
     WallLeft,
+    WallLeft2,
     WallRight,
+    WallRight2,
     WallUp,
     WallDown,
 }
@@ -101,7 +105,7 @@ public class ShortcutObject : MonoBehaviour
     // 공격판정(Attack 오브젝트)와 충돌했을 때
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (opened || type is ShortcutType.WallLeft or ShortcutType.WallRight or ShortcutType.WallUp or ShortcutType.WallDown)
+        if (opened || type is ShortcutType.WallLeft or ShortcutType.WallLeft2 or ShortcutType.WallRight or ShortcutType.WallRight2 or ShortcutType.WallUp or ShortcutType.WallDown)
             return;
 
         // Attack 컴포넌트로 판정 (프로젝트 구조 기준)

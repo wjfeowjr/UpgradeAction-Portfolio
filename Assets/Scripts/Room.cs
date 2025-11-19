@@ -687,8 +687,16 @@ public class Room : MonoBehaviour
                 leftRoom.ShortcutOpen(ShortcutType.WallRight);
                 break;
             
+            case ShortcutType.CrushLeft2:
+                leftRoom2.ShortcutOpen(ShortcutType.WallRight2);
+                break;
+            
             case ShortcutType.CrushRight:
                 rightRoom.ShortcutOpen(ShortcutType.WallLeft);
+                break;
+            
+            case ShortcutType.CrushRight2:
+                rightRoom2.ShortcutOpen(ShortcutType.WallLeft2);
                 break;
             
             case ShortcutType.CrushUp:
