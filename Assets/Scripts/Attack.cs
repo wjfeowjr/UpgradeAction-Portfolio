@@ -66,10 +66,15 @@ public class Attack : MonoBehaviour
         TargetColReset();
     }
 
-    public void SetupData(Character character, AttackData attackData)
+    public void SetupCastChar(Character character)
     {
         castChar = character;
-
+    }
+    public void SetupData(AttackData attackData)
+    {
+        if (attackInfo != null)
+            return;
+        
         attackInfo = new AttackInfo();
         attackInfo.id = attackData.id;
         attackInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
@@ -315,7 +320,7 @@ public class Attack : MonoBehaviour
                 switch (attackInfo.effectType)
                 {
                     case EEffectType.Stun:
-                        if(hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor)
+                        if(hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
                             hitTarget.Stun(attackInfo.effectTime);
                         break;
                 }
@@ -330,7 +335,7 @@ public class Attack : MonoBehaviour
                         break;
             
                     case EEffectType.Stun:
-                        if(hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor)
+                        if(hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
                             hitTarget.Stun(attackInfo.effectTime);
                         break;
             

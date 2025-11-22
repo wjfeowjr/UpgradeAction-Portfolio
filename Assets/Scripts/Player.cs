@@ -124,6 +124,8 @@ public abstract class Player : Character
     private bool isChanging;
     private float jumpLimitY;
 
+    protected CancellationTokenSource delayCancellation;
+    
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
     [SerializeField] protected bool nextAttack;
@@ -135,6 +137,9 @@ public abstract class Player : Character
     
     private float globalCoolTime;
     protected float curGlobalCoolTime;
+    
+    private float dashDelay;
+    private float curDashDelay;
     
     private float changeGlobalCoolTime;
     private float curChangeGlobalCoolTime;
@@ -161,6 +166,7 @@ public abstract class Player : Character
     {
         base.Awake();
         globalCoolTime = 0.1f;
+        dashDelay = 0.2f;
         changeGlobalCoolTime = 0.1f;
         skillGlobalCoolTime = 0.02f;
     }
@@ -184,6 +190,7 @@ public abstract class Player : Character
         UpdateFlip();
         UpdateJumpDown();
         UpdateGlobalCoolTime();
+        UpdateDashDelay();
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
         UpdateBuff();
@@ -446,6 +453,20 @@ public abstract class Player : Character
         bool isFill = curGlobalCoolTime >= globalCoolTime;
         return isFill;
     }
+    
+    private void UpdateDashDelay()
+    {
+        if (curDashDelay < dashDelay)
+            curDashDelay += Time.deltaTime;
+
+        if (curDashDelay >= dashDelay)
+            curDashDelay = dashDelay;
+    }
+    protected bool GetDashDelay()
+    {
+        bool isFill = curDashDelay >= dashDelay;
+        return isFill;
+    }
 
     private void UpdateChangeGlobalCoolTime()
     {
@@ -665,9 +686,15 @@ public abstract class Player : Character
         Controller.Instance.StopMove();
     }
     
-    public override void Airborne(float xVelocity, float yVelocity)
+    public override async void Airborne(float xVelocity, float yVelocity)
     {
         base.Airborne(xVelocity, yVelocity);
+        curDashDelay = 0f;
+        
+        delayCancellation = new CancellationTokenSource();
+        if(await NormalDelay(dashDelay, delayCancellation).SuppressCancellationThrow())
+            return;
+        
         if(GameManager.Instance.ControlStart && IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
             ActiveDashEffectUI();
     }
@@ -1172,6 +1199,45 @@ public abstract class Player : Character
                 var treasureBox = col.GetComponent<RoomTreasureBox>();
                 if(!treasureBox.IsOpen)
                     treasureBox.SpawnInteractionObject();
+            }
+        }
+    }
+
+    protected override void OnTriggerStay2D(Collider2D col)
+    {
+        base.OnTriggerStay2D(col);
+        
+        // 체공중 발 콜라이더가 벽 타입 몬스터와 충돌했을 때
+        if (col.CompareTag(ConstValues.WallBody))
+        {
+            if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
+            {
+                var monster = col.GetComponentInParent<Character>();
+
+                // 몹이 오른쪽을 보고있음
+                if (monster.transform.localScale.x > 0)
+                {
+                    if (transform.position.x > monster.transform.position.x)
+                    {
+                        transform.position = new Vector2(monster.ColFront(), transform.position.y);
+                    }
+                    else
+                    {
+                        transform.position = new Vector2(monster.ColBehind(), transform.position.y);
+                    }
+                }
+                // 몹이 왼쪽을 보고있음
+                else
+                {
+                    if (transform.position.x > monster.transform.position.x)
+                    {
+                        transform.position = new Vector2(monster.ColBehind(), transform.position.y);
+                    }
+                    else
+                    {
+                        transform.position = new Vector2(monster.ColFront(), transform.position.y);
+                    }
+                }
             }
         }
     }

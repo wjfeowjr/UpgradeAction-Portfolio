@@ -1258,7 +1258,7 @@ public class GameManager : Singleton<GameManager>
             if (!attack)
             {
                 attack = trapObject.AddComponent<Attack>();
-                attack.SetupData(null, attackData);
+                attack.SetupData(attackData);
             }
 
             attack.EnableSetting();

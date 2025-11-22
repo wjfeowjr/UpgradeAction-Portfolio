@@ -58,6 +58,7 @@ public enum EBodyType
 {
     Normal,
     SuperArmor,
+    HeavyArmor,
     StrongArmor,
     HyperArmor,
     UnChange
@@ -142,6 +143,7 @@ public abstract class Character : MonoBehaviour
     protected int airborneCount; // 에어본 카운트
     private int platformLayerMask;
     protected int groundAndPlatformLayerMask;
+    protected int groundAndWallLayerMask;
     protected int monsterWalkLayerMask;
     protected int wallLayerMask;
 
@@ -204,6 +206,7 @@ public abstract class Character : MonoBehaviour
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
+        groundAndWallLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall));
         monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform) | (1 << LayerMask.NameToLayer(ConstValues.Trap)));
         wallLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
 
@@ -246,6 +249,24 @@ public abstract class Character : MonoBehaviour
         var hitBoxOffset = myBoxCollider.offset;
         standOffset = new Vector2(hitBoxOffset.x, hitBoxOffset.y);
         downOffset = new Vector2(hitBoxOffset.x, hitBoxOffset.y - hitBoxOffset.y * 0.4f);
+    }
+    
+    public float ColFront()
+    {
+        float dir = 1;
+        if (transform.localScale.x < 0)
+            dir = -1;
+
+        return transform.position.x + dir * myBoxCollider.size.x * 0.5f;
+    }
+
+    public float ColBehind()
+    {
+        float dir = -1;
+        if (transform.localScale.x < 0)
+            dir = 1;
+
+        return transform.position.x + dir * myBoxCollider.size.x * 0.5f;
     }
 
     protected void UpdateAirborneDown()
@@ -596,11 +617,10 @@ public abstract class Character : MonoBehaviour
         {
             var attack = obj.GetComponent<Attack>();
             if (!attack)
-            {
                 attack = obj.AddComponent<Attack>();
-                attack.SetupData(this, attackData);
-            }
-
+            
+            attack.SetupCastChar(this);
+            attack.SetupData(attackData);
             attack.EnableSetting();
         }
 
@@ -687,8 +707,9 @@ public abstract class Character : MonoBehaviour
             var attack = obj.GetComponent<Attack>();
             if (!attack)
                 attack = obj.AddComponent<Attack>();
-
-            attack.SetupData(this, attackData);
+            
+            attack.SetupCastChar(this);
+            attack.SetupData(attackData);
             attack.EnableSetting();
         }
 
@@ -753,11 +774,10 @@ public abstract class Character : MonoBehaviour
         {
             var attack = obj.GetComponent<Attack>();
             if (!attack)
-            {
                 attack = obj.AddComponent<Attack>();
-                attack.SetupData(this, attackData);
-            }
-
+            
+            attack.SetupCastChar(this);
+            attack.SetupData(attackData);
             attack.EnableSetting();
         }
 
@@ -1347,7 +1367,9 @@ public abstract class Character : MonoBehaviour
             switch (buffType)
             {
                 case EBuffType.Stun:
-                    basicStat.bodyType = EBodyType.Normal;
+                    // 슈퍼 아머만 깨짐
+                    if (originStat.bodyType == EBodyType.SuperArmor)
+                        basicStat.bodyType = EBodyType.Normal;
                     break;
                 case EBuffType.Stagger:
                     // 스트롱 아머만 깨짐
@@ -1590,7 +1612,7 @@ public abstract class Character : MonoBehaviour
     }
 
     // 물리 처리(발 콜라이더의 충돌만 감지)
-    protected void OnTriggerStay2D(Collider2D col)
+    protected virtual void OnTriggerStay2D(Collider2D col)
     {
         if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
         {
@@ -1628,161 +1650,4 @@ public abstract class Character : MonoBehaviour
             }
         }
     }
-
-    // protected async UniTask<bool> Charge(float basicSpeed, float limitMag, float chargeLength, float acceleration)
-    // {
-    //     float realDashSpeed = basicSpeed;
-    //     float limitDashSpeed = basicSpeed * limitMag;
-    //     float finalSpeed = basicSpeed + limitDashSpeed * 0.5f;
-    //     float finalTime = chargeLength / finalSpeed;
-    //     
-    //     float accelerationTime = finalTime + finalTime * 0.5f;
-    //     float finalAcceleration = 0.0f;
-    //     float time = 0.0f;
-    //
-    //     Vector2 startVector = transform.position;
-    //     
-    //     while (time < accelerationTime)
-    //     {
-    //         time += Time.deltaTime;
-    //         transform.position = Vector2.MoveTowards(transform.position, chargeVector, realDashSpeed * Time.deltaTime);
-    //
-    //         if (Vector2.Distance(transform.position, chargeVector) * 2 < Vector2.Distance(startVector, chargeVector))
-    //         {
-    //             finalAcceleration += acceleration;
-    //
-    //             if (acceleration > 0)
-    //                 finalAcceleration = Mathf.Abs(finalAcceleration);
-    //             else
-    //                 finalAcceleration = -Mathf.Abs(finalAcceleration);
-    //             
-    //             realDashSpeed += finalAcceleration;
-    //         }
-    //
-    //         if (limitMag >= 1)
-    //         {
-    //             if (realDashSpeed > limitDashSpeed)
-    //                 realDashSpeed = limitDashSpeed;
-    //         }
-    //         else
-    //         {
-    //             if (realDashSpeed < limitDashSpeed)
-    //                 realDashSpeed = limitDashSpeed;
-    //         }
-    //
-    //         if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-    //             return false;
-    //     }
-    //
-    //     return true;
-    // }
-
-    // 레이체크(벽 등을 판정하여 최종적으로 도착하는 지점 확인용도)
-    // protected Vector2 RayCheckLength(float chargeLengthX, float chargeLengthY)
-    // {
-    //     var rayVector = transform.position;
-    //     
-    //     // 왼쪽
-    //     if (transform.localScale.x < 0)
-    //     {
-    //         var leftRay = Physics2D.Raycast(rayVector, Vector2.left, chargeLengthX, moveLayerMask);
-    //         Debug.DrawRay(rayVector, Vector2.left * chargeLengthX, ConstValues.RedColor, 0.1f);
-    //         
-    //         // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-    //         if (leftRay.collider != null)
-    //             return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
-    //         // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) + (자신의 콜라이더/2) 만큼 벡터가 정해진다
-    //         else
-    //             return new Vector2(transform.position.x - chargeLengthX + (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
-    //     }
-    //     // 오른쪽
-    //     else
-    //     {
-    //         var rightRay = Physics2D.Raycast(rayVector, Vector2.right, chargeLengthX, moveLayerMask);
-    //         Debug.DrawRay(rayVector, Vector2.right * chargeLengthX, ConstValues.RedColor, 0.1f);
-    //
-    //         // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
-    //         if (rightRay.collider != null)
-    //             return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y + chargeLengthY);
-    //         // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-    //         else
-    //             return new Vector2(transform.position.x + chargeLengthX - (myBoxCollider.size.x / 2), transform.position.y + chargeLengthY);
-    //     }
-    // }
-
-    // public async void KnockBack(float knockBackLength)
-    // {
-    //     if(normalState == ENormalState.Down)
-    //         return;
-    //     
-    //     var knockPosX = RayCheckLength(knockBackLength).x;
-    //     var startDir = transform.position;
-    //     var endDir = new Vector2(knockPosX, transform.position.y);
-    //     float duration = ConstValues.KnockBackTime;
-    //     float elapsed = 0f;
-    //     
-    //     anotherCancellation = new CancellationTokenSource();
-    //     while (elapsed < duration)
-    //     {
-    //         transform.position = Vector3.Lerp(startDir, endDir, elapsed / duration);
-    //         elapsed += Time.deltaTime;
-    //         if (await YieldDelay(anotherCancellation).SuppressCancellationThrow())
-    //             return;
-    //     }
-    // }
-
-    // private Vector2 RayCheckLength(float chargeLengthX)
-    // {
-    //     var absLengthX = Mathf.Abs(chargeLengthX);
-    //     // 오른쪽
-    //     if (chargeLengthX > 0)
-    //     {
-    //         var rightRay = Physics2D.Raycast(centerPos.position, Vector2.right, absLengthX, moveLayerMask);
-    //         Debug.DrawRay(centerPos.position, Vector2.right * absLengthX, ConstValues.RedColor, 0.1f);
-    //
-    //         // 레이에 닿은 콜라이더가 한개라도 있을 경우 체크가 참이된다
-    //         if (rightRay.collider != null)
-    //             return new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y);
-    //         // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 + 레이의 길이) 만큼 벡터가 정해진다
-    //         else
-    //             return new Vector2(transform.position.x + absLengthX, transform.position.y);
-    //     }
-    //     // 왼쪽
-    //     else
-    //     {
-    //         var leftRay = Physics2D.Raycast(centerPos.position, Vector2.left, absLengthX, moveLayerMask);
-    //         Debug.DrawRay(centerPos.position, Vector2.left * absLengthX, ConstValues.RedColor, 0.1f);
-    //         
-    //         // 레이에 닿은 콜라이더가 한개라도 있을 경우 (닿은 레이) - (자신의 콜라이더/2) 만큼 벡터가 정해진다
-    //         if (leftRay.collider != null)
-    //             return new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y);
-    //         // 레이에 닿은 콜라이더가 아무것도 없을 경우 (자신x축 - 레이의 길이) 만큼 벡터가 정해진다
-    //         else
-    //             return new Vector2(transform.position.x - absLengthX, transform.position.y);
-    //     }
-    // }
-
-    // public async void KnockBack(float knockBackLength)
-    // {
-    //     if(normalState == ENormalState.Down)
-    //         return;
-    //
-    //     var knockPosX = transform.position.x + knockBackLength;
-    //     if(knockBackLength < 0)
-    //         knockPosX = transform.position.x - knockBackLength;
-    //     
-    //     var startDir = transform.position;
-    //     var endDir = new Vector2(knockPosX, transform.position.y);
-    //     float duration = ConstValues.KnockBackTime;
-    //     float elapsed = 0f;
-    //     
-    //     anotherCancellation = new CancellationTokenSource();
-    //     while (elapsed < duration)
-    //     {
-    //         transform.position = Vector3.Lerp(startDir, endDir, elapsed / duration);
-    //         elapsed += Time.deltaTime;
-    //         if (await FixedYieldDelay(anotherCancellation).SuppressCancellationThrow())
-    //             return;
-    //     }
-    // }
 }

@@ -246,6 +246,15 @@ public class Player_Berserker : Player
             return;
         }
 
+        if (skillKey == GameManager.Instance.dashKey)
+        {
+            if(!GetDashDelay())
+            {
+                Debug.Log("대시 딜레이가 지나지 않음");
+                return;
+            }
+        }
+
         UseSkill(skillId);
         curGlobalCoolTime = 0;
         if (moveState == EMoveState.Moving)

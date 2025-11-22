@@ -92,8 +92,9 @@ public class Monster : Character
     private float agroTime = 5.0f;
     private float currentAgroTime;
     private bool playerInAgroRange;
-    private float firstHeight;
+    
     private float leapHeight;
+    private float arriveHeight;
 
     private bool patrolMoving = false;
     private float patrolTimer = 0f;
@@ -139,8 +140,19 @@ public class Monster : Character
         InitBasicStat();
         InitAdditionalStat();
         GravityChange(myGravity);
-        firstHeight = transform.position.y;
         startPosX = transform.position.x;
+
+        if (!IsHovering)
+            return;
+        
+        Vector2 rayVector = transform.position;
+        float distance = 30;
+        RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, distance, groundAndPlatformLayerMask);
+        Debug.DrawRay(rayVector, Vector2.down * distance, ConstValues.RedColor, 0.1f);
+        if (downRay.collider == null)
+            leapHeight = 3.0f;
+        else
+            leapHeight = transform.position.y - downRay.point.y;
     }
 
     protected override void Update()
@@ -521,15 +533,32 @@ public class Monster : Character
         // 근접몹
         else
         {
-            StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-            MoveStateSetting(EMoveState.Moving);
+            if (basicStat.moveSpeed == 0)
+            {
+                StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+                MoveStateSetting(EMoveState.Stopping);
+            }
+            else
+            {
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                MoveStateSetting(EMoveState.Moving);
+            }
         }
     }
 
     // 호버링 높이까지 도약
     private void HoveringLeap()
     {
-        leapHeight = firstHeight;
+        // 위쪽 레이캐스트 사용 (원본 사이즈만큼)
+        Vector2 rayVector = transform.position;
+        float distance = leapHeight;
+        RaycastHit2D upRay = Physics2D.Raycast(rayVector, Vector2.up, distance, groundAndWallLayerMask);
+        Debug.DrawRay(rayVector, Vector2.up * distance, ConstValues.RedColor, 0.1f);
+        if (upRay.collider == null)
+            arriveHeight = transform.position.y + leapHeight;
+        else
+            arriveHeight = upRay.point.y - myBoxCollider.size.y * 0.5f - myBoxCollider.offset.y - 0.2f;
+
         StateSetting(ENormalState.Leap, ConstValues.Leap, ConstValues.Leap);
         MoveStateSetting(EMoveState.Stopping);
     }
@@ -731,6 +760,9 @@ public class Monster : Character
         // {
         //     
         // }
+        if (basicStat.moveSpeed == 0)
+            return;
+        
         // 움직이기
         if (moveState != EMoveState.Moving)
             return;
@@ -834,8 +866,11 @@ public class Monster : Character
                 // 근접몹
                 else
                 {
-                    StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-                    MoveStateSetting(EMoveState.Moving);
+                    if (basicStat.moveSpeed != 0)
+                    {
+                        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                        MoveStateSetting(EMoveState.Moving);
+                    }
                 }
             }
         }
@@ -844,8 +879,11 @@ public class Monster : Character
             switch (normalState)
             {
                 case ENormalState.Idle:
-                    StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-                    MoveStateSetting(EMoveState.Moving);
+                    if (basicStat.moveSpeed != 0)
+                    {
+                        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                        MoveStateSetting(EMoveState.Moving);
+                    }
                     break;
 
                 case ENormalState.Move:
@@ -863,6 +901,9 @@ public class Monster : Character
 
     private void Patrol()
     {
+        if (basicStat.moveSpeed == 0)
+            return;
+        
         if (patrolTimer <= 0f)
         {
             patrolMoving = !patrolMoving;
@@ -1175,16 +1216,23 @@ public class Monster : Character
         if (normalState != ENormalState.Leap)
             return;
 
-        if (transform.position.y < leapHeight)
+        if (transform.position.y < arriveHeight)
         {
             myRigidbody.linearVelocity = new Vector2(0, 15.0f);
         }
         else
         {
-            transform.position = new Vector2(transform.position.x, leapHeight);
+            transform.position = new Vector2(transform.position.x, arriveHeight);
             myRigidbody.linearVelocity = Vector2.zero;
             GravityChange(myGravity);
             IdleOrMove();
+            
+            // 도약이 끝날때 바로 공격하는 불쾌한 현상 방지
+            for (var i = 0; i < patternInfo.Count; i++)
+            {
+                patternInfo[i].patternCoolTime = myStat.coolTime[i] - 0.5f;
+                patternInfo[i].canPattern = false;
+            }
         }
     }
 

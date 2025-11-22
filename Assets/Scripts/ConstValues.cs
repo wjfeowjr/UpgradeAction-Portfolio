@@ -128,6 +128,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Grenade = "Grenade";
     public const string Player = "Player";
     public const string Monster = "Monster";
+    public const string WallBody = "WallBody";
     
     // 룸 하위 오브젝트 이름들
     public const string MonsterArray = "MonsterArray";
