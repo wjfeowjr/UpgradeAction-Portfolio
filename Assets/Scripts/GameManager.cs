@@ -626,10 +626,10 @@ public class GameManager : Singleton<GameManager>
     public KeyCode skillKey2;
     public KeyCode skillKey3;
     public KeyCode skillKey4;
-    public KeyCode skillKey5;
-    public KeyCode skillKey6;
-    public KeyCode skillKey7;
-    public KeyCode skillKey8;
+    //public KeyCode skillKey5;
+    //public KeyCode skillKey6;
+    //public KeyCode skillKey7;
+    //public KeyCode skillKey8;
 
     public KeyCode optionKey;
 
@@ -888,10 +888,10 @@ public class GameManager : Singleton<GameManager>
         skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
         skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
-        skillKey5 = KeyBinding.LoadKey(ConstValues.SkillKey5, KeyCode.Q);
-        skillKey6 = KeyBinding.LoadKey(ConstValues.SkillKey6, KeyCode.W);
-        skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.E);
-        skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.R);
+        //skillKey5 = KeyBinding.LoadKey(ConstValues.SkillKey5, KeyCode.Q);
+        //skillKey6 = KeyBinding.LoadKey(ConstValues.SkillKey6, KeyCode.W);
+        //skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.E);
+        //skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.R);
 
         InitSkillKey();
     }
@@ -913,10 +913,10 @@ public class GameManager : Singleton<GameManager>
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey2));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey3));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey4));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey5));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey6));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey7));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey8));
+        //berserkerSkillKeyList.Add(SetSkillKey(default, skillKey5));
+        //berserkerSkillKeyList.Add(SetSkillKey(default, skillKey6));
+        //berserkerSkillKeyList.Add(SetSkillKey(default, skillKey7));
+        //berserkerSkillKeyList.Add(SetSkillKey(default, skillKey8));
         
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerUpperSlash, skillKey6));
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey7));
@@ -930,10 +930,10 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey2));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey3));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey4));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey5));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey6));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey7));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey8));
+        //gunnerSkillKeyList.Add(SetSkillKey(default, skillKey5));
+        //gunnerSkillKeyList.Add(SetSkillKey(default, skillKey6));
+        //gunnerSkillKeyList.Add(SetSkillKey(default, skillKey7));
+        //gunnerSkillKeyList.Add(SetSkillKey(default, skillKey8));
         
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey6));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
@@ -947,11 +947,6 @@ public class GameManager : Singleton<GameManager>
         
         var loadedSkillKeyCollection = JsonUtility.FromJson<SkillKeyCollection>(loadJson);
         playerSkillKey = loadedSkillKeyCollection;
-    }
-    public void AddNewSkill()
-    {
-        playerSkillKey.berserkerSkillKeyList[8] = SetSkillKey(ConstValues.BerserkerCrash, skillKey8);
-        playerSkillKey.gunnerSkillKeyList[8] = SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8);
     }
 
     public void AddNewSkill(string id)
@@ -1292,6 +1287,10 @@ public class GameManager : Singleton<GameManager>
     {
         return SpawnToPoolInstantiate(id, uiObjectPool, objTransform);
     }
+    public GameObject SpawnToUIObjectPoolInstantiate(string id, Vector2 objVector)
+    {
+        return SpawnToPoolInstantiate(id, uiObjectPool, objVector);
+    }
 
     // UI화면
     public GameObject SpawnToUIPool(string id, Vector2 objVector)
@@ -1357,8 +1356,18 @@ public class GameManager : Singleton<GameManager>
             GameObject go = Instantiate(prefab, objectPool);
             Destroy(go);
         }
-        var font = SpawnToUIObjectPool(ConstValues.TextFont, Vector2.zero);
-        font.SetActive(false);
+
+        for (int i = 0; i < 30; i++)
+        {
+            var font = SpawnToUIObjectPoolInstantiate(ConstValues.TextFont, Vector2.zero);
+            font.SetActive(false);
+        }
+        
+        var guide = SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero);
+        guide.SetActive(false);
+        
+        var skillExplosion = SpawnToObjectPool(ConstValues.GetSkillExplosion, Vector2.zero);
+        skillExplosion.SetActive(false);
     }
 
     private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)
@@ -1463,6 +1472,7 @@ public class GameManager : Singleton<GameManager>
         uiInterface.SetComboPresenter(comboPresenter);
         comboPresenter.SetCombo();
 
+        RefreshFace();
         RefreshPlayerHp();
                     
         var bossHpInterface = uiInterface.BossHpView.ConvertTo<IUIBossHpView>();
@@ -1470,7 +1480,7 @@ public class GameManager : Singleton<GameManager>
         uiInterface.SetBossHpPresenter(bossHpPresenter);
         bossHpPresenter.HideHp();
             
-        var changeInterface = uiInterface.ChangeCharacter.ConvertTo<IUISkillView>();
+        var changeInterface = uiInterface.SkillView.ConvertTo<IUISkillView>();
         var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
         var skillModel = new UISkillModel
         {
@@ -1503,14 +1513,23 @@ public class GameManager : Singleton<GameManager>
         await popupWarning.PopupWarningPresenter.SetMessage();
     }
 
-    public void RefillPlayerHp()
+    private void RefreshFace()
     {
-        foreach (var player in players)
-            player.BasicStat.hp = player.BasicStat.maxHp;
-
-        RefreshPlayerHp();
+        var faceInterface = uiInterface.CharacterFaceView.ConvertTo<ICharacterFace>();
+        var faceModel = new UICharacterFaceModel()
+        {
+            firstCharacter = firstPlayer,
+            secondCharacter = secondPlayer,
+        };
+        var facePresenter = new UICharacterFacePresenter(faceInterface, faceModel);
+        uiInterface.SetCharacterFacePresenter(facePresenter);
+        
+        if(curPlayer.BasicStat.id == firstPlayer)
+            facePresenter.SetFirstFace();
+        else if(curPlayer.BasicStat.id == secondPlayer)
+            facePresenter.SetSecondFace();
     }
-
+    
     public void RefreshPlayerHp()
     {
         var hpInterface = uiInterface.HpView.ConvertTo<IUIHpView>();
@@ -1522,6 +1541,14 @@ public class GameManager : Singleton<GameManager>
         uiInterface.SetHpPresenter(hpPresenter);
         hpPresenter.SetHp();
         hpPresenter.SetHpText();
+    }
+
+    public void RefillPlayerHp()
+    {
+        foreach (var player in players)
+            player.BasicStat.hp = player.BasicStat.maxHp;
+
+        RefreshPlayerHp();
     }
 
     public void GetGold(int getGold, int totalGold)
@@ -1623,6 +1650,8 @@ public class GameManager : Singleton<GameManager>
         curPlayer.transform.position = changePos;
         curPlayer.transform.localScale = pastPlayer.transform.localScale;
         curPlayer.JumpAttackCount = 0;
+        
+        RefreshFace();
 
         if (changeAttack)
         {
@@ -1664,7 +1693,7 @@ public class GameManager : Singleton<GameManager>
             return;
         
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
-        var changeInterface = uiInterface.ChangeCharacter.ConvertTo<IUISkillView>();
+        var changeInterface = uiInterface.SkillView.ConvertTo<IUISkillView>();
         var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
         var skillModel = new UISkillModel
         {

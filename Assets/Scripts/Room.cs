@@ -1227,7 +1227,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame2[0], sunPos, talkList[3]);
         await NextDialog(speechFrame2[0]);
 
-        PlaySound($"{ConstValues.Laugh}1");
+        PlaySound($"{ConstValues.MonsterSun}_{ConstValues.Laugh}");
         var sunMoveVector = new Vector2(bosses[0].transform.position.x + 7.5f, bosses[0].transform.position.y);
         bosses[0].transform.DOMove(sunMoveVector, 2.0f);
         if (await GameManager.Instance.NormalDelay(2.0f, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
@@ -1432,9 +1432,9 @@ public class Room : MonoBehaviour
                 return;
 
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[6]);
+            PlaySound($"{ConstValues.Scream}10");
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.3f);
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.2f);
-            PlaySound($"{ConstValues.Scream}10");
             bosses[0].DieShake();
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(10, 0.1f);
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())

@@ -149,14 +149,14 @@ public class Controller : Singleton<Controller>
             GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey3);
         if (Input.GetKeyDown(GameManager.Instance.skillKey4))
             GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey4);
-        if (Input.GetKeyDown(GameManager.Instance.skillKey5))
-            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey5);
-        if (Input.GetKeyDown(GameManager.Instance.skillKey6))
-            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey6);
-        if (Input.GetKeyDown(GameManager.Instance.skillKey7))
-            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey7);
-        if (Input.GetKeyDown(GameManager.Instance.skillKey8))
-            GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey8);
+        // if (Input.GetKeyDown(GameManager.Instance.skillKey5))
+        //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey5);
+        // if (Input.GetKeyDown(GameManager.Instance.skillKey6))
+        //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey6);
+        // if (Input.GetKeyDown(GameManager.Instance.skillKey7))
+        //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey7);
+        // if (Input.GetKeyDown(GameManager.Instance.skillKey8))
+        //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey8);
 
         // if (Input.GetKeyDown(KeyCode.Q))
         //     player.Grabbed(new Vector2(0, -2.0f));

@@ -239,11 +239,12 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string MoveSpeed = "MoveSpeed";
     public const string AttackSpeed = "AttackSpeed";
-
+    
     public const string ChangeCharacter = "ChangeCharacter";
-    public const string ChangeCharacterKey = "ChangeCharacter";
+    public const string ChangeCharacterKey = "ChangeCharacterKey";
     
     // 직업 공용
+    public const string Face = "Face";
     public const string DownDust = "DownDust";
     public const string FireFlash = "FireFlash";
     public const string GreenFlash = "GreenFlash";

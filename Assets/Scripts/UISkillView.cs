@@ -141,7 +141,7 @@ public class UISkillView : MonoBehaviour, IUISkillView
     {
         return skillImage.sprite;
     }
-    
+
     public void SetSkillInfo(KeyCode keyCode, string skillId, List<float> coolTime = null, List<float> maxCoolTime = null)
     {
         myKeyCode = keyCode;
@@ -161,10 +161,26 @@ public class UISkillView : MonoBehaviour, IUISkillView
         if (string.IsNullOrEmpty(skillId))
             return;
 
-        skillImage.sprite = GameManager.Instance.GetAtlasSprite(skillId);
-        
-        if(skillId == ConstValues.ChangeCharacter)
-            gameObject.SetActive(!string.IsNullOrEmpty(GameManager.Instance.SecondPlayer));
+        if (skillId == ConstValues.ChangeCharacter)
+        {
+            if (string.IsNullOrEmpty(GameManager.Instance.SecondPlayer))
+            {
+                gameObject.SetActive(false);
+            }
+            else
+            {
+                gameObject.SetActive(true);
+                
+                if(GameManager.Instance.CurPlayer.BasicStat.id == GameManager.Instance.FirstPlayer)
+                    skillImage.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.SecondPlayer}_{ConstValues.Face}");
+                else if(GameManager.Instance.CurPlayer.BasicStat.id == GameManager.Instance.SecondPlayer)
+                    skillImage.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.FirstPlayer}_{ConstValues.Face}");
+            }
+        }
+        else
+        {
+            skillImage.sprite = GameManager.Instance.GetAtlasSprite(skillId);
+        }
     }
 
     public void UpdateCoolTimeText(List<float> coolTime, List<float> maxCoolTime)

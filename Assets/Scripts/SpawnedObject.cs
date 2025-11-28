@@ -146,6 +146,7 @@ public class SpawnedObject : MonoBehaviour
         if (spawnObjectInfo == null)
         {
             Debug.Log(name);
+            return;
         }
         
         if (spawnObjectInfo.objectTime == 0)

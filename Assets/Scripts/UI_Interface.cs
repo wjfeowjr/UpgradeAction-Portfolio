@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class UI_Interface : UIBase
 {
@@ -11,6 +12,11 @@ public class UI_Interface : UIBase
     private UIComboPresenter uiComboPresenter;
     public UIComboPresenter ComboPresenter => uiComboPresenter;
     
+    // 캐릭터 얼굴
+    public UICharacterFaceView CharacterFaceView => characterFaceView;
+    [SerializeField] private UICharacterFaceView characterFaceView;
+    private UICharacterFacePresenter uiCharacterFacePresenter;
+
     // 체력
     public UIHpView HpView => hpView;
     [SerializeField] private UIHpView hpView;
@@ -30,10 +36,10 @@ public class UI_Interface : UIBase
     public UIBossHpPresenter BossHpPresenter => uiBossHpPresenter;
     
     // 스킬
-    public UISkillView ChangeCharacter => changeCharacter;
+    public UISkillView SkillView => skillView;
     public List<UISkillView> SkillViews => skillViews;
     [SerializeField] private RectTransform skillLayout;
-    [SerializeField] private UISkillView changeCharacter;
+    [SerializeField] private UISkillView skillView;
     [SerializeField] private List<UISkillView> skillViews;
     private UISkillPresenter uiSkillPresenter;
 
@@ -50,6 +56,11 @@ public class UI_Interface : UIBase
     public void SetComboPresenter(UIComboPresenter presenter)
     {
         uiComboPresenter = presenter;
+    }
+    
+    public void SetCharacterFacePresenter(UICharacterFacePresenter presenter)
+    {
+        uiCharacterFacePresenter = presenter;
     }
     
     public void SetHpPresenter(UIHpPresenter presenter)

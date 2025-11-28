@@ -81,8 +81,9 @@ public class Missile : MonoBehaviour
             missileInfo.spawnObject = missileData.spawnObject;
             missileInfo.hitSpawn = missileData.hitSpawn;
             missileInfo.afterImage = missileData.afterImage;
-            missileInfo.explosionAction = action;
         }
+        missileInfo.explosionAction = action;
+        
         dir = missileDir;
         SetLimit();
     }

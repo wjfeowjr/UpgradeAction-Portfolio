@@ -36,7 +36,7 @@ public class Stage2 : Stage
         stepTrigger[2].SetAction(() => Product4(2));
         stepTrigger[3].SetAction(Product5);
         stepTrigger[4].SetAction(() => Product7(3));
-        GameManager.Instance.AddNewSkill();
+        //GameManager.Instance.AddNewSkill();
         
         // episodeStep = new EpisodeStep()
         // {
