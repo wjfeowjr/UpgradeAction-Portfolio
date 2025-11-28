@@ -56,6 +56,13 @@ public class Spin : MonoBehaviour
         spinSwitch = on;
     }
     
+    public void Stop(int targetZ = -1)
+    {
+        SpinSwitchOn(false);
+        if (targetZ != -1)
+            transform.eulerAngles = new Vector3(transform.eulerAngles.x, transform.eulerAngles.y, targetZ);
+    }
+    
     public void StopAndReset()
     {
         SpinSwitchOn(false);

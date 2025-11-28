@@ -1046,8 +1046,8 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = Vector2.zero;
         DeleteDashFrameUI();
         
-        var dashSpeed = 15;
-        var dashLength = 4.5f;
+        var dashSpeed = 20; // 15
+        var dashLength = 4.0f; // 4.5
         
         if(transform.localScale.x > 0)
             chargeVector = new Vector2(transform.position.x + dashLength, transform.position.y);
@@ -1160,9 +1160,6 @@ public abstract class Player : Character
             LandingStateSetting(ELandingState.Air);
             if (normalState is ENormalState.Idle or ENormalState.Move)
                 StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-
-            // if (col.gameObject.CompareTag(ConstValues.Platform))
-            //     IgnorePlatform();
         }
     }
 

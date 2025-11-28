@@ -221,7 +221,7 @@ public class Room : MonoBehaviour
     // 세이브 포인트가 없을때만 적용, 1번맵 전용
     public async void FirstStart()
     {
-        SetBgm();
+        SetBgm(true);
         isFading = true;
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.transform.position = leftPlayerPos.position;
@@ -236,14 +236,23 @@ public class Room : MonoBehaviour
     // 세이브 포인트가 있을때 적용
     public async void SaveStart()
     {
-        SetBgm();
+        SetBgm(true);
         isFading = true;
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.transform.position = saveObject.SavePointPos.position;
         SetCameraLimit();
+        
+        // 여기서 몹 소환
+        SpawnMonster();
+        // 여기서 트랩 데이터 넣기
         SetTrap();
+        // 여기서 숏컷 제어
+        SetShortCut();
+        // 여기서 세이브포인트 데이터 넣기
         SetSavePoint();
+        // 여기서 인접 방 확인하기
         SetBossGate();
+        
         await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         GameManager.Instance.ControlStart = true;
         isFading = false;
@@ -452,10 +461,20 @@ public class Room : MonoBehaviour
             {
                 roomTreasureBox[i].SetAction(() =>
                 {
-                    roomInfo.treasureBox[idx].alreadyGet = true;
-                    GetTreasureBoxItem(roomInfo.treasureBox[idx].id, roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position);
-                    GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
-                    SaveRoom();
+                    if (AllMonsterDead())
+                    {
+                        roomTreasureBox[idx].IsOpen = true;
+                        roomTreasureBox[idx].OpenSetting();
+                        roomTreasureBox[idx].ReduceInteractionObject();
+                        roomInfo.treasureBox[idx].alreadyGet = true;
+                        GetTreasureBoxItem(roomInfo.treasureBox[idx].id, roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position);
+                        GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
+                        SaveRoom();
+                    }
+                    else
+                    {
+                        GameManager.Instance.SpawnWarningPopup("방 안의 모든 몬스터를 처치해야 합니다.");
+                    }
                 });
             }
         }
@@ -483,11 +502,25 @@ public class Room : MonoBehaviour
         }
     }
 
+    private bool AllMonsterDead()
+    {
+        foreach (var monster in monsters)
+        {
+            if (!monster.IsDie)
+                return false;
+        }
+        return true;
+    }
+
     private async void SettingRoom(EntranceDir dir, Room pastRoom)
     {
         isFading = true;
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.RoomMoveSetting();
+        
+        // 모든 몬스터들의 행동 정지
+        foreach (var monster in monsters)
+            monster.CancelMotion();
         
         await RoomManager.Instance.FadeOut(ConstValues.BlackColor);
 
@@ -560,7 +593,7 @@ public class Room : MonoBehaviour
         isFading = false;
         GameManager.Instance.ControlStart = true;
         // 여기서 BGM재생
-        SetBgm();
+        SetBgm(false);
     }
     
     private void SetLeftPlayerPos()
@@ -721,7 +754,7 @@ public class Room : MonoBehaviour
         SaveRoom();
     }
 
-    private void SpawnMonster(bool isExplosion = true)
+    private async void SpawnMonster(bool isExplosion = true)
     {
         for (var i = 0; i < monsters.Length; i++)
         {
@@ -732,8 +765,12 @@ public class Room : MonoBehaviour
             monsters[i].SetGoldAction(PlusGold);
             monsters[i].SpawnHpBar();
             monsters[i].gameObject.SetActive(true);
-            monsters[i].MonsterAwake();
+            //monsters[i].MonsterAwake();
         }
+        
+        await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
+        for (var i = 0; i < monsters.Length; i++)
+            monsters[i].MonsterAwake();
     }
 
     private void SetTrap()
@@ -808,15 +845,16 @@ public class Room : MonoBehaviour
         //     BgmManager.Instance.Play();
     }
 
-    private void SetBgm()
+    private void SetBgm(bool immediately)
     {
         if (isBossRoom)
             return;
         
-        if(int.Parse(name.Split('_')[1]) == 1)
-            PlayBGM(ConstValues.BGMEpisode1);
-        else
-            PlayBGM(ConstValues.BGMEpisode2Battle);
+        roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
+        if (roomsData == null)
+            return;
+        
+        PlayBGM(roomsData.bgm, immediately);
     }
 
     private void BossSetting()
@@ -948,9 +986,9 @@ public class Room : MonoBehaviour
     {
         BgmManager.Instance.Stop();
     }
-    private void PlayBGM(string bgmName)
+    private void PlayBGM(string bgmName, bool immediately = false)
     {
-        BgmManager.Instance.PlayBgm(bgmName);
+        BgmManager.Instance.PlayBgm(bgmName, immediately);
     }
     private void PlaySound(string bgmName)
     {
@@ -1147,7 +1185,7 @@ public class Room : MonoBehaviour
         bosses[0].gameObject.SetActive(true);
         bosses[0].Flip(-1);
 
-        PlayBGM(ConstValues.BGMEpisodeStart);
+        PlayBGM(ConstValues.BGMEpisodeStart, true);
         await UniTask.WaitUntil(() => !isFading);
         
         // 에피소드 팝업부터 시작
@@ -1170,7 +1208,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1[0], berserkerPos, talkList[1]);
         await NextDialog(speechFrame1[0]);
 
-        PlayBGM(ConstValues.BGMEpisode1);
+        PlayBGM(ConstValues.BGMSunHill, true);
         PlaySound(ConstValues.PlayerScream);
         CameraShake(0.4f, 0.4f, 1.0f);
         SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), talkList[2]);
@@ -1189,7 +1227,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame2[0], sunPos, talkList[3]);
         await NextDialog(speechFrame2[0]);
 
-        PlaySound(ConstValues.MonsterSunLaugh);
+        PlaySound($"{ConstValues.Laugh}1");
         var sunMoveVector = new Vector2(bosses[0].transform.position.x + 7.5f, bosses[0].transform.position.y);
         bosses[0].transform.DOMove(sunMoveVector, 2.0f);
         if (await GameManager.Instance.NormalDelay(2.0f, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
@@ -1371,7 +1409,8 @@ public class Room : MonoBehaviour
 
             GameManager.Instance.CurPlayer.ForceIdle();
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
-            
+
+            PlaySound($"{ConstValues.Laugh}2");
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[3]); 
             await NextDialog(speechFrame2[0]);
 
@@ -1395,6 +1434,7 @@ public class Room : MonoBehaviour
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[6]);
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.3f);
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.2f);
+            PlaySound($"{ConstValues.Scream}10");
             bosses[0].DieShake();
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(10, 0.1f);
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
@@ -1500,6 +1540,7 @@ public class Room : MonoBehaviour
         bosses[1].Flip(-1);
         await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
 
+        PlaySound($"{ConstValues.Scream}12");
         bosses[1].DieShake();
         bosses[1].GetComponent<Monster_Moon>().DieBomb();
 
@@ -1539,6 +1580,7 @@ public class Room : MonoBehaviour
         await NextDialog(speechFrame1[0]);
         
         PlaySound(ConstValues.RewardPage);
+        PlaySound($"{ConstValues.Laugh}2");
         npc[0].gameObject.SetActive(true);
         npc[0].transform.localScale = new Vector3(-1, 1, 1);
         var npcArrivePos = npc[0].transform.position;

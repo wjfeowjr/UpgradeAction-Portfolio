@@ -247,6 +247,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string DownDust = "DownDust";
     public const string FireFlash = "FireFlash";
     public const string GreenFlash = "GreenFlash";
+    public const string Warning = "Warning";
     public const string WarningArea = "WarningArea";
     public const string PlatformFragments = "PlatformFragments";
     public const string PlatformExplosion = "PlatformExplosion";
@@ -359,11 +360,14 @@ public class ConstValues : Singleton<ConstValues>
     // BGM
     public const string BGMTitle = "BGM_Title";
     public const string BGMEpisodeStart = "BGM_EpisodeStart";
-    public const string BGMEpisode1 = "BGM_Episode1";
+    public const string BGMSunHill = "BGM_SunHill";
+    public const string BGMUnderGround = "BGM_Underground";
     public const string BGMEpisode2 = "BGM_Episode2";
     public const string BGMEpisode2Battle = "BGM_Episode2Battle";
     
     // 사운드
+    public const string Laugh = "Laugh";
+    public const string Scream = "Scream";
     public const string GunnerLaugh = "Gunner_Laugh";
     public const string PlayerDamaged1 = "Player_Damaged1";
     public const string PlayerScream = "Player_Scream";

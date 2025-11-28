@@ -10,14 +10,18 @@ public class RoomTreasureBox : MonoBehaviour
     private bool isOpen;
     private Action action;
 
-    public bool IsOpen => isOpen;
+    public bool IsOpen
+    {
+        get => isOpen;
+        set => isOpen = value;
+    }
 
     private void OnEnable()
     {
         OpenSetting();
     }
 
-    private void OpenSetting()
+    public void OpenSetting()
     {
         if (isOpen)
         {
@@ -68,9 +72,6 @@ public class RoomTreasureBox : MonoBehaviour
     
     private void GetItem()
     {
-        isOpen = true;
-        OpenSetting();
-        ReduceInteractionObject();
         action();
     }
     

@@ -1,4 +1,6 @@
+using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -8,11 +10,13 @@ public class BgmManager : Singleton<BgmManager>
     private readonly Dictionary<string, AudioClip> bgmDic = new Dictionary<string, AudioClip>();
     public AudioClip[] bgmArray;
     public string currentBgm;
+    public float firstVolume;
 
     protected override void Awake()
     {
         base.Awake();
         myAudioSource = GetComponent<AudioSource>();
+        firstVolume = myAudioSource.volume;
         
         foreach (var bgm in bgmArray)
         {
@@ -25,8 +29,8 @@ public class BgmManager : Singleton<BgmManager>
             bgmDic.Add(soundName, bgm);
         }
     }
- 
-    public void PlayBgm(string uniqueId)
+
+    public async void PlayBgm(string uniqueId, bool immediately = false)
     {
         if (!myAudioSource || uniqueId == ConstValues.None)
             return;
@@ -37,10 +41,29 @@ public class BgmManager : Singleton<BgmManager>
         if (currentBgm == uniqueId)
             return;
         
+        // 서서히 음악 줄어들게 하기
+        if(!immediately)
+            await FadeVolume();
+        
         myAudioSource.Stop();
+        
+        if(!immediately)
+            await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
+        
+        myAudioSource.volume = firstVolume;
         myAudioSource.resource = bgmDic[uniqueId];
+        
         myAudioSource.Play();
         currentBgm = uniqueId;
+    }
+
+    private async UniTask FadeVolume()
+    {
+        for (int i = 0; i < 5; i++)
+        {
+            myAudioSource.volume -= 0.05f;
+            await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
+        }
     }
 
     public void Play()

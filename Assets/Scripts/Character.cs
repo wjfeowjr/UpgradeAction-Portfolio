@@ -207,7 +207,7 @@ public abstract class Character : MonoBehaviour
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
         groundAndWallLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall));
-        monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform) | (1 << LayerMask.NameToLayer(ConstValues.Trap)));
+        monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Trap));
         wallLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
 
         ScaleSetting();
@@ -394,33 +394,6 @@ public abstract class Character : MonoBehaviour
         {
             Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, false);
             ignorePlatformCollider = null;
-        }
-    }
-
-    private bool GroundAndPlatformRay(Vector2 rayVector)
-    {
-        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 0.1f, groundAndPlatformLayerMask);
-        Debug.DrawRay(rayVector, Vector2.down * 0.1f, ConstValues.GreenColor, 0.02f);
-
-        if (downRay.collider == null)
-        {
-            if (!GetJumpState())
-            {
-                LandingStateSetting(ELandingState.Air);
-            }
-
-            return false;
-        }
-        else
-        {
-            if (GetJumpState())
-            {
-                LandingStateSetting(ELandingState.Ground);
-                // if (transform.position.y > downRay.point.y)
-                //     transform.position = new Vector2(transform.position.x, downRay.point.y);
-            }
-
-            return true;
         }
     }
 
@@ -1004,7 +977,7 @@ public abstract class Character : MonoBehaviour
     }
 
     // 행동 캔슬
-    protected virtual void CancelMotion()
+    public void CancelMotion()
     {
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
@@ -1014,7 +987,8 @@ public abstract class Character : MonoBehaviour
         ClearObjectList(controlObject);
         ClearObjectList(normalObject);
         GravityChange(myGravity);
-        myRigidbody.linearVelocity = Vector2.zero;
+        if(myRigidbody)
+            myRigidbody.linearVelocity = Vector2.zero;
 
         switch (normalState)
         {
@@ -1090,7 +1064,8 @@ public abstract class Character : MonoBehaviour
     // 중력값 변경
     public void GravityChange(float value)
     {
-        myRigidbody.gravityScale = value;
+        if(myRigidbody)
+            myRigidbody.gravityScale = value;
     }
 
     // 히트박스 기상 사이즈로 변경
@@ -1167,18 +1142,6 @@ public abstract class Character : MonoBehaviour
             // FixedYieldDelay 대기, 취소 시 false 반환
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
-
-            // 대시 레이체크
-            var rayVector1 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-            var rayVector2 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
-            if (transform.localScale.x < 0)
-            {
-                rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
-                rayVector2 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
-            }
-
-            if (!GroundAndPlatformRay(rayVector1))
-                GroundAndPlatformRay(rayVector2);
         }
 
         // 4) 돌진 종료 후 정지
@@ -1310,7 +1273,7 @@ public abstract class Character : MonoBehaviour
         DownHitBox();
     }
 
-    private void Bound(float xVelocity, float yVelocity)
+    protected virtual void Bound(float xVelocity, float yVelocity)
     {
         StateSetting(ENormalState.Airborne, ConstValues.Airborne, ConstValues.Airborne);
         // 공중몹도 떴다 떨어지기 때문에 기본 중력값으로 변환
@@ -1351,7 +1314,7 @@ public abstract class Character : MonoBehaviour
         }
     }
 
-    private void AddBuff(EBuffType buffType, float buffTime)
+    public void AddBuff(EBuffType buffType, float buffTime)
     {
         var findDeBuff = buffList.Find(x => x.buffType == buffType);
         // 해당 디버프가 적용되어있지 않음
@@ -1647,6 +1610,10 @@ public abstract class Character : MonoBehaviour
                 // 플랫폼 감지
                 if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
                     isOnPlatform = true;
+            }
+            else
+            {
+                Debug.Log($"착지 충족 못함: {footTrigger.Distance(col).normal.y}");
             }
         }
     }

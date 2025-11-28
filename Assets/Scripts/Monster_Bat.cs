@@ -19,9 +19,10 @@ public class Monster_Bat : Monster
     // 패턴1. 음파
     private async void SonicWave()
     {
-        float delay1 = 0.8f;
-        float delay2 = 0.5f;
+        float delay1 = 0.9f;
+        float delay2 = 0.6f;
 
+        PlaySound($"{basicStat.id}_Voice1");
         if(await AttackDelay(delay1, true).SuppressCancellationThrow())
             return;
 

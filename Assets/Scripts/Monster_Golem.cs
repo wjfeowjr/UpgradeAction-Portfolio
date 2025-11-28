@@ -1,10 +1,18 @@
+using System;
 using UnityEngine;
 
 public class Monster_Golem : Monster
 {
     [SerializeField] private Transform attackPos;
     [SerializeField] private Transform readyEffectPos;
-    
+
+    protected override void OnEnable()
+    {
+        base.OnEnable();
+        myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+        Invoke(nameof(DelayBodyType), 0.1f);
+    }
+
     protected override void MonsterPattern(int idx)
     {
         base.MonsterPattern(idx);
@@ -36,5 +44,10 @@ public class Monster_Golem : Monster
         
         spawnObject.gameObject.SetActive(false);
         PatternEnd();
+    }
+
+    private void DelayBodyType()
+    {
+        myRigidbody.bodyType = RigidbodyType2D.Kinematic;
     }
 }

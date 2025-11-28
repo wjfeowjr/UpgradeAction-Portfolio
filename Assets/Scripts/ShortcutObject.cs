@@ -23,7 +23,7 @@ public class ShortcutObject : MonoBehaviour
 {
     [SerializeField] private ShortcutType type;
     [SerializeField] protected Collider2D myCollider;
-    [SerializeField] private GameObject shortcutBlocker;// 막고 있는 문/벽(콜라이더 포함)
+    [SerializeField] private GameObject[] shortcutBlockers;// 막고 있는 문/벽(콜라이더 포함)
 
     private Action<ShortcutType> openAction;
     private bool opened;
@@ -80,8 +80,13 @@ public class ShortcutObject : MonoBehaviour
         myCollider.enabled = false;
         opened = true;
 
-        if (shortcutBlocker)
-            shortcutBlocker.SetActive(false);
+        if (shortcutBlockers.Length > 0)
+        {
+            foreach (var shortcutBlocker in shortcutBlockers)
+            {
+                shortcutBlocker.SetActive(false);
+            }
+        }
     }
     
     protected GameObject SpawnObject(string id, Vector2 pos)

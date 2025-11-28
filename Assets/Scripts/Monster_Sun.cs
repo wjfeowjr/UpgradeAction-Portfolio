@@ -25,7 +25,7 @@ public class Monster_Sun : Monster
         }
     }
 
-    protected override void Move(string mode)
+    protected override void Move()
     {
         // 움직이기
         if (moveState != EMoveState.Moving)
@@ -58,7 +58,7 @@ public class Monster_Sun : Monster
     // 불기둥
     private async void RisingFire()
     {
-        float delay1 = 0.2f;
+        float delay1 = 0.8f; // 0.2f
         float delay2 = 0.5f;
         float fadeSpeed = 0.4f;
         
@@ -68,17 +68,21 @@ public class Monster_Sun : Monster
         
         faceSpin.SpinSwitchOn(true);
 
-        await WarningAreaSpawnCollider(firePos, Vector3.zero, targetCollider, fadeSpeed, ConstValues.RedColor);
+        // 예전꺼
+        // await WarningAreaSpawnCollider(firePos, Vector3.zero, targetCollider, fadeSpeed, ConstValues.RedColor);
+        // if(await AttackDelay(delay1).SuppressCancellationThrow())
+        //     return;
+        
+        // 지금꺼
+        SpawnObject($"{basicStat.id}_{ConstValues.Warning}", firePos);
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
         
         SpawnAttack(ConstValues.MonsterSunAttack1, firePos);
-        
         if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
         
         faceSpin.StopAndReset();
-        
         PatternEnd();
     }
     
@@ -87,7 +91,7 @@ public class Monster_Sun : Monster
     {
         float delay1 = 1.0f;
         float delay2 = 0.25f;
-        float delay3 = 0.25f;
+        float delay3 = 0.1f;
         float delay4 = 1.0f;
         
         var spinObject = SpawnObject(ConstValues.MonsterSunAttack2SpinObject, CenterPos).GetComponent<Spin>();
@@ -97,6 +101,7 @@ public class Monster_Sun : Monster
         faceReduction.PlayReduction();
         if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
+        
         int count = 3;
         for (int i = 0; i < count; i++)
         {
@@ -122,6 +127,7 @@ public class Monster_Sun : Monster
         faceReduction.StopAndReset();
         if(await AttackDelay(delay4).SuppressCancellationThrow())
             return;
+        
         spinObject.gameObject.SetActive(false);
         PatternEnd();
     }
@@ -129,6 +135,7 @@ public class Monster_Sun : Monster
     // 등장
     public override async void Appear(Action<string> bossProduct)
     {
+        PlaySound($"{ConstValues.Laugh}2");
         faceSpin.enabled = true;
         faceSpin.StopAndReset();
         faceReduction.enabled = true;
@@ -153,6 +160,7 @@ public class Monster_Sun : Monster
         FirstCoolTimeReduce();
         immortal = false;
         bossProduct?.Invoke(basicStat.name);
+        startPos = transform.position;
     }
     
     public override async void Die()
@@ -170,6 +178,8 @@ public class Monster_Sun : Monster
 
     public async void SunDie()
     {
+        PlaySound($"{ConstValues.Scream}10");
+        
         var delay = 0.12f;
         dieCancellation = new CancellationTokenSource();
         for (int i = 0; i < 15; i++)
@@ -205,5 +215,30 @@ public class Monster_Sun : Monster
         HitMaterial();
         SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
         GameManager.Instance.CameraShake(0.1f, 0.1f, 0.1f);
+    }
+
+    public override void Airborne(float xVelocity, float yVelocity)
+    {
+        base.Airborne(xVelocity, yVelocity);
+        PlaySound($"{ConstValues.Scream}7");
+    }
+
+    protected override void Bound(float xVelocity, float yVelocity)
+    {
+        base.Bound(xVelocity, yVelocity);
+        faceSpin.SpinSwitchOn(true);
+    }
+
+    protected override async void DownAndStand()
+    {
+        base.DownAndStand();
+        faceSpin.Stop();
+    }
+    
+    protected override void HoveringLeap()
+    {
+        base.HoveringLeap();
+        arriveHeight = startPos.y;
+        faceSpin.StopAndReset();
     }
 }

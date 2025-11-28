@@ -35,6 +35,7 @@ public class MonsterStat
     public bool hovering;
     public List<float> hoveringHeight = new List<float>();
     public float hoveringSpeed;
+    public float customPatrol;
     public List<float> appearShake = new List<float>();
     public string appearEffect;
     public string dyingMiniEffect;
@@ -88,21 +89,24 @@ public class Monster : Character
     protected CancellationTokenSource dieCancellation;
     protected Action<int, Vector2> goldAction;
 
-    private float startPosX;
+    [SerializeField] protected Vector2 startPos;
+    private float leftPatrol;
+    private float rightPatrol;
+
+    private float traceDelay = 0.5f;
+    private float currentTraceDelay = 0.5f;
+
     private float agroTime = 5.0f;
     private float currentAgroTime;
     private bool playerInAgroRange;
     
     private float leapHeight;
-    private float arriveHeight;
+    [SerializeField] protected float arriveHeight;
 
     private bool patrolMoving = false;
     private float patrolTimer = 0f;
     private float limitLeft;
     private float limitRight;
-
-    private PhysicsMaterial2D _airLowFrictionMat;
-    private PhysicsMaterial2D _originalMaterial;
 
     // 프로퍼티
     public bool IsHovering
@@ -140,19 +144,14 @@ public class Monster : Character
         InitBasicStat();
         InitAdditionalStat();
         GravityChange(myGravity);
-        startPosX = transform.position.x;
-
+        startPos = transform.position;
+        leftPatrol = transform.position.x - myStat.customPatrol;
+        rightPatrol = transform.position.x + myStat.customPatrol;
+        
         if (!IsHovering)
             return;
-        
-        Vector2 rayVector = transform.position;
-        float distance = 30;
-        RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, distance, groundAndPlatformLayerMask);
-        Debug.DrawRay(rayVector, Vector2.down * distance, ConstValues.RedColor, 0.1f);
-        if (downRay.collider == null)
-            leapHeight = 3.0f;
-        else
-            leapHeight = transform.position.y - downRay.point.y;
+
+        CheckLeapHeight();
     }
 
     protected override void Update()
@@ -165,7 +164,7 @@ public class Monster : Character
         if (isBoss)
         {
             Trace();
-            Move(ConstValues.Normal);
+            Move();
         }
         else
         {
@@ -176,7 +175,7 @@ public class Monster : Character
                     break;
                 case EAgroState.Agro:
                     Trace();
-                    Move(ConstValues.Stop);
+                    Move();
                     //MonsterLeap();
                     break;
                 case EAgroState.Return:
@@ -187,7 +186,8 @@ public class Monster : Character
 
             AgroSystem();
         }
-        
+
+        UpdateTraceDelay();
         UpdateHoveringLeap();
         UpdateGlobalCoolTime();
         PatternCoolTimeReduce();
@@ -233,12 +233,6 @@ public class Monster : Character
 
         totalBar.gameObject.SetActive(false);
         totalBar = null;
-    }
-
-    protected override void CancelMotion()
-    {
-        base.CancelMotion();
-        physicsCollider.sharedMaterial = _originalMaterial;
     }
 
     protected void OnDrawGizmos()
@@ -431,6 +425,7 @@ public class Monster : Character
                 myStat.hoveringHeight.Add(float.Parse(hoveringHeight));
 
             myStat.hoveringSpeed = targetStat.hoveringSpeed;
+            myStat.customPatrol = targetStat.customPatrol;
 
             var appearShakeArray = targetStat.appearShake.Split(';');
             foreach (var appearShake in appearShakeArray)
@@ -546,8 +541,20 @@ public class Monster : Character
         }
     }
 
+    private void CheckLeapHeight()
+    {
+        Vector2 rayVector = transform.position;
+        float distance = 30;
+        RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, distance, groundAndPlatformLayerMask);
+        Debug.DrawRay(rayVector, Vector2.down * distance, ConstValues.RedColor, 0.1f);
+        if (downRay.collider == null)
+            leapHeight = 3.0f;
+        else
+            leapHeight = transform.position.y - downRay.point.y;
+    }
+
     // 호버링 높이까지 도약
-    private void HoveringLeap()
+    protected virtual void HoveringLeap()
     {
         // 위쪽 레이캐스트 사용 (원본 사이즈만큼)
         Vector2 rayVector = transform.position;
@@ -753,7 +760,7 @@ public class Monster : Character
     }
 
     // 이동
-    protected virtual void Move(string mode)
+    protected virtual void Move()
     {
         // 호버링몹 위아래로 움직이게 하기
         // if (myStat.hovering && normalState == ENormalState.Idle)
@@ -767,51 +774,58 @@ public class Monster : Character
         if (moveState != EMoveState.Moving)
             return;
 
+        if (!isBoss)
+        {
+            switch (MonsterCheckWalk())
+            {
+                case 0:
+                    Flip(-1);
+                    currentTraceDelay = 0;
+                    break;
+            
+                case 1:
+                    Flip(1);
+                    currentTraceDelay = 0;
+                    break;
+            }
+            if (!myStat.hovering)
+            {
+                switch (MonsterCheckFall())
+                {
+                    case 0:
+                        Flip(-1);
+                        currentTraceDelay = 0;
+                        break;
+            
+                    case 1:
+                        Flip(1);
+                        currentTraceDelay = 0;
+                        break;
+                }
+            }
+            if (agroState == EAgroState.Normal && myStat.customPatrol > 0 && myStat.hovering)
+            {
+                if (transform.position.x > rightPatrol)
+                    Flip(-1);
+        
+                if (transform.position.x < leftPatrol)
+                    Flip(1);
+            }
+        }
+        
         float targetSpeedX = basicStat.moveSpeed;
         if (transform.localScale.x < 0)
             targetSpeedX = -basicStat.moveSpeed;
 
         float targetSpeedY = myRigidbody.linearVelocity.y;
-
-        switch (mode)
-        {
-            case ConstValues.Flip:
-                switch (MonsterCheckWalk())
-                {
-                    case 0:
-                        Flip(-1);
-                        break;
-            
-                    case 1:
-                        Flip(1);
-                        break;
-                }
-                switch (MonsterCheckFall())
-                {
-                    case 0:
-                        Flip(-1);
-                        break;
-            
-                    case 1:
-                        Flip(1);
-                        break;
-                }
-                break;
-            
-            case ConstValues.Stop:
-                if (MonsterCheckWalk() != -1)
-                    targetSpeedX = 0;
-                if (MonsterCheckFall() != -1)
-                    targetSpeedX = 0;
-                break;
-        }
+        
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
     }
 
     // 추적
     private void Trace()
     {
-        if (moveState != EMoveState.Moving || agroState == EAgroState.Normal)
+        if (moveState != EMoveState.Moving || agroState == EAgroState.Normal || normalState == ENormalState.Jump || currentTraceDelay < traceDelay)
             return;
 
         if (transform.localScale.x > 0)
@@ -829,18 +843,27 @@ public class Monster : Character
     // 복귀
     private void ReturnMoving()
     {
-        if (moveState != EMoveState.Moving)
-            return;
+        LookAt(startPos.x);
+        
+        Vector2 currentPos = myRigidbody.position;
+        Vector2 toTarget = startPos - currentPos;
 
-        LookAt(startPosX);
-        float targetSpeedX = basicStat.moveSpeed;
-        if (transform.localScale.x < 0)
-            targetSpeedX = -basicStat.moveSpeed;
+        float distance = toTarget.magnitude;
 
-        float targetSpeedY = myRigidbody.linearVelocity.y;
-        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-        if (Math.Abs(transform.position.x - startPosX) <= 0.1f)
+        // 멈출 거리(여유)
+        float stopDistance = 0.01f;
+
+        // 거의 도착했으면 스냅 + 정지
+        if (distance <= stopDistance)
+        {
+            transform.position = startPos;
             agroState = EAgroState.Normal;
+            return;
+        }
+
+        // 목표 방향으로 이동
+        Vector2 dir = toTarget / distance;
+        myRigidbody.linearVelocity = dir * basicStat.moveSpeed;
     }
 
     private void AgroSystem()
@@ -848,7 +871,10 @@ public class Monster : Character
         if (playerInAgroRange)
         {
             if (agroState is EAgroState.Normal or EAgroState.Return)
+            {
                 agroState = EAgroState.Agro;
+                patrolTimer = 0;
+            }
 
             if (normalState == ENormalState.Idle)
                 LookAt(GameManager.Instance.CurPlayer.transform.position.x);
@@ -890,10 +916,9 @@ public class Monster : Character
                     currentAgroTime += Time.deltaTime;
                     if (currentAgroTime >= agroTime)
                     {
-                        agroState = EAgroState.Return;
+                        agroState = EAgroState.Normal;
                         currentAgroTime = 0;
                     }
-
                     break;
             }
         }
@@ -928,7 +953,7 @@ public class Monster : Character
 
         if (patrolMoving)
         {
-            Move(ConstValues.Flip);
+            Move();
         }
     }
 
@@ -947,7 +972,10 @@ public class Monster : Character
         base.TakeDamage(damage, isTrapAttack);
 
         if (agroState == EAgroState.Normal)
+        {
             agroState = EAgroState.Agro;
+            patrolTimer = 0;
+        }
 
         if (damage == 0)
             return;
@@ -1046,6 +1074,32 @@ public class Monster : Character
         }
     }
 
+    // 무력화
+    public override void Stagger()
+    {
+        // 무력화 디버프 추가
+        AddBuff(EBuffType.Stagger, basicStat.staggerTime);
+        MoveStateSetting(EMoveState.Stopping);
+
+        CancelMotion();
+        stateCancellation = new CancellationTokenSource();
+        
+        // 호버링 몹일 경우 에어본으로 대체(땅에 툭 떨어지게)
+        if (myStat.hovering)
+        {
+            if (basicStat.bodyType == EBodyType.Normal)
+            {
+                Airborne(0, 5);
+            }
+        }
+        else
+        {
+            StateSetting(ENormalState.Stagger, ConstValues.Stagger, ConstValues.Stagger);
+        }
+        
+        immuneStagger = true;
+    }
+    
     public override void Die()
     {
         base.Die();
@@ -1211,6 +1265,15 @@ public class Monster : Character
         currentSkillIdx = 0;
     }
 
+    private void UpdateTraceDelay()
+    {
+        if (currentTraceDelay < traceDelay)
+            currentTraceDelay += Time.deltaTime;
+
+        if (currentTraceDelay > traceDelay)
+            currentTraceDelay = traceDelay;
+    }
+
     private void UpdateHoveringLeap()
     {
         if (normalState != ENormalState.Leap)
@@ -1226,6 +1289,10 @@ public class Monster : Character
             myRigidbody.linearVelocity = Vector2.zero;
             GravityChange(myGravity);
             IdleOrMove();
+            
+            // 패트롤 위치 실시간으로 수정
+            leftPatrol = transform.position.x - myStat.customPatrol;
+            rightPatrol = transform.position.x + myStat.customPatrol;
             
             // 도약이 끝날때 바로 공격하는 불쾌한 현상 방지
             for (var i = 0; i < patternInfo.Count; i++)
@@ -1458,24 +1525,20 @@ public class Monster : Character
     // 몬스터 절벽감지
     private int MonsterCheckFall()
     {
-        // if (myStat.hovering)
-        //     return -1;
-        
         var rayVector = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
         if (transform.localScale.x < 0)
             rayVector = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
 
-        RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, 5.0f, groundAndPlatformLayerMask);
-        Debug.DrawRay(rayVector, Vector2.down * 3.0f, ConstValues.OrangeColor, 0.02f);
+        float distance = 1.0f;
+        RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, distance, groundAndPlatformLayerMask);
+        Debug.DrawRay(rayVector, Vector2.down * distance, ConstValues.OrangeColor, 0.02f);
         if (downRay.collider == null)
         {
             switch (transform.localScale.x)
             {
                 case > 0:
                     return 0;
-                    break;
                 case < 0:
-                    Flip(1);
                     return 1;
             }
         }
@@ -1490,30 +1553,16 @@ public class Monster : Character
         
         if (IsCanJump() && jumpInfo.coolTime >= ConstValues.JumpCoolTime)
         {
-            Vector2 start = transform.position;
-            Vector2 end = transform.position;
-
-            float rayPosX = transform.position.x + myBoxCollider.size.x / 2 + 0.3f;
+            Vector2 rayPos = transform.position;
+            Vector2 dir = Vector2.right;
             if (transform.localScale.x < 0)
-                rayPosX = transform.position.x - myBoxCollider.size.x / 2 - 0.3f;
+                dir = Vector2.left;
+            float distance = myBoxCollider.size.x + 0.1f;
 
-            float rayPosY = transform.position.y + myBoxCollider.size.y + 3.0f;
+            RaycastHit2D raycast = Physics2D.Raycast(rayPos, dir, distance, groundAndPlatformLayerMask);
+            Debug.DrawRay(rayPos, dir * distance, ConstValues.OrangeColor, 0.02f);
 
-            Vector2 rayPos = new Vector2(rayPosX, rayPosY);
-            RaycastHit2D downRay = Physics2D.Raycast(rayPos, Vector2.down, 10.0f, groundAndPlatformLayerMask);
-            Debug.DrawRay(rayPos, Vector2.down * 10.0f, ConstValues.CyanColor, 0.02f);
-
-            if (downRay.collider != null && downRay.point.y > transform.position.y)
-            {
-                // 난간 턱 넘김을 위해 목표 지점을 살짝 더 앞으로/위로 보정
-                float xOffset = 0.5f;
-                float yOffset = 0.3f;
-                float dirSign = transform.localScale.x > 0 ? 1f : -1f;
-
-                end = new Vector2(downRay.point.x + xOffset * dirSign, downRay.point.y + yOffset);
-            }
-
-            if (Vector2.Distance(start, end) < 0.01f)
+            if (raycast.collider == null)
                 return;
 
             CancelMotion();
@@ -1525,71 +1574,12 @@ public class Monster : Character
             if (await AttackDelay(delay1).SuppressCancellationThrow())
                 return;
 
-            // === 점프 직전 세팅: 마찰↓, 히트박스↓ ===
-            // 낮은 마찰 머티리얼 준비
-            if (_airLowFrictionMat == null)
-            {
-                _airLowFrictionMat = new PhysicsMaterial2D("AirLowFriction")
-                {
-                    friction = 0f,
-                    bounciness = 0f
-                };
-            }
-
-            // 원래 머티리얼 기억하고 낮은 마찰 적용
-            _originalMaterial = physicsCollider.sharedMaterial;
-            physicsCollider.sharedMaterial = _airLowFrictionMat;
-
-            // 윗모서리 걸림 줄이기 위한 다운형 히트박스
-            DownHitBox();
-
             PlaySound(ConstValues.Jump1, 2.0f);
             StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
-
-            float travelTime = 0.5f;
-            Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
-            myRigidbody.linearVelocity = velocity;
+            MoveStateSetting(EMoveState.Moving);
+            
+            myRigidbody.linearVelocityY = 10.5f;
             LandingStateSetting(ELandingState.Air);
-
-            // === 초기 구간 전진유지 보정 ===
-            float dirKeep = Mathf.Sign(velocity.x);
-            MaintainForwardFor(0.2f, dirKeep).Forget();
-
-            // 착지까지 대기(간단 버전: Y가 내려오기 시작하면 착지 준비로 간주)
-            // 필요 시 레이로 땅 감지 루프를 추가하세요.
-            while (landingState == ELandingState.Air && gameObject.activeInHierarchy)
-            {
-                if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-                    return;
-
-                // 내려오는 중이고, 발밑 레이가 지면을 찾으면 착지 처리
-                var foot = new Vector2(transform.position.x, transform.position.y);
-                var hit = Physics2D.Raycast(foot, Vector2.down, 1.0f, groundAndPlatformLayerMask);
-                if (myRigidbody.linearVelocity.y <= 0 && hit.collider != null)
-                    break;
-            }
-
-            // === 원복: 머티리얼/히트박스 ===
-            physicsCollider.sharedMaterial = _originalMaterial;
-            StandHitBox();
-        }
-    }
-
-    private async UniTask MaintainForwardFor(float seconds, float dirSign)
-    {
-        float t = 0f;
-        float minKeepSpeed = basicStat.moveSpeed * 0.75f; // 전진 유지 최소 속도
-
-        while (t < seconds && landingState == ELandingState.Air && gameObject.activeInHierarchy)
-        {
-            var v = myRigidbody.linearVelocity;
-            // X가 벽에 의해 0으로 깎이면 다시 살짝 밀어준다
-            if (Mathf.Abs(v.x) < minKeepSpeed)
-                myRigidbody.linearVelocity = new Vector2(minKeepSpeed * dirSign, v.y);
-
-            t += Time.fixedDeltaTime;
-            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-                return;
         }
     }
 
@@ -1946,10 +1936,10 @@ public class Monster : Character
         {
             if (myRigidbody.gravityScale != 0 && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
                 return;
-
+            
             LandingStateSetting(ELandingState.Air);
             if (normalState is ENormalState.Idle or ENormalState.Move)
-                StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+                StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         }
     }
 }

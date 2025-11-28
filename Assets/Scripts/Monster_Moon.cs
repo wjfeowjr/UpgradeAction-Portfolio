@@ -28,7 +28,7 @@ public class Monster_Moon : Monster
         }
     }
 
-    protected override void Move(string mode)
+    protected override void Move()
     {
         // 움직이기
         if (moveState != EMoveState.Moving)
@@ -61,20 +61,27 @@ public class Monster_Moon : Monster
     // 얼음 낙하
     private async void DropFrost()
     {
-        float delay1 = 0.3f;
+        float delay1 = 0.7f;
+        float delay2 = 0.3f;
         float fadeSpeed = 0.4f;
         
         var playerPos = GameManager.Instance.CurPlayer.transform.position;
-        var firePos = new Vector2(playerPos.x, playerPos.y + 10.0f);
+        var firePos = new Vector2(playerPos.x, RoomManager.Instance.GroundPosY + 9.0f);
         var endPos = new Vector2(playerPos.x, RoomManager.Instance.GroundPosY);
         Vector3 warningAngle = new Vector3(0, 0, 90);
         var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterMoonAttack1Object);
         var moonEffect = SpawnObject(ConstValues.MonsterMoonEffect, CenterPos);
         
-        await WarningAreaSpawnTrajectory(firePos, endPos, warningAngle, fadeSpeed, ConstValues.RedColor, targetCollider.size.x);
-        SpawnAttack(ConstValues.MonsterMoonAttack1Object, firePos);
-        
+        // 예전꺼
+        // await WarningAreaSpawnTrajectory(firePos, endPos, warningAngle, fadeSpeed, ConstValues.RedColor, targetCollider.size.x);
+
+        // 지금꺼
+        SpawnObject($"{basicStat.id}_{ConstValues.Warning}", firePos);
         if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        
+        SpawnObject(ConstValues.MonsterMoonAttack1Object, firePos);
+        if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
         
         moonEffect.SetActive(false);
@@ -86,7 +93,7 @@ public class Monster_Moon : Monster
     {
         float delay1 = 1.0f;
         float delay2 = 0.1f;
-        float delay3 = 0.1f;
+        float delay3 = 0.075f;
         float delay4 = 1.0f;
         
         var spinObject = SpawnObject(ConstValues.MonsterMoonAttack2SpinObject, CenterPos).GetComponent<Spin>();
@@ -156,6 +163,8 @@ public class Monster_Moon : Monster
     // 등장
     public override async void Appear(Action<string> bossProduct)
     {
+        PlaySound($"{ConstValues.Scream}6");
+        
         faceSpin.enabled = true;
         faceSpin.StopAndReset();
         faceReduction.enabled = true;
@@ -180,6 +189,7 @@ public class Monster_Moon : Monster
         FirstCoolTimeReduce();
         immortal = false;
         bossProduct?.Invoke(basicStat.name);
+        startPos = transform.position;
     }
 
     public override void Die()
@@ -215,5 +225,30 @@ public class Monster_Moon : Monster
         dieCancellation?.Cancel();
         base.DieExplosion();
         goldAction?.Invoke(myStat.gold, centerPos.position);
+    }
+    
+    public override void Airborne(float xVelocity, float yVelocity)
+    {
+        base.Airborne(xVelocity, yVelocity);
+        PlaySound($"{ConstValues.Scream}4");
+    }
+    
+    protected override void Bound(float xVelocity, float yVelocity)
+    {
+        base.Bound(xVelocity, yVelocity);
+        faceSpin.SpinSwitchOn(true);
+    }
+
+    protected override async void DownAndStand()
+    {
+        base.DownAndStand();
+        faceSpin.Stop();
+    }
+    
+    protected override void HoveringLeap()
+    {
+        base.HoveringLeap();
+        arriveHeight = startPos.y;
+        faceSpin.StopAndReset();
     }
 }

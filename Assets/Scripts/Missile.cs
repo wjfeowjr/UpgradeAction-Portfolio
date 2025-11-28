@@ -285,7 +285,7 @@ public class Missile : MonoBehaviour
             }
             
             // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
-            if (hitTag == ConstValues.Wall)
+            if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Wall)
             {
                 Vector2 contactPoint = col.ClosestPoint(transform.position);
                 Vector2 myPoint = transform.position;

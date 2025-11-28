@@ -27,7 +27,7 @@ public class TitleManager : MonoBehaviour
 
     private void StartBGM()
     {
-        BgmManager.Instance.PlayBgm(ConstValues.BGMTitle);
+        BgmManager.Instance.PlayBgm(ConstValues.BGMTitle, true);
     }
 
     private void SetText()

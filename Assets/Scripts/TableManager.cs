@@ -170,6 +170,7 @@ public class MonsterData
     public bool hovering;
     public string hoveringHeight;
     public float hoveringSpeed;
+    public float customPatrol;
     public string appearShake;
     public string appearEffect;
     public string dyingMiniEffect;
@@ -224,6 +225,7 @@ public class RoomsData
     public string npcAppearProductIdx;
     public string bgSprite;
     public bool bgDeco;
+    public string bgm;
 }
 [Serializable]
 public class RoomsDataList

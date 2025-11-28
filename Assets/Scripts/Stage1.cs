@@ -126,7 +126,7 @@ public class Stage1 : Stage
             SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog2);
             await NextDialog(speechFrame1[0]);
             
-            PlayBGM(ConstValues.BGMEpisode1);
+            PlayBGM(ConstValues.BGMSunHill);
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 0.4f, 1.0f);
             SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), dialog3);
@@ -875,7 +875,7 @@ public class Stage1 : Stage
     private void AccumulatedStep()
     {
         if(episodeStep.dialogStep > 0)
-            PlayBGM(ConstValues.BGMEpisode1);
+            PlayBGM(ConstValues.BGMSunHill);
         else
             PlayBGM(ConstValues.BGMEpisodeStart);
 
