@@ -1031,6 +1031,7 @@ public abstract class Player : Character
     {
         StateSetting(ENormalState.Dash, ConstValues.Dash, ConstValues.Dash);
         immortal = true;
+        myBoxCollider.enabled = false;
         StandHitBox();
         GravityChange(0);
         myRigidbody.linearVelocity = Vector2.zero;
@@ -1062,6 +1063,7 @@ public abstract class Player : Character
         
         // 대시 끝
         immortal = false;
+        myBoxCollider.enabled = true;
         return chargeFinish;
     }
 

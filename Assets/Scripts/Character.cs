@@ -994,6 +994,7 @@ public abstract class Character : MonoBehaviour
         {
             case ENormalState.Dash:
                 immortal = false;
+                myBoxCollider.enabled = true;
                 break;
         }
     }

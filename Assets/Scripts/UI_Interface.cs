@@ -50,7 +50,7 @@ public class UI_Interface : UIBase
     
     public Vector3 GetDashSkillPos()
     {
-        return skillViews[0].transform.position;
+        return new Vector2(skillViews[0].transform.position.x, skillViews[0].transform.position.y - 0.06f);
     }
     
     public void SetComboPresenter(UIComboPresenter presenter)
