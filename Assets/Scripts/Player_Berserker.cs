@@ -329,6 +329,7 @@ public class Player_Berserker : Player
 
         //myRigidbody.linearVelocity = Vector2.zero;
         //Leap(6, 20, 1.6f);
+        Leap(0, 20, 0.8f);
 
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;

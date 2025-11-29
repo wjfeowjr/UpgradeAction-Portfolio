@@ -1114,18 +1114,50 @@ public abstract class Character : MonoBehaviour
         if (totalDist <= 0f)
             return false;
 
+        // 벽 거리 감지하기
+        float realDist = chargeLength;
+        
+        Vector2 dir = Vector2.right;
+        if(transform.localScale.x < 0)
+            dir = Vector2.left;
+
+        float distance = chargeLength;
+        
+        Vector2 rayVector1 = transform.position;
+        Vector2 rayVector2 = new Vector2(rayVector1.x, rayVector1.y + physicsCollider.size.y * 0.5f);
+        Vector2 rayVector3 = new Vector2(rayVector1.x, rayVector1.y + physicsCollider.size.y);
+        
+        var ray1 = Physics2D.Raycast(rayVector1, dir, distance, groundAndWallLayerMask);
+        Debug.DrawRay(rayVector1, dir, ConstValues.BlueColor, 0.1f);
+        var ray2 = Physics2D.Raycast(rayVector2, dir, distance, groundAndWallLayerMask);
+        Debug.DrawRay(rayVector2, dir, ConstValues.BlueColor, 0.1f);
+        var ray3 = Physics2D.Raycast(rayVector2, dir, distance, groundAndWallLayerMask);
+        Debug.DrawRay(rayVector3, dir, ConstValues.BlueColor, 0.1f);
+
+        if (ray1.collider != null)
+            realDist = Vector2.Distance(rayVector1, ray1.point);
+        if (ray2.collider != null)
+            realDist = Vector2.Distance(rayVector2, ray2.point);
+        if (ray3.collider != null)
+            realDist = Vector2.Distance(rayVector3, ray3.point);
+
         // 2) 전체 돌진 시간 계산 (평균 속도 = (basic + target) / 2)
-        float duration = totalDist / ((basicSpeed + targetSpeed) * 0.5f);
+        float totalDuration = totalDist / ((basicSpeed + targetSpeed) * 0.5f);
+        // 벽을 감지한 돌진 시간 계산
+        float realDuration = realDist / ((basicSpeed + targetSpeed) * 0.5f);
+        
         float elapsed = 0f;
 
+        //Debug.Log($"totalDuration:{totalDuration}, realDuration{realDuration}");
+        
         // 3) FixedUpdate 루프: elapsed < duration 동안 실행
-        while (elapsed < duration)
+        while (elapsed < realDuration)
         {
             // 시간 누적
             elapsed += Time.fixedDeltaTime;
 
             // 전체 시간 대비 현재 위치한 비율 (0→1)
-            float normTime = Mathf.Clamp01(elapsed / duration);
+            float normTime = Mathf.Clamp01(elapsed / realDuration);
 
             // accelPercent 이후부터 속도 보간
             if (normTime > accelPercent)
@@ -1146,6 +1178,20 @@ public abstract class Character : MonoBehaviour
 
         // 4) 돌진 종료 후 정지
         myRigidbody.linearVelocity = Vector2.zero;
+        
+        // if(totalDuration - realDuration > 0) 
+        //     Debug.Log($"{totalDuration - realDuration}만큼 대기시간 추가");
+        
+        // 추가 시간 만큼 정지
+        while (elapsed < totalDuration)
+        {
+            // 시간 누적
+            elapsed += Time.fixedDeltaTime;
+            // FixedYieldDelay 대기, 취소 시 false 반환
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return false;
+        }
+        
         return true;
     }
 
@@ -1548,6 +1594,17 @@ public abstract class Character : MonoBehaviour
     {
         StateSetting(state, triggerName, animId);
     }
+    
+    public async void ForceIdle()
+    {
+        stateCancellation = new CancellationTokenSource();
+        if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+            return;
+        
+        MoveStateSetting(EMoveState.Stopping);
+        CancelMotion();
+        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+    }
 
     // 깜빡이며 사라지기
     public virtual async void BlinkDelete()
@@ -1611,10 +1668,10 @@ public abstract class Character : MonoBehaviour
                 if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
                     isOnPlatform = true;
             }
-            else
-            {
-                Debug.Log($"착지 충족 못함: {footTrigger.Distance(col).normal.y}");
-            }
+            // else
+            // {
+            //     Debug.Log($"착지 충족 못함: {footTrigger.Distance(col).normal.y}");
+            // }
         }
     }
 }

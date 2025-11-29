@@ -588,17 +588,6 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = vel;
     }
 
-    public async void ForceIdle()
-    {
-        stateCancellation = new CancellationTokenSource();
-        if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-            return;
-        
-        MoveStateSetting(EMoveState.Stopping);
-        CancelMotion();
-        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-    }
-    
     public void ForceJump()
     {
         CancelMotion();
@@ -960,7 +949,8 @@ public abstract class Player : Character
             if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
-        myRigidbody.linearVelocity = new Vector2(0, 6.0f);
+        transform.position = new Vector2(transform.position.x, currentHeight + leapHeight);
+        myRigidbody.linearVelocity = new Vector2(0, 3.0f);
     }
     
     // 공격 딜레이

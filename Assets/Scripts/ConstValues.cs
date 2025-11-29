@@ -168,6 +168,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Rooms = "Rooms";
     public const string Minimap = "Minimap";
     public const string MiniMapVisitedCells = "MiniMapVisitedCells";
+    public const string MiniMapShortcutCells = "MiniMapShortcutCells";
     public const string MiniMapCheckers = "MiniMapCheckers";
     public const string SavePoint = "SavePoint";
     public const string SaveObject = "SaveObject";

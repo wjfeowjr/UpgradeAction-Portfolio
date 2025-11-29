@@ -65,6 +65,7 @@ public class Room : MonoBehaviour
     [Header("디자인 타일이 미리 그려진 미니맵 Tilemap")]
     [SerializeField] private Tilemap minimapFrameTilemap;
     [SerializeField] private Tilemap minimapInTilemap;
+    [SerializeField] private Tilemap shortcutFrameTileMap;
     
     [Header("카메라 & 저장키")]
     private Camera gameCamera;
@@ -74,7 +75,12 @@ public class Room : MonoBehaviour
     private HashSet<Vector3Int> allRoomCells = new HashSet<Vector3Int>();
     private Dictionary<Vector3Int, TileBase> originalTiles = new Dictionary<Vector3Int, TileBase>();
     private HashSet<Vector3Int> visitedCells = new HashSet<Vector3Int>();
-
+    
+    private string saveShortcut;
+    private HashSet<Vector3Int> allshortcutCells = new HashSet<Vector3Int>();
+    private Dictionary<Vector3Int, TileBase> originalshortcutTiles = new Dictionary<Vector3Int, TileBase>();
+    private HashSet<Vector3Int> visitedShortcutCells = new HashSet<Vector3Int>();
+    
     [SerializeField] private bool isBossRoom;
     [SerializeField] private GameObject roomGameObject;
     
@@ -155,7 +161,8 @@ public class Room : MonoBehaviour
         
         gameCamera = RoomManager.Instance.MainCamera;
         saveMinimapName = $"{ConstValues.MiniMapVisitedCells}_{name}";
-
+        saveShortcut = $"{ConstValues.MiniMapShortcutCells}_{name}";
+        
         // 1. 모든 그려진 타일 위치 저장 및 비활성화
         var frameBounds = minimapFrameTilemap.cellBounds;
         foreach (var pos in frameBounds.allPositionsWithin)
@@ -178,6 +185,20 @@ public class Room : MonoBehaviour
             }
         }
         minimapInTilemap.ClearAllTiles();
+
+        if (shortcutFrameTileMap)
+        {
+            var shortcutFrameBounds = shortcutFrameTileMap.cellBounds;
+            foreach (var pos in shortcutFrameBounds.allPositionsWithin)
+            {
+                if (shortcutFrameTileMap.HasTile(pos))
+                {
+                    allshortcutCells.Add(pos);
+                    originalshortcutTiles[pos] = shortcutFrameTileMap.GetTile(pos);
+                }
+            }
+            shortcutFrameTileMap.ClearAllTiles();
+        }
     }
 
     // private void OnEnable()
@@ -204,6 +225,7 @@ public class Room : MonoBehaviour
     private void OnApplicationQuit()
     {
         SaveVisitedCells();
+        SaveVisitedShortcutCells();
     }
 
     public void ObjectActive(bool active)
@@ -752,6 +774,7 @@ public class Room : MonoBehaviour
         
         targetShortcut.isOpened = true;
         SaveRoom();
+        SetShortCut();
     }
 
     private async void SpawnMonster(bool isExplosion = true)
@@ -765,7 +788,7 @@ public class Room : MonoBehaviour
             monsters[i].SetGoldAction(PlusGold);
             monsters[i].SpawnHpBar();
             monsters[i].gameObject.SetActive(true);
-            //monsters[i].MonsterAwake();
+            monsters[i].ForceIdle();
         }
         
         await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
@@ -1070,11 +1093,28 @@ public class Room : MonoBehaviour
             LoadVisitedCells();
             foreach (var cell in visitedCells)
             {
-                if (originalTiles.TryGetValue(cell, out var frameTile))
-                    minimapFrameTilemap.SetTile(cell, frameTile);
+                // if (originalTiles.TryGetValue(cell, out var frameTile))
+                //     minimapFrameTilemap.SetTile(cell, frameTile);
                 
                 if (originalTiles.TryGetValue(cell, out var inTile))
                     minimapInTilemap.SetTile(cell, inTile);
+            }
+        }
+        
+        // 저장 데이터 없음: 모든 숏컷 비활성화
+        if (!PlayerPrefs.HasKey(saveShortcut))
+        {
+            if(shortcutFrameTileMap)
+                shortcutFrameTileMap.ClearAllTiles();
+        }
+        // 저장 데이터 있음: 불러와서 해당 숏컷만 활성화
+        else
+        {
+            LoadVisitedShortcutCells();
+            foreach (var shortcutCell in visitedShortcutCells)
+            {
+                if (originalshortcutTiles.TryGetValue(shortcutCell, out var inTile))
+                    shortcutFrameTileMap.SetTile(shortcutCell, inTile);
             }
         }
     }
@@ -1094,7 +1134,6 @@ public class Room : MonoBehaviour
         Vector2 halfCell = minimapFrameTilemap.cellSize; // * 0.5f minimapTilemap.cellSize
         
         bool anyNew = false;
-
         foreach (var cell in allRoomCells)
         {
             if (visitedCells.Contains(cell))
@@ -1114,9 +1153,33 @@ public class Room : MonoBehaviour
                 anyNew = true;
             }
         }
-
         if (anyNew)
             SaveVisitedCells();
+        
+        bool shortcutNew = false;
+        foreach (var shortcutCell in allshortcutCells)
+        {
+            if (visitedShortcutCells.Contains(shortcutCell))
+                continue;
+            
+            if (shortcutFrameTileMap)
+            {
+                Vector3 center = shortcutFrameTileMap.GetCellCenterWorld(shortcutCell);
+                Vector2 min = new Vector2(center.x - halfCell.x, center.y - halfCell.y);
+                Vector2 max = new Vector2(center.x + halfCell.x, center.y + halfCell.y);
+
+                // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
+                if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
+                    max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+                {
+                    visitedShortcutCells.Add(shortcutCell);
+                    shortcutFrameTileMap.SetTile(shortcutCell, originalshortcutTiles[shortcutCell]);
+                    shortcutNew = true;
+                }
+            }
+        }
+        if (shortcutNew)
+            SaveVisitedShortcutCells();
     }
 
     // 5. PlayerPrefs에 방문 셀 저장
@@ -1125,12 +1188,11 @@ public class Room : MonoBehaviour
         var sb = new StringBuilder();
         foreach (var c in visitedCells)
             sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
-
+        
         PlayerPrefs.SetString(saveMinimapName, sb.ToString());
         PlayerPrefs.Save();
         //Debug.Log("미니맵 저장!");
     }
-
     // 2. 저장된 방문 셀 로드
     private void LoadVisitedCells()
     {
@@ -1148,6 +1210,37 @@ public class Room : MonoBehaviour
              && int.TryParse(p[2], out int z))
             {
                 visitedCells.Add(new Vector3Int(x, y, z));
+            }
+        }
+    }
+    
+    // 5. PlayerPrefs에 방문 셀 저장
+    private void SaveVisitedShortcutCells()
+    {
+        var sb = new StringBuilder();
+        foreach (var c in visitedShortcutCells)
+            sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
+        
+        PlayerPrefs.SetString(saveShortcut, sb.ToString());
+        PlayerPrefs.Save();
+    }
+    // 2. 저장된 방문 셀 로드
+    private void LoadVisitedShortcutCells()
+    {
+        string data = PlayerPrefs.GetString(saveShortcut, "");
+        if (string.IsNullOrEmpty(data))
+            return;
+
+        var entries = data.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
+        foreach (var e in entries)
+        {
+            var p = e.Split('_');
+            if (p.Length == 3
+                && int.TryParse(p[0], out int x)
+                && int.TryParse(p[1], out int y)
+                && int.TryParse(p[2], out int z))
+            {
+                visitedShortcutCells.Add(new Vector3Int(x, y, z));
             }
         }
     }
