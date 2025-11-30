@@ -1640,7 +1640,7 @@ public abstract class Character : MonoBehaviour
             // 평평한 일자형 지형에 떨어지는 경우만
             if (footTrigger.Distance(col).normal.y < -0.5f)
             {
-                if (landingState == ELandingState.Air)
+                if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
                 {
                     LandingStateSetting(ELandingState.Ground);
                     Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");

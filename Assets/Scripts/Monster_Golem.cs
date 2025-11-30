@@ -27,8 +27,8 @@ public class Monster_Golem : Monster
     // 땅치기
     private async void GroundAttack()
     {
-        float delay1 = 0.9f;
-        float delay2 = 0.5f;
+        float delay1 = 1.2f;
+        float delay2 = 0.8f;
 
         // 준비자세 취하기
         GameObject readyObject = SpawnObject($"{basicStat.id}_Ready", readyEffectPos);
@@ -38,11 +38,10 @@ public class Monster_Golem : Monster
 
         // 공격
         SetTriggerAnimator(ConstValues.Pattern);
-        var spawnObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}", attackPos).GetComponent<Attack>();
+        SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}", attackPos).GetComponent<Attack>();
         if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
         
-        spawnObject.gameObject.SetActive(false);
         PatternEnd();
     }
 

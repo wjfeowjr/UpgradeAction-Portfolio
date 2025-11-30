@@ -1199,7 +1199,7 @@ public abstract class Player : Character
         // 체공중 발 콜라이더가 벽 타입 몬스터와 충돌했을 때
         if (col.CompareTag(ConstValues.WallBody))
         {
-            if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
+            if (landingState == ELandingState.Air && normalState != ENormalState.Dash && footTrigger.Distance(col).normal.y < -0.5f)
             {
                 var monster = col.GetComponentInParent<Character>();
 
@@ -1208,11 +1208,11 @@ public abstract class Player : Character
                 {
                     if (transform.position.x > monster.transform.position.x)
                     {
-                        transform.position = new Vector2(monster.ColFront(), transform.position.y);
+                        transform.position = new Vector2(monster.ColFront(), transform.position.y - 0.1f);
                     }
                     else
                     {
-                        transform.position = new Vector2(monster.ColBehind(), transform.position.y);
+                        transform.position = new Vector2(monster.ColBehind(), transform.position.y - 0.1f);
                     }
                 }
                 // 몹이 왼쪽을 보고있음
@@ -1220,11 +1220,11 @@ public abstract class Player : Character
                 {
                     if (transform.position.x > monster.transform.position.x)
                     {
-                        transform.position = new Vector2(monster.ColBehind(), transform.position.y);
+                        transform.position = new Vector2(monster.ColBehind(), transform.position.y - 0.1f);
                     }
                     else
                     {
-                        transform.position = new Vector2(monster.ColFront(), transform.position.y);
+                        transform.position = new Vector2(monster.ColFront(), transform.position.y - 0.1f);
                     }
                 }
             }

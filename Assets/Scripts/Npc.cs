@@ -3,11 +3,13 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 
 public class Npc : Character
 {
     [SerializeField] private Transform speechPos;
     [SerializeField] private Transform uiPos;
+    [SerializeField] private Transform interactionSelectPos;
     
     private InteractionObject interactionObject;
     private InteractionSelect interactionSelect;
@@ -78,9 +80,9 @@ public class Npc : Character
 
     public void SetSelectAction()
     {
-        if (interactionSelect == null && uiPos)
+        if (interactionSelect == null && interactionSelectPos)
         {
-            interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, uiPos).GetComponent<InteractionSelect>();
+            interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, interactionSelectPos).GetComponent<InteractionSelect>();
             
             var selectList = TableManager.Instance.dialogueChoiceTable.DialogueChoice.FindAll(x => x.npc == npcData.id);
             
