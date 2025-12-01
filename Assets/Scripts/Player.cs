@@ -425,7 +425,7 @@ public abstract class Player : Character
 
     private void UpdateFlip()
     {
-        if (!canFlip)
+        if (!GameManager.Instance.ControlStart || !canFlip)
             return;
 
         MotionFlip();

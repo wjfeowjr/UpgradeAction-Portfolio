@@ -21,9 +21,8 @@ public class ProductTrigger : MonoBehaviour
 
     private void OnTriggerEnter2D(Collider2D col)
     {
-        if (col.CompareTag(ConstValues.Player) && col.isTrigger)
+        if (col.CompareTag(ConstValues.Player) && !col.isTrigger)
         {
-            Debug.Log("귀신");
             myAction?.Invoke();
             if (myAsyncAction != null)
                 myAsyncAction.Invoke();

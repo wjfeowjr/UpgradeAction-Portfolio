@@ -1637,38 +1637,39 @@ public abstract class Character : MonoBehaviour
     {
         if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
         {
-            // 평평한 일자형 지형에 떨어지는 경우만
-            if (footTrigger.Distance(col).normal.y < -0.5f)
+            if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
             {
-                if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
-                {
-                    LandingStateSetting(ELandingState.Ground);
-                    Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
-                }
-
-                // 점프 착지
-                if (normalState is ENormalState.Jump)
-                {
-                    myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-                    myRigidbody.linearVelocity = Vector2.zero;
-                    jumpAttackCount = 0;
-                    StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-                }
-                
-                // 에어본 처리
-                if (normalState == ENormalState.Airborne)
-                {
-                    Debug.Log("Down");
-                    myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-                    myRigidbody.linearVelocity = Vector2.zero;
-                    jumpAttackCount = 0;
-                    DownAndStand();
-                }
-                
-                // 플랫폼 감지
-                if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
-                    isOnPlatform = true;
+                LandingStateSetting(ELandingState.Ground);
+                Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
             }
+
+            // 점프 착지
+            if (normalState is ENormalState.Jump)
+            {
+                myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+                myRigidbody.linearVelocity = Vector2.zero;
+                jumpAttackCount = 0;
+                StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+            }
+                
+            // 에어본 처리
+            if (normalState == ENormalState.Airborne)
+            {
+                Debug.Log("Down");
+                myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+                myRigidbody.linearVelocity = Vector2.zero;
+                jumpAttackCount = 0;
+                DownAndStand();
+            }
+            // 플랫폼 감지
+            if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
+                isOnPlatform = true;
+            
+            // 평평한 일자형 지형에 떨어지는 경우만
+            // if (footTrigger.Distance(col).normal.y < -0.5f)
+            // {
+            //    
+            // }
             // else
             // {
             //     Debug.Log($"착지 충족 못함: {footTrigger.Distance(col).normal.y}");

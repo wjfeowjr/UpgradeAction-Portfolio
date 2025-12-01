@@ -16,21 +16,13 @@ public class Controller : Singleton<Controller>
 
     private void Update()
     {
-        // if (!GameManager.Instance.ControlStart)
-        // {
-        //     if (isLeftMove)
-        //         isLeftMove = false;
-        //     if (isRightMove)
-        //         isRightMove = false;
-        //     return;
-        // }
-        
         StopControl();
+        DirControl();
         
         if(!GameManager.Instance.ControlStart)
             return;
         
-        DirControl();
+        // DirControl();
         PlayerControl();
         MovingControl();
     }
@@ -157,21 +149,6 @@ public class Controller : Singleton<Controller>
         //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey7);
         // if (Input.GetKeyDown(GameManager.Instance.skillKey8))
         //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey8);
-
-        // if (Input.GetKeyDown(KeyCode.Q))
-        //     player.Grabbed(new Vector2(0, -2.0f));
-        //
-        // if (Input.GetKeyDown(KeyCode.W))
-        //     player.Airborne(6, 12);
-        //
-        // if (Input.GetKeyDown(KeyCode.E))
-        //     player.Stun(3.0f);
-        //
-        // if (Input.GetKeyDown(KeyCode.R))
-        // {
-        //     player.Damaged(0.5f);
-        //     player.KnockBack(1.0f);
-        // }
 
         if(GameManager.Instance.CurPlayer && !isLeftMove && !isRightMove)
             GameManager.Instance.CurPlayer.Stop();

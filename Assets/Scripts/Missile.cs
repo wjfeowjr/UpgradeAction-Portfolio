@@ -35,6 +35,9 @@ public class Missile : MonoBehaviour
     private Spin mySpin;
     [SerializeField] private MissileInfo missileInfo;
 
+    private int missileLayerMask;
+    private float defaultLimit;
+
     private void Awake()
     {
         myRigidbody = GetComponent<Rigidbody2D>();
@@ -43,6 +46,8 @@ public class Missile : MonoBehaviour
         myCollider = GetComponent<Collider2D>();
         missileSprite = GetComponentInChildren<SpriteRenderer>();
         mySpin = GetComponentInChildren<Spin>();
+        
+        missileLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
     }
 
     private void OnEnable()
@@ -71,8 +76,8 @@ public class Missile : MonoBehaviour
             missileInfo.id = missileData.id;
             missileInfo.type = (MissileType)Enum.Parse(typeof(MissileType), missileData.type);
             missileInfo.speed = missileData.speed;
-            missileInfo.limitLength = missileData.limitLength;
-        
+            defaultLimit = missileData.limitLength;
+
             var hitTagSplit = missileData.hitTag.Split(',');
             missileInfo.hitTagList = new List<string>();
             foreach (var hitLayer in hitTagSplit)
@@ -82,9 +87,32 @@ public class Missile : MonoBehaviour
             missileInfo.hitSpawn = missileData.hitSpawn;
             missileInfo.afterImage = missileData.afterImage;
         }
-        missileInfo.explosionAction = action;
         
+        missileInfo.explosionAction = action;
         dir = missileDir;
+        
+        // 레이캐스트
+        if (dir == Vector2.left)
+        {
+            var rayVector = new Vector2(transform.position.x, transform.position.y);
+            var ray = Physics2D.Raycast(rayVector, Vector2.left, defaultLimit, missileLayerMask);
+            Debug.DrawRay(rayVector, Vector2.left * defaultLimit, ConstValues.OrangeColor, 0.02f);
+            if (ray.collider == null)
+                missileInfo.limitLength = defaultLimit;
+            else
+                missileInfo.limitLength = Vector2.Distance(transform.position, ray.point);
+        }
+        if (dir == Vector2.right)
+        {
+            var rayVector = new Vector2(transform.position.x, transform.position.y);
+            var ray = Physics2D.Raycast(rayVector, Vector2.right, defaultLimit, missileLayerMask);
+            Debug.DrawRay(rayVector, Vector2.right * defaultLimit, ConstValues.OrangeColor, 0.02f);
+            if (ray.collider == null)
+                missileInfo.limitLength = defaultLimit;
+            else
+                missileInfo.limitLength = Vector2.Distance(transform.position, ray.point);
+        }
+        
         SetLimit();
     }
 
@@ -92,7 +120,7 @@ public class Missile : MonoBehaviour
     {
         if (missileInfo.limitLength == 0)
             return;
-        
+
         switch (missileInfo.type)
         {
             case MissileType.Horizontal:
@@ -100,42 +128,44 @@ public class Missile : MonoBehaviour
                 if (dir == Vector2.left)
                 {
                     limitPosX -= missileInfo.limitLength;
-                    if(missileSprite)
+                    if (missileSprite)
                         missileSprite.flipX = true;
-                    if(mySpin)
+                    if (mySpin)
                         mySpin.SetSpinSpeed(false);
                 }
                 else if (dir == Vector2.right)
                 {
                     limitPosX += missileInfo.limitLength;
-                    if(missileSprite)
+                    if (missileSprite)
                         missileSprite.flipX = false;
-                    if(mySpin)
+                    if (mySpin)
                         mySpin.SetSpinSpeed(true);
                 }
+
                 break;
             case MissileType.Vertical:
                 limitPosY = transform.position.y;
                 if (missileInfo.speed > 0)
                 {
                     limitPosY += missileInfo.limitLength;
-                    if(missileSprite)
+                    if (missileSprite)
                         missileSprite.flipY = false;
-                    if(mySpin)
+                    if (mySpin)
                         mySpin.SetSpinSpeed(true);
                 }
                 else
                 {
                     limitPosY -= missileInfo.limitLength;
-                    if(missileSprite)
+                    if (missileSprite)
                         missileSprite.flipY = true;
-                    if(mySpin)
+                    if (mySpin)
                         mySpin.SetSpinSpeed(false);
                 }
+
                 break;
         }
     }
-    
+
     // 좌표값 이동(Update에서 사용)
     private void Move1()
     {
@@ -154,6 +184,7 @@ public class Missile : MonoBehaviour
                 {
                     if (transform.position.x <= limitPosX)
                     {
+                        transform.position = new Vector2(limitPosX, transform.position.y);
                         Delete(false);
                     }
                 }
@@ -161,6 +192,7 @@ public class Missile : MonoBehaviour
                 {
                     if (transform.position.x >= limitPosX)
                     {
+                        transform.position = new Vector2(limitPosX, transform.position.y);
                         Delete(false);
                     }
                 }
@@ -170,10 +202,12 @@ public class Missile : MonoBehaviour
                 
                 if (limitPosY == 0)
                     return;
+                
                 if (missileInfo.speed > 0)
                 {
                     if (transform.position.y >= limitPosY)
                     {
+                        transform.position = new Vector2(transform.position.x, limitPosY);
                         Delete(false);
                     }
                 }
@@ -181,6 +215,7 @@ public class Missile : MonoBehaviour
                 {
                     if (transform.position.y <= limitPosY)
                     {
+                        transform.position = new Vector2(transform.position.x, limitPosY);
                         Delete(false);
                     }
                 }
@@ -189,40 +224,40 @@ public class Missile : MonoBehaviour
     }
     
     // 물리값 이동(FixedUpdate에서 사용)
-    // private void Move2()
-    // {
-    //     if (isDelete)
-    //         return;
-    //     
-    //     float targetSpeedX = missileInfo.speed * dir.x;
-    //     float targetSpeedY = myRigidbody.linearVelocity.y;
-    //
-    //     if (limitPosX == 0)
-    //         return;
-    //     
-    //     if (dir == Vector2.left)
-    //     {
-    //         if (transform.position.x <= limitPosX)
-    //         {
-    //             Delete(false);
-    //         }
-    //         else
-    //         {
-    //             myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-    //         }
-    //     }
-    //     else if (dir == Vector2.right)
-    //     {
-    //         if (transform.position.x >= limitPosX)
-    //         {
-    //             Delete(false);
-    //         }
-    //         else
-    //         {
-    //             myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-    //         }
-    //     }
-    // }
+    private void Move2()
+    {
+        if (isDelete)
+            return;
+        
+        float targetSpeedX = missileInfo.speed * dir.x;
+        float targetSpeedY = myRigidbody.linearVelocity.y;
+    
+        if (limitPosX == 0)
+            return;
+        
+        if (dir == Vector2.left)
+        {
+            if (transform.position.x <= limitPosX)
+            {
+                Delete(false);
+            }
+            else
+            {
+                myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+            }
+        }
+        else if (dir == Vector2.right)
+        {
+            if (transform.position.x >= limitPosX)
+            {
+                Delete(false);
+            }
+            else
+            {
+                myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+            }
+        }
+    }
 
     private async void Delete(bool isCollision)
     {
@@ -230,6 +265,8 @@ public class Missile : MonoBehaviour
             return;
         isDelete = true;
 
+        await UniTask.Yield();
+        
         if (missileInfo.spawnObject != ConstValues.None)
         {
             if (isCollision)
@@ -238,7 +275,7 @@ public class Missile : MonoBehaviour
             }
             else
             {
-                if (!missileInfo.hitSpawn)
+                if (!missileInfo.hitSpawn || missileInfo.limitLength < defaultLimit)
                     missileInfo.explosionAction(missileInfo.spawnObject, transform, 0);
             }
         }
@@ -288,8 +325,8 @@ public class Missile : MonoBehaviour
             // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
             if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Wall)
             {
-                Vector2 contactPoint = col.ClosestPoint(transform.position);
                 Vector2 myPoint = transform.position;
+                Vector2 contactPoint = col.ClosestPoint(myPoint);
 
                 if (dir == Vector2.right && myPoint.x > contactPoint.x)
                     return;

@@ -103,8 +103,10 @@ public class Monster : Character
     private float leapHeight;
     [SerializeField] protected float arriveHeight;
 
+    private bool firstPatrol = false;
     private bool patrolMoving = false;
     private float patrolTimer = 0f;
+
     private float limitLeft;
     private float limitRight;
 
@@ -695,7 +697,8 @@ public class Monster : Character
     public void MonsterAwake()
     {
         stateCancellation = new CancellationTokenSource();
-        IdleOrMove();
+        firstPatrol = true;
+        patrolTimer = 0;
         FirstCoolTimeReduce();
     }
 
@@ -931,7 +934,16 @@ public class Monster : Character
         
         if (patrolTimer <= 0f)
         {
-            patrolMoving = !patrolMoving;
+            if (firstPatrol)
+            {
+                patrolMoving = true;
+                firstPatrol = false;
+            }
+            else
+            {
+                patrolMoving = !patrolMoving;
+            }
+            
             patrolTimer = patrolMoving ? Random.Range(3.0f, 5.0f) : 3.0f;
             int randomDIr = Random.Range(0, 2);
             int dir = randomDIr == 0 ? -1 : 0;
