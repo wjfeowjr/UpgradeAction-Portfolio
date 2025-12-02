@@ -94,6 +94,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Attack3Ready = "Attack3_Ready";
     public const string JumpAttack1 = "JumpAttack1";
     public const string JumpAttack2 = "JumpAttack2";
+    public const string JumpAttack3 = "JumpAttack3";
     public const string JumpAttack2Start = "JumpAttack2_Start";
     public const string JumpAttack2Drop = "JumpAttack2_Drop";
     public const string JumpAttack2End = "JumpAttack2_End";

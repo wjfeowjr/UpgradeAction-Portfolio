@@ -47,7 +47,7 @@ public class Missile : MonoBehaviour
         missileSprite = GetComponentInChildren<SpriteRenderer>();
         mySpin = GetComponentInChildren<Spin>();
         
-        missileLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
+        missileLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall));
     }
 
     private void OnEnable()
@@ -323,11 +323,11 @@ public class Missile : MonoBehaviour
             }
             
             // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
+            Vector2 myPoint = transform.position;
+            Vector2 contactPoint = col.ClosestPoint(myPoint);
+            
             if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Wall)
             {
-                Vector2 myPoint = transform.position;
-                Vector2 contactPoint = col.ClosestPoint(myPoint);
-
                 if (dir == Vector2.right && myPoint.x > contactPoint.x)
                     return;
                 
@@ -335,6 +335,12 @@ public class Missile : MonoBehaviour
                     return;
                 
                 // 수정될 수 있음. 벽 위에서 투사체를 날린 경우
+                if(Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
+                    return;
+            }
+            
+            if (hitTag == ConstValues.Platform)
+            {
                 if(Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
                     return;
             }

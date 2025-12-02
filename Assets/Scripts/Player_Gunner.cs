@@ -16,6 +16,8 @@ public class Player_Gunner : Player
     [SerializeField] private Transform knockBackShotPos;
     [SerializeField] private Transform crazyShotPos;
     [SerializeField] private Transform bigShotPos;
+    
+    private int maxBullet = 9;
 
     private void Scream()
     {
@@ -57,6 +59,10 @@ public class Player_Gunner : Player
     public override async void Attack()
     {
         if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged() || downJumping)
+            return;
+        
+        // 점프 공격횟수를 다 쓰면 점프공격을 할 수 없다
+        if (landingState == ELandingState.Air && jumpAttackCount > maxBullet)
             return;
         
         if(!GetGlobalCoolTime())
@@ -107,8 +113,7 @@ public class Player_Gunner : Player
         float delay4 = 0.3f;
 
         float afterDelay = 0.2f;
-
-        int maxBullet = 9;
+        
         int bullet = maxBullet;
         
         // 총알이 1개 남을 때 까지 난사
@@ -154,7 +159,7 @@ public class Player_Gunner : Player
             SpawnObject(ConstValues.GunnerAttackEffect2, landingEffectPos);
             SpawnObject(ConstValues.GunnerAttack2Object, landingAttackPos);
             bullet--;
-            Rebound(4.0f);
+            Rebound(2.0f);
             
             if (await AttackDelay(delay4).SuppressCancellationThrow())
                 return false;
@@ -171,38 +176,96 @@ public class Player_Gunner : Player
         float delay2 = 0.016f;
         float delay3 = 0.1f;
         float delay4 = 0.3f;
-
         float afterDelay = 0.2f;
-
-        int bulletCount = 0;
+        bool firstShot = true;
         
-        // 그냥 계속 쏜다 ㅋㅋ
-        while (GetJumpState())
-        { 
-            if(bulletCount == 0)
+        // myRigidbody.linearVelocity = Vector2.zero;
+        // GravityChange(0);
+
+        // 총알이 1개 남을 때 까지 난사
+        while (jumpAttackCount < maxBullet)
+        {
+            if (firstShot)
+            {
                 StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
-            else if(bulletCount % 2 == 0)
-                StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2);
-            else if(bulletCount % 2 == 1)
-                StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack1);
+                firstShot = false;
+            }
+            else
+            {
+                if(jumpAttackCount % 2 == 0)
+                    StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2);
+                else if(jumpAttackCount % 2 == 1)
+                    StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack1);
+            }
             
             nextAttack = false;
-
             if (await AttackDelay(delay1).SuppressCancellationThrow())
                 return false;
 
-            myRigidbody.linearVelocity = new Vector2(0, 0.1f);
-            SpawnObject(ConstValues.GunnerAttackEffect1, jumpEffectPos, -45);
-            SpawnObject(ConstValues.GunnerAttack1Object, jumpAttackPos, -45);
-            bulletCount++;
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 1.9f);
+
+            SpawnObject(ConstValues.GunnerAttackEffect1, landingEffectPos);
+            SpawnObject(ConstValues.GunnerAttack1Object, landingAttackPos);
+            jumpAttackCount++;
             
+            if (jumpAttackCount == maxBullet - 1)
+                break;
+        
             if (await NextAttackDelay(delay2, afterDelay).SuppressCancellationThrow())
                 return false;
             
             if (!nextAttack)
                 break;
         }
+        if (jumpAttackCount == maxBullet)
+        {
+            jumpAttackCount++;
+            StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
+            myRigidbody.linearVelocity = Vector2.zero;
+            GravityChange(0);
+            if (await AttackDelay(delay4).SuppressCancellationThrow())
+                return false;
+            
+            StateSetting(ENormalState.Attack, ConstValues.JumpAttack2, ConstValues.JumpAttack3);
+            if (await AttackDelay(delay3).SuppressCancellationThrow())
+                return false;
+        
+            SpawnObject(ConstValues.GunnerAttackEffect2, landingEffectPos);
+            SpawnObject(ConstValues.GunnerAttack2Object, landingAttackPos);
+            myRigidbody.linearVelocity = new Vector2(0, 3.0f);
+            GravityChange(myGravity);
 
+            if (await AttackDelay(delay4).SuppressCancellationThrow())
+                return false;
+        }
+        GravityChange(myGravity);
+
+        // 그냥 계속 쏜다 ㅋㅋ
+        // while (GetJumpState())
+        // { 
+        //     if(bulletCount == 0)
+        //         StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
+        //     else if(bulletCount % 2 == 0)
+        //         StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2);
+        //     else if(bulletCount % 2 == 1)
+        //         StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack1);
+        //     
+        //     nextAttack = false;
+        //
+        //     if (await AttackDelay(delay1).SuppressCancellationThrow())
+        //         return false;
+        //
+        //     myRigidbody.linearVelocity = new Vector2(0, 0.1f);
+        //     SpawnObject(ConstValues.GunnerAttackEffect1, jumpEffectPos, -45);
+        //     SpawnObject(ConstValues.GunnerAttack1Object, jumpAttackPos, -45);
+        //     bulletCount++;
+        //     
+        //     if (await NextAttackDelay(delay2, afterDelay).SuppressCancellationThrow())
+        //         return false;
+        //     
+        //     if (!nextAttack)
+        //         break;
+        // }
         return true;
     }
     

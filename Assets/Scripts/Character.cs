@@ -134,7 +134,7 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected Vector2 downOffset;
 
     protected Vector2 chargeVector;
-    protected int jumpAttackCount;
+    [SerializeField] protected int jumpAttackCount;
     [SerializeField] protected bool isDie;
     [SerializeField] protected float myGravity;
     protected bool downJumping;
@@ -1479,11 +1479,7 @@ public abstract class Character : MonoBehaviour
         {
             // FixedUpdate 타이밍 대기 및 취소 체크
             if (await FixedYieldDelay(anotherCancellation).SuppressCancellationThrow())
-            {
-                // 취소되면 속도 리셋 후 종료
-                myRigidbody.linearVelocity = Vector2.zero;
                 return;
-            }
         }
 
         // 넉백 끝나면 속도 0으로
@@ -1637,9 +1633,11 @@ public abstract class Character : MonoBehaviour
     {
         if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
         {
-            if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
+            Vector2 contactPoint = col.ClosestPoint(transform.position);
+            if (landingState == ELandingState.Air && normalState != ENormalState.Dash && transform.position.y > contactPoint.y)
             {
                 LandingStateSetting(ELandingState.Ground);
+                jumpAttackCount = 0;
                 Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
             }
 
@@ -1648,17 +1646,14 @@ public abstract class Character : MonoBehaviour
             {
                 myRigidbody.bodyType = RigidbodyType2D.Dynamic;
                 myRigidbody.linearVelocity = Vector2.zero;
-                jumpAttackCount = 0;
                 StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
             }
                 
             // 에어본 처리
             if (normalState == ENormalState.Airborne)
             {
-                Debug.Log("Down");
                 myRigidbody.bodyType = RigidbodyType2D.Dynamic;
                 myRigidbody.linearVelocity = Vector2.zero;
-                jumpAttackCount = 0;
                 DownAndStand();
             }
             // 플랫폼 감지

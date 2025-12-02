@@ -433,9 +433,6 @@ public abstract class Player : Character
     
     private void UpdateJumpDown()
     {
-        if (basicStat.id == ConstValues.Gunner)
-            return;
-        
         if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Jump) && myRigidbody.linearVelocity.y < 0)
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
     }

@@ -285,22 +285,8 @@ public class Attack : MonoBehaviour
             
             // 피해를 입고, 체력이 0으로 떨어지면 죽는다
             if (hitTarget.BasicStat.hp <= 0)
-            {
                 hitTarget.Die();
-                
-                // 죽을때 기본적으로 에어본 이후 넘어져서 죽는다(보스 제외)
-                if (hitTarget.GetComponent<Monster>() && hitTarget.GetComponent<Monster>().IsBoss)
-                    return;
-                
-                var upperPowerY = attackInfo.upperPower.y;
-                if (hitTarget.GetComponent<Npc>() == null)
-                {
-                    if (upperPowerY < 5)
-                        upperPowerY = 5;
-                }
-                hitTarget.Airborne(upperPowerX, upperPowerY);
-                return;
-            }
+            
             if (!attackInfo.duplicate)
                 IgnoreCol(col);
 

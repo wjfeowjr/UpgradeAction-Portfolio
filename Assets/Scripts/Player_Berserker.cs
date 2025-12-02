@@ -221,6 +221,7 @@ public class Player_Berserker : Player
             jumpAttackCount = 0;
             StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2End);
             SpawnAttack(ConstValues.BerserkerJumpAttack2Effect, jumpAttack2Pos);
+            
             //SpawnSwordWave(attackPos[2]);
             //GameManager.Instance.playerShare.currentJumpAttack = 0;
             if (await AttackDelay(jumpAttackDelay4).SuppressCancellationThrow())

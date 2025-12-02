@@ -59,6 +59,7 @@ public class TitleManager : MonoBehaviour
             GameManager.Instance.DefaultSkillSetting();
             GameManager.Instance.DefaultSkillKeySetting();
             GameManager.Instance.DefaultGoodsSetting();
+            GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default);
         }
         
         if (Input.anyKeyDown)
