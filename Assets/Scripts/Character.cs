@@ -977,7 +977,7 @@ public abstract class Character : MonoBehaviour
     }
 
     // 행동 캔슬
-    public void CancelMotion()
+    public void CancelMotion(bool velocity0 = true)
     {
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
@@ -987,7 +987,7 @@ public abstract class Character : MonoBehaviour
         ClearObjectList(controlObject);
         ClearObjectList(normalObject);
         GravityChange(myGravity);
-        if(myRigidbody)
+        if(myRigidbody && velocity0)
             myRigidbody.linearVelocity = Vector2.zero;
 
         switch (normalState)

@@ -1303,7 +1303,7 @@ public class Room : MonoBehaviour
 
         PlayBGM(ConstValues.BGMSunHill, true);
         PlaySound(ConstValues.PlayerScream);
-        CameraShake(0.4f, 0.4f, 1.0f);
+        CameraShake(0.1f, 0.4f, 1.0f);
         SpawnSpeechFrame(speechFrame1[0], new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), talkList[2]);
         for (int i = 0; i < 2; i++)
         {
@@ -1403,7 +1403,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[1]);
         await NextDialog(speechFrame1[0]);
 
-        RoomManager.Instance.Guide(3);
+        RoomManager.Instance.Guide(0);
         
         UIOn();
         roomInfo.productCount += 1;
@@ -1430,7 +1430,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
         await NextDialog(speechFrame1[0]);
 
-        RoomManager.Instance.Guide(4);
+        RoomManager.Instance.Guide(1);
         UIOn();
         roomInfo.productCount += 1;
         SaveRoom();
@@ -1491,6 +1491,8 @@ public class Room : MonoBehaviour
         if (roomInfo.productCount == 1)
         {
             UIOff();
+            
+            // 이 부분 강제이동으로 변경
             bosses[0].transform.DOMove(bossPos[0].position, 0.5f);
             if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
@@ -1754,7 +1756,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
         CharacterOrderBinding.SaveFirstCharacter(ConstValues.Berserker);
         CharacterOrderBinding.SaveSecondCharacter(ConstValues.Gunner);
-        RoomManager.Instance.Guide(5);
+        RoomManager.Instance.Guide(4);
         
         UIOn();
         roomInfo.productCount += 1;
@@ -1832,7 +1834,7 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
 
-            RoomManager.Instance.Guide(6);
+            RoomManager.Instance.Guide(3);
             UIOn();
         }
         else

@@ -809,12 +809,22 @@ public abstract class Player : Character
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 20); 
             
             stateCancellation = new CancellationTokenSource();
-            while (transform.position.y < jumpLimitY)
+            while (transform.position.y < jumpLimitY && myRigidbody.linearVelocityY > 0)
             {
                 if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                {
+                    if(normalState == ENormalState.JumpAttack)
+                        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
+                    
+                    Debug.Log("점프 캔슬");
                     return;
+                }
             }
-            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
+            
+            if(myRigidbody.linearVelocityY > 0)
+                myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
+            
+            Debug.Log("점프 끝");
         }
     }
     // 아랫점프

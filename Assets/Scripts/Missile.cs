@@ -339,11 +339,11 @@ public class Missile : MonoBehaviour
                     return;
             }
             
-            if (hitTag == ConstValues.Platform)
-            {
-                if(Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
-                    return;
-            }
+            // if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Platform)
+            // {
+            //     if(Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
+            //         return;
+            // }
             
             Delete(true);
             return;

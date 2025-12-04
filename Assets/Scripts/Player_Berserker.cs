@@ -66,10 +66,11 @@ public class Player_Berserker : Player
         
         Debug.Log("공격 시작");
         curGlobalCoolTime = 0;
-        CancelMotion();
+        CancelMotion(false);
         stateCancellation = new CancellationTokenSource();
         bool finishSuccess = true;
         string type = "지상";
+        
         switch (landingState)
         {
             // 지상공격

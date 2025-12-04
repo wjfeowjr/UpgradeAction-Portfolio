@@ -180,6 +180,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Dialogue = "Dialogue";
     public const string DialogueChoice = "DialogueChoice";
     public const string ProductDialogue = "ProductDialogue";
+    public const string Talk = "Talk";
     public const string TreasureBox = "TreasureBox";
 
     public const string FirstCharacter = "FirstCharacter";

@@ -294,6 +294,19 @@ public class ProductDialogueDataList
     public List<ProductDialogueData> ProductDialogue;
 }
 
+[Serializable]
+public class TalkData
+{
+    public int idx;
+    public string type;
+    public string talk;
+}
+[Serializable]
+public class TalkDataList
+{
+    public List<TalkData> Talk;
+}
+
 public class TableManager : SingletonMono<TableManager>
 {
     public SpawnedObjectDataList spawnedObjectTable;
@@ -310,6 +323,7 @@ public class TableManager : SingletonMono<TableManager>
     public DialogueDataList dialogueTable;
     public DialogueChoiceDataList dialogueChoiceTable;
     public ProductDialogueDataList productDialogueTable;
+    public TalkDataList talkTable;
     
     public void Init()
     {
@@ -327,6 +341,7 @@ public class TableManager : SingletonMono<TableManager>
         dialogueTable = LoadDataFromJson<DialogueDataList>(ConstValues.Dialogue);
         dialogueChoiceTable = LoadDataFromJson<DialogueChoiceDataList>(ConstValues.DialogueChoice);
         productDialogueTable = LoadDataFromJson<ProductDialogueDataList>(ConstValues.ProductDialogue);
+        talkTable = LoadDataFromJson<TalkDataList>(ConstValues.Talk);
         
         Debug.Log($"{name} 초기화 완료");
     }

@@ -941,24 +941,4 @@ public class Stage1 : Stage
         };
         SpawnGuide(guideModel);
     }
-
-    // private void Guide2()
-    // {
-    //     var guideModel = new PopupGuideModel()
-    //     {
-    //         guideMessage = "<color=#F36B6B>'X'</color>키와 우측 하단의 스킬들을 활용하여 전투를 해보세요!",
-    //         imgName = "Guide2",
-    //     };
-    //     SpawnGuide(guideModel);
-    // }
-    
-    // private void Guide3()
-    // {
-    //     var guideModel = new PopupGuideModel()
-    //     {
-    //         guideMessage = "<color=#F36B6B>'보스'</color>는 일반 몬스터와 달리 강력한 패턴으로 무장하고 있습니다.\n공격과 스킬을 잘 활용하여 상대하세요!",
-    //         imgName = "Guide3",
-    //     };
-    //     SpawnGuide(guideModel);
-    // }
 }

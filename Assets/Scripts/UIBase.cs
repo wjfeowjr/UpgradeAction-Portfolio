@@ -21,7 +21,7 @@ public class UIBase : MonoBehaviour
     {
         gameObject.SetActive(false);
     }
-    public void ExpansionOpen(bool timeStop)
+    public async void ExpansionOpen(bool timeStop)
     {
         if (timeStop)
             Time.timeScale = 0;
