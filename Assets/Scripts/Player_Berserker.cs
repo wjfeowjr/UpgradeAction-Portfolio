@@ -21,6 +21,8 @@ public class Player_Berserker : Player
     [SerializeField] private Transform chargeCrashSmashPos;
     [SerializeField] private Transform chargeCrashSmashEffectPos;
     
+    private int maxSword = 3;
+    
     public override async void ChangeAttack()
     {
         Debug.Log("교체 공격 시작");
@@ -53,21 +55,11 @@ public class Player_Berserker : Player
         return true;
     }
     
-    public override async void Attack()
+    public override async UniTask<bool> Attack()
     {
-        if (normalState is ENormalState.Attack or ENormalState.JumpAttack or ENormalState.Skill || IsDamaged() || downJumping)
-            return;
+        if (!await base.Attack())
+            return false;
         
-        if(!GetGlobalCoolTime())
-        {
-            Debug.Log("글로벌 쿨타임이 지나지 않음");
-            return;
-        }
-        
-        Debug.Log("공격 시작");
-        curGlobalCoolTime = 0;
-        CancelMotion(false);
-        stateCancellation = new CancellationTokenSource();
         bool finishSuccess = true;
         string type = "지상";
         
@@ -75,12 +67,16 @@ public class Player_Berserker : Player
         {
             // 지상공격
             case ELandingState.Ground:
+                CancelMotion(true, false);
+                stateCancellation = new CancellationTokenSource();
                 finishSuccess = await BerserkerLandingAttack();
                 break;
 
             // 점프공격
             case ELandingState.Air:
                 type = "점프";
+                CancelMotion(false);
+                stateCancellation = new CancellationTokenSource();
                 finishSuccess = await BerserkerJumpAttack();
                 break;
         }
@@ -88,71 +84,65 @@ public class Player_Berserker : Player
         if (!finishSuccess)
         {
             Debug.Log($"{type}공격 캔슬");
-            return;
+            return false;
         }
-            
-        Debug.Log($"{type}공격 끝");
-        // 동작이 끝날때 반환하는 트리거
-        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+        
+        if (!Controller.Instance.IsAttackHeld)
+        {
+            StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+            Debug.Log($"{type}공격 끝");
+            landingAttackCount = 0;
+        }
+        return true;
     }
 
     private async UniTask<bool> BerserkerLandingAttack()
     {
         if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
-
-        var delay1 = 0.16f;
-        var delay2 = 0.2f;
-        var delay3 = 0.12f;
-        var delay4 = 0.2f;
-        var delay5 = 0.16f;
-        var delay6 = 0.5f;
+        
         var afterDelay = 0.35f;
 
-        StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
-        AttackAdvance(2.0f);
-        nextAttack = false;
+        if (landingAttackCount < maxSword)
+            landingAttackCount += 1;
 
-        if (await AttackDelay(delay1).SuppressCancellationThrow())
-            return false;
-
-        SpawnAttack(ConstValues.BerserkerAttack1, attack1Pos);
-
-        if (await NextAttackDelay(delay2, afterDelay).SuppressCancellationThrow())
-            return false;
-
-        if (landingState == ELandingState.Air)
+        switch (landingAttackCount)
         {
-            CancelMotion();
-            StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-            LandingStateSetting(ELandingState.Air);
-            return false;
-        }
+            case 1:
+                var delay1 = 0.16f;
+                var delay2 = 0.2f;
+                StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
+                AttackAdvance(2.0f);
 
-        if (nextAttack)
-        {
-            nextAttack = false;
-            MotionFlip();
-            StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
-            AttackAdvance(2.0f);
+                if (await AttackDelay(delay1).SuppressCancellationThrow())
+                    return false;
 
-            if (await AttackDelay(delay3).SuppressCancellationThrow())
-                return false;
+                SpawnAttack(ConstValues.BerserkerAttack1, attack1Pos);
 
-            SpawnAttack(ConstValues.BerserkerAttack2, attack2Pos);
-            if (await NextAttackDelay(delay4, afterDelay).SuppressCancellationThrow())
-                return false;
+                if (await AttackHeld(delay2, afterDelay).SuppressCancellationThrow())
+                    return false;
+                break;
             
-            if (landingState == ELandingState.Air)
-            {
-                CancelMotion();
-                StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-                LandingStateSetting(ELandingState.Air);
-                return false;
-            }
+            case 2:
+                var delay3 = 0.12f;
+                var delay4 = 0.2f;
+                
+                MotionFlip();
+                StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
+                AttackAdvance(2.0f);
 
-            if (nextAttack)
-            {
+                if (await AttackDelay(delay3).SuppressCancellationThrow())
+                    return false;
+
+                SpawnAttack(ConstValues.BerserkerAttack2, attack2Pos);
+                if (await AttackHeld(delay4, afterDelay).SuppressCancellationThrow())
+                    return false;
+                break;
+            
+            case 3:
+                var delay5 = 0.16f;
+                var delay6 = 0.5f;
+                
                 MotionFlip();
                 StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack3);
                 AttackAdvance(3.0f);
@@ -161,12 +151,13 @@ public class Player_Berserker : Player
                     return false;
 
                 SpawnAttack(ConstValues.BerserkerAttack3, attack3Pos);
-
                 if (await AttackDelay(delay6).SuppressCancellationThrow())
                     return false;
-            }
+                
+                landingAttackCount = 0;
+                break;
         }
-        
+        canAttack = true;
         return true;
     }
 
@@ -194,7 +185,6 @@ public class Player_Berserker : Player
             SpawnAttack(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
             if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
                 return false;
-            
         }
         else
         {
@@ -229,7 +219,7 @@ public class Player_Berserker : Player
                 return false;
             ClearObjectList(controlObject);
         }
-
+        canAttack = true;
         return true;
     }
 
@@ -256,13 +246,18 @@ public class Player_Berserker : Player
                 return;
             }
         }
-
+        
+        // 스킬 사용 후 쿨타임 및 공격캔슬 관리
         UseSkill(skillId);
         curGlobalCoolTime = 0;
         if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
 
-        CancelMotion();
+        // 대시중이라면 즉시 정지해야함..
+        if (normalState == ENormalState.Dash)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
+        CancelMotion(false);
         MotionFlip();
         // 스킬 특성: 슈퍼아머 체크
         if(skillKey != GameManager.Instance.dashKey && GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SuperArmor))
@@ -279,13 +274,13 @@ public class Player_Berserker : Player
         {
             finishSuccess = await UpperSlash();
         }
-        else if (skillId == ConstValues.BerserkerCrash)
-        {
-            finishSuccess = await Crash();
-        }
         else if (skillId == ConstValues.BerserkerFireStrike)
         {
             finishSuccess = await FireStrike();
+        }
+        else if (skillId == ConstValues.BerserkerCrash)
+        {
+            finishSuccess = await Crash();
         }
         else if (skillId == ConstValues.BerserkerChargeCrash)
         {
@@ -304,6 +299,7 @@ public class Player_Berserker : Player
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
 
+    // 올려베기
     private async UniTask<bool> UpperSlash()
     {
         StateSetting(ENormalState.Skill, ConstValues.BerserkerUpperSlash, ConstValues.BerserkerUpperSlash);
@@ -324,7 +320,7 @@ public class Player_Berserker : Player
                     attackObject.AttackInfo.upperPower = new Vector2(0, 12);
                     break;
                 case ConstValues.JumpUpper:
-                    Leap(6, 20, 1.6f);
+                    Leap(0, 20, 0.8f);
                     break;
             }
         }
@@ -333,6 +329,35 @@ public class Player_Berserker : Player
         //Leap(6, 20, 1.6f);
         Leap(0, 20, 0.8f);
 
+        if (await AttackDelay(delay2).SuppressCancellationThrow())
+            return false;
+
+        return true;
+    }
+    
+    // 불덩이 날리기
+    private async UniTask<bool> FireStrike()
+    {
+        StateSetting(ENormalState.Skill, ConstValues.BerserkerFireStrike, ConstValues.BerserkerFireStrike);
+
+        var delay1 = 0.2f;
+        var delay2 = 0.2f;
+        
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+
+        var objectId = ConstValues.BerserkerFireStrike;
+        foreach (var attribute in GameManager.Instance.PlayerSkill.GetSkillAttribute(ConstValues.BerserkerFireStrike))
+        {
+            switch (attribute)
+            {
+                case ConstValues.PiercingFire:
+                    objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Pierce}";
+                    break;
+            }
+        }
+
+        SpawnAttack(objectId, fireStrikePos);
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
 
@@ -407,35 +432,6 @@ public class Player_Berserker : Player
         return true;
     }
 
-    private async UniTask<bool> FireStrike()
-    {
-        StateSetting(ENormalState.Skill, ConstValues.BerserkerFireStrike, ConstValues.BerserkerFireStrike);
-        myRigidbody.linearVelocity = Vector2.zero;
-        
-        var delay1 = 0.2f;
-        var delay2 = 0.2f;
-        
-        if (await AttackDelay(delay1).SuppressCancellationThrow())
-            return false;
-
-        var objectId = ConstValues.BerserkerFireStrike;
-        foreach (var attribute in GameManager.Instance.PlayerSkill.GetSkillAttribute(ConstValues.BerserkerFireStrike))
-        {
-            switch (attribute)
-            {
-                case ConstValues.PiercingFire:
-                    objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Pierce}";
-                    break;
-            }
-        }
-
-        SpawnAttack(objectId, fireStrikePos);
-        if (await AttackDelay(delay2).SuppressCancellationThrow())
-            return false;
-
-        return true;
-    }
-    
     // 광전사 차지크래시
     private async UniTask<bool> ChargeCrash()
     {

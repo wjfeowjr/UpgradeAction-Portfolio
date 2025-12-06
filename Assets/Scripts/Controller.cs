@@ -6,9 +6,28 @@ using UnityEngine;
 
 public class Controller : Singleton<Controller>
 {
-    public bool isLeftMove;
-    public bool isRightMove;
+    private bool isLeftMove;
+    private bool isRightMove;
+    [SerializeField] private bool isAttackHeld;
 
+    public bool IsLeftMove
+    {
+        get => isLeftMove;
+        set => isLeftMove = value;
+    }
+    
+    public bool IsRightMove
+    {
+        get => isRightMove;
+        set => isRightMove = value;
+    }
+    
+    public bool IsAttackHeld
+    {
+        get => isAttackHeld;
+        set => isAttackHeld = value;
+    }
+    
     private async void Start()
     {
         await UniTask.WaitUntil(() => GameManager.Instance.CurPlayer != null);
@@ -16,9 +35,10 @@ public class Controller : Singleton<Controller>
 
     private void Update()
     {
+        AttackControl();
         StopControl();
         DirControl();
-        
+
         if(!GameManager.Instance.ControlStart)
             return;
         
@@ -43,7 +63,8 @@ public class Controller : Singleton<Controller>
                 isLeftMove = false;
             if (isRightMove)
                 isRightMove = false;
-            return;
+            if(isAttackHeld)
+                isAttackHeld = false;
         }
     }
 
@@ -51,6 +72,12 @@ public class Controller : Singleton<Controller>
     {
         isLeftMove = false;
         isRightMove = false;
+    }
+
+    private void AttackControl()
+    {
+        if (Input.GetKeyDown(GameManager.Instance.attackKey))
+            isAttackHeld = true;
     }
 
     // 방향 컨트롤(좌,우 동시입력 방지)
@@ -73,6 +100,9 @@ public class Controller : Singleton<Controller>
 
     private void StopControl()
     {
+        if (Input.GetKeyUp(GameManager.Instance.attackKey))
+            isAttackHeld = false;
+        
         if (Input.GetKeyUp(GameManager.Instance.leftMoveKey))
         {
             isLeftMove = false;
@@ -110,8 +140,21 @@ public class Controller : Singleton<Controller>
 
     private void PlayerControl()
     {
-        if (Input.GetKey(GameManager.Instance.attackKey))
-            GameManager.Instance.CurPlayer.Attack();
+        // 대시상태일 때의 공격캔슬 관리
+        if (isAttackHeld)
+        {
+            if (GameManager.Instance.CurPlayer.NormalState == ENormalState.Dash)
+            {
+                if (Input.GetKeyDown(GameManager.Instance.attackKey))
+                {
+                    GameManager.Instance.CurPlayer.Attack().Forget();
+                }
+            }
+            else
+            {
+                GameManager.Instance.CurPlayer.Attack().Forget();
+            }
+        }
 
         if (Input.GetKey(GameManager.Instance.downKey))
         {

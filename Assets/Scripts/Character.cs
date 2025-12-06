@@ -134,9 +134,10 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected Vector2 downOffset;
 
     protected Vector2 chargeVector;
-    [SerializeField] protected int jumpAttackCount;
-    [SerializeField] protected bool isDie;
-    [SerializeField] protected float myGravity;
+    [SerializeField] protected int landingAttackCount;
+    protected int jumpAttackCount;
+    protected bool isDie;
+    protected float myGravity;
     protected bool downJumping;
     protected bool isOnPlatform;
 
@@ -977,26 +978,31 @@ public abstract class Character : MonoBehaviour
     }
 
     // 행동 캔슬
-    public void CancelMotion(bool velocity0 = true)
+    public void CancelMotion(bool velocity0 = true, bool zeroLandingAttack = true)
     {
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
 
+        if(zeroLandingAttack)
+            landingAttackCount = 0;
         downJumping = false;
         ClearIgnorePlatform();
-        ClearObjectList(controlObject);
-        ClearObjectList(normalObject);
         GravityChange(myGravity);
         if(myRigidbody && velocity0)
             myRigidbody.linearVelocity = Vector2.zero;
 
+        float timer = 0.0f;
         switch (normalState)
         {
             case ENormalState.Dash:
                 immortal = false;
                 myBoxCollider.enabled = true;
+                myRigidbody.linearVelocity = Vector2.zero;
+                timer = 0.8f;
                 break;
         }
+        ClearObjectList(controlObject, timer);
+        ClearObjectList(normalObject, timer);
     }
 
     private void AddObjectList(List<GameObject> list, GameObject obj)
@@ -1659,16 +1665,6 @@ public abstract class Character : MonoBehaviour
             // 플랫폼 감지
             if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
                 isOnPlatform = true;
-            
-            // 평평한 일자형 지형에 떨어지는 경우만
-            // if (footTrigger.Distance(col).normal.y < -0.5f)
-            // {
-            //    
-            // }
-            // else
-            // {
-            //     Debug.Log($"착지 충족 못함: {footTrigger.Distance(col).normal.y}");
-            // }
         }
     }
 }

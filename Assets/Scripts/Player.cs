@@ -128,14 +128,14 @@ public abstract class Player : Character
     
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
-    [SerializeField] protected bool nextAttack;
+    [SerializeField] protected bool canAttack;
     [SerializeField] private bool canFlip;
     [SerializeField] private bool canMove;
     [SerializeField] private float moveRatio;
     [SerializeField] private GameObject dashEffectUI;
     [SerializeField] private GameObject dashFrameUI;
     
-    private float globalCoolTime;
+    protected float globalCoolTime;
     protected float curGlobalCoolTime;
     
     private float dashDelay;
@@ -149,6 +149,13 @@ public abstract class Player : Character
     
     // 프로퍼티
     public bool IsChanging => isChanging;
+    
+    public bool CanAttack
+    {
+        get => canAttack;
+        set => canAttack = value;
+    }
+    
     public int JumpAttackCount
     {
         get => jumpAttackCount;
@@ -157,15 +164,13 @@ public abstract class Player : Character
 
     // 스킬
     public abstract void Skill(KeyCode skillKey);
-    // 공격
-    public abstract void Attack();
     // 교체공격
     public abstract void ChangeAttack();
     
     protected override void Awake()
     {
         base.Awake();
-        globalCoolTime = 0.1f;
+        globalCoolTime = 0.05f;
         dashDelay = 0.2f;
         changeGlobalCoolTime = 0.1f;
         skillGlobalCoolTime = 0.02f;
@@ -177,6 +182,7 @@ public abstract class Player : Character
         // 최초 Idle상태로 전환
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         myGravity = myRigidbody.gravityScale;
+        canAttack = true;
     }
 
     private void Start()
@@ -373,7 +379,6 @@ public abstract class Player : Character
                 BodyTypeSetting(animationsData.bodyType);
         }
     }
-    
     protected override void StateCheck()
     {
         var stun = buffList.Find(x => x.buffType is EBuffType.Stun);
@@ -406,7 +411,7 @@ public abstract class Player : Character
         }
         StandHitBox();
     }
-    
+
     protected void MotionFlip()
     {
         if(GameManager.Instance.CurPlayer != this)
@@ -414,10 +419,10 @@ public abstract class Player : Character
         
         switch (transform.localScale.x)
         {
-            case > 0 when Controller.Instance.isLeftMove:
+            case > 0 when Controller.Instance.IsLeftMove:
                 Flip(-1);
                 break;
-            case < 0 when Controller.Instance.isRightMove:
+            case < 0 when Controller.Instance.IsRightMove:
                 Flip(1);
                 break;
         }
@@ -629,6 +634,7 @@ public abstract class Player : Character
         // transform.Translate(dir * (basicStat.moveSpeed * (moveRatio * 0.01f) * Time.deltaTime));
     }
 
+    // 플레이어 이동
     public void Move(Vector2 dir)
     {
         if (!canMove)
@@ -637,6 +643,36 @@ public abstract class Player : Character
         float targetSpeedX = dir.x * basicStat.moveSpeed * (moveRatio * 0.01f);
         float targetSpeedY = myRigidbody.linearVelocity.y;
         myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+    }
+    
+    // 플레이어 공격
+    public virtual async UniTask<bool> Attack()
+    {
+        if(!Controller.Instance.IsAttackHeld)
+            return false;
+
+        if (normalState is ENormalState.Skill || IsDamaged() || downJumping)
+        {
+            Debug.Log("공격을 할 수 없는 상태임");
+            return false;
+        }
+
+        if(!GetGlobalCoolTime())
+        {
+            Debug.Log("글로벌 쿨타임이 지나지 않음");
+            return false;
+        }
+        
+        if ((normalState is ENormalState.Attack or ENormalState.JumpAttack) && !canAttack)
+        {
+            Debug.Log("공격 진행중임");
+            return false;
+        }
+
+        canAttack = false;
+        curGlobalCoolTime = 0;
+        Debug.Log("공격 시작");
+        return true;
     }
 
     public override void TakeDamage(int damage, bool isTrapAttack)
@@ -791,11 +827,11 @@ public abstract class Player : Character
     {
         if (landingState == ELandingState.Ground && normalState is ENormalState.Idle or ENormalState.Move or ENormalState.Attack)
         {
-            if(!GetGlobalCoolTime())
-            {
-                Debug.Log("글로벌 쿨타임이 지나지 않음");
-                return;
-            }
+            // if(!GetGlobalCoolTime())
+            // {
+            //     Debug.Log("글로벌 쿨타임이 지나지 않음");
+            //     return;
+            // }
             
             Debug.Log("점프");
             PlaySound(ConstValues.Jump1, 2.0f);
@@ -813,7 +849,7 @@ public abstract class Player : Character
             {
                 if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 {
-                    if(normalState == ENormalState.JumpAttack)
+                    if(normalState is ENormalState.JumpAttack or ENormalState.Skill)
                         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
                     
                     Debug.Log("점프 캔슬");
@@ -919,7 +955,7 @@ public abstract class Player : Character
         }
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
         
-        while (normalState != Idle)
+        while (landingState != ELandingState.Ground)
         {
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
@@ -949,7 +985,12 @@ public abstract class Player : Character
         Debug.Log("도약");
         LandingStateSetting(ELandingState.Air);
         float currentHeight = transform.position.y;
-        myRigidbody.linearVelocity = new Vector2(transform.localScale.x * xVelocity, yVelocity);
+        
+        if(xVelocity == 0)
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, yVelocity);
+        else
+            myRigidbody.linearVelocity = new Vector2(transform.localScale.x * xVelocity, yVelocity);
+        
         stateCancellation = new CancellationTokenSource();
         while (transform.position.y < currentHeight + leapHeight)
         {
@@ -957,7 +998,7 @@ public abstract class Player : Character
                 return;
         }
         transform.position = new Vector2(transform.position.x, currentHeight + leapHeight);
-        myRigidbody.linearVelocity = new Vector2(0, 3.0f);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
     }
     
     // 공격 딜레이
@@ -968,11 +1009,9 @@ public abstract class Player : Character
         {
             delay += Time.deltaTime * basicStat.attackSpeed;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
-            // if (Input.GetKeyDown(GameManager.Instance.attackKey))
-            //     nextAttack = true;
         }
     }
-    protected async UniTask NextAttackDelay(float originDelay, float afterDelay)
+    protected async UniTask AttackHeld(float originDelay, float afterDelay)
     {
         float delay = 0;
         float maxDelay = originDelay + afterDelay;
@@ -980,9 +1019,8 @@ public abstract class Player : Character
         {
             delay += Time.deltaTime * basicStat.attackSpeed;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
-            if (Input.GetKey(GameManager.Instance.attackKey))
-                nextAttack = true;
-            if (delay > originDelay && nextAttack)
+            
+            if (delay > originDelay && Controller.Instance.IsAttackHeld)
             {
                 break;
             }
@@ -1081,8 +1119,10 @@ public abstract class Player : Character
     // 커스텀
     public async UniTask EpisodeMove(Vector2 movePos, float speed, int finishDir)
     {
-        Controller.Instance.isLeftMove = false;
-        Controller.Instance.isRightMove = false;
+        Controller.Instance.IsLeftMove = false;
+        Controller.Instance.IsRightMove = false;
+        Controller.Instance.IsAttackHeld = false;
+
         Stop();
         await UniTask.WaitUntil(() => normalState == ENormalState.Idle);
         
@@ -1153,7 +1193,8 @@ public abstract class Player : Character
         // 점프
         if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
         {
-            if (myRigidbody.gravityScale != 0 && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
+            // myRigidbody.gravityScale != 0 && 
+            if (myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f && myRigidbody.linearVelocityY != 0)
                 return;
             
             LandingStateSetting(ELandingState.Air);

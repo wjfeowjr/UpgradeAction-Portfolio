@@ -614,6 +614,7 @@ public class Room : MonoBehaviour
         }
         isFading = false;
         GameManager.Instance.ControlStart = true;
+
         // 여기서 BGM재생
         SetBgm(false);
     }
