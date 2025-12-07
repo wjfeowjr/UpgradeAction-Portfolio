@@ -1494,6 +1494,7 @@ public class Room : MonoBehaviour
             UIOff();
             
             // 이 부분 강제이동으로 변경
+            bosses[0].CancelMotion();
             bosses[0].transform.DOMove(bossPos[0].position, 0.5f);
             if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
@@ -1626,7 +1627,7 @@ public class Room : MonoBehaviour
 
         UIOff();
         GameManager.Instance.InitDialogueCancellation();
-
+        bosses[1].CancelMotion();
         bosses[1].transform.DOMove(bossPos[0].position, 0.5f);
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
             return;

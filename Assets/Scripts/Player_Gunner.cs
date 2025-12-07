@@ -28,10 +28,10 @@ public class Player_Gunner : Player
     {
         Debug.Log("교체 공격 시작");
         CancelMotion();
+        
+        curGlobalCoolTime = 0;
         stateCancellation = new CancellationTokenSource();
-        
         var finishSuccess = await GunnerChangeAttack();
-        
         if (!finishSuccess)
         {
             Debug.Log($"교체 공격 캔슬");
@@ -72,7 +72,7 @@ public class Player_Gunner : Player
         {
             // 지상공격
             case ELandingState.Ground:
-                CancelMotion(true, false);
+                CancelMotion(true, true, false);
                 stateCancellation = new CancellationTokenSource();
                 finishSuccess = await GunnerLandingAttack();
                 break;
@@ -80,7 +80,7 @@ public class Player_Gunner : Player
             // 점프공격
             case ELandingState.Air:
                 type = "점프";
-                CancelMotion(false);
+                CancelMotion(false, false);
                 stateCancellation = new CancellationTokenSource();
                 finishSuccess = await GunnerJumpAttack();
                 break;
@@ -92,8 +92,13 @@ public class Player_Gunner : Player
             return false;
         }
         
+        // 공격키를 계속 누르고 있는 경우
+        if (Controller.Instance.IsAttackHeld)
+        {
+            Attack().Forget();
+        }
         // 아니라면
-        if (!Controller.Instance.IsAttackHeld)
+        else
         {
             StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
             Debug.Log($"{type}공격 끝");
@@ -114,18 +119,20 @@ public class Player_Gunner : Player
         
         float delay1 = 0.066f; // 0.066f
         float delay2 = 0.016f; // 0.016f
-
+        
+        int bullet = 0;
         switch (landingAttackCount)
         {
             case 1:
                 for (int i = 0; i < 4; i++)
                 {
                     MotionFlip();
-                    if(landingAttackCount == 1)
+                    bullet += 1;
+                    if(bullet == 1)
                         StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
-                    else if(landingAttackCount % 2 == 0)
+                    else if(bullet % 2 == 0)
                         StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack1);
-                    else if(landingAttackCount % 2 == 1)
+                    else if(bullet % 2 == 1)
                         StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
             
                     if (await AttackDelay(delay1).SuppressCancellationThrow())
@@ -138,18 +145,19 @@ public class Player_Gunner : Player
                         return false;
                 }
                 if (await AttackHeld(delay2, afterDelay).SuppressCancellationThrow())
-                    return true;
+                    return false;
                 break;
             
             case 2:
                 for (int i = 0; i < 4; i++)
                 {
                     MotionFlip();
-                    if(landingAttackCount == 1)
+                    bullet += 1;
+                    if(bullet == 1)
                         StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
-                    else if(landingAttackCount % 2 == 0)
+                    else if(bullet % 2 == 0)
                         StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack1);
-                    else if(landingAttackCount % 2 == 1)
+                    else if(bullet % 2 == 1)
                         StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
             
                     if (await AttackDelay(delay1).SuppressCancellationThrow())
@@ -162,7 +170,7 @@ public class Player_Gunner : Player
                         return false;
                 }
                 if (await AttackHeld(delay2, afterDelay).SuppressCancellationThrow())
-                    return true;
+                    return false;
                 break;
             
             case 3:
@@ -350,7 +358,7 @@ public class Player_Gunner : Player
         if (normalState == ENormalState.Dash)
             myRigidbody.linearVelocity = Vector2.zero;
 
-        CancelMotion(false);
+        CancelMotion(false, false);
         MotionFlip();
         // 스킬 특성: 슈퍼아머 체크
         if(skillKey != GameManager.Instance.dashKey && GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SuperArmor))

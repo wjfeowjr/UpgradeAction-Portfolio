@@ -27,10 +27,10 @@ public class Player_Berserker : Player
     {
         Debug.Log("교체 공격 시작");
         CancelMotion();
+
+        curGlobalCoolTime = 0;
         stateCancellation = new CancellationTokenSource();
-        
         var finishSuccess = await BerserkerChangeAttack();
-        
         if (!finishSuccess)
         {
             Debug.Log($"교체 공격 캔슬");
@@ -67,7 +67,7 @@ public class Player_Berserker : Player
         {
             // 지상공격
             case ELandingState.Ground:
-                CancelMotion(true, false);
+                CancelMotion(true, true, false);
                 stateCancellation = new CancellationTokenSource();
                 finishSuccess = await BerserkerLandingAttack();
                 break;
@@ -75,7 +75,7 @@ public class Player_Berserker : Player
             // 점프공격
             case ELandingState.Air:
                 type = "점프";
-                CancelMotion(false);
+                CancelMotion(false, false);
                 stateCancellation = new CancellationTokenSource();
                 finishSuccess = await BerserkerJumpAttack();
                 break;
@@ -87,7 +87,13 @@ public class Player_Berserker : Player
             return false;
         }
         
-        if (!Controller.Instance.IsAttackHeld)
+        // 공격키를 계속 누르고 있는 경우
+        if (Controller.Instance.IsAttackHeld)
+        {
+            Attack().Forget();
+        }
+        // 아니라면
+        else
         {
             StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
             Debug.Log($"{type}공격 끝");
@@ -257,7 +263,7 @@ public class Player_Berserker : Player
         if (normalState == ENormalState.Dash)
             myRigidbody.linearVelocity = Vector2.zero;
         
-        CancelMotion(false);
+        CancelMotion(false, false);
         MotionFlip();
         // 스킬 특성: 슈퍼아머 체크
         if(skillKey != GameManager.Instance.dashKey && GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SuperArmor))

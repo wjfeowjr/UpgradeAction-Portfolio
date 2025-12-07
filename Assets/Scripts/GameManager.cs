@@ -1654,14 +1654,7 @@ public class GameManager : Singleton<GameManager>
         RefreshFace();
 
         if (changeAttack)
-        {
-            if(pastPlayer.NormalState == ENormalState.Jump)
-                curPlayer.JumpChange(pastVelocity);
-            else if(pastPlayer.MoveState == EMoveState.Moving)
-                curPlayer.MoveChange();
-            else
-                curPlayer.ChangeAttack();
-        }
+            curPlayer.ChangeAttack();
 
         RefreshSkill();
         SetCameraTarget(curPlayer.transform);

@@ -241,4 +241,10 @@ public class Monster_Sun : Monster
         arriveHeight = startPos.y;
         faceSpin.StopAndReset();
     }
+    
+    public override void CancelMotion(bool cancelJump = true, bool velocity0 = true, bool zeroLandingAttack = true)
+    {
+        base.CancelMotion(cancelJump, velocity0, zeroLandingAttack);
+        faceSpin.StopAndReset();
+    }
 }

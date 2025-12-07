@@ -109,6 +109,7 @@ public abstract class Character : MonoBehaviour
     protected Vector3 defaultAnimatorScale;
 
     protected CancellationTokenSource stateCancellation;
+    protected CancellationTokenSource jumpCancellation;
     protected CancellationTokenSource anotherCancellation; // 우선 넉백에만사용되고 있음
 
     [SerializeField] protected Collider2D footTrigger;
@@ -361,6 +362,7 @@ public abstract class Character : MonoBehaviour
             {
                 ignorePlatformCollider = downRay1.collider;
                 Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
+                Physics2D.IgnoreCollision(footTrigger, ignorePlatformCollider, true);
             }
         }
 
@@ -373,6 +375,7 @@ public abstract class Character : MonoBehaviour
             {
                 ignorePlatformCollider = downRay2.collider;
                 Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
+                Physics2D.IgnoreCollision(footTrigger, ignorePlatformCollider, true);
             }
         }
 
@@ -385,6 +388,7 @@ public abstract class Character : MonoBehaviour
             {
                 ignorePlatformCollider = downRay3.collider;
                 Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
+                Physics2D.IgnoreCollision(footTrigger, ignorePlatformCollider, true);
             }
         }
     }
@@ -394,6 +398,7 @@ public abstract class Character : MonoBehaviour
         if (ignorePlatformCollider)
         {
             Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, false);
+            Physics2D.IgnoreCollision(footTrigger, ignorePlatformCollider, false);
             ignorePlatformCollider = null;
         }
     }
@@ -978,18 +983,23 @@ public abstract class Character : MonoBehaviour
     }
 
     // 행동 캔슬
-    public void CancelMotion(bool velocity0 = true, bool zeroLandingAttack = true)
+    public virtual void CancelMotion(bool cancelJump = true, bool velocity0 = true, bool zeroLandingAttack = true)
     {
         stateCancellation?.Cancel();
         anotherCancellation?.Cancel();
+        
+        if(cancelJump)
+            jumpCancellation?.Cancel();
+        
+        if(myRigidbody && velocity0)
+            myRigidbody.linearVelocity = Vector2.zero;
 
         if(zeroLandingAttack)
             landingAttackCount = 0;
+        
         downJumping = false;
         ClearIgnorePlatform();
         GravityChange(myGravity);
-        if(myRigidbody && velocity0)
-            myRigidbody.linearVelocity = Vector2.zero;
 
         float timer = 0.0f;
         switch (normalState)
@@ -1635,6 +1645,43 @@ public abstract class Character : MonoBehaviour
     }
 
     // 물리 처리(발 콜라이더의 충돌만 감지)
+    protected virtual void OnTriggerEnter2D(Collider2D col)
+    {
+        if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)))
+        {
+            int intVel = (int)myRigidbody.linearVelocity.y;
+            if (intVel > 0)
+                return;
+
+            float disNormal = Mathf.Abs(footTrigger.Distance(col).normal.y);
+            if (disNormal < 0.5f)
+                return;
+            
+            // 랜딩상태
+            if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
+            {
+                LandingStateSetting(ELandingState.Ground);
+                jumpAttackCount = 0;
+            }
+            // 점프 착지
+            if (normalState is ENormalState.Jump)
+            {
+                myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+                myRigidbody.linearVelocity = Vector2.zero;
+                StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+            }
+            // 에어본 처리
+            if (normalState == ENormalState.Airborne)
+            {
+                myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+                myRigidbody.linearVelocity = Vector2.zero;
+                DownAndStand();
+            }
+            // 플랫폼 감지
+            if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
+                isOnPlatform = true;
+        }
+    }
     protected virtual void OnTriggerStay2D(Collider2D col)
     {
         if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
@@ -1646,8 +1693,8 @@ public abstract class Character : MonoBehaviour
                 jumpAttackCount = 0;
                 Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
             }
-
-            // 점프 착지
+            
+            //점프 착지
             if (normalState is ENormalState.Jump)
             {
                 myRigidbody.bodyType = RigidbodyType2D.Dynamic;
@@ -1656,15 +1703,15 @@ public abstract class Character : MonoBehaviour
             }
                 
             // 에어본 처리
-            if (normalState == ENormalState.Airborne)
-            {
-                myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-                myRigidbody.linearVelocity = Vector2.zero;
-                DownAndStand();
-            }
+            // if (normalState == ENormalState.Airborne)
+            // {
+            //     myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            //     myRigidbody.linearVelocity = Vector2.zero;
+            //     DownAndStand();
+            // }
             // 플랫폼 감지
-            if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
-                isOnPlatform = true;
+            // if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
+            //     isOnPlatform = true;
         }
     }
 }
