@@ -787,7 +787,7 @@ public class Room : MonoBehaviour
             monsters[i].LimitLeft = monsterLimitLeft.position.x;
             monsters[i].LimitRight = monsterLimitRight.position.x;
             monsters[i].SetGoldAction(PlusGold);
-            monsters[i].SpawnHpBar();
+            //monsters[i].SpawnHpBar();
             monsters[i].gameObject.SetActive(true);
             monsters[i].ForceIdle();
         }
@@ -914,7 +914,7 @@ public class Room : MonoBehaviour
         var monster = GameManager.Instance.SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
         monster.IsBoss = isBoss;
-        monster.SpawnHpBar();
+        //monster.SpawnHpBar();
         monster.Appear(bossProduct);
         return monster;
     }
@@ -930,7 +930,7 @@ public class Room : MonoBehaviour
     public void ActiveMonster(Monster monster, Action<string> bossProduct = null)
     {
         monster.gameObject.SetActive(true);
-        monster.SpawnHpBar();
+        //monster.SpawnHpBar();
         monster.Appear(bossProduct);
     }
     
@@ -938,7 +938,7 @@ public class Room : MonoBehaviour
     {
         monster.IsBoss = isBoss;
         monster.IsExplosion = isExplosion;
-        monster.SpawnHpBar();
+        //monster.SpawnHpBar();
     }
 
     private int DieMonsterCount()

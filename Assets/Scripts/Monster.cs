@@ -99,9 +99,12 @@ public class Monster : Character
     private float agroTime = 5.0f;
     private float currentAgroTime;
     private bool playerInAgroRange;
+
+    private float hpBarTime = 3.0f;
+    private float currentHpBarTime;
     
     private float leapHeight;
-    [SerializeField] protected float arriveHeight;
+    protected float arriveHeight;
 
     private bool firstPatrol = false;
     private bool patrolMoving = false;
@@ -174,6 +177,7 @@ public class Monster : Character
             {
                 case EAgroState.Normal:
                     Patrol();
+                    HpBarActive();
                     break;
                 case EAgroState.Agro:
                     Trace();
@@ -185,7 +189,6 @@ public class Monster : Character
                     //MonsterLeap();
                     break;
             }
-
             AgroSystem();
         }
 
@@ -470,11 +473,12 @@ public class Monster : Character
 
     public async void SpawnHpBar()
     {
-        //await UniTask.WaitUntil(() => basicStat.hp > 0);
-        await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
+        // await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
 
         if (isBoss)
         {
+            await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
+            
             var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
             if (uiInterfaceObj == null)
                 return;
@@ -494,7 +498,11 @@ public class Monster : Character
             if (!gameObject.activeSelf)
                 return;
 
-            totalBar = SpawnUIObject(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
+            if (totalBar)
+                totalBar.gameObject.SetActive(true);
+            else
+                totalBar = SpawnUIObject(ConstValues.TotalBar, hpBarPos).GetComponent<TotalBar>();
+            
             totalBar.SetCastCharacter(this);
         }
     }
@@ -927,6 +935,17 @@ public class Monster : Character
         }
     }
 
+    private void HpBarActive()
+    {
+        currentHpBarTime += Time.deltaTime;
+        if (currentHpBarTime > hpBarTime)
+        {
+            currentHpBarTime = hpBarTime;
+            if(totalBar && totalBar.gameObject.activeSelf)
+                totalBar.gameObject.SetActive(false);
+        }
+    }
+
     private void Patrol()
     {
         if (basicStat.moveSpeed == 0)
@@ -981,6 +1000,10 @@ public class Monster : Character
 
     public override void TakeDamage(int damage, bool isTrapAttack)
     {
+        if(!isBoss)
+            currentHpBarTime = 0;
+        SpawnHpBar();
+        
         base.TakeDamage(damage, isTrapAttack);
 
         if (agroState == EAgroState.Normal)

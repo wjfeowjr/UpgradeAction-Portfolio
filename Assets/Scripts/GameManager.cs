@@ -1190,7 +1190,7 @@ public class GameManager : Singleton<GameManager>
         var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
         monster.IsBoss = isBoss;
-        monster.SpawnHpBar();
+        //monster.SpawnHpBar();
         monster.Appear(bossProduct);
         monsterList.Add(monster);
         return monster;
@@ -1208,7 +1208,7 @@ public class GameManager : Singleton<GameManager>
     public void ActiveMonster(Monster monster, Action<string> bossProduct = null)
     {
         monster.gameObject.SetActive(true);
-        monster.SpawnHpBar();
+        //monster.SpawnHpBar();
         monster.Appear(bossProduct);
     }
     
@@ -1216,7 +1216,7 @@ public class GameManager : Singleton<GameManager>
     {
         monster.IsBoss = isBoss;
         monster.IsExplosion = isExplosion;
-        monster.SpawnHpBar();
+        //monster.SpawnHpBar();
         monsterList.Add(monster);
     }
 
