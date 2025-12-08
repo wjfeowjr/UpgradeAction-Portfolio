@@ -123,9 +123,10 @@ public abstract class Player : Character
 {
     private bool isChanging;
     private float jumpLimitY;
+    protected bool attackBuffer;
 
-    protected CancellationTokenSource delayCancellation;
-    
+    private CancellationTokenSource dashDelayCancellation;
+    private CancellationTokenSource attackDelayCancellation;
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
     [SerializeField] protected bool canAttack;
@@ -686,8 +687,8 @@ public abstract class Player : Character
         base.Airborne(xVelocity, yVelocity);
         curDashDelay = 0f;
         
-        delayCancellation = new CancellationTokenSource();
-        if(await NormalDelay(dashDelay, delayCancellation).SuppressCancellationThrow())
+        dashDelayCancellation = new CancellationTokenSource();
+        if(await NormalDelay(dashDelay, dashDelayCancellation).SuppressCancellationThrow())
             return;
         
         if(GameManager.Instance.ControlStart && IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
@@ -984,7 +985,8 @@ public abstract class Player : Character
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
         }
     }
-    protected async UniTask AttackHeld(float originDelay, float afterDelay)
+    // 버퍼 딜레이
+    protected async UniTask BufferDelay(float originDelay, float afterDelay)
     {
         float delay = 0;
         float maxDelay = originDelay + afterDelay;
@@ -992,8 +994,31 @@ public abstract class Player : Character
         {
             delay += Time.deltaTime * basicStat.attackSpeed;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
-            if (delay > originDelay && Controller.Instance.IsAttackHeld)
+            if (delay > originDelay && attackBuffer)
             {
+                break;
+            }
+        }
+    }
+    // 공격 체커
+    protected async void AttackChecker(float startDelay, float endDelay)
+    {
+        attackDelayCancellation = new CancellationTokenSource();
+        
+        float delay = 0;
+        while (delay < startDelay)
+        {
+            delay += Time.deltaTime * basicStat.attackSpeed;
+            await UniTask.Yield(cancellationToken: attackDelayCancellation.Token);
+        }
+        
+        while (delay < endDelay)
+        {
+            delay += Time.deltaTime * basicStat.attackSpeed;
+            await UniTask.Yield(cancellationToken: attackDelayCancellation.Token);
+            if (Input.GetKeyDown(GameManager.Instance.attackKey))
+            {
+                attackBuffer = true;
                 break;
             }
         }
@@ -1093,7 +1118,6 @@ public abstract class Player : Character
     {
         Controller.Instance.IsLeftMove = false;
         Controller.Instance.IsRightMove = false;
-        Controller.Instance.IsAttackHeld = false;
 
         Stop();
         await UniTask.WaitUntil(() => normalState == ENormalState.Idle);

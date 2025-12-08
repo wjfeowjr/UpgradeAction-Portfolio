@@ -92,12 +92,10 @@ public class Player_Gunner : Player
             return false;
         }
         
-        // 공격키를 계속 누르고 있는 경우
-        if (Controller.Instance.IsAttackHeld)
+        if (attackBuffer)
         {
             Attack().Forget();
         }
-        // 아니라면
         else
         {
             StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
@@ -113,6 +111,7 @@ public class Player_Gunner : Player
             MoveStateSetting(EMoveState.Stopping);
 
         float afterDelay = 0.35f;
+        attackBuffer = false;
         
         if (landingAttackCount < maxBullet)
             landingAttackCount += 1;
@@ -121,10 +120,12 @@ public class Player_Gunner : Player
         float delay2 = 0.016f; // 0.016f
         
         int bullet = 0;
+        int cycle = 4;
         switch (landingAttackCount)
         {
             case 1:
-                for (int i = 0; i < 4; i++)
+                AttackChecker(0.1f, (delay1 + delay2) * cycle + afterDelay);
+                for (int i = 0; i < cycle; i++)
                 {
                     MotionFlip();
                     bullet += 1;
@@ -144,12 +145,13 @@ public class Player_Gunner : Player
                     if (await AttackDelay(delay2).SuppressCancellationThrow())
                         return false;
                 }
-                if (await AttackHeld(delay2, afterDelay).SuppressCancellationThrow())
+                if (await BufferDelay(delay2, afterDelay).SuppressCancellationThrow())
                     return false;
                 break;
             
             case 2:
-                for (int i = 0; i < 4; i++)
+                AttackChecker(0.1f, (delay1 + delay2) * cycle + afterDelay);
+                for (int i = 0; i < cycle; i++)
                 {
                     MotionFlip();
                     bullet += 1;
@@ -169,7 +171,7 @@ public class Player_Gunner : Player
                     if (await AttackDelay(delay2).SuppressCancellationThrow())
                         return false;
                 }
-                if (await AttackHeld(delay2, afterDelay).SuppressCancellationThrow())
+                if (await BufferDelay(delay2, afterDelay).SuppressCancellationThrow())
                     return false;
                 break;
             
@@ -202,17 +204,17 @@ public class Player_Gunner : Player
     private async UniTask<bool> GunnerJumpAttack()
     {
         ResetTriggerAnimator(ConstValues.JumpDown);
+        attackBuffer = false;
 
         float delay1 = 0.066f; // 0.066f
         float delay2 = 0.016f; // 0.016f
-        float delay3 = 0.1f;
-        float delay4 = 0.3f;
-        float afterDelay = 0.2f;
-        bool firstShot = true;
-        
+
         // 메탈슬러그 버전
         int bullet = 0;
-        for (int i = 0; i < 4; i++)
+        int cycle = 4;
+        
+        AttackChecker(0.1f, (delay1 + delay2) * cycle);
+        for (int i = 0; i < cycle; i++)
         {
             if(bullet == 0)
                 StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);

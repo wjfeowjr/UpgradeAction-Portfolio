@@ -86,13 +86,11 @@ public class Player_Berserker : Player
             Debug.Log($"{type}공격 캔슬");
             return false;
         }
-        
-        // 공격키를 계속 누르고 있는 경우
-        if (Controller.Instance.IsAttackHeld)
+
+        if (attackBuffer)
         {
             Attack().Forget();
         }
-        // 아니라면
         else
         {
             StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
@@ -108,7 +106,8 @@ public class Player_Berserker : Player
             MoveStateSetting(EMoveState.Stopping);
         
         var afterDelay = 0.35f;
-
+        attackBuffer = false;
+        
         if (landingAttackCount < maxSword)
             landingAttackCount += 1;
 
@@ -117,31 +116,35 @@ public class Player_Berserker : Player
             case 1:
                 var delay1 = 0.16f;
                 var delay2 = 0.2f;
+                var checkDelay1 = delay1 + delay2 + afterDelay;
                 StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
                 AttackAdvance(2.0f);
 
+                AttackChecker(0.1f, checkDelay1);
                 if (await AttackDelay(delay1).SuppressCancellationThrow())
                     return false;
 
                 SpawnAttack(ConstValues.BerserkerAttack1, attack1Pos);
 
-                if (await AttackHeld(delay2, afterDelay).SuppressCancellationThrow())
+                if (await BufferDelay(delay2, afterDelay).SuppressCancellationThrow())
                     return false;
                 break;
             
             case 2:
                 var delay3 = 0.12f;
                 var delay4 = 0.2f;
+                var checkDelay2 = delay3 + delay4 + afterDelay;
                 
                 MotionFlip();
                 StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
                 AttackAdvance(2.0f);
 
+                AttackChecker(0.1f, checkDelay2);
                 if (await AttackDelay(delay3).SuppressCancellationThrow())
                     return false;
 
                 SpawnAttack(ConstValues.BerserkerAttack2, attack2Pos);
-                if (await AttackHeld(delay4, afterDelay).SuppressCancellationThrow())
+                if (await BufferDelay(delay4, afterDelay).SuppressCancellationThrow())
                     return false;
                 break;
             
@@ -170,12 +173,17 @@ public class Player_Berserker : Player
     private async UniTask<bool> BerserkerJumpAttack()
     {
         ResetTriggerAnimator(ConstValues.JumpDown);
+        attackBuffer = false;
+        
         if (jumpAttackCount <= 0)
         {
             float jumpAttackDelay1 = 0.16f;
             float jumpAttackDelay2 = 0.2f;
             float jumpAttackForce = 6;
-            
+
+            float checkDelay1 = jumpAttackDelay1 + (jumpAttackDelay2 * 2);
+
+            AttackChecker(0.1f, checkDelay1);
             StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
             if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
                 return false;
@@ -187,9 +195,8 @@ public class Player_Berserker : Player
             if (await AttackDelay(jumpAttackDelay2).SuppressCancellationThrow())
                 return false;
             
-            //myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
             SpawnAttack(ConstValues.BerserkerJumpAttack1, jumpAttack1Pos);
-            if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
+            if (await AttackDelay(jumpAttackDelay2).SuppressCancellationThrow())
                 return false;
         }
         else
@@ -311,7 +318,7 @@ public class Player_Berserker : Player
         StateSetting(ENormalState.Skill, ConstValues.BerserkerUpperSlash, ConstValues.BerserkerUpperSlash);
 
         var delay1 = 0.16f;
-        var delay2 = 0.32f;
+        var delay2 = 0.16f;
 
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
