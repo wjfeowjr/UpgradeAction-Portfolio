@@ -3,7 +3,6 @@ using UnityEngine;
 
 public class PatrolTest : MonoBehaviour
 {
-    private int wallLayerMask;
     private float speed = 7.0f;
     
     private float pointA = 110;
@@ -15,7 +14,6 @@ public class PatrolTest : MonoBehaviour
 
     private void Awake()
     {
-        wallLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
         myBoxCollider = GetComponent<BoxCollider2D>();
@@ -36,18 +34,7 @@ public class PatrolTest : MonoBehaviour
     {
         //Move2();
     }
-    
-    private void PatrolRay()
-    {
-        var leftRay = Physics2D.Raycast(transform.position, Vector2.left, 20f, wallLayerMask);
-        Debug.DrawRay(transform.position, Vector2.left * 20f, ConstValues.RedColor, 0.1f);
-        pointA = leftRay.point.x + myBoxCollider.size.x;
-        
-        var rightRay = Physics2D.Raycast(transform.position, Vector2.right, 20f, wallLayerMask);
-        Debug.DrawRay(transform.position, Vector2.right * 20f, ConstValues.BlueColor, 0.1f);
-        pointB = rightRay.point.x - myBoxCollider.size.x;
-    }
-    
+
     // 좌표값 이동(Update에서 사용)
     private void Move1()
     {

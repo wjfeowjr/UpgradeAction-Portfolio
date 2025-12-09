@@ -47,7 +47,7 @@ public class Missile : MonoBehaviour
         missileSprite = GetComponentInChildren<SpriteRenderer>();
         mySpin = GetComponentInChildren<Spin>();
         
-        missileLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall));
+        missileLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
     }
 
     private void OnEnable()
@@ -77,12 +77,15 @@ public class Missile : MonoBehaviour
             missileInfo.type = (MissileType)Enum.Parse(typeof(MissileType), missileData.type);
             missileInfo.speed = missileData.speed;
             defaultLimit = missileData.limitLength;
-
-            var hitTagSplit = missileData.hitTag.Split(',');
-            missileInfo.hitTagList = new List<string>();
-            foreach (var hitLayer in hitTagSplit)
-                missileInfo.hitTagList.Add(hitLayer);
             
+            missileInfo.hitTagList = new List<string>();
+            var hitTagSplit = missileData.hitTag.Split(',');
+            if (hitTagSplit.Length > 0)
+            {
+                foreach (var hitLayer in hitTagSplit)
+                    missileInfo.hitTagList.Add(hitLayer);
+            }
+
             missileInfo.spawnObject = missileData.spawnObject;
             missileInfo.hitSpawn = missileData.hitSpawn;
             missileInfo.afterImage = missileData.afterImage;
@@ -94,9 +97,10 @@ public class Missile : MonoBehaviour
         // 레이캐스트
         if (dir == Vector2.left)
         {
+            var rayDir = -transform.right;
             var rayVector = new Vector2(transform.position.x, transform.position.y);
-            var ray = Physics2D.Raycast(rayVector, Vector2.left, defaultLimit, missileLayerMask);
-            Debug.DrawRay(rayVector, Vector2.left * defaultLimit, ConstValues.OrangeColor, 0.02f);
+            var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
+            Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
             if (ray.collider == null)
                 missileInfo.limitLength = defaultLimit;
             else
@@ -104,9 +108,10 @@ public class Missile : MonoBehaviour
         }
         if (dir == Vector2.right)
         {
+            var rayDir = transform.right;
             var rayVector = new Vector2(transform.position.x, transform.position.y);
-            var ray = Physics2D.Raycast(rayVector, Vector2.right, defaultLimit, missileLayerMask);
-            Debug.DrawRay(rayVector, Vector2.right * defaultLimit, ConstValues.OrangeColor, 0.02f);
+            var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
+            Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
             if (ray.collider == null)
                 missileInfo.limitLength = defaultLimit;
             else
@@ -326,7 +331,7 @@ public class Missile : MonoBehaviour
             Vector2 myPoint = transform.position;
             Vector2 contactPoint = col.ClosestPoint(myPoint);
             
-            if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Wall)
+            if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Ground)
             {
                 if (dir == Vector2.right && myPoint.x > contactPoint.x)
                     return;

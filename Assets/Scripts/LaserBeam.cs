@@ -40,7 +40,7 @@ public class LaserBeam : MonoBehaviour
     {
         myLineRenderer = beamLineRendererPrefab.GetComponent<LineRenderer>();
         myBoxCollider = GetComponent<BoxCollider2D>();
-        layerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground) | 1 << LayerMask.NameToLayer(ConstValues.Platform) | 1 << LayerMask.NameToLayer(ConstValues.Wall);
+        layerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground) | 1 << LayerMask.NameToLayer(ConstValues.Platform);
     }
 
     private void OnEnable()

@@ -46,14 +46,19 @@ public class Skill
 {
     public string skillId;
     public bool isGet;
+    public List<SkillAttribute> attributeList = new List<SkillAttribute>();
+}
+[Serializable]
+public class SkillAttribute
+{
+    public string attributeId;
     public int level;
-    public List<string> attributeList = new List<string>();
 }
 [Serializable]
 public class SkillSetting
 {
     public int attributePoint;
-    public List<Skill> skillList;
+    public List<Skill>skillList;
 }
 [Serializable]
 public class SkillCollection
@@ -91,7 +96,7 @@ public class SkillCollection
 
         return false;
     }
-    public List<string> GetSkillAttribute(string id)
+    public List<SkillAttribute> GetSkillAttribute(string id)
     {
         var berserkerSkillList = berserkerSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
         if (berserkerSkillList != null)
@@ -108,137 +113,189 @@ public class SkillCollection
     {
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (berserkerSkill != null)
-            return berserkerSkill.attributeList.Contains(attributeId);
+            return berserkerSkill.attributeList.Find(x => x.attributeId == attributeId) != null;
         
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
-            return gunnerSkill.attributeList.Contains(attributeId);
+            return gunnerSkill.attributeList.Find(x => x.attributeId == attributeId) != null;
         
         Debug.Log("해당 특성 자체가 없음!");
         return false;
     }
-    public int AttributeLv(string skillId)
-    {
-        var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (berserkerSkill != null)
-            return berserkerSkill.level;
-        
-        var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (gunnerSkill != null)
-            return gunnerSkill.level;
-        
-        Debug.Log("스킬 자체를 안배움!");
-        return 0;
-    }
-
-    public async void AttributeLvUp(string skillId)
+    public int AttributeLv(string skillId, string attributeId)
     {
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (berserkerSkill != null)
         {
-            var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == skillId);
-
-            if(berserkerSkill.level < attributeData[^1].level)
+            if (berserkerSkill.attributeList.Find(x => x.attributeId == attributeId) == null)
             {
-                var attributeList = attributeData.FindAll(x => x.id == skillId);
-                var attribute = attributeList.Find(x => x.level == berserkerSkill.level + 1);
-                if (berserkerSkillSetting.attributePoint >= attribute.cost)
+                Debug.Log($"{attributeId}특성을 배우지 않았음");
+                return 0;
+            }
+            return berserkerSkill.attributeList.Find(x => x.attributeId == attributeId).level;
+        }
+            
+        
+        var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
+        if (gunnerSkill != null)
+        {
+            if (gunnerSkill.attributeList.Find(x => x.attributeId == attributeId) == null)
+            {
+                Debug.Log($"{attributeId}특성을 배우지 않았음");
+                return 0;
+            }
+            return gunnerSkill.attributeList.Find(x => x.attributeId == attributeId).level;
+        }
+        Debug.Log("이 특성을 활성화하는 스킬 자체를 배우지 않았음");
+        return 0;
+    }
+
+    public async void AttributeLvUp(string skillId, string attributeId)
+    {
+        var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == attributeId);
+        var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
+
+        if (berserkerSkill != null)
+        {
+            var targetAttribute = berserkerSkill.attributeList.Find(x => x.attributeId == attributeId);
+            
+            if (targetAttribute == null)
+            {
+                if (berserkerSkillSetting.attributePoint < attributeData[0].cost)
                 {
-                    berserkerSkillSetting.attributePoint -= attribute.cost;
-                    berserkerSkill.level += 1;
-                    berserkerSkill.attributeList.Add(attribute.attribute);
-                    
-                    string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-                    SkillBinding.SaveSkill(skillJson);
-                    // 올리는 연출 넣기
+                    await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
                 }
                 else
                 {
-                    await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
+                    var newAttribute = new SkillAttribute();
+                    newAttribute.attributeId = attributeId;
+                    newAttribute.level = 1;
+                    berserkerSkill.attributeList.Add(newAttribute);
                 }
             }
             else
             {
-                await GameManager.Instance.SpawnWarningPopup("특성이 최대 레벨입니다.");
+                if(targetAttribute.level < attributeData[^1].level)
+                {
+                    var attributeList = attributeData.FindAll(x => x.id == skillId);
+                    var attribute = attributeList.Find(x => x.level == targetAttribute.level + 1);
+                    if (berserkerSkillSetting.attributePoint >= attribute.cost)
+                    {
+                        berserkerSkillSetting.attributePoint -= attribute.cost;
+                        targetAttribute.level += 1;
+
+                        string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
+                        SkillBinding.SaveSkill(skillJson);
+                        // 올리는 연출 넣기
+                    }
+                    else
+                    {
+                        await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
+                    }
+                }
+                else
+                {
+                    await GameManager.Instance.SpawnWarningPopup("특성이 최대 레벨입니다.");
+                }
             }
         }
         
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
         {
-            var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == skillId);
-
-            if(gunnerSkill.level < attributeData[^1].level)
+            var targetAttribute = gunnerSkill.attributeList.Find(x => x.attributeId == attributeId);
+            
+            if (targetAttribute == null)
             {
-                var attributeList = attributeData.FindAll(x => x.id == skillId);
-                var attribute = attributeList.Find(x => x.level == gunnerSkill.level + 1);
-                if (gunnerSkillSetting.attributePoint >= attribute.cost)
+                if (gunnerSkillSetting.attributePoint < attributeData[0].cost)
                 {
-                    gunnerSkillSetting.attributePoint -= attribute.cost;
-                    gunnerSkill.level += 1;
-                    gunnerSkill.attributeList.Add(attribute.attribute);
-                    
-                    string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-                    SkillBinding.SaveSkill(skillJson);
-                    // 올리는 연출 넣기
+                    await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
                 }
                 else
                 {
-                    await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
+                    var newAttribute = new SkillAttribute();
+                    newAttribute.attributeId = attributeId;
+                    newAttribute.level = 1;
+                    gunnerSkill.attributeList.Add(newAttribute);
                 }
             }
             else
             {
-                await GameManager.Instance.SpawnWarningPopup("특성이 최대 레벨입니다.");
+                if(targetAttribute.level < attributeData[^1].level)
+                {
+                    var attributeList = attributeData.FindAll(x => x.id == skillId);
+                    var attribute = attributeList.Find(x => x.level == targetAttribute.level + 1);
+                    if (gunnerSkillSetting.attributePoint >= attribute.cost)
+                    {
+                        gunnerSkillSetting.attributePoint -= attribute.cost;
+                        targetAttribute.level += 1;
+
+                        string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
+                        SkillBinding.SaveSkill(skillJson);
+                        // 올리는 연출 넣기
+                    }
+                    else
+                    {
+                        await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
+                    }
+                }
+                else
+                {
+                    await GameManager.Instance.SpawnWarningPopup("특성이 최대 레벨입니다.");
+                }
             }
         }
     }
     
-    public async void AttributeLvDown(string skillId)
+    public async void AttributeLvDown(string skillId, string attributeId)
     {
+        var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == attributeId);
+        
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (berserkerSkill != null)
         {
-            var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == skillId);
+            var targetAttribute = berserkerSkill.attributeList.Find(x => x.attributeId == attributeId);
 
-            if(berserkerSkill.level > 0)
+            if (targetAttribute == null)
+            {
+                await GameManager.Instance.SpawnWarningPopup("특성레벨을 더 이상 내릴 수 없습니다.");
+            }
+            else
             {
                 var attributeList = attributeData.FindAll(x => x.id == skillId);
-                var attribute = attributeList.Find(x => x.level == berserkerSkill.level);
+                var attribute = attributeList.Find(x => x.level == targetAttribute.level);
                 berserkerSkillSetting.attributePoint += attribute.cost;
-                berserkerSkill.level -= 1;
-                berserkerSkill.attributeList.Remove(attribute.attribute);
+                targetAttribute.level -= 1;
+                if(targetAttribute.level == 0)
+                    berserkerSkill.attributeList.Remove(targetAttribute);
                 
                 string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
                 SkillBinding.SaveSkill(skillJson);
                 // 내리는 연출 넣기
-            }
-            else
-            {
-                await GameManager.Instance.SpawnWarningPopup("특성레벨을 더 이상 내릴 수 없습니다.");
             }
         }
         
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
         {
-            var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == skillId);
+            var targetAttribute = gunnerSkill.attributeList.Find(x => x.attributeId == attributeId);
 
-            if(gunnerSkill.level > 0)
+            if (targetAttribute == null)
+            {
+                await GameManager.Instance.SpawnWarningPopup("특성레벨을 더 이상 내릴 수 없습니다.");
+            }
+            else
             {
                 var attributeList = attributeData.FindAll(x => x.id == skillId);
-                var attribute = attributeList.Find(x => x.level == gunnerSkill.level);
+                var attribute = attributeList.Find(x => x.level == targetAttribute.level);
                 gunnerSkillSetting.attributePoint += attribute.cost;
-                gunnerSkill.level -= 1;
-                gunnerSkill.attributeList.Remove(attribute.attribute);
+                targetAttribute.level -= 1;
+                if(targetAttribute.level == 0)
+                    gunnerSkill.attributeList.Remove(targetAttribute);
                 
                 string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
                 SkillBinding.SaveSkill(skillJson);
                 // 내리는 연출 넣기
-            }
-            else
-            {
-                await GameManager.Instance.SpawnWarningPopup("특성레벨을 더 이상 내릴 수 없습니다.");
             }
         }
     }
@@ -249,19 +306,15 @@ public class SkillCollection
         {
             case ConstValues.Berserker:
                 foreach (var skillList in berserkerSkillSetting.skillList)
-                {
-                    skillList.level = 0;
                     skillList.attributeList.Clear();
-                }
+                
                 berserkerSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
                 break;
             
             case ConstValues.Gunner:
                 foreach (var skillList in gunnerSkillSetting.skillList)
-                {
-                    skillList.level = 0;
                     skillList.attributeList.Clear();
-                }
+                
                 gunnerSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
                 break;
         }
@@ -843,7 +896,7 @@ public class GameManager : Singleton<GameManager>
                 Skill berserkerSkill = new Skill();
                 berserkerSkill.skillId = skill.id;
                 berserkerSkill.isGet = false;
-                berserkerSkill.level = 0;
+                berserkerSkill.attributeList = new List<SkillAttribute>();
                 berserkerSkillSetting.skillList.Add(berserkerSkill);
             }
 
@@ -852,7 +905,7 @@ public class GameManager : Singleton<GameManager>
                 Skill gunnerSkill = new Skill();
                 gunnerSkill.skillId = skill.id;
                 gunnerSkill.isGet = false;
-                gunnerSkill.level = 0;
+                gunnerSkill.attributeList = new List<SkillAttribute>();
                 gunnerSkillSetting.skillList.Add(gunnerSkill);
             }
         }

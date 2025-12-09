@@ -140,14 +140,15 @@ public abstract class Character : MonoBehaviour
     protected bool isDie;
     protected float myGravity;
     protected bool downJumping;
-    protected bool isOnPlatform;
+    
+    [SerializeField] protected bool isOnGround;     // 이어지는 플랫폼 처리에만 사용
+    [SerializeField] protected bool isOnPlatform;   // 아랫점프, 이어지는 땅 처리에만 사용
 
     protected int airborneCount; // 에어본 카운트
     private int platformLayerMask;
+    protected int groundLayerMask;
     protected int groundAndPlatformLayerMask;
-    protected int groundAndWallLayerMask;
     protected int monsterWalkLayerMask;
-    protected int wallLayerMask;
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
@@ -207,10 +208,9 @@ public abstract class Character : MonoBehaviour
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
+        groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
-        groundAndWallLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall));
-        monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Wall)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Trap));
-        wallLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Wall);
+        monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Trap));
 
         ScaleSetting();
         ColSizeSetting();
@@ -1144,11 +1144,11 @@ public abstract class Character : MonoBehaviour
         Vector2 rayVector2 = new Vector2(rayVector1.x, rayVector1.y + physicsCollider.size.y * 0.5f);
         Vector2 rayVector3 = new Vector2(rayVector1.x, rayVector1.y + physicsCollider.size.y);
         
-        var ray1 = Physics2D.Raycast(rayVector1, dir, distance, groundAndWallLayerMask);
+        var ray1 = Physics2D.Raycast(rayVector1, dir, distance, groundLayerMask);
         Debug.DrawRay(rayVector1, dir, ConstValues.BlueColor, 0.1f);
-        var ray2 = Physics2D.Raycast(rayVector2, dir, distance, groundAndWallLayerMask);
+        var ray2 = Physics2D.Raycast(rayVector2, dir, distance, groundLayerMask);
         Debug.DrawRay(rayVector2, dir, ConstValues.BlueColor, 0.1f);
-        var ray3 = Physics2D.Raycast(rayVector2, dir, distance, groundAndWallLayerMask);
+        var ray3 = Physics2D.Raycast(rayVector2, dir, distance, groundLayerMask);
         Debug.DrawRay(rayVector3, dir, ConstValues.BlueColor, 0.1f);
 
         if (ray1.collider != null)
@@ -1649,14 +1649,22 @@ public abstract class Character : MonoBehaviour
     {
         if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)))
         {
+            // 땅 감지
+            if (!isOnGround && col.CompareTag(ConstValues.Ground))
+                isOnGround = true;
+            
+            // 플랫폼 감지
+            if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
+                isOnPlatform = true;
+            
             int intVel = (int)myRigidbody.linearVelocity.y;
             if (intVel > 0)
                 return;
-
+            
             float disNormal = Mathf.Abs(footTrigger.Distance(col).normal.y);
             if (disNormal < 0.5f)
                 return;
-            
+
             // 랜딩상태
             if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
             {
@@ -1677,15 +1685,13 @@ public abstract class Character : MonoBehaviour
                 myRigidbody.linearVelocity = Vector2.zero;
                 DownAndStand();
             }
-            // 플랫폼 감지
-            if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
-                isOnPlatform = true;
         }
     }
     protected virtual void OnTriggerStay2D(Collider2D col)
     {
         if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
         {
+            // 랜딩상태
             Vector2 contactPoint = col.ClosestPoint(transform.position);
             if (landingState == ELandingState.Air && normalState != ENormalState.Dash && transform.position.y > contactPoint.y)
             {
@@ -1694,7 +1700,7 @@ public abstract class Character : MonoBehaviour
                 Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
             }
             
-            //점프 착지
+            // 점프 착지
             if (normalState is ENormalState.Jump)
             {
                 myRigidbody.bodyType = RigidbodyType2D.Dynamic;

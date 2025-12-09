@@ -216,7 +216,6 @@ public class ConstValues : Singleton<ConstValues>
     public const string ChangeAttack = "ChangeAttack";
     
     public const string Ground = "Ground";
-    public const string Wall = "Wall";
     public const string Trap = "Trap";
     public const string Stage = "Stage";
     public const string Flip = "Flip";

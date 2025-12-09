@@ -33,10 +33,11 @@ public class Npc_GameSystem : Npc
         }
     }
 
-    private void OnTriggerEnter2D(Collider2D other)
+    protected override void OnTriggerEnter2D(Collider2D col)
     {
+        base.OnTriggerEnter2D(col);
         // 착지
-        if ((other.gameObject.CompareTag(ConstValues.Ground) || other.gameObject.CompareTag(ConstValues.Wall)) && landingState == ELandingState.Air)
+        if (col.gameObject.CompareTag(ConstValues.Ground) && landingState == ELandingState.Air)
         {
             SpawnObject(ConstValues.NpcGameSystemDie, transform.position);
             gameObject.SetActive(false);

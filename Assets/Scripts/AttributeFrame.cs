@@ -86,11 +86,13 @@ public class AttributeFrame : MonoBehaviour
             switch (skillData.caster)
             {
                 case ConstValues.Berserker:
-                    attributeLv = GameManager.Instance.PlayerSkill.AttributeLv(skillId);
+                    //attributeLv = GameManager.Instance.PlayerSkill.AttributeLv(skillId);
+                    attributeLv = 0;
                     break;
             
                 case ConstValues.Gunner:
-                    attributeLv = GameManager.Instance.PlayerSkill.AttributeLv(skillId);
+                    //attributeLv = GameManager.Instance.PlayerSkill.AttributeLv(skillId);
+                    attributeLv = 0;
                     break;
             }
 
@@ -125,7 +127,8 @@ public class AttributeFrame : MonoBehaviour
                     attributeInfoArray[i].color = normalColor;
                 }
 
-                var activeLevel = GameManager.Instance.PlayerSkill.AttributeLv(skillId);
+                //var activeLevel = GameManager.Instance.PlayerSkill.AttributeLv(skillId);
+                var activeLevel = 0;
                 for (int i = 0; i < activeLevel; i++)
                     attributeInfoArray[i].color = activeColor;
             }
@@ -134,10 +137,10 @@ public class AttributeFrame : MonoBehaviour
 
     public void AttributeLvUp()
     {
-        GameManager.Instance.PlayerSkill.AttributeLvUp(id);
+        //GameManager.Instance.PlayerSkill.AttributeLvUp(id);
     }
     public void AttributeLvDown()
     {
-        GameManager.Instance.PlayerSkill.AttributeLvDown(id);
+        //GameManager.Instance.PlayerSkill.AttributeLvDown(id);
     }
 }

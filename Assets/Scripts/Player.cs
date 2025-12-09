@@ -127,6 +127,7 @@ public abstract class Player : Character
 
     private CancellationTokenSource dashDelayCancellation;
     private CancellationTokenSource attackDelayCancellation;
+
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
     [SerializeField] protected bool canAttack;
@@ -807,7 +808,7 @@ public abstract class Player : Character
             //     return;
             // }
             
-            Debug.Log("점프");
+            //Debug.Log("점프");
             PlaySound(ConstValues.Jump1, 2.0f);
             //curGlobalCoolTime = 0;
             jumpAttackCount = 0;
@@ -834,7 +835,7 @@ public abstract class Player : Character
             if(myRigidbody.linearVelocityY > 0)
                 myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
             
-            Debug.Log("점프 끝");
+            //Debug.Log("점프 끝");
         }
     }
     // 아랫점프
@@ -1157,21 +1158,6 @@ public abstract class Player : Character
         StopVelocity_X();
     }
 
-    // protected void OnCollisionExit2D(Collision2D col)
-    // {
-    //     // 점프
-    //     if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
-    //     {
-    //         // myRigidbody.gravityScale != 0 && 
-    //         if (myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f && myRigidbody.linearVelocityY != 0)
-    //             return;
-    //         
-    //         LandingStateSetting(ELandingState.Air);
-    //         if (normalState is ENormalState.Idle or ENormalState.Move)
-    //             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-    //     }
-    // }
-
     protected override void OnTriggerEnter2D(Collider2D col)
     {
         base.OnTriggerEnter2D(col);
@@ -1253,13 +1239,49 @@ public abstract class Player : Character
     protected void OnTriggerExit2D(Collider2D col)
     {
         // 활강
-        if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
+        // if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
+        // {
+        //     LandingStateSetting(ELandingState.Air);
+        //     if (normalState is ENormalState.Idle or ENormalState.Move)
+        //         StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+        //     
+        //     // 땅 떠나기
+        //     if (col.CompareTag(ConstValues.Ground) && isOnGround)
+        //         isOnGround = false;
+        //     
+        //     // 플랫폼 떠나기
+        //     if (col.CompareTag(ConstValues.Platform) && isOnPlatform)
+        //         isOnPlatform = false;
+        // }
+        
+        if (col.gameObject.CompareTag(ConstValues.Ground))
         {
-            LandingStateSetting(ELandingState.Air);
-            if (normalState is ENormalState.Idle or ENormalState.Move)
-                StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+            if (!isOnPlatform)
+            {
+                LandingStateSetting(ELandingState.Air);
+                if (normalState is ENormalState.Idle or ENormalState.Move)
+                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+                //Debug.Log("꽥1");
+            }
+            // 땅 떠나기
+            if (isOnGround)
+                isOnGround = false;
         }
         
+        if (col.gameObject.CompareTag(ConstValues.Platform))
+        {
+            if (!isOnGround)
+            {
+                LandingStateSetting(ELandingState.Air);
+                if (normalState is ENormalState.Idle or ENormalState.Move)
+                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+                //Debug.Log("꽥2");
+            }
+            // 플랫폼 떠나기
+            if (isOnPlatform)
+                isOnPlatform = false;
+        }
+
         // 세이브 포인트
         if (col.CompareTag(ConstValues.SaveObject))
         {
@@ -1289,9 +1311,5 @@ public abstract class Player : Character
                 treasureBox.ReduceInteractionObject();
             }
         }
-        
-        // 플랫폼 떠나기
-        if (col.CompareTag(ConstValues.Platform) && isOnPlatform)
-            isOnPlatform = false;
     }
 }

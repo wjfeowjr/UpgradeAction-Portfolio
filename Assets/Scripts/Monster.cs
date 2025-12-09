@@ -100,7 +100,7 @@ public class Monster : Character
     private float currentAgroTime;
     private bool playerInAgroRange;
 
-    private float hpBarTime = 3.0f;
+    private float hpBarTime = 0.0f;
     private float currentHpBarTime;
     
     private float leapHeight;
@@ -569,7 +569,7 @@ public class Monster : Character
         // 위쪽 레이캐스트 사용 (원본 사이즈만큼)
         Vector2 rayVector = transform.position;
         float distance = leapHeight;
-        RaycastHit2D upRay = Physics2D.Raycast(rayVector, Vector2.up, distance, groundAndWallLayerMask);
+        RaycastHit2D upRay = Physics2D.Raycast(rayVector, Vector2.up, distance, groundLayerMask);
         Debug.DrawRay(rayVector, Vector2.up * distance, ConstValues.RedColor, 0.1f);
         if (upRay.collider == null)
             arriveHeight = transform.position.y + leapHeight;

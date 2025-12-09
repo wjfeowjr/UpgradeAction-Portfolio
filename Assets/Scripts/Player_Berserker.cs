@@ -327,7 +327,7 @@ public class Player_Berserker : Player
 
         foreach (var attribute in GameManager.Instance.PlayerSkill.GetSkillAttribute(ConstValues.BerserkerUpperSlash))
         {
-            switch (attribute)
+            switch (attribute.attributeId)
             {
                 case ConstValues.HighUpper:
                     attackObject.AttackInfo.upperPower = new Vector2(0, 12);
@@ -362,7 +362,7 @@ public class Player_Berserker : Player
         var objectId = ConstValues.BerserkerFireStrike;
         foreach (var attribute in GameManager.Instance.PlayerSkill.GetSkillAttribute(ConstValues.BerserkerFireStrike))
         {
-            switch (attribute)
+            switch (attribute.attributeId)
             {
                 case ConstValues.PiercingFire:
                     objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Pierce}";

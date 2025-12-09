@@ -40,7 +40,7 @@ public class Monster_Moon : Monster
         // 왼쪽
         if (dir == Vector2.left)
         {
-            RaycastHit2D leftRay = Physics2D.Raycast(rayVector, Vector2.left, distance, wallLayerMask);
+            RaycastHit2D leftRay = Physics2D.Raycast(rayVector, Vector2.left, distance, groundLayerMask);
             Debug.DrawRay(rayVector, Vector2.left * distance, ConstValues.CyanColor, 0.02f);
             if (leftRay.collider != null)
                 dir = Vector2.right;
@@ -49,7 +49,7 @@ public class Monster_Moon : Monster
         if (dir == Vector2.right)
         {
             
-            RaycastHit2D rightRay = Physics2D.Raycast(rayVector, Vector2.right, distance, wallLayerMask);
+            RaycastHit2D rightRay = Physics2D.Raycast(rayVector, Vector2.right, distance, groundLayerMask);
             Debug.DrawRay(rayVector, Vector2.right * distance, ConstValues.CyanColor, 0.02f);
             if (rightRay.collider != null)
                 dir = Vector2.left;
