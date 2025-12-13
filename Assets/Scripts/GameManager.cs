@@ -45,7 +45,6 @@ public static class KeyBinding
 public class Skill
 {
     public string skillId;
-    public bool isGet;
     public List<SkillAttribute> attributeList = new List<SkillAttribute>();
 }
 [Serializable]
@@ -78,21 +77,11 @@ public class SkillCollection
     {
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (berserkerSkill != null)
-        {
-            if (berserkerSkill.isGet)
-                return true;
-            
-            return false;
-        }
+            return true;
 
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
-        {
-            if (gunnerSkill.isGet)
-                return true;
-            
-            return false;
-        }
+            return true;
 
         return false;
     }
@@ -150,7 +139,7 @@ public class SkillCollection
         return 0;
     }
 
-    public async void AttributeLvUp(string skillId, string attributeId)
+    public async void AttributeLvUp(string skillId, string attributeId, Vector3 effectPos)
     {
         var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == attributeId);
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
@@ -171,19 +160,19 @@ public class SkillCollection
                     newAttribute.attributeId = attributeId;
                     newAttribute.level = 1;
                     berserkerSkill.attributeList.Add(newAttribute);
+                    berserkerSkillSetting.attributePoint -= attributeData[0].cost;
                 }
             }
             else
             {
                 if(targetAttribute.level < attributeData[^1].level)
                 {
-                    var attributeList = attributeData.FindAll(x => x.id == skillId);
-                    var attribute = attributeList.Find(x => x.level == targetAttribute.level + 1);
+                    var attributeList = attributeData.FindAll(x => x.skill == skillId);
+                    var attribute = attributeList.Find(x => x.id == targetAttribute.attributeId);
                     if (berserkerSkillSetting.attributePoint >= attribute.cost)
                     {
                         berserkerSkillSetting.attributePoint -= attribute.cost;
                         targetAttribute.level += 1;
-
                         string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
                         SkillBinding.SaveSkill(skillJson);
                         // 올리는 연출 넣기
@@ -217,6 +206,7 @@ public class SkillCollection
                     newAttribute.attributeId = attributeId;
                     newAttribute.level = 1;
                     gunnerSkill.attributeList.Add(newAttribute);
+                    gunnerSkillSetting.attributePoint -= attributeData[0].cost;
                 }
             }
             else
@@ -247,7 +237,7 @@ public class SkillCollection
         }
     }
     
-    public async void AttributeLvDown(string skillId, string attributeId)
+    public async void AttributeLvDown(string skillId, string attributeId, Vector3 effectPos)
     {
         var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == attributeId);
         
@@ -262,8 +252,8 @@ public class SkillCollection
             }
             else
             {
-                var attributeList = attributeData.FindAll(x => x.id == skillId);
-                var attribute = attributeList.Find(x => x.level == targetAttribute.level);
+                var attributeList = attributeData.FindAll(x => x.skill == skillId);
+                var attribute = attributeList.Find(x => x.id == targetAttribute.attributeId);
                 berserkerSkillSetting.attributePoint += attribute.cost;
                 targetAttribute.level -= 1;
                 if(targetAttribute.level == 0)
@@ -286,8 +276,8 @@ public class SkillCollection
             }
             else
             {
-                var attributeList = attributeData.FindAll(x => x.id == skillId);
-                var attribute = attributeList.Find(x => x.level == targetAttribute.level);
+                var attributeList = attributeData.FindAll(x => x.skill == skillId);
+                var attribute = attributeList.Find(x => x.id == targetAttribute.attributeId);
                 gunnerSkillSetting.attributePoint += attribute.cost;
                 targetAttribute.level -= 1;
                 if(targetAttribute.level == 0)
@@ -889,26 +879,6 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillSetting.attributePoint = 0;
         gunnerSkillSetting.skillList = new List<Skill>();
         
-        foreach (var skill in TableManager.Instance.skillTable.Skill)
-        {
-            if (skill.caster == ConstValues.Berserker && skill.type != ConstValues.Dash)
-            {
-                Skill berserkerSkill = new Skill();
-                berserkerSkill.skillId = skill.id;
-                berserkerSkill.isGet = false;
-                berserkerSkill.attributeList = new List<SkillAttribute>();
-                berserkerSkillSetting.skillList.Add(berserkerSkill);
-            }
-
-            if (skill.caster == ConstValues.Gunner && skill.type != ConstValues.Dash)
-            {
-                Skill gunnerSkill = new Skill();
-                gunnerSkill.skillId = skill.id;
-                gunnerSkill.isGet = false;
-                gunnerSkill.attributeList = new List<SkillAttribute>();
-                gunnerSkillSetting.skillList.Add(gunnerSkill);
-            }
-        }
         playerSkill.berserkerSkillSetting = berserkerSkillSetting;
         playerSkill.gunnerSkillSetting = gunnerSkillSetting;
         
@@ -1012,28 +982,32 @@ public class GameManager : Singleton<GameManager>
             {
                 int idx = EmptySkillIdx(playerSkillKey.berserkerSkillKeyList);
                 playerSkillKey.berserkerSkillKeyList[idx].skillId = id;
+
+                Skill newSkill = new Skill();
+                newSkill.skillId = id;
+                newSkill.attributeList = new List<SkillAttribute>();
+                playerSkill.berserkerSkillSetting.skillList.Add(newSkill);
                 break;
             }
             case ConstValues.Gunner:
             {
                 int idx = EmptySkillIdx(playerSkillKey.gunnerSkillKeyList);
                 playerSkillKey.gunnerSkillKeyList[idx].skillId = id;
+                
+                Skill newSkill = new Skill();
+                newSkill.skillId = id;
+                newSkill.attributeList = new List<SkillAttribute>();
+                playerSkill.gunnerSkillSetting.skillList.Add(newSkill);
                 break;
             }
         }
         RefreshSkill();
+        
+        // 키세팅 저장
         string skillKeyJson = JsonUtility.ToJson(playerSkillKey, true);
         SkillKeyBinding.SaveKey(skillKeyJson);
-
+        
         // 스킬 저장
-        var berserkerSkillData = playerSkill.berserkerSkillSetting.skillList.Find(x => x.skillId == id);
-        if (berserkerSkillData != null)
-            berserkerSkillData.isGet = true;
-        
-        var gunnerSkillData = playerSkill.gunnerSkillSetting.skillList.Find(x => x.skillId == id);
-        if (gunnerSkillData != null)
-            gunnerSkillData.isGet = true;
-        
         string skillJson = JsonUtility.ToJson(playerSkill, true);
         SkillBinding.SaveSkill(skillJson);
     }

@@ -1,694 +1,682 @@
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
-
-// Presenter 안쪽(클래스 상단)에 추가
-public enum UpgradeTarget
-{
-    Plus,
-    Minus
-}
 
 public interface IPopupAttributeView
 {
-    void SetModel(SkillCollection playerSkill, string character);
+    void SetModel(SkillCollection playerSkill);
     void SetAction(Action closeAction);
-
-    void CloseAction();
-
-    // ▼ 추가: Presenter가 View의 상태에 접근/지시하기 위한 API
-    int GetActiveItemCount();
-
-    void MoveSelectTo(int index, float tweenTime = 0.1f); // DoTween으로 selectFrame 이동
-
-    // 🔽 추가: 스크롤 이동용
-    // 변경: +1/-1 방향 대신 "변화한 행 수(rowSteps)"로 스크롤
-    void ScrollContentRows(int rowSteps); // 양수: 아래로 rowSteps행, 음수: 위로 rowSteps행
-
-    // 🔽 추가: Presenter가 유효 타겟 여부를 판단하기 위한 API
-    int GetFrameCount(); // attributeFrameArray.Length
-    bool IsNavigable(int index); // index 범위 내 && attributeFrameArray[index].isHaveSkill == true
-
-    // ▼ 추가: 업그레이드 모드 시 필요 API
-    void SetUpgradeActive(int index, bool active); // index의 upgradeFrame On/Off
-    void PositionUpgradeImit(int index, UpgradeTarget target);
-    void PositionUpgradeTo(int index, UpgradeTarget target, float t = 0.1f); // upgradeFrame을 plus/minus 위치로 트윈
-    bool ShouldStartOnMinus(int index); // 규칙 3 판단용
-    void RefreshSkillInfo(int index); // SetSkillInfo() 래핑
-
-    // ▼ 추가: Reset 모드용
-    void SetResetActive(bool active); // resetFrame On/Off
-    void RefreshAllSkillInfo(); // attributeFrameArray 전체에 SetSkillInfo()
-
-    void LevelUp(int index);
-    void LevelDown(int index);
-    
-    // Reset/업그레이드 등 특수 모드에서 커서를 숨기거나 다시 보이게
-    void SetSelectFrameActive(bool active);
 }
 
 public class PopupAttributeModel
 {
-    public SkillCollection playerSkill;
     public Action closeAction;
 }
 
 public class PopupAttributePresenter
 {
-    private IPopupAttributeView _attributeView;
-    private PopupAttributeModel _model;
+    private readonly IPopupAttributeView _attributeView;
+    private readonly PopupAttributeModel _model;
 
-    // ▼ 추가 상태
-    private int _currentIndex = 0;
-    private const int _cols = 3; // 3열 고정
-
-    // 키 홀드(네비게이션) 상태
-    private bool _holding = false;
-    private KeyCode _holdKey;
-    private float _repeatTimer = 0f;
-    private const float _firstDelay = 0.3f; // 최초 지연
-    private const float _repeatDelay = 0.2f; // 반복 지연
-
-    // 업그레이드 모드 상태
-    private bool _inUpgradeMode = false;
-    private UpgradeTarget _upgradeTarget = UpgradeTarget.Plus; // 기본 plus
-
-    // ▼ 추가: Reset 모드
-    private bool _inResetMode = false;
-
-
-    public PopupAttributePresenter(IPopupAttributeView guideView, PopupAttributeModel model)
+    public PopupAttributePresenter(IPopupAttributeView attributeView, PopupAttributeModel model)
     {
-        _attributeView = guideView;
+        _attributeView = attributeView;
         _model = model;
     }
 
-    private void CloseAction()
+    public void Expansion(Action action)
     {
-        _attributeView.CloseAction();
-    }
-
-    public void CloseAttribute()
-    {
-        if (Input.GetKeyDown(KeyCode.I) || (!_inUpgradeMode && Input.GetKeyDown(KeyCode.Escape)))
-            CloseAction();
+        action?.Invoke();
     }
 
     public void SetModel(SkillCollection playerSkill)
     {
-        _model.playerSkill = playerSkill;
-        _attributeView.SetModel(_model.playerSkill, GameManager.Instance.CurPlayer.name);
-
-        _currentIndex = SnapToNearestValid(0, +1);
-        if (_currentIndex >= 0)
-        {
-            _attributeView.MoveSelectTo(_currentIndex, 0f);
-        }
-
-        // 시작 시 모드 패널 Off
-        _attributeView.SetUpgradeActive(_currentIndex, false);
-        _attributeView.SetResetActive(false);
+        _attributeView.SetModel(playerSkill);
     }
 
-    public void SetAction(Action closeAction)
+    public void SetAction(Action action)
     {
-        _model.closeAction = closeAction;
+        _model.closeAction = action;
         _attributeView.SetAction(_model.closeAction);
-    }
-
-    // ▼ 매 프레임 호출: 방향키 네비게이션 처리 (Unscaled)
-    public void UpdateNavigation()
-    {
-        // ===== Reset 모드 중 =====
-        if (_inResetMode)
-        {
-            // Enter → Reset 실행
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
-            {
-                string characterName = GameManager.Instance.CurPlayer.name;
-                GameManager.Instance.PlayerSkill.ResetAttribute(characterName);
-                SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton2);
-                
-                // 모든 프레임 최신화
-                _attributeView.RefreshAllSkillInfo();
-                ExitResetMode();
-                return;
-            }
-
-            // Esc → 취소
-            if (Input.GetKeyDown(KeyCode.DownArrow))
-            {
-                SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton);
-                ExitResetMode();
-                return;
-            }
-
-            // Reset 모드에선 방향키/기타 입력 무시 (잠금)
-            return;
-        }
-
-        // ===== 업그레이드 모드 중 =====
-        if (_inUpgradeMode)
-        {
-            if (Input.GetKeyDown(KeyCode.Escape))
-            {
-                ExitUpgradeMode();
-                SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton2);
-                return;
-            }
-
-            if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
-            {
-                if (_upgradeTarget == UpgradeTarget.Plus)
-                    _attributeView.LevelUp(_currentIndex);
-                else
-                    _attributeView.LevelDown(_currentIndex);
-
-                _attributeView.RefreshSkillInfo(_currentIndex);
-                SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton2);
-                return;
-            }
-
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
-            {
-                if (_upgradeTarget != UpgradeTarget.Minus)
-                {
-                    _upgradeTarget = UpgradeTarget.Minus;
-                    _attributeView.PositionUpgradeTo(_currentIndex, _upgradeTarget, 0.1f);
-                }
-                return;
-            }
-
-            if (Input.GetKeyDown(KeyCode.RightArrow))
-            {
-                if (_upgradeTarget != UpgradeTarget.Plus)
-                {
-                    _upgradeTarget = UpgradeTarget.Plus;
-                    _attributeView.PositionUpgradeTo(_currentIndex, _upgradeTarget, 0.1f);
-                }
-
-                return;
-            }
-
-            return; // 업그레이드 모드에선 선택 이동 잠금
-        }
-
-        // ===== 일반 모드 (선택 이동 가능) =====
-
-        // Enter → 업그레이드 모드 진입
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
-        {
-            if (_attributeView.IsNavigable(_currentIndex))
-                EnterUpgradeMode();
-            return;
-        }
-
-        // 🔸 "첫 번째 열에서 ↑" → Reset 모드 진입
-        // 첫 번째 열 판정: (index % _cols == 0)
-        if (Input.GetKeyDown(KeyCode.UpArrow) && (_currentIndex % _cols == 0))
-        {
-            EnterResetMode();
-            return;
-        }
-
-        // 기존 네비게이션 (좌/우/상/하)
-        if (Input.GetKeyDown(KeyCode.LeftArrow)) StartHold(KeyCode.LeftArrow, -1);
-        else if (Input.GetKeyDown(KeyCode.RightArrow)) StartHold(KeyCode.RightArrow, +1);
-        else if (Input.GetKeyDown(KeyCode.UpArrow)) StartHold(KeyCode.UpArrow, -_cols);
-        else if (Input.GetKeyDown(KeyCode.DownArrow)) StartHold(KeyCode.DownArrow, +_cols);
-
-        if (_holding)
-        {
-            if (Input.GetKey(_holdKey))
-            {
-                _repeatTimer -= Time.unscaledDeltaTime;
-                if (_repeatTimer <= 0f)
-                {
-                    Step(_holdKey);
-                    _repeatTimer = _repeatDelay;
-                }
-            }
-            else _holding = false;
-        }
-    }
-
-    // ==== Reset 모드 진입/해제 ====
-    private void EnterResetMode()
-    {
-        _inResetMode = true;
-        _attributeView.SetResetActive(true);
-        _attributeView.SetSelectFrameActive(false); // ⬅️ 커서 숨김
-        // 보조: 업그레이드 패널은 꺼 둔다
-        _attributeView.SetUpgradeActive(_currentIndex, false);
-        SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton);
-    }
-
-    private void ExitResetMode()
-    {
-        _inResetMode = false;
-        _attributeView.SetResetActive(false);
-        _attributeView.SetSelectFrameActive(true);  // ⬅️ 커서 복원
-    }
-
-    // ==== 업그레이드 모드 진입/해제 (기존) ====
-    private void EnterUpgradeMode()
-    {
-        _inUpgradeMode = true;
-
-        // 규칙 2: 선택된 프레임의 upgradeFrame만 활성
-        _attributeView.SetUpgradeActive(_currentIndex, true);
-
-        // 규칙 3: 기본 plus, 단 ShouldStartOnMinus면 minus에서 시작
-        _upgradeTarget = _attributeView.ShouldStartOnMinus(_currentIndex) ? UpgradeTarget.Minus : UpgradeTarget.Plus;
-        _attributeView.PositionUpgradeImit(_currentIndex, _upgradeTarget);
-        
-        SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton2);
-    }
-
-    private void ExitUpgradeMode()
-    {
-        _inUpgradeMode = false;
-        _attributeView.SetUpgradeActive(_currentIndex, false); // 비활성화
-    }
-
-    private void StartHold(KeyCode key, int delta)
-    {
-        if (TryMove(delta, out _))
-        {
-            _holding = true;
-            _holdKey = key;
-            _repeatTimer = _firstDelay;
-        }
-        else _holding = false;
-    }
-
-    private void Step(KeyCode key)
-    {
-        int delta = 0;
-        if (key == KeyCode.LeftArrow)
-            delta = -1;
-        else if (key == KeyCode.RightArrow)
-            delta = +1;
-        else if (key == KeyCode.UpArrow)
-            delta = -_cols;
-        else if (key == KeyCode.DownArrow)
-            delta = +_cols;
-
-        TryMove(delta, out _);
-    }
-
-    // ====== 아래 이동/래핑/스냅 유효칸 탐색은 기존 구현을 재사용 ======
-    private bool TryMove(int delta, out int rowSteps)
-    {
-        rowSteps = 0;
-        int count = _attributeView.GetFrameCount();
-        if (count <= 0) return false;
-
-        int prev = _currentIndex;
-
-        if (!_attributeView.IsNavigable(prev))
-        {
-            int snapped = SnapToNearestValid(prev, +1);
-            if (snapped < 0)
-                return false;
-            prev = _currentIndex = snapped;
-            _attributeView.MoveSelectTo(_currentIndex, 0f);
-        }
-
-        bool vertical = (delta == _cols) || (delta == -_cols);
-        int target = -1;
-
-        if (vertical)
-        {
-            int proposed = prev + delta;
-            if (proposed < 0)
-                target = SnapToNearestValid(0, +1);
-            else if (proposed >= count)
-                target = SnapToNearestValid(count - 1, -1);
-            else
-                target = FindNextValid(prev, delta, count);
-        }
-        else
-        {
-            // 좌/우: 먼저 방향 검색 → 없으면 래핑(좌: 마지막 유효칸 / 우: 첫 유효칸)
-            target = FindNextValid(prev, delta, count);
-            if (target < 0)
-                target = (delta == -1) ? GetLastValidIndex() : GetFirstValidIndex();
-        }
-
-        if (target < 0 || target == prev)
-            return false;
-
-        int prevRow = prev / _cols;
-        int nextRow = target / _cols;
-        rowSteps = nextRow - prevRow;
-
-        _currentIndex = target;
-        _attributeView.MoveSelectTo(_currentIndex);
-        if (rowSteps != 0)
-            _attributeView.ScrollContentRows(rowSteps);
-
-        // 일반 모드에서는 upgradeFrame 항상 꺼 둠(규칙 2 충족: 선택되지 않은 프레임은 비활성)
-        _attributeView.SetUpgradeActive(_currentIndex, false);
-        SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton);
-        return true;
-    }
-
-    // start에서 step(±1 또는 ±_cols)로 진행하며 첫 유효 칸을 찾는다.
-    private int FindNextValid(int start, int step, int count)
-    {
-        int i = start + step;
-        while (i >= 0 && i < count)
-        {
-            if (_attributeView.IsNavigable(i))
-                return i;
-            i += step;
-        }
-
-        return -1;
-    }
-
-    // 기준점에서 dir(+1: 앞으로, -1: 뒤로)로 진행하며 가장 가까운 유효 칸을 찾는다.
-    // 기준점 자체가 유효하면 그 자체를 반환.
-    private int SnapToNearestValid(int pivot, int dir)
-    {
-        int count = _attributeView.GetFrameCount();
-        if (count <= 0)
-            return -1;
-
-        if (pivot >= 0 && pivot < count && _attributeView.IsNavigable(pivot))
-            return pivot;
-
-        if (dir >= 0)
-        {
-            for (int i = Mathf.Max(0, pivot); i < count; i++)
-                if (_attributeView.IsNavigable(i))
-                    return i;
-        }
-
-        for (int i = Mathf.Min(count - 1, pivot); i >= 0; i--)
-            if (_attributeView.IsNavigable(i))
-                return i;
-
-        return -1;
-    }
-
-    private int GetFirstValidIndex()
-    {
-        int count = _attributeView.GetFrameCount();
-        for (int i = 0; i < count; i++)
-            if (_attributeView.IsNavigable(i))
-                return i;
-        return -1;
-    }
-
-    private int GetLastValidIndex()
-    {
-        int count = _attributeView.GetFrameCount();
-        for (int i = count - 1; i >= 0; i--)
-            if (_attributeView.IsNavigable(i))
-                return i;
-        return -1;
     }
 }
 
-
 public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 {
-    private string targetCharacter;
-
-    [SerializeField] private TMP_Text titleText;
-    [SerializeField] private TMP_Text leftPointText;
-    [SerializeField] private TMP_Text leftPoint;
-    [SerializeField] private TMP_Text resetText;
-    [SerializeField] private Button closeButton;
-    [SerializeField] private RectTransform content;
-    [SerializeField] private Image selectFrame;
-    [SerializeField] private GameObject resetFrame;
-    [SerializeField] private AttributeFrame[] attributeFrameArray;
-
-    private Tweener moveTween;
-    private Tweener scrollTween;
-    private Tweener upgradeTween;
-
-    private Action closeAction;
-    private SkillCollection skillCollection;
-
-    public int GetFrameCount() => attributeFrameArray?.Length ?? 0;
-
-    // isHaveSkill 여부로 네비게이션 가능성 판단
-    public bool IsNavigable(int index)
+    private enum eStep
     {
-        if (attributeFrameArray == null || index < 0 || index >= attributeFrameArray.Length)
-            return false;
-
-        var f = attributeFrameArray[index];
-        // 필요하면 activeSelf도 조건에 추가 가능:
-        // return f.gameObject.activeSelf && f.isHaveSkill;
-        return f != null && f.isHaveSkill;
+        SkillSelect,
+        AttributeSelect,
+        PointAdjust
     }
 
-    public async void SetModel(SkillCollection playerSkill, string character)
+    private enum eAdjust
     {
-        skillCollection = playerSkill;
+        Plus = 0,
+        Minus = 1,
+    }
 
-        titleText.text = "특성";
-        leftPointText.text = "남은 포인트";
-        leftPoint.text = skillCollection.berserkerSkillSetting.attributePoint.ToString();
-        resetText.text = "초기화";
+    [Header("Texts")]
+    [SerializeField] private TMP_Text skillText;
+    [SerializeField] private TMP_Text attributeText;
+    [SerializeField] private TMP_Text leftPointText;
+    [SerializeField] private TMP_Text leftPoint;
+    [SerializeField] private TMP_Text attributeNameText;        // 특성 이름
+    [SerializeField] private TMP_Text attributeExplainText;     // 특성 설명
+    [SerializeField] private TMP_Text costText;
 
-        foreach (var attributeFrame in attributeFrameArray)
-            attributeFrame.gameObject.SetActive(false);
+    [Header("Objects")]
+    [SerializeField] private GameObject explainObject;
 
-        switch (character)
+    [Header("Buttons")]
+    [SerializeField] private AttributeButton plusButton;
+    [SerializeField] private AttributeButton minusButton;
+
+    [Header("Frames")]
+    [SerializeField] private AttributeFrame_Skill[] skillArray;
+    [SerializeField] private AttributeFrame_Attribute[] attributeArray;
+
+    private Action _closeAction;
+
+    private SkillCollection skillInfo;
+    private SkillSetting skillSetting;
+    private readonly List<SkillData> skillTableList = new List<SkillData>();
+    private List<SkillAttributeData> attributeTableList;
+
+    // 현재 스킬에서 사용 가능한 "특성 id"(중복 레벨 행 제거)
+    private readonly List<string> attributeIdList = new List<string>();
+    private readonly HashSet<string> attributeIdSet = new HashSet<string>();
+
+    private string curSkillId;
+    private string curAttributeId;
+
+    // 단계/선택 인덱스
+    private eStep curStep = eStep.SkillSelect;
+    private int curSkillIndex;
+    private int skillCount;
+
+    private int curAttributeIndex;
+    private int attributeSlotCount;
+
+    private eAdjust curAdjust = eAdjust.Plus;
+
+    private const int AttributeCols = 3;
+    private const int AttributeRows = 2;
+
+    private void OnDisable()
+    {
+        // 안전장치: 꺼질 때 버튼 선택 상태 초기화
+        plusButton.UnSelect();
+        minusButton.UnSelect();
+    }
+
+    private void Update()
+    {
+        switch (curStep)
+        {
+            case eStep.SkillSelect:
+                UpdateSkillSelect();
+                break;
+            case eStep.AttributeSelect:
+                UpdateAttributeSelect();
+                break;
+            case eStep.PointAdjust:
+                UpdatePointAdjust();
+                break;
+        }
+    }
+
+    #region Step1 - SkillSelect
+
+    private void UpdateSkillSelect()
+    {
+        if (skillCount <= 0)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            SetSkillIndex(curSkillIndex - 1);
+        }
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            SetSkillIndex(curSkillIndex + 1);
+        }
+        else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            // 스킬 선택 확정 → 특성 선택 단계 진입
+            EnterAttributeSelect();
+        }
+        else if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            CloseAction();
+        }
+    }
+
+    private void SetSkillList()
+    {
+        var showCount = Mathf.Min(skillTableList.Count, skillArray.Length);
+
+        for (var i = 0; i < skillArray.Length; i++)
+        {
+            if (i < showCount)
+            {
+                skillArray[i].gameObject.SetActive(true);
+                skillArray[i].SetData(skillSetting.skillList.Find(x => x.skillId == skillTableList[i].id) != null, skillTableList[i]);
+            }
+            else
+            {
+                skillArray[i].gameObject.SetActive(false);
+            }
+        }
+    }
+
+    private void SetupSkillNavigation()
+    {
+        skillCount = Mathf.Min(skillTableList.Count, skillArray.Length);
+        if (skillCount <= 0)
+        {
+            curSkillIndex = 0;
+            return;
+        }
+
+        if (curSkillIndex < 0 || curSkillIndex >= skillCount)
+            curSkillIndex = 0;
+    }
+
+    private void SetSkillIndex(int newIndex, bool force = false)
+    {
+        if (skillCount <= 0)
+            return;
+
+        // 순환
+        newIndex %= skillCount;
+        if (newIndex < 0)
+            newIndex += skillCount;
+
+        if (!force && curSkillIndex == newIndex)
+            return;
+
+        curSkillIndex = newIndex;
+
+        for (int i = 0; i < skillCount; i++)
+        {
+            if (i == curSkillIndex)
+                skillArray[i].Select();
+            else
+                skillArray[i].UnSelect();
+        }
+
+        // 스킬이 바뀌면 특성 리스트 갱신 + 선택 리셋
+        BuildAttributeListForSkill(skillTableList[curSkillIndex].id, resetSelection: true);
+    }
+
+    #endregion
+
+    #region Step2 - AttributeSelect
+
+    private void UpdateAttributeSelect()
+    {
+        if (attributeSlotCount <= 0)
+            return;
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            MoveAttributeHorizontal(-1);
+        }
+        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            MoveAttributeHorizontal(1);
+        }
+        else if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            MoveAttributeVertical(-1);
+        }
+        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            MoveAttributeVertical(1);
+        }
+        else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            EnterPointAdjust();
+        }
+        else if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            BackToSkillSelect();
+        }
+    }
+
+    private void EnterAttributeSelect()
+    {
+        SetupAttributeNavigation();
+        if (attributeSlotCount <= 0)
+            return;
+
+        curStep = eStep.AttributeSelect;
+        SetAttributeIndex(FindFirstSelectableAttributeIndex(), true);
+        skillArray[curSkillIndex].SelectObjectActive(false);
+    }
+
+    private void BackToSkillSelect()
+    {
+        curStep = eStep.SkillSelect;
+        explainObject.SetActive(false);
+
+        for (int i = 0; i < attributeArray.Length; i++)
+        {
+            if (attributeArray[i] == null)
+                continue;
+            
+            attributeArray[i].UnSelect();
+        }
+        skillArray[curSkillIndex].SelectObjectActive(true);
+    }
+
+    private void SetupAttributeNavigation()
+    {
+        attributeSlotCount = 0;
+        for (int i = 0; i < attributeArray.Length; i++)
+        {
+            if (attributeArray[i] != null && attributeArray[i].gameObject.activeSelf)
+                attributeSlotCount++;
+        }
+
+        if (attributeSlotCount <= 0)
+        {
+            curAttributeIndex = 0;
+            return;
+        }
+
+        if (curAttributeIndex < 0 || curAttributeIndex >= attributeArray.Length)
+            curAttributeIndex = 0;
+    }
+
+    private int FindFirstSelectableAttributeIndex()
+    {
+        for (int i = 0; i < attributeArray.Length; i++)
+        {
+            if (IsAttributeSelectable(i))
+                return i;
+        }
+        return 0;
+    }
+
+    private bool IsAttributeSelectable(int idx)
+    {
+        if (idx < 0 || idx >= attributeArray.Length)
+            return false;
+
+        if (attributeArray[idx] == null || !attributeArray[idx].gameObject.activeSelf)
+            return false;
+
+        // id 리스트와 매핑 깨짐 방지
+        if (idx >= attributeIdList.Count)
+            return false;
+
+        return true;
+    }
+
+    private void SetAttributeIndex(int newIndex, bool force = false)
+    {
+        if (attributeSlotCount <= 0)
+            return;
+
+        if (!IsAttributeSelectable(newIndex))
+            newIndex = FindFirstSelectableAttributeIndex();
+
+        if (!force && curAttributeIndex == newIndex)
+            return;
+
+        curAttributeIndex = newIndex;
+
+        for (int i = 0; i < attributeArray.Length; i++)
+        {
+            if (attributeArray[i] == null)
+                continue;
+
+            if (i == curAttributeIndex && attributeArray[i].gameObject.activeSelf)
+                attributeArray[i].Select();
+            else
+                attributeArray[i].UnSelect();
+        }
+
+        curAttributeId = attributeIdList[curAttributeIndex];
+        GetAttributeInfo(curAttributeId);
+    }
+
+    private void MoveAttributeHorizontal(int dir)
+    {
+        int row = curAttributeIndex / AttributeCols;
+        int col = curAttributeIndex % AttributeCols;
+
+        // 같은 row 내에서 순환 탐색
+        for (int step = 1; step <= AttributeCols; step++)
+        {
+            int newCol = (col + (dir * step)) % AttributeCols;
+            if (newCol < 0) newCol += AttributeCols;
+
+            int idx = row * AttributeCols + newCol;
+            if (IsAttributeSelectable(idx))
+            {
+                SetAttributeIndex(idx);
+                return;
+            }
+        }
+
+        SetAttributeIndex(FindFirstSelectableAttributeIndex(), true);
+    }
+
+    private void MoveAttributeVertical(int dir)
+    {
+        int row = curAttributeIndex / AttributeCols;
+        int col = curAttributeIndex % AttributeCols;
+
+        int targetRow = (row + dir) % AttributeRows;
+        if (targetRow < 0) targetRow += AttributeRows;
+
+        int idx = targetRow * AttributeCols + col;
+        if (IsAttributeSelectable(idx))
+        {
+            SetAttributeIndex(idx);
+            return;
+        }
+
+        for (int step = 1; step < AttributeCols; step++)
+        {
+            int newCol = (col + step) % AttributeCols;
+            idx = targetRow * AttributeCols + newCol;
+            if (IsAttributeSelectable(idx))
+            {
+                SetAttributeIndex(idx);
+                return;
+            }
+        }
+
+        SetAttributeIndex(FindFirstSelectableAttributeIndex(), true);
+    }
+
+    #endregion
+
+    #region Step3 - PointAdjust
+
+    private void EnterPointAdjust()
+    {
+        if (string.IsNullOrEmpty(curSkillId) || string.IsNullOrEmpty(curAttributeId))
+            return;
+
+        curStep = eStep.PointAdjust;
+        plusButton.Select();
+        minusButton.Select();
+        attributeArray[curAttributeIndex].SelectObjectActive(false);
+    }
+
+    private void BackToAttributeSelect()
+    {
+        curStep = eStep.AttributeSelect;
+        plusButton.UnSelect();
+        minusButton.UnSelect();
+        attributeArray[curAttributeIndex].SelectObjectActive(true);
+    }
+
+    private void UpdatePointAdjust()
+    { 
+        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        {
+            ApplyPointAdjust();
+        }
+        else if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            BackToAttributeSelect();
+        }
+    }
+
+    private void CheckAdjust()
+    {
+        Skill skill = skillSetting.skillList.Find(x => x.skillId == curSkillId);
+        bool isHaveAttribute = skill.attributeList.Find(x => x.attributeId == curAttributeId) != null;
+        if(isHaveAttribute)
+            curAdjust = eAdjust.Minus;
+        else
+            curAdjust = eAdjust.Plus;
+        
+        ButtonActive();
+    }
+
+    private void ButtonActive()
+    {
+        if (curAdjust == eAdjust.Plus)
+        {
+            plusButton.gameObject.SetActive(true);
+            minusButton.gameObject.SetActive(false);
+        }
+        else
+        {
+            plusButton.gameObject.SetActive(false);
+            minusButton.gameObject.SetActive(true);
+        }
+    }
+
+    private void ApplyPointAdjust()
+    {
+        if (skillInfo == null || skillSetting == null)
+            return;
+
+        if (curAdjust == eAdjust.Plus)
+            skillInfo.AttributeLvUp(curSkillId, curAttributeId, Vector3.zero);
+        else
+            skillInfo.AttributeLvDown(curSkillId, curAttributeId, Vector3.zero);
+
+        // async void 내부에서 저장/경고가 발생할 수 있으니, 다음 프레임에 UI를 한 번 더 갱신
+        RefreshAfterAdjust();
+    }
+
+    private void RefreshAfterAdjust()
+    {
+        RefreshLeftPoint();
+        RefreshAttributeActiveStates(keepSelection: true);
+        SetAttributeIndex(curAttributeIndex, true);
+        
+        CheckAdjust();
+        plusButton.Select();
+        minusButton.Select();
+    }
+
+    #endregion
+
+    #region Data/Refresh
+
+    public void SetModel(SkillCollection playerSkill)
+    {
+        skillInfo = playerSkill;
+        skillTableList.Clear();
+
+        switch (GameManager.Instance.CurPlayer.BasicStat.id)
         {
             case ConstValues.Berserker:
-                for (int i = 0; i < skillCollection.berserkerSkillSetting.skillList.Count; i++)
-                {
-                    attributeFrameArray[i].gameObject.SetActive(true);
-                    attributeFrameArray[i].SetSkillInfo(skillCollection.berserkerSkillSetting.skillList[i].skillId);
-                }
-
+                skillSetting = skillInfo.berserkerSkillSetting;
+                skillTableList.AddRange(TableManager.Instance.skillTable.Skill.FindAll(
+                    x => x.caster == ConstValues.Berserker && x.type != ConstValues.Dash));
                 break;
 
             case ConstValues.Gunner:
-                for (int i = 0; i < skillCollection.gunnerSkillSetting.skillList.Count; i++)
-                {
-                    attributeFrameArray[i].gameObject.SetActive(true);
-                    attributeFrameArray[i].SetSkillInfo(skillCollection.gunnerSkillSetting.skillList[i].skillId);
-                }
-
+                skillSetting = skillInfo.gunnerSkillSetting;
+                skillTableList.AddRange(TableManager.Instance.skillTable.Skill.FindAll(
+                    x => x.caster == ConstValues.Gunner && x.type != ConstValues.Dash));
                 break;
         }
 
-        // 자동으로 맨 위쪽 스크롤로 맞추고, 그곳에 따라서 셀렉트 프레임의 위치를 재설정
-        await UniTask.Yield();
-        content.anchoredPosition = new Vector2(0, -content.sizeDelta.y);
+        SetSkillList();
+        SetupSkillNavigation();
+        RefreshLeftPoint();
 
-        await UniTask.Yield();
-        var targetRT = attributeFrameArray[0].GetComponent<RectTransform>();
-        var frameRT = selectFrame.GetComponent<RectTransform>();
-        frameRT.anchoredPosition = targetRT.anchoredPosition;
+        // 초기 상태: 스킬 선택 단계, 0번 선택
+        curStep = eStep.SkillSelect;
+        SetSkillIndex(0, true);
+        explainObject.SetActive(false);
+        plusButton.UnSelect();
+        minusButton.UnSelect();
+
+        skillText.text = "스킬";
+        attributeText.text = "특성";
+        leftPointText.text = "남은 포인트";
     }
 
-    public int GetActiveItemCount()
+    private void RefreshLeftPoint()
     {
-        int count = 0;
-        foreach (var f in attributeFrameArray)
-            if (f.gameObject.activeSelf)
-                count++;
-        return count;
+        if (leftPoint != null && skillSetting != null)
+            leftPoint.text = skillSetting.attributePoint.ToString();
     }
 
-    public void MoveSelectTo(int index, float tweenTime = 0.1f)
+    private void BuildAttributeListForSkill(string skillId, bool resetSelection)
     {
-        if (!IsNavigable(index))
-            return;
-
-        var targetRT = attributeFrameArray[index].GetComponent<RectTransform>();
-        var frameRT = selectFrame.rectTransform;
-
-        moveTween?.Kill();
-        moveTween = frameRT.DOAnchorPos(targetRT.anchoredPosition, tweenTime)
-            .SetEase(Ease.OutQuad)
-            .SetUpdate(true)
-            .SetLink(gameObject, LinkBehaviour.KillOnDestroy);
+        curSkillId = skillId;
+        explainObject.SetActive(false);
+        attributeText.gameObject.SetActive(false);
         
-        if(tweenTime > 0)
-            SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton);
+        // 배우지 않은 스킬이면 슬롯 숨김
+        if (skillSetting == null || skillSetting.skillList.Find(x => x.skillId == curSkillId) == null)
+        {
+            
+            for (int i = 0; i < attributeArray.Length; i++)
+            {
+                if (attributeArray[i] == null)
+                    continue;
+                
+                attributeArray[i].gameObject.SetActive(false);
+                attributeArray[i].UnSelect();
+            }
+
+            attributeTableList = null;
+            attributeIdList.Clear();
+            attributeIdSet.Clear();
+            attributeSlotCount = 0;
+            if (resetSelection)
+                curAttributeIndex = 0;
+            
+            return;
+        }
+
+        attributeText.gameObject.SetActive(true);
+        attributeTableList = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.skill == curSkillId);
+        BuildAttributeIdList();
+
+        var skill = skillSetting.skillList.Find(x => x.skillId == curSkillId);
+
+        for (int i = 0; i < attributeArray.Length; i++)
+        {
+            if (attributeArray[i] == null)
+                continue;
+            
+            attributeArray[i].UnSelect();
+            attributeArray[i].gameObject.SetActive(false);
+        }
+
+        int showCount = Mathf.Min(attributeIdList.Count, attributeArray.Length);
+        for (int i = 0; i < showCount; i++)
+        {
+            attributeArray[i].gameObject.SetActive(true);
+            string attrId = attributeIdList[i];
+            bool isActive = skill.attributeList.Find(x => x.attributeId == attrId) != null;
+            attributeArray[i].SetData(attrId, isActive);
+        }
+
+        attributeSlotCount = showCount;
+        if (resetSelection)
+            curAttributeIndex = 0;
     }
 
-    // 🔽 새로 추가되는 부분
-    // ⬇️ 추가/변경: 행 수(rowSteps)만큼 스크롤
-    public void ScrollContentRows(int rowSteps)
+    private void RefreshAttributeActiveStates(bool keepSelection)
     {
-        if (rowSteps == 0 || content == null || selectFrame == null) return;
-
-        float oneRow = selectFrame.GetComponent<RectTransform>().sizeDelta.y;
-        Vector2 target = content.anchoredPosition;
-        target.y += oneRow * rowSteps;
-
-        scrollTween?.Kill();
-        scrollTween = content.DOAnchorPos(target, 0.2f)
-            .SetEase(Ease.OutQuad)
-            .SetUpdate(true)
-            .SetLink(gameObject, LinkBehaviour.KillOnDestroy);
-    }
-
-    // ---------- 업그레이드 모드 관련 구현 ----------
-    public void SetUpgradeActive(int index, bool active)
-    {
-        if (attributeFrameArray == null)
+        if (string.IsNullOrEmpty(curSkillId))
             return;
 
-        // 전체 끄고, 선택 index만 켜기
-        for (int i = 0; i < attributeFrameArray.Length; i++)
+        // 리스트/프레임만 다시 갱신 (선택 리셋 여부 제어)
+        int prevIndex = curAttributeIndex;
+        BuildAttributeListForSkill(curSkillId, resetSelection: !keepSelection);
+        if (keepSelection)
+            curAttributeIndex = prevIndex;
+    }
+
+    private void BuildAttributeIdList()
+    {
+        attributeIdList.Clear();
+        attributeIdSet.Clear();
+
+        if (attributeTableList == null)
+            return;
+
+        for (int i = 0; i < attributeTableList.Count; i++)
         {
-            var f = attributeFrameArray[i];
-            if (f == null) continue;
-            f.SetUpgradeFrameActive(i == index && active);
+            var row = attributeTableList[i];
+            if (row == null) continue;
+            if (attributeIdSet.Add(row.id))
+            {
+                attributeIdList.Add(row.id);
+                if (attributeIdList.Count >= attributeArray.Length)
+                    break;
+            }
         }
     }
 
-    public void PositionUpgradeImit(int index, UpgradeTarget target)
+    // 특성 정보 확인
+    private void GetAttributeInfo(string id)
     {
-        if (attributeFrameArray == null || index < 0 || index >= attributeFrameArray.Length)
+        if (attributeTableList == null)
             return;
 
-        var f = attributeFrameArray[index];
-        if (f == null)
-            return;
-
-        var frameRT = f.upgradeFrame; // 업그레이드 핸들(하이라이트) RectTransform
-        var plusRT = f.plusButton;
-        var minusRT = f.minusButton;
-
-        if (frameRT == null || plusRT == null || minusRT == null)
-            return;
-
-        Vector2 dest = (target == UpgradeTarget.Plus) ? plusRT.anchoredPosition : minusRT.anchoredPosition;
-        frameRT.anchoredPosition = dest;
-    }
-
-    public void PositionUpgradeTo(int index, UpgradeTarget target, float t = 0.1f)
-    {
-        if (attributeFrameArray == null || index < 0 || index >= attributeFrameArray.Length)
-            return;
-
-        var f = attributeFrameArray[index];
-        if (f == null)
-            return;
-
-        var frameRT = f.upgradeFrame; // 업그레이드 핸들(하이라이트) RectTransform
-        var plusRT = f.plusButton;
-        var minusRT = f.minusButton;
-
-        if (frameRT == null || plusRT == null || minusRT == null)
-            return;
-
-        Vector2 dest = (target == UpgradeTarget.Plus) ? plusRT.anchoredPosition : minusRT.anchoredPosition;
-
-        upgradeTween?.Kill();
-        upgradeTween = frameRT.DOAnchorPos(dest, t)
-            .SetEase(Ease.OutQuad)
-            .SetUpdate(true)
-            .SetLink(gameObject, LinkBehaviour.KillOnDestroy);
-        
-        if(t > 0)
-            SoundManager.Instance.PlaySoundNotCondition(ConstValues.NormalButton);
-    }
-
-    // 규칙 3: "기본은 plus, 단 attributeData[level]와 같은 레벨이면 minus"
-    public bool ShouldStartOnMinus(int index)
-    {
-        if (attributeFrameArray == null || index < 0 || index >= attributeFrameArray.Length) return false;
-        var f = attributeFrameArray[index];
-        if (f == null)
-            return false;
-
-        return f.ShouldStartOnMinus();
-    }
-
-    public void LevelUp(int index)
-    {
-        if (attributeFrameArray == null || index < 0 || index >= attributeFrameArray.Length)
-            return;
-
-        var f = attributeFrameArray[index];
-        if (f == null)
-            return;
-
-        f.AttributeLvUp();
-        leftPoint.text = skillCollection.berserkerSkillSetting.attributePoint.ToString();
-    }
-
-    public void LevelDown(int index)
-    {
-        if (attributeFrameArray == null || index < 0 || index >= attributeFrameArray.Length)
-            return;
-
-        var f = attributeFrameArray[index];
-        if (f == null)
-            return;
-
-        f.AttributeLvDown();
-        leftPoint.text = skillCollection.berserkerSkillSetting.attributePoint.ToString();
-    }
-
-    public void RefreshSkillInfo(int index)
-    {
-        if (attributeFrameArray == null || index < 0 || index >= attributeFrameArray.Length)
-            return;
-
-        var f = attributeFrameArray[index];
-        if (f == null)
-            return;
-
-        f.SetSkillInfo(attributeFrameArray[index].id); // AttributeFrame 내부의 기존 갱신 루틴 사용
-    }
-
-    // Reset 패널 On/Off
-    public void SetResetActive(bool active)
-    {
-        if (resetFrame != null)
-            resetFrame.SetActive(active);
-    }
-
-    // 전체 프레임 최신화
-    public void RefreshAllSkillInfo()
-    {
-        if (attributeFrameArray == null)
-            return;
-
-        for (int i = 0; i < attributeFrameArray.Length; i++)
+        // 이름/설명은 보통 레벨마다 동일하다고 가정하고, level==1 우선
+        SkillAttributeData baseRow = null;
+        for (int i = 0; i < attributeTableList.Count; i++)
         {
-            var f = attributeFrameArray[i];
-            if (f != null)
-                f.SetSkillInfo(f.id);
+            var row = attributeTableList[i];
+            if (row == null)
+                continue;
+            if (row.id != id)
+                continue;
+            
+            if (row.level == 1)
+            {
+                baseRow = row;
+                break;
+            }
+            if (baseRow == null)
+                baseRow = row;
         }
-        leftPoint.text = skillCollection.berserkerSkillSetting.attributePoint.ToString();
-    }
-    
-    public void SetSelectFrameActive(bool active)
-    {
-        if (selectFrame != null)
-            selectFrame.gameObject.SetActive(active);
-    }
 
-    // CloseAction/SetAction/SetModel 등 기존 메서드 유지
+        if (baseRow == null)
+            return;
+        
+        attributeNameText.text = baseRow.name;
+        attributeExplainText.text = baseRow.talk;
+        costText.text = $"비용: {baseRow.cost} 포인트";
+
+        explainObject.SetActive(true);
+        CheckAdjust();
+        plusButton.UnSelect();
+        minusButton.UnSelect();
+    }
+    #endregion
+
+    #region Close
+
     public void SetAction(Action action)
     {
-        closeAction = action;
-        closeButton.onClick.RemoveAllListeners();
-        closeButton.onClick.AddListener(() => { closeAction(); });
+        _closeAction = action;
     }
 
     public void CloseAction()
     {
-        Time.timeScale = 1.0f;
-        closeAction();
+        if (_closeAction != null)
+        {
+            _closeAction.Invoke();
+            return;
+        }
+
+        // 안전장치
+        gameObject.SetActive(false);
     }
+
+    #endregion
 }

@@ -251,7 +251,6 @@ public class RoomManager : Singleton<RoomManager>
             var attributeInterface = popupAttribute.AttributeView.ConvertTo<IPopupAttributeView>();
             var attributeModel = new PopupAttributeModel()
             {
-                playerSkill = GameManager.Instance.PlayerSkill,
                 closeAction = () =>
                 {
                     popupAttribute.ReductionClose(true);

@@ -202,9 +202,10 @@ public class SkillDataList
 public class SkillAttributeData
 {
     public string id;
+    public string skill;
     public int level;
     public int cost;
-    public string attribute;
+    public string name;
     public string talk;
 }
 [Serializable]

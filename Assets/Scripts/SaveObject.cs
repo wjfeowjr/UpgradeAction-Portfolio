@@ -11,8 +11,7 @@ public class SaveObject : MonoBehaviour
     [SerializeField] private Transform uiPos;
     
     private InteractionObject interactionObject;
-    private Action saveAction;
-    
+
     public InteractionObject InteractionObject => interactionObject;
     public Transform SavePointPos => savePointPos;
 

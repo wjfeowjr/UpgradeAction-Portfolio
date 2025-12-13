@@ -31,6 +31,7 @@ public class UIBase : MonoBehaviour
         var endVector = Vector3.one;
         var time = 0.2f;
         uiObject.transform.DOScale(endVector, time).SetUpdate(true);
+        GameManager.Instance.ControlStart = false;
     }
     public async void ReductionClose(bool timeReset)
     {
@@ -42,6 +43,7 @@ public class UIBase : MonoBehaviour
         if (timeReset)
             Time.timeScale = 1;
         gameObject.SetActive(false);
+        GameManager.Instance.ControlStart = true;
     }
 
     private void PlaySound(string soundId)
