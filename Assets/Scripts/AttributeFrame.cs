@@ -9,8 +9,6 @@ public class AttributeFrame : MonoBehaviour
     [SerializeField] protected Sprite[] frameSprite; // 프레임 스프라이트
     [SerializeField] protected GameObject selectObject;
 
-    protected Action selectAction;
-
     public void SelectObjectActive(bool active)
     {
         selectObject.SetActive(active);

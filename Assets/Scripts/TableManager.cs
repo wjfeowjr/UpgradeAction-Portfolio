@@ -13,6 +13,7 @@ public class SpawnedObjectData
     public bool yFlip;
     public bool zFlip;
     public bool tracePos;
+    public bool timeScale;
     public string basicAngle;
     public string flipAngle;
     public float objectTime;

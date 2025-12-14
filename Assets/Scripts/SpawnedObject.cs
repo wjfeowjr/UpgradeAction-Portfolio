@@ -11,6 +11,7 @@ public class SpawnObjectInfo
     public bool yFlip;
     public bool zFlip;
     public bool tracePos;
+    public bool timeScale;
     public Vector3 basicAngle;
     public Vector3 flipAngle;
     public float objectTime;
@@ -71,6 +72,7 @@ public class SpawnedObject : MonoBehaviour
         spawnObjectInfo.yFlip = objectData.yFlip;
         spawnObjectInfo.zFlip = objectData.zFlip;
         spawnObjectInfo.tracePos = objectData.tracePos;
+        spawnObjectInfo.timeScale = objectData.timeScale;
         
         var basicAngle = objectData.basicAngle.Split(',');
         spawnObjectInfo.basicAngle = new Vector3(float.Parse(basicAngle[0]), float.Parse(basicAngle[1]), float.Parse(basicAngle[2]));
@@ -93,7 +95,7 @@ public class SpawnedObject : MonoBehaviour
         dir = dirX;
     }
     
-    public void EnableSetting()
+    public void EnableSetting(bool ignoreSoundCondition = false)
     {
         leftObjectTime = 0;
         float xScale = defaultScale.x;
@@ -135,7 +137,7 @@ public class SpawnedObject : MonoBehaviour
         transform.eulerAngles = defaultAngle;
 
         foreach (var sound  in spawnObjectInfo.soundList)
-            SoundManager.Instance.PlaySound(sound, spawnObjectInfo.soundVolume);
+            SoundManager.Instance.PlaySound(sound, ignoreSoundCondition);
         
         if(spawnObjectInfo.cameraShake != Vector2.zero)
             GameManager.Instance.CameraShake(spawnObjectInfo.cameraShake.x, spawnObjectInfo.cameraShake.y, spawnObjectInfo.shakeTime);
@@ -152,7 +154,10 @@ public class SpawnedObject : MonoBehaviour
         if (spawnObjectInfo.objectTime == 0)
             return;
         
-        leftObjectTime += Time.deltaTime;
+        if(spawnObjectInfo.timeScale)
+            leftObjectTime += Time.deltaTime;
+        else
+            leftObjectTime += Time.unscaledDeltaTime;
 
         if (leftObjectTime >= spawnObjectInfo.objectTime)
             gameObject.SetActive(false);

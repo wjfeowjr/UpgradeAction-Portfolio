@@ -28,17 +28,20 @@ public class SoundManager : Singleton<SoundManager>
         }
     }
 
-    public void PlaySound(string uniqueId, float volumeScale = 0.8f)
+    public void PlaySound(string uniqueId, bool ignoreSoundCondition = false, float volumeScale = 0.8f)
     {
         if (!myAudioSource || uniqueId == ConstValues.None || !soundDic.ContainsKey(uniqueId))
             return;
         
         float now = Time.time;
-        
-        if (lastPlayTime.TryGetValue(uniqueId, out float t) && now - t < minInterval)
-            return;
-        
-        lastPlayTime[uniqueId] = now;
+
+        if (!ignoreSoundCondition)
+        {
+            if (lastPlayTime.TryGetValue(uniqueId, out float t) && now - t < minInterval)
+                return;
+            
+            lastPlayTime[uniqueId] = now;
+        }
         myAudioSource.PlayOneShot(soundDic[uniqueId], volumeScale);
     }
     

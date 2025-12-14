@@ -161,6 +161,8 @@ public class SkillCollection
                     newAttribute.level = 1;
                     berserkerSkill.attributeList.Add(newAttribute);
                     berserkerSkillSetting.attributePoint -= attributeData[0].cost;
+                    // 올리는 연출 넣기
+                    GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                 }
             }
             else
@@ -176,6 +178,7 @@ public class SkillCollection
                         string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
                         SkillBinding.SaveSkill(skillJson);
                         // 올리는 연출 넣기
+                        GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                     }
                     else
                     {
@@ -207,6 +210,8 @@ public class SkillCollection
                     newAttribute.level = 1;
                     gunnerSkill.attributeList.Add(newAttribute);
                     gunnerSkillSetting.attributePoint -= attributeData[0].cost;
+                    // 올리는 연출 넣기
+                    GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                 }
             }
             else
@@ -223,6 +228,7 @@ public class SkillCollection
                         string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
                         SkillBinding.SaveSkill(skillJson);
                         // 올리는 연출 넣기
+                        GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                     }
                     else
                     {
@@ -262,6 +268,7 @@ public class SkillCollection
                 string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
                 SkillBinding.SaveSkill(skillJson);
                 // 내리는 연출 넣기
+                GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
             }
         }
         
@@ -286,6 +293,7 @@ public class SkillCollection
                 string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
                 SkillBinding.SaveSkill(skillJson);
                 // 내리는 연출 넣기
+                GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
             }
         }
     }
@@ -1808,5 +1816,27 @@ public class GameManager : Singleton<GameManager>
             return 0.ToString();
         
         return $"{data:#,###}";
+    }
+
+    public void SpawnHighestObject(string id, Vector2 pos, int zAngle = 0)
+    {
+        var obj = SpawnToHighestPool(id, pos);
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+
+        var spawnedObject = obj.GetComponent<SpawnedObject>();
+        if (!spawnedObject)
+            spawnedObject = obj.AddComponent<SpawnedObject>();
+
+        spawnedObject.SetupData(objectData, transform.localScale.x);
+        spawnedObject.EnableSetting(true);
+        if (zAngle != 0)
+        {
+            var finalAngle = zAngle;
+            if (transform.localScale.x < 0)
+                finalAngle = -zAngle;
+
+            var objectAngle = spawnedObject.transform.eulerAngles;
+            spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+        }
     }
 }

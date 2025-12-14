@@ -7,6 +7,10 @@ using UnityEngine.Serialization;
 public class AttributeFrame_Attribute : AttributeFrame
 {
     private Tween selectTween;
+    private Vector2 effectPos;
+    public string attributeId;
+
+    public Vector2 EffectPos => effectPos;
     
     public void SetData(string id, bool isActive)
     {
@@ -15,6 +19,8 @@ public class AttributeFrame_Attribute : AttributeFrame
             frameImage.sprite = frameSprite[2];
         else
             frameImage.sprite = frameSprite[0];
+
+        attributeId = id;
     }
 
     public void Select()
@@ -22,6 +28,7 @@ public class AttributeFrame_Attribute : AttributeFrame
         SelectObjectActive(true);
         selectTween?.Kill(false);
         selectTween = transform.DOScale(1.1f, 0.2f).SetEase(Ease.OutQuad).SetUpdate(true);
+        effectPos = transform.position;
     }
 
     public void UnSelect()

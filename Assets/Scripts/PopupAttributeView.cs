@@ -211,6 +211,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
         // 스킬이 바뀌면 특성 리스트 갱신 + 선택 리셋
         BuildAttributeListForSkill(skillTableList[curSkillIndex].id, resetSelection: true);
+        SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
     }
 
     #endregion
@@ -257,6 +258,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         curStep = eStep.AttributeSelect;
         SetAttributeIndex(FindFirstSelectableAttributeIndex(), true);
         skillArray[curSkillIndex].SelectObjectActive(false);
+        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
     }
 
     private void BackToSkillSelect()
@@ -272,6 +274,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             attributeArray[i].UnSelect();
         }
         skillArray[curSkillIndex].SelectObjectActive(true);
+        SoundManager.Instance.PlaySound(ConstValues.NormalButton, true);
     }
 
     private void SetupAttributeNavigation()
@@ -361,6 +364,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             if (IsAttributeSelectable(idx))
             {
                 SetAttributeIndex(idx);
+                SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
                 return;
             }
         }
@@ -390,6 +394,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             if (IsAttributeSelectable(idx))
             {
                 SetAttributeIndex(idx);
+                SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
                 return;
             }
         }
@@ -410,6 +415,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         plusButton.Select();
         minusButton.Select();
         attributeArray[curAttributeIndex].SelectObjectActive(false);
+        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
     }
 
     private void BackToAttributeSelect()
@@ -418,6 +424,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         plusButton.UnSelect();
         minusButton.UnSelect();
         attributeArray[curAttributeIndex].SelectObjectActive(true);
+        SoundManager.Instance.PlaySound(ConstValues.NormalButton, true);
     }
 
     private void UpdatePointAdjust()
@@ -463,10 +470,19 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         if (skillInfo == null || skillSetting == null)
             return;
 
+        Vector2 effectVector = Vector2.zero;
+        foreach (var attribute in attributeArray)
+        {
+            if (attribute.attributeId == curAttributeId)
+            {
+                effectVector = attribute.EffectPos;
+                break;
+            }
+        }
         if (curAdjust == eAdjust.Plus)
-            skillInfo.AttributeLvUp(curSkillId, curAttributeId, Vector3.zero);
+            skillInfo.AttributeLvUp(curSkillId, curAttributeId, effectVector);
         else
-            skillInfo.AttributeLvDown(curSkillId, curAttributeId, Vector3.zero);
+            skillInfo.AttributeLvDown(curSkillId, curAttributeId, effectVector);
 
         // async void 내부에서 저장/경고가 발생할 수 있으니, 다음 프레임에 UI를 한 번 더 갱신
         RefreshAfterAdjust();

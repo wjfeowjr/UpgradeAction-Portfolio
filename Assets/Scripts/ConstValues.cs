@@ -72,6 +72,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string Effect = "Effect";
     public const string FadeBg = "FadeBg";
     public const string FadeUI = "FadeUI";
+    public const string AttributeUpEffect = "AttributeUpEffect";
+    public const string AttributeDownEffect = "AttributeDownEffect";
+    
     public const string Explosion = "Explosion";
     public const string DashEffectUI = "DashEffectUI";
     public const string DashFrameUI = "DashFrameUI";

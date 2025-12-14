@@ -1565,7 +1565,7 @@ public abstract class Character : MonoBehaviour
 
     protected void PlaySound(string soundId, float volumeScale = 0.8f)
     {
-        SoundManager.Instance.PlaySound(soundId, volumeScale);
+        SoundManager.Instance.PlaySound(soundId, false, volumeScale);
     }
 
     // 정지
@@ -1709,12 +1709,13 @@ public abstract class Character : MonoBehaviour
             }
                 
             // 에어본 처리
-            // if (normalState == ENormalState.Airborne)
-            // {
-            //     myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            //     myRigidbody.linearVelocity = Vector2.zero;
-            //     DownAndStand();
-            // }
+            if (normalState == ENormalState.Airborne)
+            {
+                myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+                myRigidbody.linearVelocity = Vector2.zero;
+                DownAndStand();
+            }
+            
             // 플랫폼 감지
             // if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
             //     isOnPlatform = true;

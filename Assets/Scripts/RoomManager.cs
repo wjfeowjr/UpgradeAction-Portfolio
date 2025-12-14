@@ -253,7 +253,7 @@ public class RoomManager : Singleton<RoomManager>
             {
                 closeAction = () =>
                 {
-                    popupAttribute.ReductionClose(true);
+                    popupAttribute.ReductionClose(true, true);
                 }
             };
             var attributePresenter = new PopupAttributePresenter(attributeInterface, attributeModel);
@@ -261,7 +261,7 @@ public class RoomManager : Singleton<RoomManager>
             popupAttribute.PopupAttributePresenter.SetAction(attributeModel.closeAction);
         }
         popupAttribute.PopupAttributePresenter.SetModel(GameManager.Instance.PlayerSkill);
-        popupAttribute.ExpansionOpen(true);
+        popupAttribute.ExpansionOpen(true, true);
     }
 
     private void MinimapCameraMove()
@@ -372,11 +372,11 @@ public class RoomManager : Singleton<RoomManager>
             var guideInterface = popupGuide.GuideView.ConvertTo<IPopupGuideView>();
             var guideModel = new PopupGuideModel()
             {
-                closeAction = () => { uiBase.ReductionClose(true); }
+                closeAction = () => { uiBase.ReductionClose(true, true); }
             };
             var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
             popupGuide.SetGuidePresenter(guidePresenter);
-            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true); });
+            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true, true); });
             guidePresenter.SetModel(model.guideMessage, model.imgName);
             guidePresenter.SetAction(guideModel.closeAction);
         }
