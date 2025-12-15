@@ -17,7 +17,7 @@ public class UIBase : MonoBehaviour
         uiType = type;
     }
 
-    public async void Close()
+    public void Close()
     {
         gameObject.SetActive(false);
     }

@@ -309,7 +309,7 @@ public class Missile : MonoBehaviour
     {
         foreach (var hitTag in missileInfo.hitTagList)
         {
-            if (!col.gameObject.CompareTag(hitTag))
+            if (string.IsNullOrEmpty(hitTag) || !col.gameObject.CompareTag(hitTag))
                 continue;
 
             // 캐릭터들이 무적상태라면 무시한다

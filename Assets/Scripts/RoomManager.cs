@@ -240,27 +240,39 @@ public class RoomManager : Singleton<RoomManager>
 
     private void SpawnAttribute()
     {
-        if (popupAttribute)
+        popupAttribute = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Attribute, Vector3.zero).GetComponent<Popup_Attribute>();
+            
+        // 바인딩
+        var attributeInterface = popupAttribute.AttributeView.ConvertTo<IPopupAttributeView>();
+        var attributeModel = new PopupAttributeModel()
         {
-            popupAttribute.gameObject.SetActive(true);
-        }
-        else
-        {
-            popupAttribute = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Attribute, Vector3.zero).GetComponent<Popup_Attribute>();
-            // 바인딩
-            var attributeInterface = popupAttribute.AttributeView.ConvertTo<IPopupAttributeView>();
-            var attributeModel = new PopupAttributeModel()
+            playerId = GameManager.Instance.CurPlayer.BasicStat.id,
+            berserkerSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Berserker && x.type != ConstValues.Dash),
+            gunnerSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Gunner && x.type != ConstValues.Dash),
+            attributeList = TableManager.Instance.skillAttributeTable.SkillAttribute,
+            playerSkill = GameManager.Instance.PlayerSkill,
+            playMoveSound = () =>
             {
-                closeAction = () =>
-                {
-                    popupAttribute.ReductionClose(true, true);
-                }
-            };
-            var attributePresenter = new PopupAttributePresenter(attributeInterface, attributeModel);
-            popupAttribute.SetAttributePresenter(attributePresenter);
-            popupAttribute.PopupAttributePresenter.SetAction(attributeModel.closeAction);
-        }
-        popupAttribute.PopupAttributePresenter.SetModel(GameManager.Instance.PlayerSkill);
+                SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
+            },
+            playSelectSound = () =>
+            {
+                SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
+            },
+            playCancelSound = () =>
+            {
+                SoundManager.Instance.PlaySound(ConstValues.NormalButton, true);
+            },
+            closeAction = () =>
+            {
+                popupAttribute.ReductionClose(true, true);
+            },
+            popupAction = GameManager.Instance.SpawnSelect
+        };
+        var attributePresenter = new PopupAttributePresenter(attributeInterface, attributeModel);
+        popupAttribute.SetAttributePresenter(attributePresenter);
+        popupAttribute.PopupAttributePresenter.SetAction();
+        popupAttribute.PopupAttributePresenter.SetModel();
         popupAttribute.ExpansionOpen(true, true);
     }
 
@@ -330,10 +342,10 @@ public class RoomManager : Singleton<RoomManager>
             };
             var gameOverPresenter = new PopupGameOverPresenter(gameOverInterface, gameOverModel);
             popupGameOver.SetGuidePresenter(gameOverPresenter);
-            gameOverPresenter.SetPopup();
+            gameOverPresenter.SetModel();
         }
     }
-    
+
     // 에피소드 소환
     public async UniTask ProductEpisode(string episodeName)
     {
@@ -372,12 +384,14 @@ public class RoomManager : Singleton<RoomManager>
             var guideInterface = popupGuide.GuideView.ConvertTo<IPopupGuideView>();
             var guideModel = new PopupGuideModel()
             {
+                guideMessage = model.guideMessage,
+                imgName = model.imgName,
                 closeAction = () => { uiBase.ReductionClose(true, true); }
             };
             var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
             popupGuide.SetGuidePresenter(guidePresenter);
             guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true, true); });
-            guidePresenter.SetModel(model.guideMessage, model.imgName);
+            guidePresenter.SetModel();
             guidePresenter.SetAction(guideModel.closeAction);
         }
     }

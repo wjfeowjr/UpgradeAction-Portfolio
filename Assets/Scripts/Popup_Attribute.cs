@@ -10,7 +10,7 @@ public class Popup_Attribute : UIBase
     private PopupAttributePresenter popupAttributePresenter;
     
     public PopupAttributePresenter PopupAttributePresenter => popupAttributePresenter;
-    
+
     public void SetAttributePresenter(PopupAttributePresenter presenter)
     {
         popupAttributePresenter = presenter;

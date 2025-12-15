@@ -7,13 +7,22 @@ using UnityEngine;
 
 public interface IPopupAttributeView
 {
-    void SetModel(SkillCollection playerSkill);
-    void SetAction(Action closeAction);
+    void SetModel(string playerId, List<SkillData> berserkerSkillList, List<SkillData> gunnerSkillList, List<SkillAttributeData> attributeList, SkillCollection playerSkill);
+    void SetAction(Action playMoveSound, Action playSelectSound, Action playCancelSound, Action closeAction, Action<string, Action, Action> popupAction);
 }
 
 public class PopupAttributeModel
 {
+    public string playerId;
+    public List<SkillData> berserkerSkillList = new List<SkillData>();
+    public List<SkillData> gunnerSkillList = new List<SkillData>();
+    public List<SkillAttributeData> attributeList = new List<SkillAttributeData>(); 
+    public SkillCollection playerSkill;
+    public Action playMoveSound;
+    public Action playSelectSound;
+    public Action playCancelSound;
     public Action closeAction;
+    public Action<string, Action, Action> popupAction;
 }
 
 public class PopupAttributePresenter
@@ -27,20 +36,14 @@ public class PopupAttributePresenter
         _model = model;
     }
 
-    public void Expansion(Action action)
+    public void SetModel()
     {
-        action?.Invoke();
+        _attributeView.SetModel(_model.playerId, _model.berserkerSkillList, _model.gunnerSkillList, _model.attributeList, _model.playerSkill);
     }
 
-    public void SetModel(SkillCollection playerSkill)
+    public void SetAction()
     {
-        _attributeView.SetModel(playerSkill);
-    }
-
-    public void SetAction(Action action)
-    {
-        _model.closeAction = action;
-        _attributeView.SetAction(_model.closeAction);
+        _attributeView.SetAction(_model.playMoveSound, _model.playSelectSound, _model.playCancelSound, _model.closeAction, _model.popupAction);
     }
 }
 
@@ -55,8 +58,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private enum eAdjust
     {
-        Plus = 0,
-        Minus = 1,
+        Buy = 0,
+        Sell = 1,
     }
 
     [Header("Texts")]
@@ -67,23 +70,33 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [SerializeField] private TMP_Text attributeNameText;        // 특성 이름
     [SerializeField] private TMP_Text attributeExplainText;     // 특성 설명
     [SerializeField] private TMP_Text costText;
-
+    [SerializeField] private TMP_Text activeText;
+    [SerializeField] private TMP_Text disActiveText;
+    
     [Header("Objects")]
     [SerializeField] private GameObject explainObject;
-
-    [Header("Buttons")]
-    [SerializeField] private AttributeButton plusButton;
-    [SerializeField] private AttributeButton minusButton;
-
+    [SerializeField] private GameObject activeObject;
+    [SerializeField] private GameObject disActiveObject;
+    [SerializeField] private TMP_Text sellText;
+    
+    [SerializeField] private GameObject berserkerObject;
+    [SerializeField] private GameObject gunnerObject;
+    
     [Header("Frames")]
     [SerializeField] private AttributeFrame_Skill[] skillArray;
     [SerializeField] private AttributeFrame_Attribute[] attributeArray;
 
-    private Action _closeAction;
+    private Action playMoveSound;
+    private Action playSelectSound;
+    private Action playCancelSound;
+    private Action closeAction;
+    private Action<string, Action, Action> popupAction;
 
     private SkillCollection skillInfo;
     private SkillSetting skillSetting;
     private readonly List<SkillData> skillTableList = new List<SkillData>();
+    
+    private List<SkillAttributeData> allAttributeList;
     private List<SkillAttributeData> attributeTableList;
 
     // 현재 스킬에서 사용 가능한 "특성 id"(중복 레벨 행 제거)
@@ -100,18 +113,12 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private int curAttributeIndex;
     private int attributeSlotCount;
+    private int curCost;
 
-    private eAdjust curAdjust = eAdjust.Plus;
+    private eAdjust curAdjust = eAdjust.Buy;
 
-    private const int AttributeCols = 3;
+    private const int AttributeCols = 4;
     private const int AttributeRows = 2;
-
-    private void OnDisable()
-    {
-        // 안전장치: 꺼질 때 버튼 선택 상태 초기화
-        plusButton.UnSelect();
-        minusButton.UnSelect();
-    }
 
     private void Update()
     {
@@ -122,9 +129,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                 break;
             case eStep.AttributeSelect:
                 UpdateAttributeSelect();
-                break;
-            case eStep.PointAdjust:
-                UpdatePointAdjust();
                 break;
         }
     }
@@ -204,14 +208,20 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         for (int i = 0; i < skillCount; i++)
         {
             if (i == curSkillIndex)
-                skillArray[i].Select();
+            {
+                skillArray[i].SelectObjectActive(true);
+                skillArray[i].Expansion(1.05f);
+            }
             else
-                skillArray[i].UnSelect();
+            {
+                skillArray[i].SelectObjectActive(false);
+                skillArray[i].Reduction();
+            }
         }
 
         // 스킬이 바뀌면 특성 리스트 갱신 + 선택 리셋
         BuildAttributeListForSkill(skillTableList[curSkillIndex].id, resetSelection: true);
-        SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
+        playMoveSound();
     }
 
     #endregion
@@ -257,8 +267,9 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
         curStep = eStep.AttributeSelect;
         SetAttributeIndex(FindFirstSelectableAttributeIndex(), true);
-        skillArray[curSkillIndex].SelectObjectActive(false);
-        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
+        //skillArray[curSkillIndex].SelectObjectActive(false);
+        skillArray[curSkillIndex].Reduction();
+        playSelectSound();
     }
 
     private void BackToSkillSelect()
@@ -271,10 +282,12 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             if (attributeArray[i] == null)
                 continue;
             
-            attributeArray[i].UnSelect();
+            attributeArray[i].SelectObjectActive(false);
+            attributeArray[i].Reduction();
         }
         skillArray[curSkillIndex].SelectObjectActive(true);
-        SoundManager.Instance.PlaySound(ConstValues.NormalButton, true);
+        skillArray[curSkillIndex].Expansion(1.05f);
+        playCancelSound();
     }
 
     private void SetupAttributeNavigation()
@@ -340,9 +353,15 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                 continue;
 
             if (i == curAttributeIndex && attributeArray[i].gameObject.activeSelf)
-                attributeArray[i].Select();
+            {
+                attributeArray[i].SelectObjectActive(true);
+                attributeArray[i].Expansion(1.1f);
+            }
             else
-                attributeArray[i].UnSelect();
+            {
+                attributeArray[i].SelectObjectActive(false);
+                attributeArray[i].Reduction();
+            }
         }
 
         curAttributeId = attributeIdList[curAttributeIndex];
@@ -364,7 +383,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             if (IsAttributeSelectable(idx))
             {
                 SetAttributeIndex(idx);
-                SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
+                playMoveSound();
                 return;
             }
         }
@@ -378,7 +397,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         int col = curAttributeIndex % AttributeCols;
 
         int targetRow = (row + dir) % AttributeRows;
-        if (targetRow < 0) targetRow += AttributeRows;
+        if (targetRow < 0)
+            targetRow += AttributeRows;
 
         int idx = targetRow * AttributeCols + col;
         if (IsAttributeSelectable(idx))
@@ -394,7 +414,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             if (IsAttributeSelectable(idx))
             {
                 SetAttributeIndex(idx);
-                SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
+                playMoveSound();
                 return;
             }
         }
@@ -412,56 +432,55 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             return;
 
         curStep = eStep.PointAdjust;
-        plusButton.Select();
-        minusButton.Select();
         attributeArray[curAttributeIndex].SelectObjectActive(false);
-        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
+        playSelectSound();
+
+        // 여기에 선택 팝업 띄우고 처리
+        string message = $"구매 하시겠습니까?\n비용: {curCost}포인트";
+        if(curAdjust == eAdjust.Sell)
+            message = $"판매 하시겠습니까?\n비용: {curCost}포인트";
+        
+        popupAction(message, YesAction, NoAction);
     }
 
-    private void BackToAttributeSelect()
+    private void YesAction()
     {
         curStep = eStep.AttributeSelect;
-        plusButton.UnSelect();
-        minusButton.UnSelect();
         attributeArray[curAttributeIndex].SelectObjectActive(true);
-        SoundManager.Instance.PlaySound(ConstValues.NormalButton, true);
+        ApplyPointAdjust();
     }
-
-    private void UpdatePointAdjust()
-    { 
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
-        {
-            ApplyPointAdjust();
-        }
-        else if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            BackToAttributeSelect();
-        }
+    
+    private void NoAction()
+    {
+        curStep = eStep.AttributeSelect;
+        attributeArray[curAttributeIndex].SelectObjectActive(true);
     }
-
+    
     private void CheckAdjust()
     {
         Skill skill = skillSetting.skillList.Find(x => x.skillId == curSkillId);
         bool isHaveAttribute = skill.attributeList.Find(x => x.attributeId == curAttributeId) != null;
         if(isHaveAttribute)
-            curAdjust = eAdjust.Minus;
+            curAdjust = eAdjust.Sell;
         else
-            curAdjust = eAdjust.Plus;
+            curAdjust = eAdjust.Buy;
         
         ButtonActive();
     }
 
     private void ButtonActive()
     {
-        if (curAdjust == eAdjust.Plus)
+        if (curAdjust == eAdjust.Buy)
         {
-            plusButton.gameObject.SetActive(true);
-            minusButton.gameObject.SetActive(false);
+            activeObject.SetActive(false);
+            disActiveObject.SetActive(true);
+            sellText.text = "구매";
         }
         else
         {
-            plusButton.gameObject.SetActive(false);
-            minusButton.gameObject.SetActive(true);
+            activeObject.SetActive(true);
+            disActiveObject.SetActive(false);
+            sellText.text = "판매";
         }
     }
 
@@ -479,7 +498,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                 break;
             }
         }
-        if (curAdjust == eAdjust.Plus)
+        if (curAdjust == eAdjust.Buy)
             skillInfo.AttributeLvUp(curSkillId, curAttributeId, effectVector);
         else
             skillInfo.AttributeLvDown(curSkillId, curAttributeId, effectVector);
@@ -495,34 +514,35 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         SetAttributeIndex(curAttributeIndex, true);
         
         CheckAdjust();
-        plusButton.Select();
-        minusButton.Select();
     }
 
     #endregion
 
     #region Data/Refresh
 
-    public void SetModel(SkillCollection playerSkill)
+    public void SetModel(string playerId, List<SkillData> berserkerSkillList, List<SkillData> gunnerSkillList, List<SkillAttributeData> attributeList, SkillCollection playerSkill)
     {
         skillInfo = playerSkill;
         skillTableList.Clear();
 
-        switch (GameManager.Instance.CurPlayer.BasicStat.id)
+        switch (playerId)
         {
             case ConstValues.Berserker:
                 skillSetting = skillInfo.berserkerSkillSetting;
-                skillTableList.AddRange(TableManager.Instance.skillTable.Skill.FindAll(
-                    x => x.caster == ConstValues.Berserker && x.type != ConstValues.Dash));
+                skillTableList.AddRange(berserkerSkillList);
+                berserkerObject.SetActive(true);
+                gunnerObject.SetActive(false);
                 break;
 
             case ConstValues.Gunner:
                 skillSetting = skillInfo.gunnerSkillSetting;
-                skillTableList.AddRange(TableManager.Instance.skillTable.Skill.FindAll(
-                    x => x.caster == ConstValues.Gunner && x.type != ConstValues.Dash));
+                skillTableList.AddRange(gunnerSkillList);
+                berserkerObject.SetActive(false);
+                gunnerObject.SetActive(true);
                 break;
         }
-
+        allAttributeList = attributeList;
+        
         SetSkillList();
         SetupSkillNavigation();
         RefreshLeftPoint();
@@ -531,12 +551,12 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         curStep = eStep.SkillSelect;
         SetSkillIndex(0, true);
         explainObject.SetActive(false);
-        plusButton.UnSelect();
-        minusButton.UnSelect();
 
-        skillText.text = "스킬";
-        attributeText.text = "특성";
+        skillText.text = "[ 스킬 ]";
+        attributeText.text = "스킬 특성 설정";
         leftPointText.text = "남은 포인트";
+        activeText.text = "활성화";
+        disActiveText.text = "비활성화";
     }
 
     private void RefreshLeftPoint()
@@ -561,7 +581,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                     continue;
                 
                 attributeArray[i].gameObject.SetActive(false);
-                attributeArray[i].UnSelect();
+                attributeArray[i].SelectObjectActive(false);
+                attributeArray[i].Reduction();
             }
 
             attributeTableList = null;
@@ -575,7 +596,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         }
 
         attributeText.gameObject.SetActive(true);
-        attributeTableList = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.skill == curSkillId);
+        attributeTableList = allAttributeList.FindAll(x => x.skill == curSkillId);
         BuildAttributeIdList();
 
         var skill = skillSetting.skillList.Find(x => x.skillId == curSkillId);
@@ -585,8 +606,9 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             if (attributeArray[i] == null)
                 continue;
             
-            attributeArray[i].UnSelect();
             attributeArray[i].gameObject.SetActive(false);
+            attributeArray[i].SelectObjectActive(false);
+            attributeArray[i].Reduction();
         }
 
         int showCount = Mathf.Min(attributeIdList.Count, attributeArray.Length);
@@ -668,25 +690,29 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         attributeExplainText.text = baseRow.talk;
         costText.text = $"비용: {baseRow.cost} 포인트";
 
+        curCost = baseRow.cost;
+
         explainObject.SetActive(true);
         CheckAdjust();
-        plusButton.UnSelect();
-        minusButton.UnSelect();
     }
     #endregion
 
     #region Close
 
-    public void SetAction(Action action)
+    public void SetAction(Action moveSound, Action selectSound, Action cancelSound, Action close, Action<string, Action, Action> popup)
     {
-        _closeAction = action;
+        playMoveSound = moveSound;
+        playSelectSound = selectSound;
+        playCancelSound = cancelSound;
+        closeAction = close;
+        popupAction = popup;
     }
 
     public void CloseAction()
     {
-        if (_closeAction != null)
+        if (closeAction != null)
         {
-            _closeAction.Invoke();
+            closeAction.Invoke();
             return;
         }
 

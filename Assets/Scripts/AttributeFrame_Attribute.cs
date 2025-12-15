@@ -6,7 +6,8 @@ using UnityEngine.Serialization;
 
 public class AttributeFrame_Attribute : AttributeFrame
 {
-    private Tween selectTween;
+    [SerializeField] private GameObject activeObject;
+    
     private Vector2 effectPos;
     public string attributeId;
 
@@ -16,31 +17,17 @@ public class AttributeFrame_Attribute : AttributeFrame
     {
         mainImage.sprite = GameManager.Instance.GetAtlasSprite(id);
         if (isActive)
-            frameImage.sprite = frameSprite[2];
+            frameImage.sprite = frameSprite[1];
         else
             frameImage.sprite = frameSprite[0];
 
         attributeId = id;
+        activeObject.SetActive(isActive);
     }
-
-    public void Select()
+    
+    public override void SelectObjectActive(bool active)
     {
-        SelectObjectActive(true);
-        selectTween?.Kill(false);
-        selectTween = transform.DOScale(1.1f, 0.2f).SetEase(Ease.OutQuad).SetUpdate(true);
+        base.SelectObjectActive(active);
         effectPos = transform.position;
-    }
-
-    public void UnSelect()
-    {
-        SelectObjectActive(false);
-        selectTween?.Kill(false);
-        selectTween = transform.DOScale(1.0f, 0.2f).SetEase(Ease.OutQuad).SetUpdate(true);
-    }
-
-    private void OnDisable()
-    {
-        selectTween?.Kill(false);
-        selectTween = null;
     }
 }

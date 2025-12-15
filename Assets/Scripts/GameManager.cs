@@ -161,6 +161,8 @@ public class SkillCollection
                     newAttribute.level = 1;
                     berserkerSkill.attributeList.Add(newAttribute);
                     berserkerSkillSetting.attributePoint -= attributeData[0].cost;
+                    string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
+                    SkillBinding.SaveSkill(skillJson);
                     // 올리는 연출 넣기
                     GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                 }
@@ -210,6 +212,8 @@ public class SkillCollection
                     newAttribute.level = 1;
                     gunnerSkill.attributeList.Add(newAttribute);
                     gunnerSkillSetting.attributePoint -= attributeData[0].cost;
+                    string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
+                    SkillBinding.SaveSkill(skillJson);
                     // 올리는 연출 넣기
                     GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                 }
@@ -652,6 +656,7 @@ public enum eUIType
     Popup_Minimap,
     Popup_Warning,
     Popup_Attribute,
+    Popup_Select,
 }
 
 public class GameManager : Singleton<GameManager>
@@ -1837,6 +1842,49 @@ public class GameManager : Singleton<GameManager>
 
             var objectAngle = spawnedObject.transform.eulerAngles;
             spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+        }
+    }
+
+    private void HideHighestObjects()
+    {
+        for (int i = 0; i < highestPool.childCount; i++)
+            highestPool.GetChild(i).gameObject.SetActive(false);
+    }
+
+    public void SpawnSelect(string message, Action yesAction, Action noAction)
+    {
+        var uiBase = SpawnToPopupPool(eUIType.Popup_Select, Vector3.zero).GetComponent<UIBase>();
+        
+        if (uiBase is Popup_Select popupSelect)
+        {
+            var selectInterface = popupSelect.SelectView.ConvertTo<IPopupSelectView>();
+            var selectModel = new PopupSelectModel()
+            {
+                message = message,
+                startAction = HideHighestObjects,
+                yesAction = () =>
+                {
+                    uiBase.Close();
+                    yesAction();
+                },
+                noAction = ()=>
+                {
+                    uiBase.Close();
+                    noAction();
+                },
+                moveSoundAction = () =>
+                {
+                    SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
+                }
+            };
+            var selectPresenter = new PopupSelectPresenter(selectInterface, selectModel);
+            popupSelect.SetSelectPresenter(selectPresenter);
+            selectPresenter.Expansion(() =>
+            {
+                uiBase.ExpansionOpen(false, false);
+            });
+            selectPresenter.SetModel();
+            selectPresenter.SetAction();
         }
     }
 }

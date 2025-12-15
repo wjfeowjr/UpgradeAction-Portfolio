@@ -6,7 +6,7 @@ using UnityEngine.UI;
 
 public interface IPopupGameOverView
 {
-    void SetMessage(string title, string message, Action confirmAction);
+    void SetModel(string title, string message, Action confirmAction);
 }
 
 public class PopupGameOverModel
@@ -27,9 +27,9 @@ public class PopupGameOverPresenter
         _model = model;
     }
 
-    public void SetPopup()
+    public void SetModel()
     {
-        _gameOverView.SetMessage(_model.title, _model.message, _model.replayAction);
+        _gameOverView.SetModel(_model.title, _model.message, _model.replayAction);
     }
     
     public void Restart()
@@ -46,7 +46,7 @@ public class PopupGameOverView : MonoBehaviour, IPopupGameOverView
     [SerializeField] private Button confirmButton;
     private Action action;
     
-    public void SetMessage(string title, string message, Action confirmAction)
+    public void SetModel(string title, string message, Action confirmAction)
     {
         titleText.text = title;
         messageText.text = message;

@@ -935,8 +935,7 @@ public class Stage1 : Stage
     {
         var guideModel = new PopupGuideModel()
         {
-            guideMessage =
-                "<color=#F36B6B>'Z'</color>키를 입력하여 회피 할 수 있습니다.\n회피 도중에는 <color=#F36B6B>'무적'</color>입니다.\n<color=#F36B6B>피격, 넘어짐 상태에서도 사용할 수 있습니다.</color>",
+            guideMessage = "<color=#F36B6B>'Z'</color>키를 입력하여 회피 할 수 있습니다.\n회피 도중에는 <color=#F36B6B>'무적'</color>입니다.\n<color=#F36B6B>피격, 넘어짐 상태에서도 사용할 수 있습니다.</color>",
             imgName = "Guide1",
         };
         SpawnGuide(guideModel);

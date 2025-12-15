@@ -32,10 +32,8 @@ public class PopupGuidePresenter
         action?.Invoke();
     }
 
-    public void SetModel(string guideMessage, string imgName)
+    public void SetModel()
     {
-        _model.guideMessage = guideMessage;
-        _model.imgName = imgName;
         _guideView.SetModel(_model.guideMessage, _model.imgName);
     }
     

@@ -275,12 +275,14 @@ public abstract class Stage : MonoBehaviour
             var guideInterface = guideView.GuideView.ConvertTo<IPopupGuideView>();
             var guideModel = new PopupGuideModel()
             {
-                closeAction = () => { uiBase.ReductionClose(true); }
+                guideMessage = model.guideMessage,
+                imgName = model.imgName,
+                closeAction = () => { uiBase.ReductionClose(true, true); }
             };
             var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
             guideView.SetGuidePresenter(guidePresenter);
-            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true); });
-            guidePresenter.SetModel(model.guideMessage, model.imgName);
+            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true, true); });
+            guidePresenter.SetModel();
             guidePresenter.SetAction(guideModel.closeAction);
         }
     }
