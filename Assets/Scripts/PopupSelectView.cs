@@ -7,13 +7,16 @@ using UnityEngine.UI;
 
 public interface IPopupSelectView
 {
-    void SetModel(string message);
+    void SetModel(string message, Sprite goods, int cost);
     void SetAction(Action start, Action yes, Action no, Action moveSoundAction);
 }
 
 public class PopupSelectModel
 {
     public string message;
+    public Sprite goods;
+    public int cost;
+    
     public Action startAction;
     public Action yesAction;
     public Action noAction;
@@ -38,7 +41,7 @@ public class PopupSelectPresenter
 
     public void SetModel()
     {
-        _selectView.SetModel(_model.message);
+        _selectView.SetModel(_model.message, _model.goods, _model.cost);
     }
     
     public void SetAction()
@@ -50,6 +53,11 @@ public class PopupSelectPresenter
 public class PopupSelectView : MonoBehaviour, IPopupSelectView
 {
     [SerializeField] private TMP_Text messageText;
+    [SerializeField] private TMP_Text costText;
+    
+    [SerializeField] private Image goodsIcon;
+    [SerializeField] private GameObject goodsObject;
+    
     [SerializeField] private Transform yesButton;
     [SerializeField] private GameObject yesSelectObject;
     
@@ -98,11 +106,25 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
             else
                 noAction();
         }
+        else if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            noAction();
+        }
     }
 
-    public void SetModel(string message)
+    public void SetModel(string message, Sprite goods, int cost)
     {
         messageText.text = message;
+        if (goods == null)
+        {
+            goodsObject.SetActive(false);
+        }
+        else
+        {
+            goodsObject.SetActive(true);
+            goodsIcon.sprite = goods;
+            costText.text = cost.ToString();
+        }
     }
     
     public void SetAction(Action start, Action yes, Action no, Action move)

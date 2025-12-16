@@ -8,7 +8,7 @@ using UnityEngine;
 public interface IPopupAttributeView
 {
     void SetModel(string playerId, List<SkillData> berserkerSkillList, List<SkillData> gunnerSkillList, List<SkillAttributeData> attributeList, SkillCollection playerSkill);
-    void SetAction(Action playMoveSound, Action playSelectSound, Action playCancelSound, Action closeAction, Action<string, Action, Action> popupAction);
+    void SetAction(Action playMoveSound, Action playSelectSound, Action playCancelSound, Action closeAction, Action<string, Sprite, int, Action, Action> popupAction);
 }
 
 public class PopupAttributeModel
@@ -22,7 +22,7 @@ public class PopupAttributeModel
     public Action playSelectSound;
     public Action playCancelSound;
     public Action closeAction;
-    public Action<string, Action, Action> popupAction;
+    public Action<string, Sprite, int, Action, Action> popupAction;
 }
 
 public class PopupAttributePresenter
@@ -65,7 +65,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [Header("Texts")]
     [SerializeField] private TMP_Text skillText;
     [SerializeField] private TMP_Text attributeText;
-    [SerializeField] private TMP_Text leftPointText;
     [SerializeField] private TMP_Text leftPoint;
     [SerializeField] private TMP_Text attributeNameText;        // 특성 이름
     [SerializeField] private TMP_Text attributeExplainText;     // 특성 설명
@@ -90,7 +89,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private Action playSelectSound;
     private Action playCancelSound;
     private Action closeAction;
-    private Action<string, Action, Action> popupAction;
+    private Action<string, Sprite, int, Action, Action> popupAction;
 
     private SkillCollection skillInfo;
     private SkillSetting skillSetting;
@@ -436,11 +435,13 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         playSelectSound();
 
         // 여기에 선택 팝업 띄우고 처리
-        string message = $"구매 하시겠습니까?\n비용: {curCost}포인트";
+        string message = $"구매 하시겠습니까?";
         if(curAdjust == eAdjust.Sell)
-            message = $"판매 하시겠습니까?\n비용: {curCost}포인트";
+            message = $"판매 하시겠습니까?";
+
+        Sprite goodsSprite = GameManager.Instance.GetAtlasSprite(ConstValues.IconAttributePoint);
         
-        popupAction(message, YesAction, NoAction);
+        popupAction(message, goodsSprite, curCost, YesAction, NoAction);
     }
 
     private void YesAction()
@@ -554,7 +555,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
         skillText.text = "[ 스킬 ]";
         attributeText.text = "스킬 특성 설정";
-        leftPointText.text = "남은 포인트";
         activeText.text = "활성화";
         disActiveText.text = "비활성화";
     }
@@ -688,7 +688,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         
         attributeNameText.text = baseRow.name;
         attributeExplainText.text = baseRow.talk;
-        costText.text = $"비용: {baseRow.cost} 포인트";
+        costText.text = baseRow.cost.ToString();
 
         curCost = baseRow.cost;
 
@@ -699,7 +699,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     #region Close
 
-    public void SetAction(Action moveSound, Action selectSound, Action cancelSound, Action close, Action<string, Action, Action> popup)
+    public void SetAction(Action moveSound, Action selectSound, Action cancelSound, Action close, Action<string, Sprite, int, Action, Action> popup)
     {
         playMoveSound = moveSound;
         playSelectSound = selectSound;

@@ -1851,7 +1851,7 @@ public class GameManager : Singleton<GameManager>
             highestPool.GetChild(i).gameObject.SetActive(false);
     }
 
-    public void SpawnSelect(string message, Action yesAction, Action noAction)
+    public void SpawnSelect(string message, Sprite goodsSprite, int cost, Action yesAction, Action noAction)
     {
         var uiBase = SpawnToPopupPool(eUIType.Popup_Select, Vector3.zero).GetComponent<UIBase>();
         
@@ -1861,6 +1861,8 @@ public class GameManager : Singleton<GameManager>
             var selectModel = new PopupSelectModel()
             {
                 message = message,
+                goods = goodsSprite,
+                cost = cost,
                 startAction = HideHighestObjects,
                 yesAction = () =>
                 {

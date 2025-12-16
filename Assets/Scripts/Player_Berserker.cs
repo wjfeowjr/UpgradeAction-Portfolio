@@ -124,10 +124,13 @@ public class Player_Berserker : Player
                 if (await AttackDelay(delay1).SuppressCancellationThrow())
                     return false;
 
-                SpawnAttack(ConstValues.BerserkerAttack1, attack1Pos);
+                GameObject obj = SpawnAttackObject(ConstValues.BerserkerAttack1, attack1Pos);
 
                 if (await BufferDelay(delay2, afterDelay).SuppressCancellationThrow())
+                {
+                    obj.SetActive(false);
                     return false;
+                }
                 break;
             
             case 2:
@@ -143,9 +146,12 @@ public class Player_Berserker : Player
                 if (await AttackDelay(delay3).SuppressCancellationThrow())
                     return false;
 
-                SpawnAttack(ConstValues.BerserkerAttack2, attack2Pos);
+                GameObject obj2 = SpawnAttackObject(ConstValues.BerserkerAttack2, attack2Pos);
                 if (await BufferDelay(delay4, afterDelay).SuppressCancellationThrow())
+                {
+                    obj2.SetActive(false);
                     return false;
+                }
                 break;
             
             case 3:
@@ -159,9 +165,12 @@ public class Player_Berserker : Player
                 if (await AttackDelay(delay5).SuppressCancellationThrow())
                     return false;
 
-                SpawnAttack(ConstValues.BerserkerAttack3, attack3Pos);
+                GameObject obj3 = SpawnAttackObject(ConstValues.BerserkerAttack3, attack3Pos);
                 if (await AttackDelay(delay6).SuppressCancellationThrow())
+                {
+                    obj3.SetActive(false);
                     return false;
+                }
                 
                 landingAttackCount = 0;
                 break;

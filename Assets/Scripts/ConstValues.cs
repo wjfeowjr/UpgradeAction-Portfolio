@@ -362,6 +362,9 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Episode1 = "Episode1";
     public const string Episode2 = "Episode2";
+    
+    // 아이콘
+    public const string IconAttributePoint = "Icon_AttributePoint";
 
     // BGM
     public const string BGMTitle = "BGM_Title";
