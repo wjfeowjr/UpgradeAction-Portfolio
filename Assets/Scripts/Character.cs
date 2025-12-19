@@ -149,6 +149,7 @@ public abstract class Character : MonoBehaviour
     protected int groundLayerMask;
     protected int groundAndPlatformLayerMask;
     protected int monsterWalkLayerMask;
+    protected int agroLayerMask;
 
     [SerializeField] protected bool immortal;
     [SerializeField] protected bool immuneStagger;
@@ -211,7 +212,8 @@ public abstract class Character : MonoBehaviour
         groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
         monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Trap));
-
+        agroLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
+        
         ScaleSetting();
         ColSizeSetting();
     }

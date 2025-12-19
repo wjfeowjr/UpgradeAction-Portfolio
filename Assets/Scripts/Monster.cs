@@ -213,11 +213,16 @@ public class Monster : Character
             return;
 
         base.FixedUpdate();
-        PlayerInAttackRangeCheck();
         PlayerInAgroRangeCheck();
-        PlayerInJumpRangeCheck();
-        PlayerInDropRangeCheck();
+
+        if (agroState == EAgroState.Agro)
+        {
+            PlayerInAttackRangeCheck();
+            PlayerInJumpRangeCheck();
+            PlayerInDropRangeCheck();
+        }
         // UpdateStandingCheck();
+        
         UpdateRoomLimit();
     }
 
@@ -881,6 +886,9 @@ public class Monster : Character
     {
         if (playerInAgroRange)
         {
+            if (!IsAgroRay(ConstValues.MagentaColor))
+                return;
+            
             if (agroState is EAgroState.Normal or EAgroState.Return)
             {
                 agroState = EAgroState.Agro;
@@ -1192,10 +1200,6 @@ public class Monster : Character
     // 플레이어가 공격범위 안에 들어왔는지 체크
     private void PlayerInAttackRangeCheck()
     {
-        // myBoxCollider.size.y * 0.5f
-        // GetRightPosX()
-        // GetLeftPosX()
-        // GetUpPosY()
         foreach (var pattern in patternInfo)
         {
             if (GameManager.Instance.CurPlayer.GetRightPosX() > transform.position.x - pattern.attackRange[0] &&
@@ -1216,26 +1220,36 @@ public class Monster : Character
 
     private void PlayerInAgroRangeCheck()
     {
-        if (GameManager.Instance.CurPlayer.GetRightPosX() > transform.position.x - myStat.agroRange.x &&
-            GameManager.Instance.CurPlayer.GetLeftPosX() < transform.position.x + myStat.agroRange.x &&
-            GameManager.Instance.CurPlayer.CenterPos.position.y >
-            transform.position.y - myStat.agroRange.y + CenterPos.localPosition.y &&
-            GameManager.Instance.CurPlayer.CenterPos.position.y <
-            transform.position.y + myStat.agroRange.y + CenterPos.localPosition.y)
-        {
+        float leftPlayerPos = GameManager.Instance.CurPlayer.GetLeftPosX();
+        float rightPlayerPos = GameManager.Instance.CurPlayer.GetRightPosX();
+        Vector2 centerPlayerPos = GameManager.Instance.CurPlayer.CenterPos.position;
+
+        Vector2 agroRange = myStat.agroRange;
+        Vector2 myPos = transform.position;
+        Vector2 myScale = transform.localScale;
+        float centerLocalPos = CenterPos.localPosition.y;
+        
+        float leftAgroRange = myPos.x - agroRange.x;
+        float rightAgroRange = myPos.x + agroRange.x;
+        float upAgroRange =  myPos.y - agroRange.y + centerLocalPos;
+        float downAgroRange = myPos.y + agroRange.y + centerLocalPos;
+
+        bool condition1 = rightPlayerPos > leftAgroRange;
+        bool condition2 = leftPlayerPos < rightAgroRange;
+        bool condition3 = centerPlayerPos.y > upAgroRange;
+        bool condition4 = centerPlayerPos.y < downAgroRange;
+        
+        // 추가된 방향 처리(몹이 플레이어를 바라보아야 함)
+        bool condition5 = (myPos.x >= centerPlayerPos.x && myScale.x < 0) || (myPos.x < centerPlayerPos.x && myScale.x > 0);
+        
+        if (condition1 && condition2 && condition3 && condition4 && condition5)
             playerInAgroRange = true;
-        }
         else
-        {
             playerInAgroRange = false;
-        }
     }
 
     private void PlayerInJumpRangeCheck()
     {
-        // GameManager.Instance.CurPlayer.GetUpPosY() > transform.position.y &&
-        //Debug.Log($"{GameManager.Instance.CurPlayer.GetDownPosY()}, {transform.position.y + myStat.jumpRange.y}");
-
         if (GameManager.Instance.CurPlayer.GetRightPosX() > transform.position.x - myStat.jumpRange.x &&
             GameManager.Instance.CurPlayer.GetLeftPosX() < transform.position.x + myStat.jumpRange.x &&
             GameManager.Instance.CurPlayer.GetDownPosY() < transform.position.y + myStat.jumpRange.y * 2)
@@ -1414,6 +1428,9 @@ public class Monster : Character
     {
         if (IsCanAttackAndJump() && patternInfo[idx].canPattern && patternInfo[idx].playerInAttackRange)
         {
+            if (!IsAgroRay(ConstValues.OrangeColor))
+                return;
+            
             // 특정 행동이 끝나는 즉시 행동하면 애니메이션 갭이 일어나서 1프레임 뒤에 실행
             if (stateCancellation == null)
                 stateCancellation = new CancellationTokenSource();
@@ -1895,6 +1912,19 @@ public class Monster : Character
 
         Stop();
         StopVelocity_X();
+    }
+
+    private bool IsAgroRay(Color rayColor)
+    {
+        Vector2 from = CenterPos.position;
+        Vector2 to   = GameManager.Instance.CurPlayer.CenterPos.position;
+        Vector2 dir  = (to - from).normalized;
+        float distance   = Vector2.Distance(from, to);
+            
+        var ray = Physics2D.Raycast(from, dir, distance, agroLayerMask);
+        Debug.DrawRay(from, dir * distance, rayColor, 0.02f);
+
+        return ray.collider != null && ray.collider.CompareTag(ConstValues.Player);
     }
 
     // protected async void OnCollisionEnter2D(Collision2D col)

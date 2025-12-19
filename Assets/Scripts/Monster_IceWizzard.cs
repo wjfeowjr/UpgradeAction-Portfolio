@@ -29,7 +29,7 @@ public class Monster_IceWizzard : Monster
             var playerPos = GameManager.Instance.CurPlayer.CenterPos.position;
             
             SpawnObject(ConstValues.MonsterMoonAttack3DelayObject, playerPos);
-            if(await AttackDelay(delay2).SuppressCancellationThrow())
+            if(await AttackDelay(delay2, true).SuppressCancellationThrow())
                 return;
             
             SpawnAttack(ConstValues.MonsterIceWizzardAttack, playerPos);

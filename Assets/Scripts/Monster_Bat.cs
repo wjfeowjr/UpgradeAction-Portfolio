@@ -19,20 +19,21 @@ public class Monster_Bat : Monster
     // 패턴1. 음파
     private async void SonicWave()
     {
-        float delay1 = 0.9f;
+        float delay1 = 0.7f;
         float delay2 = 0.6f;
 
         PlaySound($"{basicStat.id}_Voice1");
-        if(await AttackDelay(delay1, true).SuppressCancellationThrow())
-            return;
-
+        Vector2 targetPos = GameManager.Instance.CurPlayer.CenterPos.position;
         int missileDir = 1;
-        if (GameManager.Instance.CurPlayer.CenterPos.position.x < transform.position.x)
+        if (targetPos.x < transform.position.x)
             missileDir = -1;
         
-        SetTriggerAnimator(ConstValues.Pattern);
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        
         var attackObject = SpawnAttackObject($"{basicStat.id}_Attack", attackPos, 0, missileDir).GetComponent<Missile>();
-        attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
+        SetTriggerAnimator(ConstValues.Pattern);
+        attackObject.LookAtTarget(targetPos);
         
         if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
