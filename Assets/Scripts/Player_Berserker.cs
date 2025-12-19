@@ -365,6 +365,9 @@ public class Player_Berserker : Player
         var delay1 = 0.2f;
         var delay2 = 0.2f;
         
+        if(landingState == ELandingState.Ground)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 

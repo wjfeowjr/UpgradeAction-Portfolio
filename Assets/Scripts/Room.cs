@@ -248,6 +248,8 @@ public class Room : MonoBehaviour
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.transform.position = leftPlayerPos.position;
         SetCameraLimit();
+        RoomManager.Instance.SetCameraPos();
+        
         SetTrap();
         SetSavePoint();
         SetBossGate();
@@ -263,6 +265,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.transform.position = saveObject.SavePointPos.position;
         SetCameraLimit();
+        RoomManager.Instance.SetCameraPos();
         
         // 여기서 몹 소환
         SpawnMonster();

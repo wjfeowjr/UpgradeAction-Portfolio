@@ -163,6 +163,12 @@ public class RoomManager : Singleton<RoomManager>
         await fadeUI.Fade();
     }
 
+    public void SetCameraPos()
+    {
+        Vector2 playerPos = GameManager.Instance.CurPlayer.CenterPos.position;
+        mainCameraFollow.transform.position = new Vector3(playerPos.x, playerPos.y, mainCameraFollow.transform.position.z);
+    }
+
     // 페이드 루프
     public async UniTask EntranceFadeLoop()
     {
