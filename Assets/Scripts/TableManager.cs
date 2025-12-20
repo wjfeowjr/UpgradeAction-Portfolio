@@ -61,6 +61,8 @@ public class AttackData
     public string upperPower;
     public int customDir;
     public float colliderTime;
+    public string hitShake;
+    public float shakeTime;
     public string hitEffectId;
 }
 [Serializable]

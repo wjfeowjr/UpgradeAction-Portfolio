@@ -111,6 +111,9 @@ public class FollowCamera : MonoBehaviour
 
     public void Shake(float amountX, float amountY, float time)
     {
+        if (shakeTime > 0 && (shakeAmountX >= amountX || shakeAmountY >= amountY))
+            return;
+        
         shakeAmountX = amountX;
         shakeAmountY = amountY;
         shakeTime = time;

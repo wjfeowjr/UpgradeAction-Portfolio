@@ -35,6 +35,8 @@ public class AttackInfo
     public Vector2 upperPower;
     public int customDir;
     public float colliderTime;
+    public Vector2 hitShake;
+    public float shakeTime;
     public string hitEffectId;
 }
 public class Attack : MonoBehaviour
@@ -100,6 +102,18 @@ public class Attack : MonoBehaviour
 
         attackInfo.customDir = attackData.customDir;
         attackInfo.colliderTime = attackData.colliderTime;
+
+        if (string.IsNullOrEmpty(attackData.hitShake))
+        {
+            attackInfo.hitShake = Vector2.zero;
+        }
+        else
+        {
+            var hitShakeSplit = attackData.hitShake.Split(';');
+            attackInfo.hitShake = new Vector2(float.Parse(hitShakeSplit[0]), float.Parse(hitShakeSplit[1]));
+        }
+
+        attackInfo.shakeTime = attackData.shakeTime;
         attackInfo.hitEffectId = attackData.hitEffectId;
     }
 
@@ -241,6 +255,8 @@ public class Attack : MonoBehaviour
 
                 isTrapAttack = true;
             }
+            
+            GameManager.Instance.CameraShake(attackInfo.hitShake[0], attackInfo.hitShake[1], attackInfo.shakeTime);
 
             // 피격이팩트 생성
             if(attackInfo.hitEffectId != ConstValues.None)

@@ -80,7 +80,9 @@ public class Room : MonoBehaviour
     private HashSet<Vector3Int> allshortcutCells = new HashSet<Vector3Int>();
     private Dictionary<Vector3Int, TileBase> originalshortcutTiles = new Dictionary<Vector3Int, TileBase>();
     private HashSet<Vector3Int> visitedShortcutCells = new HashSet<Vector3Int>();
-    
+
+    private string saveSaveObject;
+
     [SerializeField] private bool isBossRoom;
     [SerializeField] private GameObject roomGameObject;
     
@@ -162,6 +164,7 @@ public class Room : MonoBehaviour
         gameCamera = RoomManager.Instance.MainCamera;
         saveMinimapName = $"{ConstValues.MiniMapVisitedCells}_{name}";
         saveShortcut = $"{ConstValues.MiniMapShortcutCells}_{name}";
+        saveSaveObject = $"{ConstValues.SaveObject}_{name}";
         
         // 1. 모든 그려진 타일 위치 저장 및 비활성화
         var frameBounds = minimapFrameTilemap.cellBounds;
@@ -1121,6 +1124,19 @@ public class Room : MonoBehaviour
                     shortcutFrameTileMap.SetTile(shortcutCell, inTile);
             }
         }
+        
+        // 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
+        if (!PlayerPrefs.HasKey(saveSaveObject))
+        {
+            if(saveObject)
+                saveObject.MinimapObject.SetActive(false);
+        }
+        // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화
+        else
+        {
+            if(saveObject)
+                saveObject.MinimapObject.SetActive(true);
+        }
     }
     // 3. 카메라 뷰 영역에 조금이라도 겹치면 활성화
     private void RevealCellsInView()
@@ -1159,6 +1175,25 @@ public class Room : MonoBehaviour
         }
         if (anyNew)
             SaveVisitedCells();
+        
+        // 이곳에 세이브 포인트 뭐시기
+        bool saveNew = false;
+        if (saveObject)
+        {
+            Vector2 savePos = saveObject.transform.position;
+            Vector2 saveSize = saveObject.ColSize;
+            
+            Vector2 min = new Vector2(savePos.x - saveSize.x, savePos.y - saveSize.y);
+            Vector2 max = new Vector2(savePos.x + saveSize.x, savePos.y + saveSize.y);
+            // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
+            if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
+                max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+            {
+                saveNew = true;
+            }
+        }
+        if (saveNew)
+            SaveSaveObject();
         
         bool shortcutNew = false;
         foreach (var shortcutCell in allshortcutCells)
@@ -1247,6 +1282,13 @@ public class Room : MonoBehaviour
                 visitedShortcutCells.Add(new Vector3Int(x, y, z));
             }
         }
+    }
+    
+    private void SaveSaveObject()
+    {
+        saveObject.MinimapObject.SetActive(true);
+        PlayerPrefs.SetInt(saveSaveObject, 1);
+        PlayerPrefs.Save();
     }
 
     /// <summary>
@@ -1509,8 +1551,7 @@ public class Room : MonoBehaviour
 
             GameManager.Instance.CurPlayer.ForceIdle();
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
-
-            PlaySound($"{ConstValues.Laugh}2");
+            
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[3]); 
             await NextDialog(speechFrame2[0]);
 
@@ -1532,7 +1573,6 @@ public class Room : MonoBehaviour
                 return;
 
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[6]);
-            PlaySound($"{ConstValues.Scream}10");
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.3f);
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.2f);
             bosses[0].DieShake();
@@ -1680,7 +1720,6 @@ public class Room : MonoBehaviour
         await NextDialog(speechFrame1[0]);
         
         PlaySound(ConstValues.RewardPage);
-        PlaySound($"{ConstValues.Laugh}2");
         npc[0].gameObject.SetActive(true);
         npc[0].transform.localScale = new Vector3(-1, 1, 1);
         var npcArrivePos = npc[0].transform.position;

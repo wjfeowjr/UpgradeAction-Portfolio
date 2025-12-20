@@ -9,12 +9,15 @@ public class SaveObject : MonoBehaviour
 {
     [SerializeField] private Transform savePointPos;
     [SerializeField] private Transform uiPos;
+    [SerializeField] private GameObject minimapObject;
     
     private InteractionObject interactionObject;
 
     public InteractionObject InteractionObject => interactionObject;
     public Transform SavePointPos => savePointPos;
-
+    public Vector2 ColSize => GetComponent<BoxCollider2D>().size;
+    public GameObject MinimapObject => minimapObject;
+    
     public void SpawnInteractionObject()
     {
         interactionObject.gameObject.SetActive(true);

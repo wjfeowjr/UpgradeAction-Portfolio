@@ -135,7 +135,6 @@ public class Monster_Sun : Monster
     // 등장
     public override async void Appear(Action<string> bossProduct)
     {
-        PlaySound($"{ConstValues.Laugh}2");
         faceSpin.enabled = true;
         faceSpin.StopAndReset();
         faceReduction.enabled = true;
@@ -178,7 +177,6 @@ public class Monster_Sun : Monster
 
     public async void SunDie()
     {
-        PlaySound($"{ConstValues.Scream}10");
         CancelMotion();
         var delay = 0.12f;
         dieCancellation = new CancellationTokenSource();

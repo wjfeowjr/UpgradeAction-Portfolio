@@ -445,6 +445,9 @@ public class Monster : Character
             myStat.dyingMiniEffect = targetStat.dyingMiniEffect;
             myStat.dyingEffect = targetStat.dyingEffect;
         }
+
+        foreach (var pattern in patternInfo)
+            pattern.playerInAttackRange = false;
     }
 
     private async void InitAdditionalStat()
