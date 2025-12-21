@@ -148,7 +148,7 @@ public abstract class Player : Character
     
     private float skillGlobalCoolTime;
     private float curSkillGlobalCoolTime;
-    
+
     // 프로퍼티
     public bool IsChanging => isChanging;
     
@@ -208,6 +208,15 @@ public abstract class Player : Character
     {
         base.FixedUpdate();
         UpdateCameraLimit();
+        
+        // 입력이 없어서 Move가 안 불릴 때도 플랫폼 속도는 유지
+        if (IsPlatformFollow() && currentPlatform != null)
+        {
+            var v = myRigidbody.linearVelocity;
+            v.x = currentPlatform.Velocity.x; // 기본은 플랫폼 속도
+            v.y = currentPlatform.Velocity.y;
+            myRigidbody.linearVelocity = v;
+        }
     }
 
     private void OnDisable()
@@ -618,9 +627,14 @@ public abstract class Player : Character
         if (!canMove)
             return;
 
-        float targetSpeedX = dir.x * basicStat.moveSpeed * (moveRatio * 0.01f);
+        float inputSpeedX = dir.x * basicStat.moveSpeed * (moveRatio * 0.01f);
+
+        float platformSpeedX = 0f;
+        if (landingState == ELandingState.Ground && currentPlatform != null)
+            platformSpeedX = currentPlatform.Velocity.x;
+
         float targetSpeedY = myRigidbody.linearVelocity.y;
-        myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
+        myRigidbody.linearVelocity = new Vector2(inputSpeedX + platformSpeedX, targetSpeedY);
     }
     
     // 플레이어 공격
@@ -1236,24 +1250,9 @@ public abstract class Player : Character
         }
     }
 
-    protected void OnTriggerExit2D(Collider2D col)
+    protected override void OnTriggerExit2D(Collider2D col)
     {
-        // 활강
-        // if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
-        // {
-        //     LandingStateSetting(ELandingState.Air);
-        //     if (normalState is ENormalState.Idle or ENormalState.Move)
-        //         StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-        //     
-        //     // 땅 떠나기
-        //     if (col.CompareTag(ConstValues.Ground) && isOnGround)
-        //         isOnGround = false;
-        //     
-        //     // 플랫폼 떠나기
-        //     if (col.CompareTag(ConstValues.Platform) && isOnPlatform)
-        //         isOnPlatform = false;
-        // }
-        
+        base.OnTriggerExit2D(col);
         if (col.gameObject.CompareTag(ConstValues.Ground))
         {
             if (!isOnPlatform)

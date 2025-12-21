@@ -328,6 +328,8 @@ public class Player_Berserker : Player
 
         var delay1 = 0.16f;
         var delay2 = 0.16f;
+        
+        myRigidbody.linearVelocity = Vector2.zero;
 
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;

@@ -111,7 +111,7 @@ public abstract class Character : MonoBehaviour
     protected CancellationTokenSource stateCancellation;
     protected CancellationTokenSource jumpCancellation;
     protected CancellationTokenSource anotherCancellation; // 우선 넉백에만사용되고 있음
-
+    
     [SerializeField] protected Collider2D footTrigger;
     [SerializeField] protected Collider2D ignorePlatformCollider;
 
@@ -133,6 +133,8 @@ public abstract class Character : MonoBehaviour
     [SerializeField] protected Vector2 downHitBoxSize;
     [SerializeField] protected Vector2 standOffset;
     [SerializeField] protected Vector2 downOffset;
+    
+    [SerializeField] protected MovingPlatform currentPlatform;
 
     protected Vector2 chargeVector;
     [SerializeField] protected int landingAttackCount;
@@ -195,7 +197,6 @@ public abstract class Character : MonoBehaviour
     {
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
-
         myBoxCollider = GetComponent<BoxCollider2D>();
         foreach (var component in GetComponentsInChildren<BoxCollider2D>())
         {
@@ -1104,8 +1105,13 @@ public abstract class Character : MonoBehaviour
     // 피해를 입고있는 모션인가?
     protected bool IsDamaged()
     {
-        return normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun
-            or ENormalState.Damaged;
+        return normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun or ENormalState.Damaged;
+    }
+
+    // 움직이는 플랫폼 위에서 따라가는 조건
+    protected bool IsPlatformFollow()
+    {
+        return moveState == EMoveState.Stopping && (normalState is ENormalState.Idle or ENormalState.Attack or ENormalState.JumpAttack || IsDamaged());
     }
 
     // 군중제어에 걸렸는가?
@@ -1666,6 +1672,10 @@ public abstract class Character : MonoBehaviour
             float disNormal = Mathf.Abs(footTrigger.Distance(col).normal.y);
             if (disNormal < 0.5f)
                 return;
+            
+            var movingPlatform = col.GetComponent<MovingPlatform>();
+            if (movingPlatform != null)
+                currentPlatform = movingPlatform;
 
             // 랜딩상태
             if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
@@ -1722,5 +1732,12 @@ public abstract class Character : MonoBehaviour
             // if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
             //     isOnPlatform = true;
         }
+    }
+
+    protected virtual void OnTriggerExit2D(Collider2D col)
+    {
+        var movingPlatform = col.GetComponent<MovingPlatform>();
+        if (movingPlatform != null && currentPlatform == movingPlatform)
+            currentPlatform = null;
     }
 }
