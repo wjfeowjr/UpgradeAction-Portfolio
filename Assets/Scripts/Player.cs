@@ -861,8 +861,8 @@ public abstract class Player : Character
             return;
         }
         
-        // 플랫폼 위에서만 작동함
-        if(downJumping || !isOnPlatform || IsDamaged() || normalState == ENormalState.JumpAttack)
+        // 플랫폼 위에서 '서있거나, 움직일때' 만 작동함
+        if((normalState != ENormalState.Idle && normalState != ENormalState.Move) || downJumping || !isOnPlatform || IsDamaged() || normalState == ENormalState.JumpAttack)
             return;
 
         PlaySound(ConstValues.Jump2, 2.0f);

@@ -76,6 +76,10 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [SerializeField] private GameObject explainObject;
     [SerializeField] private GameObject activeObject;
     [SerializeField] private GameObject disActiveObject;
+
+    [SerializeField] private GameObject buyButton;
+    [SerializeField] private GameObject sellButton;
+    [SerializeField] private TMP_Text buyText;
     [SerializeField] private TMP_Text sellText;
     
     [SerializeField] private GameObject berserkerObject;
@@ -432,16 +436,18 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
         curStep = eStep.PointAdjust;
         attributeArray[curAttributeIndex].SelectObjectActive(false);
-        playSelectSound();
 
-        // 여기에 선택 팝업 띄우고 처리
-        string message = $"구매 하시겠습니까?";
-        if(curAdjust == eAdjust.Sell)
-            message = $"판매 하시겠습니까?";
+        // 즉시 구매
+        GameManager.Instance.HideHighestObjects();
+        YesAction();
 
-        Sprite goodsSprite = GameManager.Instance.GetAtlasSprite(ConstValues.IconAttributePoint);
-        
-        popupAction(message, goodsSprite, curCost, YesAction, NoAction);
+        // 팝업으로 구매
+        // playSelectSound();
+        // string message = $"구매 하시겠습니까?";
+        // if(curAdjust == eAdjust.Sell)
+        //     message = $"판매 하시겠습니까?";
+        // Sprite goodsSprite = GameManager.Instance.GetAtlasSprite(ConstValues.IconAttributePoint);
+        // popupAction(message, goodsSprite, curCost, YesAction, NoAction);
     }
 
     private void YesAction()
@@ -475,13 +481,15 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         {
             activeObject.SetActive(false);
             disActiveObject.SetActive(true);
-            sellText.text = "구매";
+            buyButton.SetActive(true);
+            sellButton.SetActive(false);
         }
         else
         {
             activeObject.SetActive(true);
             disActiveObject.SetActive(false);
-            sellText.text = "판매";
+            buyButton.SetActive(false);
+            sellButton.SetActive(true);
         }
     }
 
@@ -557,6 +565,9 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         attributeText.text = "스킬 특성 설정";
         activeText.text = "활성화";
         disActiveText.text = "비활성화";
+        
+        buyText.text = "구매";
+        sellText.text = "판매";
     }
 
     private void RefreshLeftPoint()

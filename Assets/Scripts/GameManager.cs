@@ -1845,7 +1845,7 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-    private void HideHighestObjects()
+    public void HideHighestObjects()
     {
         for (int i = 0; i < highestPool.childCount; i++)
             highestPool.GetChild(i).gameObject.SetActive(false);

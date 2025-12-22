@@ -132,7 +132,7 @@ public class Controller : Singleton<Controller>
 
         if (Input.GetKey(GameManager.Instance.downKey))
         {
-            if (Input.GetKeyDown(GameManager.Instance.jumpKey) && GameManager.Instance.CurPlayer.MyRigidbody.linearVelocity.normalized.y == 0)
+            if (Input.GetKeyDown(GameManager.Instance.jumpKey))
                 GameManager.Instance.CurPlayer.DownJump();
         }
         else
