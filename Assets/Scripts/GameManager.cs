@@ -152,6 +152,7 @@ public class SkillCollection
             {
                 if (berserkerSkillSetting.attributePoint < attributeData[0].cost)
                 {
+                    SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
                     await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
                 }
                 else
@@ -184,6 +185,7 @@ public class SkillCollection
                     }
                     else
                     {
+                        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
                         await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
                     }
                 }
@@ -203,6 +205,7 @@ public class SkillCollection
             {
                 if (gunnerSkillSetting.attributePoint < attributeData[0].cost)
                 {
+                    SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
                     await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
                 }
                 else
@@ -236,6 +239,7 @@ public class SkillCollection
                     }
                     else
                     {
+                        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
                         await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
                     }
                 }
@@ -1520,7 +1524,7 @@ public class GameManager : Singleton<GameManager>
         uiInterface.SetBossHpPresenter(bossHpPresenter);
         bossHpPresenter.HideHp();
             
-        var changeInterface = uiInterface.SkillView.ConvertTo<IUISkillView>();
+        var changeInterface = uiInterface.ChangeSkillView.ConvertTo<IUISkillView>();
         var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
         var skillModel = new UISkillModel
         {
@@ -1530,6 +1534,8 @@ public class GameManager : Singleton<GameManager>
         var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
         uiInterface.SetSkillPresenter(skillPresenter);
         skillPresenter.SetSkillInfo();
+        
+        //ChangingFalse();
     }
 
     public async UniTask SpawnWarningPopup(string message)
@@ -1679,7 +1685,6 @@ public class GameManager : Singleton<GameManager>
     public void CharacterChange(bool changeAttack = true)
     {
         var pastPlayer = curPlayer;
-        var pastVelocity = pastPlayer.GetVelocity();
         var changePos = curPlayer.transform.position;
         var nextPlayerId = secondPlayer;
         if (curPlayer.BasicStat.id == secondPlayer)
@@ -1725,8 +1730,7 @@ public class GameManager : Singleton<GameManager>
         if (uiInterfaceObj == null)
             return;
         
-        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
-        var changeInterface = uiInterface.SkillView.ConvertTo<IUISkillView>();
+        var changeInterface = uiInterface.ChangeSkillView.ConvertTo<IUISkillView>();
         var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
         var skillModel = new UISkillModel
         {

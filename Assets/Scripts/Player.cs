@@ -136,6 +136,7 @@ public abstract class Player : Character
     [SerializeField] private float moveRatio;
     [SerializeField] private GameObject dashEffectUI;
     [SerializeField] private GameObject dashFrameUI;
+    [SerializeField] private GameObject waitCharacterUI;
     
     protected float globalCoolTime;
     protected float curGlobalCoolTime;
@@ -506,8 +507,11 @@ public abstract class Player : Character
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
         dashEffectUI = SpawnUI(ConstValues.DashEffectUI, uiInterface.GetDashSkillPos());
         dashFrameUI = SpawnUI(ConstValues.DashFrameUI, uiInterface.GetDashSkillPos());
+        waitCharacterUI = SpawnUI(ConstValues.WaitCharacterUI, uiInterface.GetWaitingCharacterPos());
+        
         dashEffectUI.SetActive(false);
         dashFrameUI.SetActive(false);
+        waitCharacterUI.SetActive(false);
     }
 
     // 대시UI이팩트 켜기
@@ -736,8 +740,18 @@ public abstract class Player : Character
 
         curChangeGlobalCoolTime = 0;
         isChanging = true;
+        
+        bool immediateChange = normalState is Idle or ENormalState.Move || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime);
+        if (!immediateChange)
+        {
+            waitCharacterUI.SetActive(true);
+            PlaySound(ConstValues.Upgrade);
+        }
+        
         // 점프 도중에만 글로벌 쿨타임을 준다
         await UniTask.WaitUntil(()=> normalState is Idle or ENormalState.Move || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime));
+        waitCharacterUI.SetActive(false);
+        
         isChanging = false;
         targetSkill.SetCoolTime();
         return true;
@@ -916,16 +930,6 @@ public abstract class Player : Character
                 return;
         }
         await NormalDelay(1.0f, jumpCancellation);
-    }
-    public async void JumpToChange()
-    {
-        jumpCancellation = new CancellationTokenSource();
-        while (transform.position.y < jumpLimitY)
-        {
-            if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
-                return;
-        }
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
     }
     public async UniTask EntranceJump()
     {

@@ -111,6 +111,7 @@ public class UISkillView : MonoBehaviour, IUISkillView
 {
     private string mySkillId;
     private KeyCode myKeyCode;
+    private bool isChanging;
     
     [SerializeField] private Image skillImage;
     [SerializeField] private TMP_Text skillKey;
@@ -185,6 +186,9 @@ public class UISkillView : MonoBehaviour, IUISkillView
 
     public void UpdateCoolTimeText(List<float> coolTime, List<float> maxCoolTime)
     {
+        if (isChanging)
+            return;
+        
         // 스택형 쿨타임 표시
         if (coolTime.Count > 1)
         {
@@ -225,7 +229,7 @@ public class UISkillView : MonoBehaviour, IUISkillView
             coolTimeImage.fillAmount = finalCoolTime / maxCoolTime[0];
         }
     }
-    
+
     public void ExecuteSkillAction(string skillId)
     {
         GameManager.Instance.SetSkillId(myKeyCode, skillId);

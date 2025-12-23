@@ -36,13 +36,15 @@ public class UI_Interface : UIBase
     public UIBossHpPresenter BossHpPresenter => uiBossHpPresenter;
     
     // 스킬
-    public UISkillView SkillView => skillView;
+    public UISkillView ChangeSkillView => changeSkillView;
     public List<UISkillView> SkillViews => skillViews;
     [SerializeField] private RectTransform skillLayout;
-    [SerializeField] private UISkillView skillView;
+    [SerializeField] private RectTransform waitingCharacterPos;
+    [SerializeField] private UISkillView changeSkillView;
     [SerializeField] private List<UISkillView> skillViews;
     private UISkillPresenter uiSkillPresenter;
-
+    public UISkillPresenter SkillPresenter => uiSkillPresenter;
+    
     public Vector3 GetTooltipPos()
     {
         return new Vector2(skillLayout.position.x + 1.9f, skillLayout.position.y + 0.8f);
@@ -51,6 +53,11 @@ public class UI_Interface : UIBase
     public Vector3 GetDashSkillPos()
     {
         return new Vector2(skillViews[0].transform.position.x, skillViews[0].transform.position.y - 0.06f);
+    }
+
+    public Vector3 GetWaitingCharacterPos()
+    {
+        return waitingCharacterPos.position;
     }
     
     public void SetComboPresenter(UIComboPresenter presenter)

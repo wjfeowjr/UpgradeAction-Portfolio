@@ -78,6 +78,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Explosion = "Explosion";
     public const string DashEffectUI = "DashEffectUI";
     public const string DashFrameUI = "DashFrameUI";
+    public const string WaitCharacterUI = "WaitCharacterUI";
     public const string Guide = "Guide";
 
     public const string Object = "Object";
