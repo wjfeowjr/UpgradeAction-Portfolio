@@ -1,6 +1,8 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Unity.VisualScripting;
@@ -13,6 +15,104 @@ using UnityEngine.SceneManagement;
 using UnityEngine.Serialization;
 using UnityEngine.U2D;
 using UnityEngine.UI;
+
+public static class SaveSystem
+{
+    // 원하는대로 폴더명 바꾸면 됨 (ex: "Save", "Saves", "Profile" 등)
+    private const string SaveFolderName = "Save";
+
+    /// <summary>
+    /// 예: Windows 기준
+    /// C:\Users\{User}\AppData\LocalLow\{CompanyName}\{ProductName}\Saves
+    /// </summary>
+    public static string SaveDirectory
+    {
+        get
+        {
+            // persistentDataPath = LocalLow\CompanyName\ProductName
+            return Path.Combine(Application.persistentDataPath, SaveFolderName);
+        }
+    }
+
+    /// <summary>
+    /// 파일명에 .json이 없으면 자동으로 붙임
+    /// </summary>
+    public static string GetSavePath(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            throw new ArgumentException("fileName is null/empty");
+
+        if (!fileName.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            fileName += ".json";
+
+        return Path.Combine(SaveDirectory, fileName);
+    }
+
+    public static void Save<T>(string fileName, T data)
+    {
+        try
+        {
+            Directory.CreateDirectory(SaveDirectory);
+
+            // JsonUtility는 클래스/구조체의 public 필드 또는 [SerializeField] 필드만 직렬화함
+            string json = JsonUtility.ToJson(data, prettyPrint: true);
+
+            string path = GetSavePath(fileName);
+
+            // 한글 등 깨짐 방지: UTF8
+            File.WriteAllText(path, json, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+#if UNITY_EDITOR
+            Debug.Log($"[SaveSystem] Saved");
+#endif
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SaveSystem] Save failed ({fileName}): {e}");
+        }
+    }
+
+    public static bool TryLoad<T>(string fileName, out T data)
+    {
+        data = default;
+
+        try
+        {
+            string path = GetSavePath(fileName);
+            if (!File.Exists(path))
+                return false;
+
+            string json = File.ReadAllText(path, Encoding.UTF8);
+            data = JsonUtility.FromJson<T>(json);
+            return true;
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SaveSystem] Load failed ({fileName}): {e}");
+            return false;
+        }
+    }
+
+    public static bool Exists(string fileName)
+    {
+        string path = GetSavePath(fileName);
+        return File.Exists(path);
+    }
+
+    public static void Delete(string fileName)
+    {
+        try
+        {
+            string path = GetSavePath(fileName);
+            if (File.Exists(path))
+                File.Delete(path);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SaveSystem] Delete failed ({fileName}): {e}");
+        }
+    }
+}
 
 public static class KeyBinding
 {
@@ -162,8 +262,7 @@ public class SkillCollection
                     newAttribute.level = 1;
                     berserkerSkill.attributeList.Add(newAttribute);
                     berserkerSkillSetting.attributePoint -= attributeData[0].cost;
-                    string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-                    SkillBinding.SaveSkill(skillJson);
+                    //GameManager.Instance.SaveGame();
                     // 올리는 연출 넣기
                     GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                 }
@@ -178,8 +277,7 @@ public class SkillCollection
                     {
                         berserkerSkillSetting.attributePoint -= attribute.cost;
                         targetAttribute.level += 1;
-                        string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-                        SkillBinding.SaveSkill(skillJson);
+                        //GameManager.Instance.SaveGame();
                         // 올리는 연출 넣기
                         GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                     }
@@ -215,8 +313,8 @@ public class SkillCollection
                     newAttribute.level = 1;
                     gunnerSkill.attributeList.Add(newAttribute);
                     gunnerSkillSetting.attributePoint -= attributeData[0].cost;
-                    string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-                    SkillBinding.SaveSkill(skillJson);
+                    //GameManager.Instance.SaveGame();
+                    
                     // 올리는 연출 넣기
                     GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                 }
@@ -231,9 +329,8 @@ public class SkillCollection
                     {
                         gunnerSkillSetting.attributePoint -= attribute.cost;
                         targetAttribute.level += 1;
-
-                        string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-                        SkillBinding.SaveSkill(skillJson);
+                        //GameManager.Instance.SaveGame();
+                        
                         // 올리는 연출 넣기
                         GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
                     }
@@ -273,8 +370,7 @@ public class SkillCollection
                 if(targetAttribute.level == 0)
                     berserkerSkill.attributeList.Remove(targetAttribute);
                 
-                string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-                SkillBinding.SaveSkill(skillJson);
+                //GameManager.Instance.SaveGame();
                 // 내리는 연출 넣기
                 GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
             }
@@ -298,8 +394,7 @@ public class SkillCollection
                 if(targetAttribute.level == 0)
                     gunnerSkill.attributeList.Remove(targetAttribute);
                 
-                string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-                SkillBinding.SaveSkill(skillJson);
+                //GameManager.Instance.SaveGame();
                 // 내리는 연출 넣기
                 GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
             }
@@ -328,33 +423,6 @@ public class SkillCollection
     }
 }
 
-public static class SkillBinding
-{
-    // 저장할 때
-    public static void SaveSkill(string skill)
-    {
-        PlayerPrefs.SetString(ConstValues.PlayerSkill, skill);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static string LoadSkill(string defaultSkill)
-    {
-        if (PlayerPrefs.HasKey(ConstValues.PlayerSkill))
-        {
-            Debug.Log($"저장된 스킬 존재");
-            return PlayerPrefs.GetString(ConstValues.PlayerSkill);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"스킬 최초 생성");
-            SaveSkill(defaultSkill);
-            return defaultSkill;
-        }
-    }
-}
-
 [Serializable]
 public class SkillKey
 {
@@ -375,273 +443,34 @@ public class SettingSkill
     public PlayerSkill playerSkill;
 }
 
-public static class SkillKeyBinding
+[Serializable]
+public class RoomInfo
 {
-    // 저장할 때
-    public static void SaveKey(string skillKey)
-    {
-        PlayerPrefs.SetString(ConstValues.PlayerSkillKey, skillKey);
-        PlayerPrefs.Save();
-    }
+    public string roomId;
+    public int productCount;
+    public bool bossClear;
 
-    // 불러올 때
-    public static string LoadSkillKey(string defaultSkillKey)
-    {
-        if (PlayerPrefs.HasKey(ConstValues.PlayerSkillKey))
-        {
-            Debug.Log($"저장된 스킬 키 세팅 존재");
-            return PlayerPrefs.GetString(ConstValues.PlayerSkillKey);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"스킬 키 세팅 최초 생성");
-            SaveKey(defaultSkillKey);
-            return defaultSkillKey;
-        }
-    }
-}
-
-public static class StageBinding
-{
-    // 저장할 때
-    public static void SaveStage(int num)
-    {
-        PlayerPrefs.SetInt(ConstValues.Stage, num);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static int LoadStage()
-    {
-        if (PlayerPrefs.HasKey(ConstValues.Stage))
-        {
-            Debug.Log($"저장된 스테이지가 존재{PlayerPrefs.GetInt(ConstValues.Stage)}");
-            return PlayerPrefs.GetInt(ConstValues.Stage);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"스테이지 최초 저장");
-            SaveStage(0);
-            return 0;
-        }
-    }
-}
-
-public static class GoldBinding
-{
-    // 저장할 때
-    public static void SaveGold(int count)
-    {
-        PlayerPrefs.SetInt(ConstValues.Gold, count);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static void LoadGold()
-    {
-        if (PlayerPrefs.HasKey(ConstValues.Gold))
-        {
-            Debug.Log($"저장된 골드가 존재{PlayerPrefs.GetInt(ConstValues.Gold)}");
-            
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"골드 최초 저장");
-            SaveGold(0);
-        }
-    }
-}
-
-public static class SavePointBinding
-{
-    // 저장할 때
-    public static void SaveSavePoint(string savePointName)
-    {
-        PlayerPrefs.SetString(ConstValues.SavePoint, savePointName);
-        PlayerPrefs.Save();
-    }
-  
-    // 불러올 때
-    public static string LoadSavePoint()
-    {
-        if (PlayerPrefs.HasKey(ConstValues.SavePoint))
-        {
-            Debug.Log($"저장된 세이브 포인트가 존재{PlayerPrefs.GetString(ConstValues.SavePoint)}");
-            return PlayerPrefs.GetString(ConstValues.SavePoint);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"세이브 포인트 없음, 1번 맵으로 생성");
-            return default;
-        }
-    }
-}
-
-public static class EpisodeBinding
-{
-    // 저장할 때
-    public static void SaveEpisode(string episodeName, string episodeClass)
-    {
-        PlayerPrefs.SetString(episodeName, episodeClass);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static string LoadEpisode(string episodeName, string episodeClass)
-    {
-        if (PlayerPrefs.HasKey(episodeName))
-        {
-            Debug.Log($"저장된 에피소드 존재");
-            return PlayerPrefs.GetString(episodeName);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"{episodeName}에피소드 최초 생성");
-            SaveEpisode(episodeName, episodeClass);
-            return episodeClass;
-        }
-    }
-}
-
-public static class RoomBinding
-{
-    // 저장할 때
-    public static void SaveRoom(string roomName, string roomClass)
-    {
-        PlayerPrefs.SetString(roomName, roomClass);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static string LoadRoom(string roomName, string roomClass)
-    {
-        if (PlayerPrefs.HasKey(roomName))
-        {
-            Debug.Log($"저장된 룸 정보 존재");
-            return PlayerPrefs.GetString(roomName);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"{roomName}룸 최초 생성");
-            SaveRoom(roomName, roomClass);
-            return roomClass;
-        }
-    }
-}
-
-public static class FirstGetSkillBinding
-{
-    // 저장할 때
-    public static void SaveFirstGetSkill(int alreadyGet)
-    {
-        PlayerPrefs.SetInt(ConstValues.FirstGetSkill, alreadyGet);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static int LoadFirstGetSkill()
-    {
-        if (PlayerPrefs.HasKey(ConstValues.FirstGetSkill))
-        {
-            Debug.Log($"최초로 스킬을 획득한적이 있음");
-            return PlayerPrefs.GetInt(ConstValues.FirstGetSkill);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"아무 스킬도 획득한 적이 없음");
-            SaveFirstGetSkill(0);
-            return 0;
-        }
-    }
-}
-
-public static class FirstGetAttributeBinding
-{
-    // 저장할 때
-    public static void SaveFirstGetAttribute(int alreadyGet)
-    {
-        PlayerPrefs.SetInt(ConstValues.FirstGetAttribute, alreadyGet);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static int LoadFirstGetAttribute()
-    {
-        if (PlayerPrefs.HasKey(ConstValues.FirstGetAttribute))
-        {
-            Debug.Log($"최초로 특성을 획득한적이 있음");
-            return PlayerPrefs.GetInt(ConstValues.FirstGetAttribute);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"아무 특성도 획득한 적이 없음");
-            SaveFirstGetAttribute(0);
-            return 0;
-        }
-    }
-}
-
-public static class CharacterOrderBinding
-{
-    // 저장할 때
-    public static void SaveFirstCharacter(string first)
-    {
-        PlayerPrefs.SetString(ConstValues.FirstCharacter, first);
-        PlayerPrefs.Save();
-    }
-    public static void SaveSecondCharacter(string second)
-    {
-        PlayerPrefs.SetString(ConstValues.SecondCharacter, second);
-        PlayerPrefs.Save();
-    }
-
-    // 불러올 때
-    public static string LoadFirstCharacter()
-    {
-        if (PlayerPrefs.HasKey(ConstValues.FirstCharacter))
-        {
-            Debug.Log($"첫 번째 캐릭터: {PlayerPrefs.GetString(ConstValues.FirstCharacter)}");
-            return PlayerPrefs.GetString(ConstValues.FirstCharacter);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"최초 첫 캐릭터");
-            SaveFirstCharacter(ConstValues.Berserker);
-            return ConstValues.Berserker;
-        }
-    }
+    public string visitedCells;         // 방문한 구역
+    public string visitedShortcutCells; // 방문한 숏컷
+    public bool savePointCheck;         // 세이브 포인트
     
-    public static string LoadSecondCharacter()
-    {
-        if (PlayerPrefs.HasKey(ConstValues.SecondCharacter))
-        {
-            Debug.Log($"두 번째 캐릭터: {PlayerPrefs.GetString(ConstValues.SecondCharacter)}");
-            return PlayerPrefs.GetString(ConstValues.SecondCharacter);
-        }
-        else
-        {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"아직 두 번째 캐릭터 존재 안함");
-            SaveSecondCharacter(default);
-            return default;
-        }
-    }
+    public List<ShortCut> shortCut = new List<ShortCut>();
+    public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
+    public List<TreasureBox> treasureBox = new List<TreasureBox>();
 }
 
-public enum ePoolType
+[Serializable]
+public class NpcInfo
 {
-    None,
-    UI,
-    Popup,
+    public string id;
+    public DialogKey dialogKey = new DialogKey();
+}
+
+[Serializable]
+public class DialogKey
+{
+    public string id;
+    public bool isUse;
 }
 
 public enum eUIType
@@ -661,6 +490,30 @@ public enum eUIType
     Popup_Warning,
     Popup_Attribute,
     Popup_Select,
+}
+
+[Serializable]
+public class SaveData
+{
+    // 재화
+    public int gold;
+    
+    // 세이브 포인트
+    public string savePoint;
+
+    public bool firstGetSkill;
+    public bool firstGetAttribute;
+    
+    public string firstPlayer;
+    public string secondPlayer;
+
+    public int npcSunGetSkill;
+    
+    public SkillCollection playerSkill;
+    public SkillKeyCollection playerSkillKey;
+    public List<Vector2> miniMapCheckers = new List<Vector2>();
+    public List<NpcInfo> npcInfoList = new List<NpcInfo>();
+    public List<RoomInfo> roomInfoList = new List<RoomInfo>();
 }
 
 public class GameManager : Singleton<GameManager>
@@ -712,31 +565,23 @@ public class GameManager : Singleton<GameManager>
 
     private UI_Interface uiInterface;
     private Popup_Warning popupWarning;
-
-    // 재화
-    private int gold;
-
-    // 최초획득
-    private int alreadySkill;
-    private int alreadyAttribute;
     
-    private string episodeName;
-    private string firstPlayer;
-    private string secondPlayer;
-    private bool controlStart;
+    // 세이브 넘버
+    private string saveFileName;
+    private int saveIdx;
+    
+    [SerializeField] private bool controlStart;
     private bool bossProduct;
     private int comboCount;
 
+    [SerializeField] private SaveData saveData;
+    
     // 등록된 스킬 및 키 세팅 목록
     private SettingSkill changeSkill;
-    [SerializeField] private SkillCollection playerSkill;
-    [SerializeField] private SkillKeyCollection playerSkillKey;
 
     // 매니저들
     public TableManager tableManager;
-    //public UIManager uiManager;
-    //public ResourceManager resourceManager;
-    
+
     // 카메라
     private FollowCamera mainCamera;
     [SerializeField] private Transform miniMapCamera;
@@ -751,41 +596,6 @@ public class GameManager : Singleton<GameManager>
     {
         get => curPlayer;
         set => curPlayer = value;
-    }
-
-    public int AlreadySkill
-    {
-        get => alreadySkill;
-        set => alreadySkill = value;
-    }
-    
-    public int AlreadyAttribute
-    {
-        get => alreadyAttribute;
-        set => alreadyAttribute = value;
-    }
-    
-    public int Gold
-    {
-        get => gold;
-        set => gold = value;
-    }
-
-    public string EpisodeName
-    {
-        get => episodeName;
-        set => episodeName = value;
-    }
-
-    public string FirstPlayer
-    {
-        get => firstPlayer;
-        set => firstPlayer = value;
-    }
-    
-    public string SecondPlayer
-    {
-        get => secondPlayer;
     }
 
     public bool ControlStart 
@@ -806,8 +616,60 @@ public class GameManager : Singleton<GameManager>
         set => comboCount = value;
     }
 
-    public SkillCollection PlayerSkill => playerSkill;
-    public SkillKeyCollection PlayerSkillKey => playerSkillKey;
+    public int Gold
+    {
+        get => saveData.gold;
+        set => saveData.gold = value;
+    }
+
+    public string SavePoint
+    {
+        get => saveData.savePoint;
+        set => saveData.savePoint = value;
+    }
+
+    public bool FirstGetSkill
+    {
+        get => saveData.firstGetSkill;
+        set => saveData.firstGetSkill = value;
+    }
+
+    public bool FirstGetAttribute
+    {
+        get => saveData.firstGetAttribute;
+        set => saveData.firstGetAttribute = value;
+    }
+    
+    public string FirstPlayer
+    {
+        get => saveData.firstPlayer;
+        set => saveData.firstPlayer = value;
+    }
+    
+    public string SecondPlayer
+    {
+        get => saveData.secondPlayer;
+        set => saveData.secondPlayer = value;
+    }
+    
+    public int NpcSunGetSkill
+    {
+        get => saveData.npcSunGetSkill;
+        set => saveData.npcSunGetSkill = value;
+    }
+
+    public List<Vector2> MiniMapCheckers
+    {
+        get => saveData.miniMapCheckers;
+        set => saveData.miniMapCheckers = value;
+    }
+
+    public SkillCollection PlayerSkill => saveData.playerSkill;
+
+    public SkillKeyCollection PlayerSkillKey => saveData.playerSkillKey;
+
+    public List<RoomInfo> RoomInfoList => saveData.roomInfoList;
+    public List<NpcInfo> NpcInfoInfoList => saveData.npcInfoList;
 
     public SettingSkill ChangeSkill => changeSkill;
     
@@ -839,13 +701,11 @@ public class GameManager : Singleton<GameManager>
     {
         base.Awake();
         //QualitySettings.vSyncCount = 0;
+        saveFileName = $"{ConstValues.User}_{saveIdx}";
         Application.targetFrameRate = 60;
         InitManager();
         
-        DefaultSkillSetting();
-        DefaultSkillKeySetting();
-        DefaultGoodsSetting();
-        LoadPlayerPrefs();
+        GameStart();
 
         InitAtlas(uiAtlas);
         InitAtlas(bgAtlas);
@@ -858,6 +718,49 @@ public class GameManager : Singleton<GameManager>
     private void OnDestroy()
     {
         SetPrefabActive(true);
+    }
+    
+    public void SaveGame()
+    {
+        // json화
+        SaveSystem.Save(saveFileName, saveData);
+    }
+
+    public void LoadGame()
+    {
+        // json화
+        if(SaveSystem.TryLoad(saveFileName, out SaveData loadData))
+            saveData = loadData;
+    }
+    
+    public void DeleteData()
+    {
+        // json화
+        SaveSystem.Delete(saveFileName);
+    }
+
+    public void FirstStart()
+    {
+        DeleteData();
+        DefaultSkillSetting();
+        DefaultMapSetting();
+        DefaultNpcSetting();
+        SetPlayerOrder(ConstValues.Berserker, default);
+        SaveGame();
+    }
+
+    private void GameStart()
+    {
+        DefaultSkillKeySetting();
+        
+        if (SaveSystem.Exists(saveFileName))
+        {
+            LoadGame();
+        }
+        else
+        {
+            FirstStart();
+        }
     }
 
     private void SetPrefabActive(bool active)
@@ -879,14 +782,12 @@ public class GameManager : Singleton<GameManager>
         SceneManager.LoadScene(sceneName);
     }
 
-    public void DefaultGoodsSetting()
-    {
-        GoldBinding.LoadGold();
-    }
-
     public void DefaultSkillSetting()
     {
-        playerSkill.totalAttributePoint = 0;
+        FirstGetSkill = false;
+        FirstGetAttribute = false;
+        
+        PlayerSkill.totalAttributePoint = 0;
 
         SkillSetting berserkerSkillSetting = new SkillSetting();
         berserkerSkillSetting.attributePoint = 0;
@@ -896,15 +797,8 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillSetting.attributePoint = 0;
         gunnerSkillSetting.skillList = new List<Skill>();
         
-        playerSkill.berserkerSkillSetting = berserkerSkillSetting;
-        playerSkill.gunnerSkillSetting = gunnerSkillSetting;
-        
-        // json화
-        string json = JsonUtility.ToJson(playerSkill, true);
-        var loadJson = SkillBinding.LoadSkill(json);
-        
-        var loadedSkillCollection = JsonUtility.FromJson<SkillCollection>(loadJson);
-        playerSkill = loadedSkillCollection;
+        PlayerSkill.berserkerSkillSetting = berserkerSkillSetting;
+        PlayerSkill.gunnerSkillSetting = gunnerSkillSetting;
     }
     
     public void DefaultSkillKeySetting()
@@ -933,20 +827,7 @@ public class GameManager : Singleton<GameManager>
         //skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.E);
         //skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.R);
 
-        InitSkillKey();
-    }
-
-    private SkillKey SetSkillKey(string skillId, KeyCode keyCode)
-    {
-        var skillKey = new SkillKey()
-        {
-            skillId = skillId,
-            keyCode = keyCode,
-        };
-        return skillKey;
-    }
-    private void InitSkillKey()
-    {
+        // 각 플레이어들의 스킬 키 세팅 초기화
         List<SkillKey> berserkerSkillKeyList = new List<SkillKey>();
         berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey1));
@@ -962,7 +843,7 @@ public class GameManager : Singleton<GameManager>
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey7));
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
         //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey8));
-        playerSkillKey.berserkerSkillKeyList = berserkerSkillKeyList;
+        PlayerSkillKey.berserkerSkillKeyList = berserkerSkillKeyList;
         
         List<SkillKey> gunnerSkillKeyList = new List<SkillKey>();
         gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerDash, dashKey));
@@ -979,14 +860,29 @@ public class GameManager : Singleton<GameManager>
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
         //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
-        playerSkillKey.gunnerSkillKeyList = gunnerSkillKeyList;
-        
-        // json화
-        string json = JsonUtility.ToJson(playerSkillKey, true);
-        var loadJson = SkillKeyBinding.LoadSkillKey(json);
-        
-        var loadedSkillKeyCollection = JsonUtility.FromJson<SkillKeyCollection>(loadJson);
-        playerSkillKey = loadedSkillKeyCollection;
+        PlayerSkillKey.gunnerSkillKeyList = gunnerSkillKeyList;
+    }
+
+    private void DefaultMapSetting()
+    {
+        MiniMapCheckers.Clear();
+        RoomInfoList.Clear();
+        SavePoint = default;
+    }
+
+    private void DefaultNpcSetting()
+    {
+        NpcInfoInfoList.Clear();
+    }
+
+    private SkillKey SetSkillKey(string skillId, KeyCode keyCode)
+    {
+        var skillKey = new SkillKey()
+        {
+            skillId = skillId,
+            keyCode = keyCode,
+        };
+        return skillKey;
     }
 
     public void AddNewSkill(string id)
@@ -997,36 +893,31 @@ public class GameManager : Singleton<GameManager>
         {
             case ConstValues.Berserker:
             {
-                int idx = EmptySkillIdx(playerSkillKey.berserkerSkillKeyList);
-                playerSkillKey.berserkerSkillKeyList[idx].skillId = id;
+                int idx = EmptySkillIdx(PlayerSkillKey.berserkerSkillKeyList);
+                PlayerSkillKey.berserkerSkillKeyList[idx].skillId = id;
 
                 Skill newSkill = new Skill();
                 newSkill.skillId = id;
                 newSkill.attributeList = new List<SkillAttribute>();
-                playerSkill.berserkerSkillSetting.skillList.Add(newSkill);
+                PlayerSkill.berserkerSkillSetting.skillList.Add(newSkill);
                 break;
             }
             case ConstValues.Gunner:
             {
-                int idx = EmptySkillIdx(playerSkillKey.gunnerSkillKeyList);
-                playerSkillKey.gunnerSkillKeyList[idx].skillId = id;
+                int idx = EmptySkillIdx(PlayerSkillKey.gunnerSkillKeyList);
+                PlayerSkillKey.gunnerSkillKeyList[idx].skillId = id;
                 
                 Skill newSkill = new Skill();
                 newSkill.skillId = id;
                 newSkill.attributeList = new List<SkillAttribute>();
-                playerSkill.gunnerSkillSetting.skillList.Add(newSkill);
+                PlayerSkill.gunnerSkillSetting.skillList.Add(newSkill);
                 break;
             }
         }
         RefreshSkill();
         
-        // 키세팅 저장
-        string skillKeyJson = JsonUtility.ToJson(playerSkillKey, true);
-        SkillKeyBinding.SaveKey(skillKeyJson);
-        
-        // 스킬 저장
-        string skillJson = JsonUtility.ToJson(playerSkill, true);
-        SkillBinding.SaveSkill(skillJson);
+        // 게임 저장
+        SaveGame();
     }
     private int EmptySkillIdx(List<SkillKey> skillKeyList)
     {
@@ -1046,29 +937,28 @@ public class GameManager : Singleton<GameManager>
     {
         if (curPlayer.BasicStat.id == ConstValues.Berserker)
         {
-            var berserkerSkillKey = playerSkillKey.berserkerSkillKeyList.Find(x => x.keyCode == keyCode);
+            var berserkerSkillKey = PlayerSkillKey.berserkerSkillKeyList.Find(x => x.keyCode == keyCode);
             if (berserkerSkillKey != null)
                 berserkerSkillKey.skillId = skillId;
         }
         else if (curPlayer.BasicStat.id == ConstValues.Gunner)
         {
-            var gunnerSkillKey = playerSkillKey.gunnerSkillKeyList.Find(x => x.keyCode == keyCode);
+            var gunnerSkillKey = PlayerSkillKey.gunnerSkillKeyList.Find(x => x.keyCode == keyCode);
             if (gunnerSkillKey != null)
                 gunnerSkillKey.skillId = skillId;
         }
         
         // 저장
-        string json = JsonUtility.ToJson(playerSkillKey, true);
-        SkillKeyBinding.SaveKey(json);
+        //SaveGame();
     }
     public List<SettingSkill> GetSettingSkillList()
     {
         List<SkillKey> keyList = null;
         
         if(curPlayer.BasicStat.id == ConstValues.Berserker)
-            keyList = playerSkillKey.berserkerSkillKeyList;
+            keyList = PlayerSkillKey.berserkerSkillKeyList;
         else if(curPlayer.BasicStat.id == ConstValues.Gunner)
-            keyList = playerSkillKey.gunnerSkillKeyList;
+            keyList = PlayerSkillKey.gunnerSkillKeyList;
         
         List<SettingSkill> settingSkillList = new List<SettingSkill>();
         foreach (var key in keyList)
@@ -1111,15 +1001,6 @@ public class GameManager : Singleton<GameManager>
         return atlasDic[id];
     }
 
-    private void LoadPlayerPrefs()
-    {
-        alreadySkill = FirstGetSkillBinding.LoadFirstGetSkill();
-        alreadyAttribute = FirstGetAttributeBinding.LoadFirstGetAttribute();
-        
-        firstPlayer = CharacterOrderBinding.LoadFirstCharacter();
-        secondPlayer = CharacterOrderBinding.LoadSecondCharacter();
-    }
-    
     private void InitManager() 
     {
         tableManager = TableManager.Instance;
@@ -1150,8 +1031,8 @@ public class GameManager : Singleton<GameManager>
     
     public void SetPlayerOrder(string first, string second)
     {
-        firstPlayer = first;
-        secondPlayer = second;
+        FirstPlayer = first;
+        SecondPlayer = second;
         curPlayer = GetPlayer(FirstPlayer);
     }
 
@@ -1564,15 +1445,15 @@ public class GameManager : Singleton<GameManager>
         var faceInterface = uiInterface.CharacterFaceView.ConvertTo<ICharacterFace>();
         var faceModel = new UICharacterFaceModel()
         {
-            firstCharacter = firstPlayer,
-            secondCharacter = secondPlayer,
+            firstCharacter = FirstPlayer,
+            secondCharacter = SecondPlayer,
         };
         var facePresenter = new UICharacterFacePresenter(faceInterface, faceModel);
         uiInterface.SetCharacterFacePresenter(facePresenter);
         
-        if(curPlayer.BasicStat.id == firstPlayer)
+        if(curPlayer.BasicStat.id == FirstPlayer)
             facePresenter.SetFirstFace();
-        else if(curPlayer.BasicStat.id == secondPlayer)
+        else if(curPlayer.BasicStat.id == SecondPlayer)
             facePresenter.SetSecondFace();
     }
     
@@ -1686,9 +1567,9 @@ public class GameManager : Singleton<GameManager>
     {
         var pastPlayer = curPlayer;
         var changePos = curPlayer.transform.position;
-        var nextPlayerId = secondPlayer;
-        if (curPlayer.BasicStat.id == secondPlayer)
-            nextPlayerId = firstPlayer;
+        var nextPlayerId = SecondPlayer;
+        if (curPlayer.BasicStat.id == SecondPlayer)
+            nextPlayerId = FirstPlayer;
         
         ActivePlayer(nextPlayerId);
         curPlayer = GetPlayer(nextPlayerId);

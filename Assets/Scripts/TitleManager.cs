@@ -55,13 +55,11 @@ public class TitleManager : MonoBehaviour
     {
         if (Input.GetKeyDown(KeyCode.F1))
         {
-            PlayerPrefs.DeleteAll();
-            GameManager.Instance.DefaultSkillSetting();
+            //PlayerPrefs.DeleteAll();
             GameManager.Instance.DefaultSkillKeySetting();
-            GameManager.Instance.DefaultGoodsSetting();
-            GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default);
+            GameManager.Instance.FirstStart();
         }
-        
+
         if (Input.anyKeyDown)
             GameManager.Instance.GoScene(ConstValues.BattleScene);
     }

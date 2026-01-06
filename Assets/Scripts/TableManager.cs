@@ -242,6 +242,7 @@ public class NpcData
 {
     public string id;
     public string startDialog;
+    public string dialogKey;
 }
 [Serializable]
 public class NpcDataList
@@ -263,7 +264,7 @@ public class DialogueData
     public string cameraShake;
     public float shakeTime;
     public string checkKey;
-    public int checkKeyValue;
+    public bool checkKeyValue;
     public string endEvent;
     public string reward;
 }

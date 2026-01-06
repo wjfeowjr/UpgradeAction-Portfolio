@@ -17,8 +17,7 @@ public class TotalRoom : MonoBehaviour
     [SerializeField] private Trace playerPoint;
     [SerializeField] private GameObject[] checkerArray;
     private Player targetPlayer;
-    public List<Vector2> targets = new List<Vector2>();
-    
+
     private int checkerLayerMask;
 
     public Room[] RoomArray => roomArray;
@@ -89,7 +88,7 @@ public class TotalRoom : MonoBehaviour
                 if (checker == hit.collider.gameObject)
                 {
                     checker.gameObject.SetActive(false);
-                    targets.Remove(checker.transform.position);
+                    GameManager.Instance.MiniMapCheckers.Remove(checker.transform.position);
                 }
             }
         }
@@ -99,44 +98,32 @@ public class TotalRoom : MonoBehaviour
                 return;
             checkerArray[idx].transform.position = new Vector2(miniMapCameraPos.x, miniMapCameraPos.y);
             checkerArray[idx].SetActive(true);
-            targets.Add(checkerArray[idx].transform.position);
+            GameManager.Instance.MiniMapCheckers.Add(checkerArray[idx].transform.position);
         }
         SaveCheckerPos();
     }
 
     private void SaveCheckerPos()
     {
-        // 몇 개를 저장했는지 기록
-        PlayerPrefs.SetInt(ConstValues.MiniMapCheckers, targets.Count);
-
-        for (int i = 0; i < targets.Count; i++)
-        {
-            Vector3 p = targets[i];
-            PlayerPrefs.SetFloat($"Target_{i}_X", p.x);
-            PlayerPrefs.SetFloat($"Target_{i}_Y", p.y);
-        }
-        PlayerPrefs.Save();
-        Debug.Log($"[{targets.Count}]개 오브젝트 위치 저장 완료");
+        // for (int i = 0; i < GameManager.Instance.MiniMapCheckers.Count; i++)
+        // {
+        //     Vector3 p = GameManager.Instance.MiniMapCheckers[i];
+        //     PlayerPrefs.SetFloat($"Target_{i}_X", p.x);
+        //     PlayerPrefs.SetFloat($"Target_{i}_Y", p.y);
+        // }
+        
+        //GameManager.Instance.SaveGame();
+        Debug.Log($"[{GameManager.Instance.MiniMapCheckers.Count}]개 오브젝트 위치 저장 완료");
     }
 
     private void LoadCheckerPos()
     {
-        int savedCount = PlayerPrefs.GetInt(ConstValues.MiniMapCheckers, 0);
-        //int useCount = Mathf.Min(savedCount, targets.Count);
-
-        for (int i = 0; i < savedCount; i++)
+        for (int i = 0; i < GameManager.Instance.MiniMapCheckers.Count; i++)
         {
-            float x = PlayerPrefs.GetFloat($"Target_{i}_X");
-            float y = PlayerPrefs.GetFloat($"Target_{i}_Y");
-            targets.Add(new Vector2(x, y));
-        }
-
-        for (int i = 0; i < targets.Count; i++)
-        {
-            checkerArray[i].transform.position = targets[i];
+            checkerArray[i].transform.position = GameManager.Instance.MiniMapCheckers[i];
             checkerArray[i].SetActive(true);
         }
-        Debug.Log($"[{savedCount}]개 오브젝트 위치 불러오기 완료 (저장된: {savedCount}, 설정된: {targets.Count})");
+        Debug.Log($"[{GameManager.Instance.MiniMapCheckers.Count}]개 오브젝트 위치 불러오기 완료)");
     }
     
     // 인스펙터 우클릭 메뉴에 “Cache Prefabs” 항목 추가

@@ -8,6 +8,9 @@ public class WaitCharacterUI : MonoBehaviour
 
     private void OnEnable()
     {
+        if(string.IsNullOrEmpty(GameManager.Instance.SecondPlayer))
+            return;
+        
         if(GameManager.Instance.CurPlayer.BasicStat.id == GameManager.Instance.FirstPlayer)
             characterImage.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.SecondPlayer}_{ConstValues.Face}");
         else if (GameManager.Instance.CurPlayer.BasicStat.id == GameManager.Instance.SecondPlayer)

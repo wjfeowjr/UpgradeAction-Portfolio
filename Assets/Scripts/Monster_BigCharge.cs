@@ -124,7 +124,7 @@ public class Monster_BigCharge : Monster
     // 등장(연출 포함)
     public override async void Appear(Action<string> bossProduct)
     {
-        if (GameManager.Instance.EpisodeName == ConstValues.Episode2)
+        if (true)
         {
             stateCancellation = new CancellationTokenSource();
             await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
@@ -174,7 +174,7 @@ public class Monster_BigCharge : Monster
     {
         base.Die();
         
-        if (GameManager.Instance.EpisodeName == ConstValues.Episode2)
+        if (true)
         {
             CancelMotion();
             ClearObjectList(buffObject);

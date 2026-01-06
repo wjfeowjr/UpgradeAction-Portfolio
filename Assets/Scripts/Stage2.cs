@@ -31,11 +31,11 @@ public class Stage2 : Stage
     protected override void Start()
     {
         base.Start();
-        stepTrigger[0].SetAction(() => Product1(0));
-        stepTrigger[1].SetAction(() => Product2(1));
-        stepTrigger[2].SetAction(() => Product4(2));
-        stepTrigger[3].SetAction(Product5);
-        stepTrigger[4].SetAction(() => Product7(3));
+        //stepTrigger[0].SetAction(() => Product1(0));
+        //stepTrigger[1].SetAction(() => Product2(1));
+        //stepTrigger[2].SetAction(() => Product4(2));
+        //stepTrigger[3].SetAction(Product5);
+        //stepTrigger[4].SetAction(() => Product7(3));
         //GameManager.Instance.AddNewSkill();
         
         // episodeStep = new EpisodeStep()

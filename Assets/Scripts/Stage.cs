@@ -154,7 +154,7 @@ public abstract class Stage : MonoBehaviour
     {
         clearString = "클리어!!";
         buttonString = "종료";
-        GameManager.Instance.EpisodeName = episodeName;
+        //GameManager.Instance.EpisodeName = episodeName;
     }
     
     // 에피소드 저장
@@ -162,17 +162,17 @@ public abstract class Stage : MonoBehaviour
     {
         // json화
         string json = JsonUtility.ToJson(episodeStep, true);
-        EpisodeBinding.SaveEpisode(episodeName, json);
+        //EpisodeBinding.SaveEpisode(episodeName, json);
     }
     // 에피소드 불러오기
     protected void LoadEpisode()
     {
         // json화
         string json = JsonUtility.ToJson(episodeStep, true);
-        var loadJson = EpisodeBinding.LoadEpisode(episodeName, json);
+        //var loadJson = EpisodeBinding.LoadEpisode(episodeName, json);
         // json 불러오기
-        var loadedEpisode = JsonUtility.FromJson<EpisodeStep>(loadJson);
-        episodeStep = loadedEpisode;
+        //var loadedEpisode = JsonUtility.FromJson<EpisodeStep>(loadJson);
+        //episodeStep = loadedEpisode;
     }
     
     protected void SpawnEpisode(string episodeName)
@@ -232,7 +232,7 @@ public abstract class Stage : MonoBehaviour
     }
     protected void ProductStageClear(int saveStage)
     {
-        StageBinding.SaveStage(saveStage);
+        //StageBinding.SaveStage(saveStage);
         episodeStep = new EpisodeStep();
         var uiEpisodeObj = GameManager.Instance.GetUI(eUIType.UI_StageClear);
         if (uiEpisodeObj == null)

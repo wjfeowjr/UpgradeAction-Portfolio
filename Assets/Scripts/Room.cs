@@ -20,16 +20,6 @@ public enum EntranceDir
 }
 
 [Serializable]
-public class RoomInfo
-{
-    public int productCount;
-    public bool bossClear;
-    public List<ShortCut> shortCut = new List<ShortCut>();
-    public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
-    public List<TreasureBox> treasureBox = new List<TreasureBox>();
-}
-
-[Serializable]
 // 스킬 및 패시브
 public class ShortCut
 {
@@ -71,23 +61,17 @@ public class Room : MonoBehaviour
     private Camera gameCamera;
 
     // 내부 저장용
-    private string saveMinimapName;
     private HashSet<Vector3Int> allRoomCells = new HashSet<Vector3Int>();
     private Dictionary<Vector3Int, TileBase> originalTiles = new Dictionary<Vector3Int, TileBase>();
     private HashSet<Vector3Int> visitedCells = new HashSet<Vector3Int>();
     
-    private string saveShortcut;
     private HashSet<Vector3Int> allshortcutCells = new HashSet<Vector3Int>();
     private Dictionary<Vector3Int, TileBase> originalshortcutTiles = new Dictionary<Vector3Int, TileBase>();
     private HashSet<Vector3Int> visitedShortcutCells = new HashSet<Vector3Int>();
 
-    private string saveSaveObject;
-
     [SerializeField] private bool isBossRoom;
     [SerializeField] private GameObject roomGameObject;
-    
-    [SerializeField] protected RoomInfo roomInfo;
-    
+
     [SerializeField] protected RoomSkillAndPassive[] roomSkillAndPassive;
     [SerializeField] protected RoomTreasureBox[] roomTreasureBox;
 
@@ -148,7 +132,8 @@ public class Room : MonoBehaviour
     [SerializeField] protected SpriteRenderer[] bgSpriteRenderers;
     [SerializeField] private GameObject roomDoor;
     [SerializeField] private GameObject[] roomCustomObjects;
-
+    [SerializeField] private RoomInfo roomInfo;
+    
     private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
     private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
     private SpeechFrame speechFrameStrong;
@@ -162,9 +147,6 @@ public class Room : MonoBehaviour
             return;
         
         gameCamera = RoomManager.Instance.MainCamera;
-        saveMinimapName = $"{ConstValues.MiniMapVisitedCells}_{name}";
-        saveShortcut = $"{ConstValues.MiniMapShortcutCells}_{name}";
-        saveSaveObject = $"{ConstValues.SaveObject}_{name}";
         
         // 1. 모든 그려진 타일 위치 저장 및 비활성화
         var frameBounds = minimapFrameTilemap.cellBounds;
@@ -204,25 +186,10 @@ public class Room : MonoBehaviour
         }
     }
 
-    // private void OnEnable()
-    // {
-    //     // 여기서 보스 비활성화
-    //     BossSetting();
-    // }
-
-    private void Start()
-    {
-        StartMinimap();
-    }
-
     private void Update()
     {
         if(roomGameObject.activeSelf)
             RevealCellsInView();
-        // if (Input.GetKeyDown(KeyCode.Space))
-        // {
-        //     SaveVisitedCells();
-        // }
     }
 
     private void OnApplicationQuit()
@@ -240,6 +207,31 @@ public class Room : MonoBehaviour
             BossSetting();
             // 여기서 배경 설정
             BgSetting();
+        }
+    }
+
+    public void AddRoomData()
+    {
+        var data = GameManager.Instance.RoomInfoList.Find(x => x.roomId == name);
+        if (data == null)
+        {
+            RoomInfo room = new RoomInfo();
+            room.roomId = name;
+            GameManager.Instance.RoomInfoList.Add(room);
+            roomInfo = GameManager.Instance.RoomInfoList.Find(x => x.roomId == name);
+        }
+        else
+        {
+            roomInfo = data;
+        }
+        StartMinimap();
+    }
+
+    public void AddNpcData()
+    {
+        foreach (var character in npc)
+        {
+            character.AddData();
         }
     }
     
@@ -348,30 +340,6 @@ public class Room : MonoBehaviour
             });
         }
 
-        // 저장된 데이터가 있는 경우
-        if (PlayerPrefs.HasKey(name))
-        {
-            Debug.Log("불러오기");
-            LoadRoom();
-            // 저장단계 커스텀
-            // if (name == "Room_1_9")
-            // {
-            //     roomInfo.productCount = 0;
-            //     SaveRoom();
-            // }
-            // 
-            // if (name == "Room_2_9")
-            // {
-            //     roomInfo.skillAndPassive.Clear();
-            //     SaveRoom();
-            // }
-        }
-        // 저장된 데이터가 없는경우
-        else
-        {
-            roomInfo.productCount = 0;
-        }
-        
         // 맵에 있는 숏컷 세팅
         if (roomInfo.shortCut.Count < shortCutObjects.Length)
         {
@@ -383,16 +351,6 @@ public class Room : MonoBehaviour
                 roomInfo.shortCut.Add(addShortcut);
             }
         }
-        
-        // 초기화 할 때 쓰는거
-        // roomInfo.shortCut.Clear();
-        // foreach (var shortcutObject in shortCutObjects)
-        // {
-        //     ShortCut addShortcut = new ShortCut();
-        //     addShortcut.type = shortcutObject.Type;
-        //     addShortcut.isOpened = false;
-        //     roomInfo.shortCut.Add(addShortcut);
-        // }
 
         // 맵에 널려있는 스킬 세팅
         var skillArray = roomsData.skill.Split(';');
@@ -435,7 +393,6 @@ public class Room : MonoBehaviour
                 }
             }
         }
-        SaveRoom();
 
         // 연출을 봤다면, 다시 나오지 않게 조정
         if (productCount > 0)
@@ -443,8 +400,6 @@ public class Room : MonoBehaviour
             if (roomInfo.productCount >= productCount)
             {
                 productTriggers[0].gameObject.SetActive(false);
-                // if(isBossRoom)
-                //     BgmManager.Instance.Play();
             }
         }
 
@@ -472,7 +427,7 @@ public class Room : MonoBehaviour
                     roomInfo.skillAndPassive[idx].alreadyGet = true;
                     GameManager.Instance.AddNewSkill(roomInfo.skillAndPassive[idx].id);
                     GameManager.Instance.GetSkillProduct(roomInfo.skillAndPassive[idx].id, GetSkillEvent);
-                    SaveRoom();
+                    GameManager.Instance.SaveGame();
                 });
             }
         }
@@ -497,7 +452,7 @@ public class Room : MonoBehaviour
                         roomInfo.treasureBox[idx].alreadyGet = true;
                         GetTreasureBoxItem(roomInfo.treasureBox[idx].id, roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position);
                         GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
-                        SaveRoom();
+                        GameManager.Instance.SaveGame();
                     }
                     else
                     {
@@ -687,12 +642,10 @@ public class Room : MonoBehaviour
             return;
         
         GameManager.Instance.Gold += gold;
-        GoldBinding.SaveGold(GameManager.Instance.Gold);
         // 골드가 날아가는 연출
         var followGold = GameManager.Instance.SpawnToObjectPool(ConstValues.FollowGold, goldPos).GetComponent<FollowGold>();
         followGold.SetAction(() =>
         {
-            GameManager.Instance.Gold = PlayerPrefs.GetInt(ConstValues.Gold);
             GameManager.Instance.GetGold(gold, GameManager.Instance.Gold);
         });
     }
@@ -714,9 +667,8 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.PlayerSkill.PlusAttributePoint(attributePoint);
 
-        string skillJson = JsonUtility.ToJson(GameManager.Instance.PlayerSkill, true);
-        SkillBinding.SaveSkill(skillJson);
-        Debug.Log($"저장된 {ConstValues.AttributePoint} = {GameManager.Instance.PlayerSkill.totalAttributePoint}");
+        //GameManager.Instance.SaveGame();
+        //Debug.Log($"저장된 {ConstValues.AttributePoint} = {GameManager.Instance.PlayerSkill.totalAttributePoint}");
     }
     private void ReducePassivePoint(string character, int passivePoint)
     {
@@ -780,7 +732,7 @@ public class Room : MonoBehaviour
             return;
         
         targetShortcut.isOpened = true;
-        SaveRoom();
+        GameManager.Instance.SaveGame();
         SetShortCut();
     }
 
@@ -822,11 +774,12 @@ public class Room : MonoBehaviour
         
         saveObject.SetSaveAction(() =>
         {
-            SavePointBinding.SaveSavePoint(name);
+            GameManager.Instance.SavePoint = name;
             GameManager.Instance.SpawnWarningPopup("세이브 포인트가 저장되었습니다.").Forget();
             GameManager.Instance.RefillPlayerHp();
             saveObject.InteractionObject.FadeOut();
             SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
+            GameManager.Instance.SaveGame();
         });
     }
     
@@ -989,24 +942,6 @@ public class Room : MonoBehaviour
         speechFrame.SpeechEnd();
     }
 
-    // 룸 저장
-    private void SaveRoom()
-    {
-        // json화
-        string json = JsonUtility.ToJson(roomInfo, true);
-        RoomBinding.SaveRoom(name, json);
-    }
-    // 룸 정보 불러오기
-    private void LoadRoom()
-    {
-        // json화
-        string json = JsonUtility.ToJson(roomInfo, true);
-        var loadJson = RoomBinding.LoadRoom(name, json);
-        // json 불러오기
-        var loadedEpisode = JsonUtility.FromJson<RoomInfo>(loadJson);
-        roomInfo = loadedEpisode;
-    }
-
     private async UniTask YieldDelay(CancellationTokenSource tokenSource)
     {
         await UniTask.Yield(cancellationToken: tokenSource.Token);
@@ -1089,7 +1024,7 @@ public class Room : MonoBehaviour
     private void StartMinimap()
     {
         // 저장 데이터 없음: 모든 타일 비활성화
-        if (!PlayerPrefs.HasKey(saveMinimapName))
+        if (string.IsNullOrEmpty(roomInfo.visitedCells))
         {
             minimapFrameTilemap.ClearAllTiles();
             minimapInTilemap.ClearAllTiles();
@@ -1100,16 +1035,13 @@ public class Room : MonoBehaviour
             LoadVisitedCells();
             foreach (var cell in visitedCells)
             {
-                // if (originalTiles.TryGetValue(cell, out var frameTile))
-                //     minimapFrameTilemap.SetTile(cell, frameTile);
-                
                 if (originalTiles.TryGetValue(cell, out var inTile))
                     minimapInTilemap.SetTile(cell, inTile);
             }
         }
         
         // 저장 데이터 없음: 모든 숏컷 비활성화
-        if (!PlayerPrefs.HasKey(saveShortcut))
+        if (string.IsNullOrEmpty(roomInfo.visitedShortcutCells))
         {
             if(shortcutFrameTileMap)
                 shortcutFrameTileMap.ClearAllTiles();
@@ -1125,17 +1057,17 @@ public class Room : MonoBehaviour
             }
         }
         
-        // 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
-        if (!PlayerPrefs.HasKey(saveSaveObject))
-        {
-            if(saveObject)
-                saveObject.MinimapObject.SetActive(false);
-        }
         // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화
-        else
+        if (roomInfo.savePointCheck)
         {
             if(saveObject)
                 saveObject.MinimapObject.SetActive(true);
+        }
+        // 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
+        else
+        {
+            if(saveObject)
+                saveObject.MinimapObject.SetActive(false);
         }
     }
     // 3. 카메라 뷰 영역에 조금이라도 겹치면 활성화
@@ -1221,25 +1153,22 @@ public class Room : MonoBehaviour
             SaveVisitedShortcutCells();
     }
 
-    // 5. PlayerPrefs에 방문 셀 저장
+    // 방문 셀 저장
     private void SaveVisitedCells()
     {
         var sb = new StringBuilder();
         foreach (var c in visitedCells)
             sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
-        
-        PlayerPrefs.SetString(saveMinimapName, sb.ToString());
-        PlayerPrefs.Save();
-        //Debug.Log("미니맵 저장!");
+
+        roomInfo.visitedCells = sb.ToString();
     }
-    // 2. 저장된 방문 셀 로드
+    // 방문 셀 로드
     private void LoadVisitedCells()
     {
-        string data = PlayerPrefs.GetString(saveMinimapName, "");
-        if (string.IsNullOrEmpty(data))
+        if (string.IsNullOrEmpty(roomInfo.visitedCells))
             return;
 
-        var entries = data.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
+        var entries = roomInfo.visitedCells.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
         foreach (var e in entries)
         {
             var p = e.Split('_');
@@ -1253,24 +1182,22 @@ public class Room : MonoBehaviour
         }
     }
     
-    // 5. PlayerPrefs에 방문 셀 저장
+    // 숏컷 셀 저장
     private void SaveVisitedShortcutCells()
     {
         var sb = new StringBuilder();
         foreach (var c in visitedShortcutCells)
             sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
-        
-        PlayerPrefs.SetString(saveShortcut, sb.ToString());
-        PlayerPrefs.Save();
+
+        roomInfo.visitedShortcutCells = sb.ToString();
     }
-    // 2. 저장된 방문 셀 로드
+    // 숏컷 셀 로드
     private void LoadVisitedShortcutCells()
     {
-        string data = PlayerPrefs.GetString(saveShortcut, "");
-        if (string.IsNullOrEmpty(data))
+        if (string.IsNullOrEmpty(roomInfo.visitedShortcutCells))
             return;
 
-        var entries = data.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
+        var entries = roomInfo.visitedShortcutCells.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
         foreach (var e in entries)
         {
             var p = e.Split('_');
@@ -1287,8 +1214,7 @@ public class Room : MonoBehaviour
     private void SaveSaveObject()
     {
         saveObject.MinimapObject.SetActive(true);
-        PlayerPrefs.SetInt(saveSaveObject, 1);
-        PlayerPrefs.Save();
+        roomInfo.savePointCheck = true;
     }
 
     /// <summary>
@@ -1381,50 +1307,9 @@ public class Room : MonoBehaviour
         UIOn();
 
         roomInfo.productCount += 1;
-        SaveRoom();
+        GameManager.Instance.SaveGame();
     }
 
-    private async void Product_Empty()
-    {
-        GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
-        GameManager.Instance.InitDialogueCancellation();
-
-        string dialog1 = "딱 봐도 엄청 좋은거다!";
-        string dialog2 = "근데 이 불기둥을 어떻게 돌파하지?";
-        string dialog3 = "대시를 사용해야겠어!";
-        
-        UIOff();
-            
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
-            return;
-        
-        GameManager.Instance.MainCamera.SetTarget(roomSkillAndPassive[0].transform);
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
-            return;
-        
-        GameManager.Instance.MainCamera.SetTarget(GameManager.Instance.CurPlayer.transform);
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
-            return;
-        
-        var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
-
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog1);
-        await NextDialog(speechFrame1[0]);
-        
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog2);
-        await NextDialog(speechFrame1[0]);
-        
-        SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog3);
-        await NextDialog(speechFrame1[0]);
-
-        RoomManager.Instance.Guide(1);
-        
-        UIOn();
-        roomInfo.productCount += 1;
-        SaveRoom();
-    }
-    
     private async void Product2()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
@@ -1453,7 +1338,7 @@ public class Room : MonoBehaviour
         
         UIOn();
         roomInfo.productCount += 1;
-        SaveRoom();
+        GameManager.Instance.SaveGame();
     }
 
     private async void Product3()
@@ -1479,7 +1364,7 @@ public class Room : MonoBehaviour
         RoomManager.Instance.Guide(1);
         UIOn();
         roomInfo.productCount += 1;
-        SaveRoom();
+        GameManager.Instance.SaveGame();
     }
     
     private async void Product4()
@@ -1528,7 +1413,7 @@ public class Room : MonoBehaviour
             GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
             UIOn();
             roomInfo.productCount += 1;
-            SaveRoom();
+            GameManager.Instance.SaveGame();
         }
         
         if(await WaitUntil(() => bosses[0].IsDie, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
@@ -1662,7 +1547,7 @@ public class Room : MonoBehaviour
             
             UIOn();
             roomInfo.productCount += 1;
-            SaveRoom();
+            GameManager.Instance.SaveGame();
         }
 
         if (await WaitUntil(() => bosses[1].IsDie, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
@@ -1740,7 +1625,7 @@ public class Room : MonoBehaviour
         DoorActive(false);
         roomInfo.productCount += 1;
         roomInfo.bossClear = true;
-        SaveRoom();
+        GameManager.Instance.SaveGame();
         UIOn();
     }
 
@@ -1798,13 +1683,11 @@ public class Room : MonoBehaviour
         
         // 2인 캐릭터 설정 및 저장
         GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
-        CharacterOrderBinding.SaveFirstCharacter(ConstValues.Berserker);
-        CharacterOrderBinding.SaveSecondCharacter(ConstValues.Gunner);
         RoomManager.Instance.Guide(4);
         
         UIOn();
         roomInfo.productCount += 1;
-        SaveRoom();
+        GameManager.Instance.SaveGame();
     }
     
     private async void Product6()
@@ -1829,7 +1712,7 @@ public class Room : MonoBehaviour
         DoorActive(false);
         roomInfo.productCount += 1;
         roomInfo.bossClear = true;
-        SaveRoom();
+        GameManager.Instance.SaveGame();
         UIOn();
     }
     
@@ -1838,11 +1721,15 @@ public class Room : MonoBehaviour
     {
         string getMessage = $"{skillName}을(를) 획득하였다!";
         
-        if (FirstGetSkillBinding.LoadFirstGetSkill() == 0)
+        if (GameManager.Instance.FirstGetSkill)
         {
-            FirstGetSkillBinding.SaveFirstGetSkill(1);
-            GameManager.Instance.AlreadySkill = FirstGetSkillBinding.LoadFirstGetSkill();
-            
+            await GameManager.Instance.SpawnWarningPopup(getMessage);
+        }
+        else
+        {
+            GameManager.Instance.FirstGetSkill = true;
+            //GameManager.Instance.SaveGame();
+
             UIOff();
             GameManager.Instance.CurPlayer.ForceProduct();
             await GameManager.Instance.SpawnWarningPopup(getMessage);
@@ -1854,10 +1741,6 @@ public class Room : MonoBehaviour
             RoomManager.Instance.Guide(2);
             UIOn();
         }
-        else
-        {
-            await GameManager.Instance.SpawnWarningPopup(getMessage);
-        }
     }
     
     // 특성 포인트 획득 후 이벤트
@@ -1865,11 +1748,15 @@ public class Room : MonoBehaviour
     {
         string getMessage = $"특성 포인트 {pointCount}점을 획득하였다!";
         
-        if (FirstGetAttributeBinding.LoadFirstGetAttribute() == 0)
+        if (GameManager.Instance.FirstGetAttribute)
         {
-            FirstGetAttributeBinding.SaveFirstGetAttribute(1);
-            GameManager.Instance.AlreadyAttribute = FirstGetAttributeBinding.LoadFirstGetAttribute();
-            
+            await GameManager.Instance.SpawnWarningPopup(getMessage);
+        }
+        else
+        {
+            GameManager.Instance.FirstGetAttribute = true;
+            //GameManager.Instance.SaveGame();
+
             UIOff();
             GameManager.Instance.CurPlayer.ForceProduct();
             await GameManager.Instance.SpawnWarningPopup(getMessage);
@@ -1880,10 +1767,6 @@ public class Room : MonoBehaviour
 
             RoomManager.Instance.Guide(3);
             UIOn();
-        }
-        else
-        {
-            await GameManager.Instance.SpawnWarningPopup(getMessage);
         }
     }
 

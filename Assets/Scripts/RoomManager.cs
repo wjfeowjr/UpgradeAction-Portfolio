@@ -84,6 +84,8 @@ public class RoomManager : Singleton<RoomManager>
 
         foreach (var room in totalRoom.RoomArray)
         {
+            room.AddRoomData();
+            room.AddNpcData();
             room.SpeechFrameSetting();
             room.EntranceSetting();
             room.InfoSetting();
@@ -92,7 +94,7 @@ public class RoomManager : Singleton<RoomManager>
             room.ObjectActive(false);
         }
 
-        if (string.IsNullOrEmpty(SavePointBinding.LoadSavePoint()))
+        if (string.IsNullOrEmpty(GameManager.Instance.SavePoint))
         {
             currentRoom = totalRoom.RoomArray[0];
             currentRoom.ObjectActive(true);
@@ -100,7 +102,7 @@ public class RoomManager : Singleton<RoomManager>
         }
         else
         {
-            var savePointName = SavePointBinding.LoadSavePoint();
+            var savePointName = GameManager.Instance.SavePoint;
             foreach (var room in totalRoom.RoomArray)
             {
                 if (room.name != savePointName)
@@ -124,7 +126,7 @@ public class RoomManager : Singleton<RoomManager>
         if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.tabKey))
             SpawnMinimap();
 
-        if (GameManager.Instance.AlreadyAttribute == 1 && (!popupAttribute || !popupAttribute.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.attributeKey))
+        if (GameManager.Instance.FirstGetAttribute && (!popupAttribute || !popupAttribute.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.attributeKey))
             SpawnAttribute();
     }
 

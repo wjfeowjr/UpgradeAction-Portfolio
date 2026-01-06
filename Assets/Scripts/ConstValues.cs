@@ -27,6 +27,8 @@ public class ConstValues : Singleton<ConstValues>
     
     public const float DialogDelay1 = 2.5f;
     public const float DialogDelay2 = 1.0f;
+
+    public const string User = "user";
     
     public const string PrefabFolder = "Assets/Prefab";
     public const string SoundFolder = "Assets/Sound";

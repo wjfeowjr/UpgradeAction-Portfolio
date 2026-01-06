@@ -21,11 +21,11 @@ public class Stage1 : Stage
     protected override async void Start()
     {
         base.Start();
-        stepTrigger[0].SetAction(() => Product1(0));
-        stepTrigger[1].SetAction(() => Product2(1));
-        stepTrigger[2].SetAction(() => Product3(2));
-        stepTrigger[3].SetAction(() => Product6(3));
-        stepTrigger[4].SetAction(() => Product8(4));
+        //stepTrigger[0].SetAction(() => Product1(0));
+        //stepTrigger[1].SetAction(() => Product2(1));
+        //stepTrigger[2].SetAction(() => Product3(2));
+        //stepTrigger[3].SetAction(() => Product6(3));
+        //stepTrigger[4].SetAction(() => Product8(4));
 
         // 초반
         // episodeStep = new EpisodeStep()

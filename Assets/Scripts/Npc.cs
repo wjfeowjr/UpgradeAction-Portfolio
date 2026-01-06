@@ -10,7 +10,8 @@ public class Npc : Character
     [SerializeField] private Transform speechPos;
     [SerializeField] private Transform uiPos;
     [SerializeField] private Transform interactionSelectPos;
-    
+    [SerializeField] private NpcInfo npcInfo;
+        
     private InteractionObject interactionObject;
     private InteractionSelect interactionSelect;
 
@@ -112,7 +113,7 @@ public class Npc : Character
         string checkKey = talkDataList[0].checkKey;
         string endEvent = talkDataList[0].endEvent;
         string eventReward = talkDataList[0].reward;
-        int checkKeyValue = GetCheckKey(checkKey);
+        bool checkKeyValue = npcInfo.dialogKey.isUse;
         
         List<DialogueData> talkList = new List<DialogueData>();
         if (checkKey == ConstValues.None)
@@ -172,33 +173,36 @@ public class Npc : Character
         }
         else
         {
-            if(checkKeyValue == 0)
-                PlayEndEvent(checkKey, endEvent, eventReward);
-            else
+            if(checkKeyValue)
                 SpawnInteractionObject();
+            else
+                PlayEndEvent(endEvent, eventReward);
         }
     }
 
-    private int GetCheckKey(string checkKey)
+    public void AddData()
     {
-        if(!PlayerPrefs.HasKey(checkKey))
-            PlayerPrefs.SetInt(checkKey, 0);
-        
-        Debug.Log($"키:{checkKey}, 값:{PlayerPrefs.GetInt(checkKey)}");
-        return PlayerPrefs.GetInt(checkKey);
+        var data = GameManager.Instance.NpcInfoInfoList.Find(x => x.id == name);
+        if (data == null)
+        {
+            NpcInfo npc = new NpcInfo();
+            npc.id = name;
+            npc.dialogKey.id = npcData.dialogKey;
+            GameManager.Instance.NpcInfoInfoList.Add(npc);
+            npcInfo = GameManager.Instance.NpcInfoInfoList.Find(x => x.id == name);
+        }
+        else
+        {
+            npcInfo = data;
+        }
     }
 
-    private void SetCheckKey(string checkKey, int value)
-    {
-        PlayerPrefs.SetInt(checkKey, value);
-    }
-
-    private void PlayEndEvent(string checkKey, string eventKey, string reward)
+    private void PlayEndEvent(string eventKey, string reward)
     {
         switch (eventKey)
         {
             case ConstValues.GetSkill:
-                SetCheckKey(checkKey, 1);
+                npcInfo.dialogKey.isUse = true;
                 GameManager.Instance.AddNewSkill(reward);
                 GameManager.Instance.GetSkillProduct(reward, GetSkillDialogue);
                 break;
