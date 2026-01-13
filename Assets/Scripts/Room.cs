@@ -16,7 +16,9 @@ public enum EntranceDir
     Right,
     Right2,
     Up,
-    Down
+    Up2,
+    Down,
+    Down2
 }
 
 [Serializable]
@@ -94,23 +96,29 @@ public class Room : MonoBehaviour
     [SerializeField] private Transform rightPlayerPos;
     [SerializeField] private Transform rightPlayerPos2;
     [SerializeField] private Transform upPlayerPos;
+    [SerializeField] private Transform upPlayerPos2;
     [SerializeField] private Transform downPlayerPos;
-
+    [SerializeField] private Transform downPlayerPos2;
+    
     [Header("인접한 방")]
     [SerializeField] private Room leftRoom;
     [SerializeField] private Room leftRoom2;
     [SerializeField] private Room rightRoom;
     [SerializeField] private Room rightRoom2;
     [SerializeField] private Room upRoom;
+    [SerializeField] private Room upRoom2;
     [SerializeField] private Room downRoom;
-
+    [SerializeField] private Room downRoom2;
+    
     [Header("방의 입구")]
     [SerializeField] private RoomEntrance leftEntrance;
     [SerializeField] private RoomEntrance leftEntrance2;
     [SerializeField] private RoomEntrance rightEntrance;
     [SerializeField] private RoomEntrance rightEntrance2;
     [SerializeField] private RoomEntrance upEntrance;
+    [SerializeField] private RoomEntrance upEntrance2;
     [SerializeField] private RoomEntrance downEntrance;
+    [SerializeField] private RoomEntrance downEntrance2;
     
     [SerializeField] protected Monster[] monsters;
     [SerializeField] protected List<Vector2> firstMonsterPosList = new List<Vector2>();
@@ -308,8 +316,14 @@ public class Room : MonoBehaviour
         if (upEntrance != null)
             upEntrance.SetAction(() => upRoom.SettingRoom(EntranceDir.Down, this));
         
+        if (upEntrance2 != null)
+            upEntrance2.SetAction(() => upRoom2.SettingRoom(EntranceDir.Down2, this));
+        
         if (downEntrance != null)
             downEntrance.SetAction(() => downRoom.SettingRoom(EntranceDir.Up, this));
+        
+        if (downEntrance2 != null)
+            downEntrance2.SetAction(() => downRoom2.SettingRoom(EntranceDir.Up2, this));
     }
 
     public void InfoSetting()
@@ -531,8 +545,20 @@ public class Room : MonoBehaviour
                 GameManager.Instance.CurPlayer.ZeroVelocity();
                 GameManager.Instance.CurPlayer.GravityChange(0);
                 break;
+            case EntranceDir.Up2:
+                SetUpPlayerPos2();
+                GameManager.Instance.CurPlayer.SetJumpState();
+                GameManager.Instance.CurPlayer.ZeroVelocity();
+                GameManager.Instance.CurPlayer.GravityChange(0);
+                break;
             case EntranceDir.Down:
                 SetDownPlayerPos();
+                GameManager.Instance.CurPlayer.ForceJump();
+                GameManager.Instance.CurPlayer.ZeroVelocity();
+                GameManager.Instance.CurPlayer.GravityChange(0);
+                break;
+            case EntranceDir.Down2:
+                SetDownPlayerPos2();
                 GameManager.Instance.CurPlayer.ForceJump();
                 GameManager.Instance.CurPlayer.ZeroVelocity();
                 GameManager.Instance.CurPlayer.GravityChange(0);
@@ -605,9 +631,19 @@ public class Room : MonoBehaviour
         GameManager.Instance.CurPlayer.transform.position = upPlayerPos.position;
     }
     
+    private void SetUpPlayerPos2()
+    {
+        GameManager.Instance.CurPlayer.transform.position = upPlayerPos2.position;
+    }
+    
     private void SetDownPlayerPos()
     {
         GameManager.Instance.CurPlayer.transform.position = downPlayerPos.position;
+    }
+    
+    private void SetDownPlayerPos2()
+    {
+        GameManager.Instance.CurPlayer.transform.position = downPlayerPos2.position;
     }
 
     private void SetCameraLimit()
@@ -717,8 +753,16 @@ public class Room : MonoBehaviour
                 upRoom.ShortcutOpen(ShortcutType.WallDown);
                 break;
             
+            case ShortcutType.CrushUp2:
+                upRoom2.ShortcutOpen(ShortcutType.WallDown2);
+                break;
+            
             case ShortcutType.CrushDown:
                 downRoom.ShortcutOpen(ShortcutType.WallUp);
+                break;
+            
+            case ShortcutType.CrushDown2:
+                downRoom2.ShortcutOpen(ShortcutType.WallUp2);
                 break;
         }
     }
@@ -1796,6 +1840,15 @@ public class Room : MonoBehaviour
         Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
         if (playerPosArray != null)
         {
+            leftPlayerPos = null;
+            leftPlayerPos2 = null;
+            rightPlayerPos = null;
+            rightPlayerPos2 = null;
+            upPlayerPos = null;
+            upPlayerPos2 = null;
+            downPlayerPos = null;
+            downPlayerPos2 = null;
+            
             Transform[] possArray = playerPosArray.GetComponentsInChildren<Transform>();
             foreach (var poss in possArray)
             {
@@ -1814,15 +1867,29 @@ public class Room : MonoBehaviour
                 if (poss.name == $"{ConstValues.UpPlayerPos}_1")
                     upPlayerPos = poss;
                 
+                if (poss.name == $"{ConstValues.UpPlayerPos}_2")
+                    upPlayerPos2 = poss;
+                
                 if (poss.name == $"{ConstValues.DownPlayerPos}_1")
                     downPlayerPos = poss;
+                
+                if (poss.name == $"{ConstValues.DownPlayerPos}_2")
+                    downPlayerPos2 = poss;
             }
         }
         
         Transform entrancePosArray = roomGameObject.transform.Find(ConstValues.EntranceArray);
         if (entrancePosArray != null)
         {
-
+            leftEntrance = null;
+            leftEntrance2 = null;
+            rightEntrance = null;
+            rightEntrance2 = null;
+            upEntrance = null;
+            upEntrance2 = null;
+            downEntrance = null;
+            downEntrance2 = null;
+            
             RoomEntrance[] entranceArray = entrancePosArray.GetComponentsInChildren<RoomEntrance>();
             foreach (var entrance in entranceArray)
             {
@@ -1841,8 +1908,14 @@ public class Room : MonoBehaviour
                 if (entrance.name == $"{ConstValues.UpEntrance}_1")
                     upEntrance = entrance;
                 
+                if (entrance.name == $"{ConstValues.UpEntrance}_2")
+                    upEntrance2 = entrance;
+                
                 if (entrance.name == $"{ConstValues.DownEntrance}_1")
                     downEntrance = entrance;
+                
+                if (entrance.name == $"{ConstValues.DownEntrance}_2")
+                    downEntrance2 = entrance;
             }
         }
         

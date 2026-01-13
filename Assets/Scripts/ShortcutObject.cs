@@ -10,13 +10,17 @@ public enum ShortcutType
     CrushRight,
     CrushRight2,
     CrushUp,
+    CrushUp2,
     CrushDown,
+    CrushDown2,
     WallLeft,
     WallLeft2,
     WallRight,
     WallRight2,
     WallUp,
+    WallUp2,
     WallDown,
+    WallDown2,
 }
 
 public class ShortcutObject : MonoBehaviour
