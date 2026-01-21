@@ -444,6 +444,47 @@ public class SettingSkill
 }
 
 [Serializable]
+// 숏컷
+public class ShortCut
+{
+    public string type;
+    public bool isOpened;
+}
+
+[Serializable]
+// 스킬 및 패시브
+public class SkillAndPassive
+{
+    public string id;
+    public bool alreadyGet;
+}
+
+[Serializable]
+// 재화나 아이템(보물상자)
+public class TreasureBox
+{
+    public string id;
+    public int count;
+    public bool alreadyGet;
+}
+
+[Serializable]
+// 엘리베이터
+public class ElevatorData
+{
+    public string id;
+    public int idx;
+}
+
+[Serializable]
+// 잠긴 문
+public class LockDoorData
+{
+    public string id;
+    public bool isOpen;
+}
+
+[Serializable]
 public class RoomInfo
 {
     public string roomId;
@@ -457,6 +498,15 @@ public class RoomInfo
     public List<ShortCut> shortCut = new List<ShortCut>();
     public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
     public List<TreasureBox> treasureBox = new List<TreasureBox>();
+    public List<ElevatorData> elevators = new List<ElevatorData>();
+    public List<LockDoorData> lockDoors = new List<LockDoorData>();
+}
+
+[Serializable]
+public class ItemInfo
+{
+    public string id;
+    public int count;
 }
 
 [Serializable]
@@ -508,7 +558,8 @@ public class SaveData
     public string secondPlayer;
 
     public int npcSunGetSkill;
-    
+
+    public List<ItemInfo> itemList = new List<ItemInfo>();
     public SkillCollection playerSkill;
     public SkillKeyCollection playerSkillKey;
     public List<Vector2> miniMapCheckers = new List<Vector2>();
@@ -663,6 +714,8 @@ public class GameManager : Singleton<GameManager>
         get => saveData.miniMapCheckers;
         set => saveData.miniMapCheckers = value;
     }
+
+    public List<ItemInfo> ItemList => saveData.itemList;
 
     public SkillCollection PlayerSkill => saveData.playerSkill;
 
@@ -1548,6 +1601,12 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
+    // 해당 아이템을 가지고 있는가?
+    public bool IsHaveItem(string id)
+    {
+        return ItemList.Find(x => x.id == id) != null;
+    }
+
     public string GetSkillName(string id)
     {
         string skillName = default;
@@ -1571,8 +1630,11 @@ public class GameManager : Singleton<GameManager>
         if (curPlayer.BasicStat.id == SecondPlayer)
             nextPlayerId = FirstPlayer;
         
-        ActivePlayer(nextPlayerId);
         curPlayer = GetPlayer(nextPlayerId);
+        // 교체 시 유지해야하는 데이터 받아오기
+        curPlayer.ReceiveChangeData(pastPlayer);
+        ActivePlayer(nextPlayerId);
+
         curPlayer.transform.position = changePos;
         curPlayer.transform.localScale = pastPlayer.transform.localScale;
         curPlayer.JumpAttackCount = 0;

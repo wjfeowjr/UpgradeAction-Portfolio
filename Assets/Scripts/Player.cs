@@ -137,7 +137,7 @@ public abstract class Player : Character
     [SerializeField] private GameObject dashEffectUI;
     [SerializeField] private GameObject dashFrameUI;
     [SerializeField] private GameObject waitCharacterUI;
-    
+
     protected float globalCoolTime;
     protected float curGlobalCoolTime;
     
@@ -151,14 +151,6 @@ public abstract class Player : Character
     private float curSkillGlobalCoolTime;
 
     // 프로퍼티
-    public bool IsChanging => isChanging;
-    
-    public bool CanAttack
-    {
-        get => canAttack;
-        set => canAttack = value;
-    }
-    
     public int JumpAttackCount
     {
         get => jumpAttackCount;
@@ -217,6 +209,8 @@ public abstract class Player : Character
             v.x = currentPlatform.Velocity.x; // 기본은 플랫폼 속도
             v.y = currentPlatform.Velocity.y;
             myRigidbody.linearVelocity = v;
+            if (currentPlatform.Velocity == Vector2.zero)
+                currentPlatform = null;
         }
     }
 
@@ -1086,7 +1080,14 @@ public abstract class Player : Character
         Debug.Log("교체!");
         GameManager.Instance.CharacterChange();
     }
- 
+
+    public void ReceiveChangeData(Player player)
+    {
+        currentPlatform = player.currentPlatform;
+        if (player.landingState == ELandingState.Ground)
+            landingState = ELandingState.Ground;
+    }
+
     // 대시
     protected async UniTask<bool> Dash()
     {
@@ -1183,34 +1184,24 @@ public abstract class Player : Character
         if (!GameManager.Instance.ControlStart)
             return;
 
-        // 세이브 포인트
-        if (col.CompareTag(ConstValues.SaveObject))
+        // 상호작용
+        if (col.CompareTag(ConstValues.Interaction))
         {
-            if (col.GetComponent<SaveObject>())
+            if (col.GetComponent<InteractionController>())
             {
-                var saveObject = col.GetComponent<SaveObject>();
-                saveObject.SpawnInteractionObject();
+                var controller = col.GetComponent<InteractionController>();
+                controller.SpawnInteractionObject();
+                controller.IsPlayerTouch = true;
             }
         }
 
-        // 대화 상호작용
+        // Npc 상호작용
         if (col.CompareTag(ConstValues.Npc))
         {
             if (col.GetComponent<Npc>())
             {
                 var npc = col.GetComponent<Npc>();
                 npc.SpawnInteractionObject();
-            }
-        }
-        
-        // 보물상자 상호작용
-        if (col.CompareTag(ConstValues.TreasureBox))
-        {
-            if (col.GetComponent<RoomTreasureBox>())
-            {
-                var treasureBox = col.GetComponent<RoomTreasureBox>();
-                if(!treasureBox.IsOpen)
-                    treasureBox.SpawnInteractionObject();
             }
         }
     }
@@ -1285,13 +1276,14 @@ public abstract class Player : Character
                 isOnPlatform = false;
         }
 
-        // 세이브 포인트
-        if (col.CompareTag(ConstValues.SaveObject))
+        // 상호작용
+        if (col.CompareTag(ConstValues.Interaction))
         {
-            if (col.GetComponent<SaveObject>())
+            if (col.GetComponent<InteractionController>())
             {
-                var saveObject = col.GetComponent<SaveObject>();
-                saveObject.ReduceInteractionObject();
+                var controller = col.GetComponent<InteractionController>();
+                controller.ReduceInteractionObject();
+                controller.IsPlayerTouch = false;
             }
         }
 
@@ -1302,16 +1294,6 @@ public abstract class Player : Character
             {
                 var npc = col.GetComponent<Npc>();
                 npc.ReduceInteractionObject();
-            }
-        }
-        
-        // 보물상자 상호작용
-        if (col.CompareTag(ConstValues.TreasureBox))
-        {
-            if (col.GetComponent<RoomTreasureBox>())
-            {
-                var treasureBox = col.GetComponent<RoomTreasureBox>();
-                treasureBox.ReduceInteractionObject();
             }
         }
     }

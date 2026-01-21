@@ -179,7 +179,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MiniMapShortcutCells = "MiniMapShortcutCells";
     public const string MiniMapCheckers = "MiniMapCheckers";
     public const string SavePoint = "SavePoint";
-    public const string SaveObject = "SaveObject";
+    public const string Interaction = "Interaction";
     public const string InteractionUI = "InteractionUI";
     public const string InteractionSelectUI = "InteractionSelectUI";
     
@@ -188,8 +188,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string DialogueChoice = "DialogueChoice";
     public const string ProductDialogue = "ProductDialogue";
     public const string Talk = "Talk";
-    public const string TreasureBox = "TreasureBox";
-
+    
     public const string FirstCharacter = "FirstCharacter";
     public const string SecondCharacter = "SecondCharacter";
     
@@ -251,6 +250,12 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string ChangeCharacter = "ChangeCharacter";
     public const string ChangeCharacterKey = "ChangeCharacterKey";
+    
+    // 기타 애니메이션
+    public const string Left = "Left";
+    public const string Right = "Right";
+    public const string SwitchLeft = "SwitchLeft";
+    public const string SwitchRight = "SwitchRight";
     
     // 직업 공용
     public const string Face = "Face";

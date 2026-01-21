@@ -1675,7 +1675,10 @@ public abstract class Character : MonoBehaviour
             
             var movingPlatform = col.GetComponent<MovingPlatform>();
             if (movingPlatform != null)
-                currentPlatform = movingPlatform;
+            {
+                if(movingPlatform.Velocity != Vector2.zero)
+                    currentPlatform = movingPlatform;
+            }
 
             // 랜딩상태
             if (landingState == ELandingState.Air && normalState != ENormalState.Dash)

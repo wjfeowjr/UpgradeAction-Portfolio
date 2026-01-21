@@ -33,11 +33,13 @@ public class InteractionObject : MonoBehaviour
         StartSetting();
     }
 
+    // 모든 상호작용은 플레이어가 서있는 상태에서만 할 수 있다
     private void Update()
     {
         if (GameManager.Instance.ControlStart && GameManager.Instance.CurPlayer.NormalState == ENormalState.Idle && !isFading && isExpansion && Input.GetKeyDown(KeyCode.UpArrow))
         {
-            interactionAction();
+            if(interactionAction != null)
+                interactionAction();
         }
     }
 

@@ -9,11 +9,12 @@ public class Platform : MonoBehaviour
     [SerializeField] private Sprite[] spriteEnd;
     [SerializeField] private int idx;
     private SpriteRenderer[] platformSpriteList;
+    
+    private MovingPlatform movingPlatform;
 
     private void Awake()
     {
         platformSpriteList = GetComponentsInChildren<SpriteRenderer>();
-
         for (var i = 0; i < platformSpriteList.Length; i++)
         {
             if (i == 0)
@@ -22,6 +23,13 @@ public class Platform : MonoBehaviour
                 platformSpriteList[i].sprite = spriteEnd[idx];
             else
                 platformSpriteList[i].sprite = spriteMiddle[idx];
+        }
+
+        movingPlatform = GetComponent<MovingPlatform>();
+        if (movingPlatform)
+        {
+            movingPlatform.IsMoving = true;
+            movingPlatform.IsRepeat = true;
         }
     }
 

@@ -21,31 +21,6 @@ public enum EntranceDir
     Down2
 }
 
-[Serializable]
-// 스킬 및 패시브
-public class ShortCut
-{
-    public string type;
-    public bool isOpened;
-}
-
-[Serializable]
-// 스킬 및 패시브
-public class SkillAndPassive
-{
-    public string id;
-    public bool alreadyGet;
-}
-
-[Serializable]
-// 재화나 아이템(보물상자)
-public class TreasureBox
-{
-    public string id;
-    public int count;
-    public bool alreadyGet;
-}
-
 public class Room : MonoBehaviour
 {
     private bool isFading;
@@ -76,7 +51,9 @@ public class Room : MonoBehaviour
 
     [SerializeField] protected RoomSkillAndPassive[] roomSkillAndPassive;
     [SerializeField] protected RoomTreasureBox[] roomTreasureBox;
-
+    [SerializeField] protected Elevator[] elevators;
+    [SerializeField] protected LockDoor[] lockDoors;
+    
     [SerializeField] private Transform minCameraLimitX;
     [SerializeField] private Transform maxCameraLimitX;
     [SerializeField] private Transform minCameraLimitY;
@@ -277,7 +254,7 @@ public class Room : MonoBehaviour
         // 여기서 숏컷 제어
         SetShortCut();
         // 여기서 세이브포인트 데이터 넣기
-        SetSavePoint();
+         SetSavePoint();
         // 여기서 인접 방 확인하기
         SetBossGate();
         
@@ -407,6 +384,38 @@ public class Room : MonoBehaviour
                 }
             }
         }
+        
+        // 엘리베이터 설정
+        if (roomInfo.elevators.Count < elevators.Length)
+        {
+            for (int i = 0; i < elevators.Length; i++)
+            {
+                int idx = i;
+
+                var elevator = new ElevatorData()
+                {
+                    id = elevators[idx].name,
+                    idx = 0
+                };
+                roomInfo.elevators.Add(elevator);
+            }
+        }
+
+        // 잠긴 문 설정
+        if (roomInfo.lockDoors.Count < lockDoors.Length)
+        {
+            for (int i = 0; i < lockDoors.Length; i++)
+            {
+                int idx = i;
+
+                var door = new LockDoorData()
+                {
+                    id = lockDoors[idx].name,
+                    isOpen = false
+                };
+                roomInfo.lockDoors.Add(door);
+            }
+        }
 
         // 연출을 봤다면, 다시 나오지 않게 조정
         if (productCount > 0)
@@ -475,6 +484,66 @@ public class Room : MonoBehaviour
                 });
             }
         }
+        
+        // 엘리베이터
+        for (int i = 0; i < roomInfo.elevators.Count; i++)
+        {
+            int idx = i;
+            
+            elevators[i].SetUpDown(roomInfo.elevators[idx].idx);
+            elevators[i].PosSetting();
+            elevators[i].SetInteractionAction();
+            elevators[i].SetLeverAction();
+            
+            // 출발
+            elevators[i].SetAction(() =>
+            {
+                elevators[idx].ReduceInteractionObject();
+            });
+            
+            // 도착
+            elevators[i].SetSaveAction(() =>
+            {
+                roomInfo.elevators[idx].idx = elevators[idx].TargetIdx;
+                GameManager.Instance.ControlStart = true;
+                GameManager.Instance.SaveGame();
+            });
+        }
+
+        // 잠긴 문
+        for (int i = 0; i < roomInfo.lockDoors.Count; i++)
+        {
+            int idx = i;
+            lockDoors[i].SetOpen(roomInfo.lockDoors[idx].isOpen);
+
+            if (lockDoors[i].IsOpen)
+            {
+                lockDoors[i].DeleteDoor();
+            }
+            else
+            {
+                lockDoors[i].SetInteractionAction();
+                lockDoors[i].SetAction(() =>
+                {
+                    // 열쇠를 가지고 있는 경우
+                    if (GameManager.Instance.IsHaveItem(lockDoors[idx].KeyId))
+                    {
+                        Debug.Log($"{lockDoors[idx].KeyId}아이템을 가지고 있음. 문이 열렸다!");
+                        lockDoors[idx].OpenDoor();
+                        lockDoors[idx].ReduceInteractionObject();
+                        // 이후 연출
+                        roomInfo.lockDoors[idx].isOpen = true;
+                        GameManager.Instance.SaveGame();
+                    }
+                    // 열쇠가 없는 경우
+                    else
+                    {
+                        Debug.Log($"{lockDoors[idx].KeyId}아이템을 가지고 있지 않음");
+                    }
+                });
+            }
+        }
+        GameManager.Instance.SaveGame();
     }
     public void MonsterPosSetting()
     {
@@ -1814,7 +1883,7 @@ public class Room : MonoBehaviour
         }
     }
 
-    // 몬스터 및 보스 캐싱
+    // 캐싱
     public void CacheObjects()
     {
         Transform monsterArray = roomGameObject.transform.Find(ConstValues.MonsterArray);
@@ -1945,39 +2014,5 @@ public class Room : MonoBehaviour
                     downBossGate = gate.gameObject;
             }
         }
-        
-        // Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
-        // if (playerPosArray != null)
-        // {
-        //     Transform leftPlayerPos = playerPosArray.transform.Find(ConstValues.LeftPlayerPos);
-        //     if (leftPlayerPos != null)
-        //         leftPlayerPos.gameObject.name = $"{ConstValues.LeftPlayerPos}_1";
-        //     Transform rightPlayerPos = playerPosArray.transform.Find(ConstValues.RightPlayerPos);
-        //     if (rightPlayerPos != null)
-        //         rightPlayerPos.gameObject.name = $"{ConstValues.RightPlayerPos}_1";
-        //     Transform upPlayerPos = playerPosArray.transform.Find(ConstValues.UpPlayerPos);
-        //     if (upPlayerPos != null)
-        //         upPlayerPos.gameObject.name = $"{ConstValues.UpPlayerPos}_1";
-        //     Transform downPlayerPos = playerPosArray.transform.Find(ConstValues.DownPlayerPos);
-        //     if (downPlayerPos != null)
-        //         downPlayerPos.gameObject.name = $"{ConstValues.DownPlayerPos}_1";
-        // }
-        //
-        // Transform entranceArray = roomGameObject.transform.Find(ConstValues.EntranceArray);
-        // if (entranceArray != null)
-        // {
-        //     Transform leftEntrance = entranceArray.Find(ConstValues.LeftEntrance);
-        //     if (leftEntrance != null)
-        //         leftEntrance.gameObject.name = $"{ConstValues.LeftEntrance}_1";
-        //     Transform rightEntrance = entranceArray.Find(ConstValues.RightEntrance);
-        //     if (rightEntrance != null)
-        //         rightEntrance.gameObject.name = $"{ConstValues.RightEntrance}_1";
-        //     Transform upEntrance = entranceArray.Find(ConstValues.UpEntrance);
-        //     if (upEntrance != null)
-        //         upEntrance.gameObject.name = $"{ConstValues.UpEntrance}_1";
-        //     Transform downEntrance = entranceArray.Find(ConstValues.DownEntrance);
-        //     if (downEntrance != null)
-        //         downEntrance.gameObject.name = $"{ConstValues.DownEntrance}_1";
-        // }
     }
 }
