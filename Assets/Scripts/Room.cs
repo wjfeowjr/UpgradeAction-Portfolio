@@ -341,6 +341,7 @@ public class Room : MonoBehaviour
                 addShortcut.isOpened = false;
                 roomInfo.shortCut.Add(addShortcut);
             }
+            GameManager.Instance.SaveGame();
         }
 
         // 맵에 널려있는 스킬 세팅
@@ -359,12 +360,13 @@ public class Room : MonoBehaviour
                     };
                     roomInfo.skillAndPassive.Add(skillAndPassive);
                 }
+                GameManager.Instance.SaveGame();
             }
         }
         
         // 맵에 널려있는 보물상자 세팅
         var treasureBoxArray = roomsData.treasureBox.Split('ㅗ');
-        if (roomInfo.treasureBox.Count != treasureBoxArray.Length)
+        if (roomInfo.treasureBox.Count < treasureBoxArray.Length)
         {
             if (treasureBoxArray[0] != ConstValues.None)
             {
@@ -382,6 +384,7 @@ public class Room : MonoBehaviour
                     };
                     roomInfo.treasureBox.Add(treasureBox);
                 }
+                GameManager.Instance.SaveGame();
             }
         }
         
@@ -399,6 +402,7 @@ public class Room : MonoBehaviour
                 };
                 roomInfo.elevators.Add(elevator);
             }
+            GameManager.Instance.SaveGame();
         }
 
         // 잠긴 문 설정
@@ -415,6 +419,7 @@ public class Room : MonoBehaviour
                 };
                 roomInfo.lockDoors.Add(door);
             }
+            GameManager.Instance.SaveGame();
         }
 
         // 연출을 봤다면, 다시 나오지 않게 조정
@@ -528,7 +533,7 @@ public class Room : MonoBehaviour
                     // 열쇠를 가지고 있는 경우
                     if (GameManager.Instance.IsHaveItem(lockDoors[idx].KeyId))
                     {
-                        Debug.Log($"{lockDoors[idx].KeyId}아이템을 가지고 있음. 문이 열렸다!");
+                        lockDoors[idx].OpenMessage();
                         lockDoors[idx].OpenDoor();
                         lockDoors[idx].ReduceInteractionObject();
                         // 이후 연출
@@ -538,12 +543,11 @@ public class Room : MonoBehaviour
                     // 열쇠가 없는 경우
                     else
                     {
-                        Debug.Log($"{lockDoors[idx].KeyId}아이템을 가지고 있지 않음");
+                        lockDoors[idx].LockMessage();
                     }
                 });
             }
         }
-        GameManager.Instance.SaveGame();
     }
     public void MonsterPosSetting()
     {

@@ -50,6 +50,20 @@ public class LockDoor : InteractionController
     {
         gameObject.SetActive(false);
     }
+    
+    // 잠겨있음
+    public async void OpenMessage()
+    {
+        string getMessage = $"문이 열렸다";
+        await GameManager.Instance.SpawnWarningPopup(getMessage);
+    }
+    
+    // 잠겨있음
+    public async void LockMessage()
+    {
+        string getMessage = $"{keyId}가 필요합니다";
+        await GameManager.Instance.SpawnWarningPopup(getMessage);
+    }
 
     public void SetAction(Action getAction)
     {

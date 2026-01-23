@@ -754,7 +754,12 @@ public class GameManager : Singleton<GameManager>
     {
         base.Awake();
         //QualitySettings.vSyncCount = 0;
+        
         saveFileName = $"{ConstValues.User}_{saveIdx}";
+#if UNITY_EDITOR
+        saveFileName = $"{ConstValues.User}_{saveIdx}_Editor";
+#endif
+        
         Application.targetFrameRate = 60;
         InitManager();
         
