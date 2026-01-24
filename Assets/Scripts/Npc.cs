@@ -89,7 +89,7 @@ public class Npc : Character
             
             List<string> choiceList = new List<string>();
             foreach (var select in selectList)
-                choiceList.Add(select.choiceText);
+                choiceList.Add(GameManager.Instance.GetTalk(select.talk));
             
             List<string> idList = new List<string>();
             foreach (var select in selectList)
@@ -160,7 +160,7 @@ public class Npc : Character
             if(cameraShake != Vector2.zero)
                 GameManager.Instance.CameraShake(cameraShake.x, cameraShake.y, talk.shakeTime);
             
-            SpawnSpeechFrame(speechFrame, speechVector, talk.speechText);
+            SpawnSpeechFrame(speechFrame, speechVector, GameManager.Instance.GetTalk(talk.talk));
             await NextDialog(speechFrame);
             if (talk.isEnd)
                 break;
@@ -253,7 +253,7 @@ public class Npc : Character
                     break;
             }
             
-            SpawnSpeechFrame(speechFrame, speechPos.position, firstTalk.speechText);
+            SpawnSpeechFrame(speechFrame, speechPos.position, GameManager.Instance.GetTalk(firstTalk.talk));
             await NextDialog(speechFrame);
             isFirstTalk = true;
         }
@@ -372,7 +372,7 @@ public class Npc : Character
     // 스킬을 획득 후 독백 이벤트
     private async void GetSkillDialogue(string skillName)
     {
-        string getMessage = $"{skillName}을(를) 획득하였다!";
+        string getMessage = string.Format(GameManager.Instance.GetTalk(30200), skillName);
         await GameManager.Instance.SpawnWarningPopup(getMessage);
     }
     

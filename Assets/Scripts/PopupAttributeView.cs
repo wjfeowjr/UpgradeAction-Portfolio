@@ -81,6 +81,9 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [SerializeField] private GameObject sellButton;
     [SerializeField] private TMP_Text buyText;
     [SerializeField] private TMP_Text sellText;
+    [SerializeField] private TMP_Text[] enterTexts;
+    [SerializeField] private TMP_Text selectText;
+    [SerializeField] private TMP_Text backText;
     
     [SerializeField] private GameObject berserkerObject;
     [SerializeField] private GameObject gunnerObject;
@@ -561,13 +564,19 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         SetSkillIndex(0, true);
         explainObject.SetActive(false);
 
-        skillText.text = "[ 스킬 ]";
-        attributeText.text = "스킬 특성 설정";
-        activeText.text = "활성화";
-        disActiveText.text = "비활성화";
+        skillText.text = GameManager.Instance.GetTalk(30004);
+        attributeText.text = GameManager.Instance.GetTalk(30005);
+        activeText.text = GameManager.Instance.GetTalk(30006);
+        disActiveText.text = GameManager.Instance.GetTalk(30007);
         
-        buyText.text = "구매";
-        sellText.text = "판매";
+        buyText.text = GameManager.Instance.GetTalk(30008);
+        sellText.text = GameManager.Instance.GetTalk(30009);
+
+        foreach (var enterText in enterTexts)
+            enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey);
+        
+        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
+        backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
     }
 
     private void RefreshLeftPoint()
@@ -697,8 +706,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         if (baseRow == null)
             return;
         
-        attributeNameText.text = baseRow.name;
-        attributeExplainText.text = baseRow.talk;
+        attributeNameText.text = GameManager.Instance.GetTalk(baseRow.talk);
+        attributeExplainText.text = GameManager.Instance.GetTalk(baseRow.explainTalk);
         costText.text = baseRow.cost.ToString();
 
         curCost = baseRow.cost;

@@ -1,11 +1,18 @@
+using System;
 using TMPro;
 using UnityEngine;
 
 public class SpeechFrame : MonoBehaviour
 {
-    [SerializeField] private TMP_Text dialogText; 
-    [SerializeField] private GameObject nextObject; 
-    
+    [SerializeField] private TMP_Text dialogText;
+    [SerializeField] private TMP_Text nextText;
+    [SerializeField] private GameObject nextObject;
+
+    private void Awake()
+    {
+        nextText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.spaceKey);
+    }
+
     public void SetPos(Vector2 pos)
     {
         transform.position = pos;

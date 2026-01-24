@@ -55,7 +55,7 @@ public class RoomTreasureBox : InteractionController
     
     public void SetInteractionAction()
     {
-        SetInteractionAction(GetItem, "열기", "↑");
+        SetInteractionAction(GetItem, GameManager.Instance.GetTalk(30001), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
     }
     
     private void GetItem()

@@ -20,7 +20,7 @@ public class AttributeFrame_Skill : AttributeFrame
         if (isHaveSkill)
         {
             mainImage.sprite = GameManager.Instance.GetAtlasSprite(skill.id);
-            skillName.text = skill.name;
+            skillName.text = GameManager.Instance.GetTalk(skill.talk);
             skillObject.SetActive(true);
             lockObject.SetActive(false);
             frameImage.sprite = frameSprite[1];

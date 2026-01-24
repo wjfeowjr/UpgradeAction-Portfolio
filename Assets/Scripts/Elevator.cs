@@ -44,7 +44,7 @@ public class Elevator : InteractionController
 
     public void SetInteractionAction()
     {
-        SetInteractionAction(Operation, "작동", "↑");
+        SetInteractionAction(Operation, GameManager.Instance.GetTalk(30003), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
     }
 
     public void SetLeverAction()

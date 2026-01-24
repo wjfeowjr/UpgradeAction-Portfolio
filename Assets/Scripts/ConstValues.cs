@@ -59,6 +59,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SkillKey7 = "SkillKey7";
     public const string SkillKey8 = "SkillKey8";
 
+    public const string InteractionKey = "InteractionKey";
     public const string OptionKey = "OptionKey";
     
     public const string TotalBar = "TotalBar";

@@ -110,7 +110,7 @@ public class PlayerData
 {
     // 공통 데이터
     public string id;
-    public string name;
+    public int talk;
     public string bodyType;
     public int hp;
     public int power;
@@ -142,7 +142,7 @@ public class MonsterData
 {
     // 공통 데이터
     public string id;
-    public string name;
+    public int talk;
     public string bodyType;
     public int hp;
     public int power;
@@ -192,8 +192,8 @@ public class SkillData
     public string type;
     public string caster;
     public string coolTime;
-    public string name;
-    public string explain;
+    public int talk;
+    public int explainTalk;
 }
 [Serializable]
 public class SkillDataList
@@ -208,8 +208,8 @@ public class SkillAttributeData
     public string skill;
     public int level;
     public int cost;
-    public string name;
-    public string talk;
+    public int talk;
+    public int explainTalk;
 }
 [Serializable]
 public class SkillAttributeDataList
@@ -241,6 +241,7 @@ public class RoomsDataList
 public class NpcData
 {
     public string id;
+    public int talk;
     public string startDialog;
     public string dialogKey;
 }
@@ -255,7 +256,7 @@ public class DialogueData
 {
     public string id;
     public bool isSpeaker;
-    public string speechText;
+    public int talk;
     public bool isEnd;
     public string choiceGroupId;
     public string speechFrame;
@@ -279,7 +280,7 @@ public class DialogueChoiceData
 {
     public string id;
     public string npc;
-    public string choiceText;
+    public int talk;
 }
 [Serializable]
 public class DialogueChoiceDataList
@@ -291,7 +292,7 @@ public class DialogueChoiceDataList
 public class ProductDialogueData
 {
     public string id;
-    public string talk;
+    public int talk;
 }
 [Serializable]
 public class ProductDialogueDataList
@@ -303,8 +304,7 @@ public class ProductDialogueDataList
 public class TalkData
 {
     public int idx;
-    public string type;
-    public string talk;
+    public string kr;
 }
 [Serializable]
 public class TalkDataList

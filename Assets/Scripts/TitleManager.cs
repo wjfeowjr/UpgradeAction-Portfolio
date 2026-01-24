@@ -60,8 +60,15 @@ public class TitleManager : MonoBehaviour
             GameManager.Instance.FirstStart();
         }
 
-        if (Input.anyKeyDown)
-            GameManager.Instance.GoScene(ConstValues.BattleScene);
+        // 아무 키 누르기
+        if (!Input.anyKeyDown)
+            return;
+        
+        // 마우스 클릭은 제외
+        if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
+            return;
+            
+        GameManager.Instance.GoScene(ConstValues.BattleScene);
     }
     
     private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)

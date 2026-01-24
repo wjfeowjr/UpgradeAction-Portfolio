@@ -122,6 +122,10 @@ public class RoomManager : Singleton<RoomManager>
     protected virtual void Update()
     {
         GameManager.Instance.ReduceSkillPlayer();
+        
+        // 테스트 용도
+        // if (Input.GetKeyDown(KeyCode.F1))
+        //     Guide(40003);
 
         if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.tabKey))
             SpawnMinimap();
@@ -234,8 +238,8 @@ public class RoomManager : Singleton<RoomManager>
             var minimapInterface = popupMinimap.MinimapView.ConvertTo<IPopupMinimapView>();
             var minimapModel = new PopupMinimapModel()
             {
-                checkString = "마크: Enter",
-                closeString = "닫기: Esc",
+                checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(GameManager.Instance.markKey)),
+                closeString = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
                 moveAction = MinimapCameraMove,
                 checkAction = SpawnCheckMark,
             };
@@ -405,7 +409,27 @@ public class RoomManager : Singleton<RoomManager>
     }
     public void Guide(int idx)
     {
-        string guideMessage = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).talk;
+        string guideMessage;
+
+        switch (idx)
+        {
+            case 40000:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.tabKey));
+                break;
+            case 40001:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
+                break;
+            case 40003:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.attributeKey));
+                break;
+            case 40004:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
+                break;
+            default:
+                guideMessage = GameManager.Instance.GetTalk(idx);
+                break;
+        }
+
         string imgName = $"{ConstValues.Guide}{idx}";
 
         var guideModel = new PopupGuideModel()

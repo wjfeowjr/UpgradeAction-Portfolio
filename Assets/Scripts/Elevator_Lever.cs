@@ -50,7 +50,7 @@ public class Elevator_Lever : InteractionController
 
     public void SetInteractionAction()
     {
-        SetInteractionAction(InteractionAction, "작동", "↑");
+        SetInteractionAction(InteractionAction, GameManager.Instance.GetTalk(30003), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
     }
 
     private void InteractionAction()

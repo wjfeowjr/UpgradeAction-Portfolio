@@ -253,7 +253,7 @@ public class SkillCollection
                 if (berserkerSkillSetting.attributePoint < attributeData[0].cost)
                 {
                     SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                    await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
+                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
                 }
                 else
                 {
@@ -284,12 +284,12 @@ public class SkillCollection
                     else
                     {
                         SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                        await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
+                        await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
                     }
                 }
                 else
                 {
-                    await GameManager.Instance.SpawnWarningPopup("특성이 최대 레벨입니다.");
+                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30203));
                 }
             }
         }
@@ -304,7 +304,7 @@ public class SkillCollection
                 if (gunnerSkillSetting.attributePoint < attributeData[0].cost)
                 {
                     SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                    await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
+                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
                 }
                 else
                 {
@@ -337,12 +337,12 @@ public class SkillCollection
                     else
                     {
                         SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                        await GameManager.Instance.SpawnWarningPopup("특성 포인트가 부족합니다.");
+                        await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
                     }
                 }
                 else
                 {
-                    await GameManager.Instance.SpawnWarningPopup("특성이 최대 레벨입니다.");
+                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30203));
                 }
             }
         }
@@ -359,7 +359,7 @@ public class SkillCollection
 
             if (targetAttribute == null)
             {
-                await GameManager.Instance.SpawnWarningPopup("특성레벨을 더 이상 내릴 수 없습니다.");
+                await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30204));
             }
             else
             {
@@ -383,7 +383,7 @@ public class SkillCollection
 
             if (targetAttribute == null)
             {
-                await GameManager.Instance.SpawnWarningPopup("특성레벨을 더 이상 내릴 수 없습니다.");
+                await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30204));
             }
             else
             {
@@ -419,7 +419,7 @@ public class SkillCollection
                 gunnerSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
                 break;
         }
-        await GameManager.Instance.SpawnWarningPopup("특성이 초기화 되었습니다.");
+        await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30205));
     }
 }
 
@@ -576,6 +576,8 @@ public class GameManager : Singleton<GameManager>
     public KeyCode tabKey;
     public KeyCode spaceKey;
     public KeyCode attributeKey;
+    public KeyCode markKey;
+    public KeyCode confirmKey;
     
     public KeyCode leftMoveKey;
     public KeyCode rightMoveKey;
@@ -595,6 +597,7 @@ public class GameManager : Singleton<GameManager>
     //public KeyCode skillKey7;
     //public KeyCode skillKey8;
 
+    public KeyCode interactionKey;
     public KeyCode optionKey;
 
     [SerializeField] private SpriteAtlas uiAtlas;
@@ -835,6 +838,25 @@ public class GameManager : Singleton<GameManager>
         return prefabList;
     }
 
+    public string GetTalk(int idx)
+    {
+        return TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).kr;
+    }
+    
+    public string GetKeyCode(KeyCode keycode)
+    {
+        return keycode switch
+        {
+            KeyCode.LeftArrow => "←",
+            KeyCode.RightArrow => "→",
+            KeyCode.UpArrow => "↑",
+            KeyCode.DownArrow => "↓",
+            KeyCode.Escape => "Esc",
+            KeyCode.Return => "Enter",
+            _ => keycode.ToString()
+        };
+    }
+
     public void GoScene(string sceneName)
     {
         SceneManager.LoadScene(sceneName);
@@ -865,6 +887,8 @@ public class GameManager : Singleton<GameManager>
         tabKey = KeyCode.Tab;
         spaceKey = KeyCode.Space;
         attributeKey = KeyCode.I;
+        markKey = KeyCode.Return;
+        confirmKey = KeyCode.Return;
         
         leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
@@ -884,6 +908,8 @@ public class GameManager : Singleton<GameManager>
         //skillKey6 = KeyBinding.LoadKey(ConstValues.SkillKey6, KeyCode.W);
         //skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.E);
         //skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.R);
+        
+        interactionKey = KeyBinding.LoadKey(ConstValues.InteractionKey, KeyCode.UpArrow);
 
         // 각 플레이어들의 스킬 키 세팅 초기화
         List<SkillKey> berserkerSkillKeyList = new List<SkillKey>();
@@ -1599,8 +1625,8 @@ public class GameManager : Singleton<GameManager>
                 addedSkill.curCoolTime.Add(float.Parse(coolTime));
             }
             
-            addedSkill.name = skill.name;
-            addedSkill.explain = skill.explain;
+            addedSkill.talk = GetTalk(skill.talk);
+            addedSkill.explainTalk = GetTalk(skill.explainTalk);
             changeSkill.playerSkill = addedSkill;
             break;
         }
@@ -1620,7 +1646,7 @@ public class GameManager : Singleton<GameManager>
             if (skill.id != id)
                 continue;
 
-            skillName = skill.name;
+            skillName = GetTalk(skill.talk);
             break;
         }
 

@@ -59,7 +59,7 @@ public class PopupGuideView : MonoBehaviour, IPopupGuideView
 
     public void SetModel(string guideMessage, string imgName)
     {
-        titleText.text = "가이드";
+        titleText.text = GameManager.Instance.GetTalk(30010);
         explainText.text = guideMessage;
         guideImage.sprite = GameManager.Instance.GetAtlasSprite(imgName);
     }

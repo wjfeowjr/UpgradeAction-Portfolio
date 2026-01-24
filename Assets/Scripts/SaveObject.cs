@@ -17,6 +17,6 @@ public class SaveObject : InteractionController
 
     public void SetSaveAction(Action action)
     {
-        SetInteractionAction(action, "저장", "↑");
+        SetInteractionAction(action, GameManager.Instance.GetTalk(30002), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
     }
 }

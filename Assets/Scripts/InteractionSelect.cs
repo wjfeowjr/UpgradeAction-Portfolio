@@ -8,6 +8,7 @@ using UnityEngine;
 
 public class InteractionSelect : MonoBehaviour
 {
+    [SerializeField] private TMP_Text selectKey;
     [SerializeField] private TMP_Text[] selectTexts;
     
     private Vector3 basicScale = Vector3.one;
@@ -24,7 +25,12 @@ public class InteractionSelect : MonoBehaviour
     private Action<string> interactionAction;
     private Action closeAction;
     private CancellationTokenSource waitCancellation;
-    
+
+    private void Awake()
+    {
+        selectKey.text = GameManager.Instance.GetKeyCode(GameManager.Instance.spaceKey);
+    }
+
     private void OnEnable()
     {
         ChoiceDelay();

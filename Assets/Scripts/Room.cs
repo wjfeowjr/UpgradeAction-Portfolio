@@ -23,6 +23,7 @@ public enum EntranceDir
 
 public class Room : MonoBehaviour
 {
+    private bool firstStart;
     private bool isFading;
     private bool nearBossRoom;
     private int productViewIdx;
@@ -234,7 +235,10 @@ public class Room : MonoBehaviour
         SetSavePoint();
         SetBossGate();
         await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
-        GameManager.Instance.ControlStart = true;
+        
+        if(!firstStart)
+            GameManager.Instance.ControlStart = true;
+        
         isFading = false;
     }
     // 세이브 포인트가 있을때 적용
@@ -892,7 +896,7 @@ public class Room : MonoBehaviour
         saveObject.SetSaveAction(() =>
         {
             GameManager.Instance.SavePoint = name;
-            GameManager.Instance.SpawnWarningPopup("세이브 포인트가 저장되었습니다.").Forget();
+            GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30206)).Forget();
             GameManager.Instance.RefillPlayerHp();
             saveObject.InteractionObject.FadeOut();
             SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
@@ -1354,14 +1358,11 @@ public class Room : MonoBehaviour
     private async void Product1()
     {
         // 연출 시작 전 세팅
+        firstStart = true;
         StopBGM();
         roomCustomObjects[0].SetActive(false);
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
         
-        // var sunObject = RoomManager.Instance.SunObject;
-        // sunObject.gameObject.transform.position = bossPos[0].position;
-        // sunObject.gameObject.SetActive(true);
-        // sunObject.BasicStat.moveSpeed = 0;
         bosses[0].enabled = false;
         bosses[0].transform.position = bossPos[0].position;
         bosses[0].gameObject.SetActive(true);
@@ -1373,11 +1374,13 @@ public class Room : MonoBehaviour
         // 에피소드 팝업부터 시작
         GameManager.Instance.ControlStart = false;
         
-        string title = TableManager.Instance.productDialogueTable.ProductDialogue.Find(x => x.id == ConstValues.Episode1Title).talk;
+        int titleTalk = TableManager.Instance.productDialogueTable.ProductDialogue.Find(x => x.id == ConstValues.Episode1Title).talk;
+        string title = GameManager.Instance.GetTalk(titleTalk);
+        
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product1);
         List<string> talkList = new List<string>();
         foreach (var productDialogue in productDialogueList)
-            talkList.Add(productDialogue.talk);
+            talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
 
         await RoomManager.Instance.ProductEpisode(title);
         GameManager.Instance.InitDialogueCancellation();
@@ -1425,6 +1428,7 @@ public class Room : MonoBehaviour
 
         roomInfo.productCount += 1;
         GameManager.Instance.SaveGame();
+        firstStart = false;
     }
 
     private async void Product2()
@@ -1436,7 +1440,7 @@ public class Room : MonoBehaviour
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product2);
         List<string> talkList = new List<string>();
         foreach (var productDialogue in productDialogueList)
-            talkList.Add(productDialogue.talk);
+            talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
         
         UIOff();
             
@@ -1451,7 +1455,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[1]);
         await NextDialog(speechFrame1[0]);
 
-        RoomManager.Instance.Guide(0);
+        RoomManager.Instance.Guide(40000);
         
         UIOn();
         roomInfo.productCount += 1;
@@ -1467,7 +1471,7 @@ public class Room : MonoBehaviour
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product3);
         List<string> talkList = new List<string>();
         foreach (var productDialogue in productDialogueList)
-            talkList.Add(productDialogue.talk);
+            talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
 
         UIOff();
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
@@ -1478,7 +1482,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
         await NextDialog(speechFrame1[0]);
 
-        RoomManager.Instance.Guide(1);
+        RoomManager.Instance.Guide(40001);
         UIOn();
         roomInfo.productCount += 1;
         GameManager.Instance.SaveGame();
@@ -1493,7 +1497,7 @@ public class Room : MonoBehaviour
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product4);
         List<string> talkList = new List<string>();
         foreach (var productDialogue in productDialogueList)
-            talkList.Add(productDialogue.talk);
+            talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
 
         // 문 닫기
         DoorActive(true);
@@ -1755,7 +1759,7 @@ public class Room : MonoBehaviour
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product5);
         List<string> talkList = new List<string>();
         foreach (var productDialogue in productDialogueList)
-            talkList.Add(productDialogue.talk);
+            talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
 
         UIOff();
         
@@ -1763,7 +1767,8 @@ public class Room : MonoBehaviour
         StopBGM();
         PlayBGM(ConstValues.BGMEpisode2Battle);
         // 에피소드 팝업부터 시작
-        string title = TableManager.Instance.productDialogueTable.ProductDialogue.Find(x => x.id == ConstValues.Episode2Title).talk;
+        int titleTalk = TableManager.Instance.productDialogueTable.ProductDialogue.Find(x => x.id == ConstValues.Episode2Title).talk;
+        string title = GameManager.Instance.GetTalk(titleTalk);
         await RoomManager.Instance.ProductEpisode(title);
         
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
@@ -1800,7 +1805,7 @@ public class Room : MonoBehaviour
         
         // 2인 캐릭터 설정 및 저장
         GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
-        RoomManager.Instance.Guide(4);
+        RoomManager.Instance.Guide(40004);
         
         UIOn();
         roomInfo.productCount += 1;
@@ -1836,7 +1841,7 @@ public class Room : MonoBehaviour
     // 스킬을 획득 후 이벤트
     private async void GetSkillEvent(string skillName)
     {
-        string getMessage = $"{skillName}을(를) 획득하였다!";
+        string getMessage = string.Format(GameManager.Instance.GetTalk(30200), skillName);;
         
         if (GameManager.Instance.FirstGetSkill)
         {
@@ -1855,7 +1860,7 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
 
-            RoomManager.Instance.Guide(2);
+            RoomManager.Instance.Guide(40002);
             UIOn();
         }
     }
@@ -1863,7 +1868,7 @@ public class Room : MonoBehaviour
     // 특성 포인트 획득 후 이벤트
     private async void GetAttributeEvent(int pointCount)
     {
-        string getMessage = $"특성 포인트 {pointCount}점을 획득하였다!";
+        string getMessage = string.Format(GameManager.Instance.GetTalk(30201), pointCount.ToString());
         
         if (GameManager.Instance.FirstGetAttribute)
         {
@@ -1882,7 +1887,7 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
 
-            RoomManager.Instance.Guide(3);
+            RoomManager.Instance.Guide(40003);
             UIOn();
         }
     }

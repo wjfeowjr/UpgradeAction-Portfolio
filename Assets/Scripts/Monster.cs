@@ -313,7 +313,7 @@ public class Monster : Character
         basicStat = new BasicStat()
         {
             id = targetStat.id,
-            name = targetStat.name,
+            name = GameManager.Instance.GetTalk(targetStat.talk),
             bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
             hp = targetStat.hp,
             maxHp = targetStat.hp,
@@ -333,7 +333,7 @@ public class Monster : Character
             originStat = new BasicStat()
             {
                 id = targetStat.id,
-                name = targetStat.name,
+                name = GameManager.Instance.GetTalk(targetStat.talk),
                 bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
                 hp = targetStat.hp,
                 maxHp = targetStat.hp,
@@ -1547,7 +1547,7 @@ public class Monster : Character
     // 몬스터 뒤돌기
     private int MonsterCheckWalk()
     {
-        var rayVector = transform.position;
+        var rayVector = new Vector2(transform.position.x, transform.position.y + 0.02f);
         var distance = myBoxCollider.size.x * 0.5f + 0.2f;
         float halfWidth = physicsCollider.size.x * 0.5f;
 

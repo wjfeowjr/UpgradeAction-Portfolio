@@ -13,7 +13,7 @@ public class SkillTooltip : MonoBehaviour
     public void SetTooltip(PlayerSkill playerSkill)
     {
         skillImage.sprite = GameManager.Instance.GetAtlasSprite(playerSkill.id);
-        skillName.text = playerSkill.name;
+        skillName.text = playerSkill.talk;
         
         skillCoolTime.text = $"쿨타임 : {playerSkill.maxCoolTime[0]}초";
 
@@ -21,6 +21,6 @@ public class SkillTooltip : MonoBehaviour
         if (playerSkill.maxCoolTime.Count > 1)
             skillStack.text = $"충전량 : {playerSkill.maxCoolTime[2]}회";
 
-        skillExplain.text = playerSkill.explain;
+        skillExplain.text = playerSkill.explainTalk;
     }
 }

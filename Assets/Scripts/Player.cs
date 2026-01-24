@@ -13,8 +13,8 @@ public class PlayerSkill
     public string id;
     public List<float> maxCoolTime = new List<float>();
     public List<float> curCoolTime = new List<float>();
-    public string name;
-    public string explain;
+    public string talk;
+    public string explainTalk;
 
     public bool IsOnCooldown
     {
@@ -229,7 +229,7 @@ public abstract class Player : Character
         basicStat = new BasicStat()
         {
             id = targetStat.id,
-            name = targetStat.name,
+            name = GameManager.Instance.GetTalk(targetStat.talk),
             bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
             hp = targetStat.hp,
             maxHp = targetStat.hp,
@@ -258,7 +258,7 @@ public abstract class Player : Character
             originStat = new BasicStat()
             {
                 id = targetStat.id,
-                name = targetStat.name,
+                name = GameManager.Instance.GetTalk(targetStat.talk),
                 bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
                 hp = targetStat.hp,
                 maxHp = targetStat.hp,
@@ -1053,8 +1053,8 @@ public abstract class Player : Character
                 addedSkill.maxCoolTime.Add(float.Parse(coolTime));
                 addedSkill.curCoolTime.Add(float.Parse(coolTime));
             }
-            addedSkill.name = skill.name;
-            addedSkill.explain = skill.explain;
+            addedSkill.talk = GameManager.Instance.GetTalk(skill.talk);;
+            addedSkill.explainTalk = GameManager.Instance.GetTalk(skill.explainTalk);
             skillList.Add(addedSkill);
         }
     }
