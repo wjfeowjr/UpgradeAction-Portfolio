@@ -1245,7 +1245,8 @@ public class Monster : Character
         // 추가된 방향 처리(몹이 플레이어를 바라보아야 함)
         bool condition5 = (myPos.x >= centerPlayerPos.x && myScale.x < 0) || (myPos.x < centerPlayerPos.x && myScale.x > 0);
         
-        if (condition1 && condition2 && condition3 && condition4 && condition5)
+        // && condition5
+        if (condition1 && condition2 && condition3 && condition4)
             playerInAgroRange = true;
         else
             playerInAgroRange = false;

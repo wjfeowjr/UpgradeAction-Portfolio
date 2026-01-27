@@ -201,6 +201,7 @@ public abstract class Player : Character
     {
         base.FixedUpdate();
         UpdateCameraLimit();
+        FixedUpdateAirRay();
         
         // 입력이 없어서 Move가 안 불릴 때도 플랫폼 속도는 유지
         if (IsPlatformFollow() && currentPlatform != null)
@@ -819,6 +820,75 @@ public abstract class Player : Character
             myRigidbody.linearVelocity = dir * new Vector2(distance, myRigidbody.linearVelocity.y);
     }
     
+    // 체공 레이캐스트
+    private async void FixedUpdateAirRay()
+    {
+        Vector2 colPos = physicsCollider.transform.position;
+        Vector2 physSize = physicsCollider.size;
+        
+        if (landingState == ELandingState.Air)
+        {
+            if (myRigidbody.linearVelocityY > 0)
+            {
+                Vector2 airLeftRayPos = new Vector2(colPos.x - physSize.x * 0.5f, colPos.y + physSize.y);
+                Vector2 airRightRayPos = new Vector2(colPos.x + physSize.x * 0.5f, colPos.y + physSize.y);
+            
+                float distance = 0.1f;
+                RaycastHit2D leftRay = Physics2D.Raycast(airLeftRayPos, Vector2.up, distance, groundLayerMask);
+                Debug.DrawRay(airLeftRayPos, Vector2.up * distance, ConstValues.BlueColor, 0.02f);
+            
+                RaycastHit2D rightRay = Physics2D.Raycast(airRightRayPos, Vector2.up, distance, groundLayerMask);
+                Debug.DrawRay(airRightRayPos, Vector2.up * distance, ConstValues.BlueColor, 0.02f);
+
+                if (!isCeilingHang && (leftRay.collider != null || rightRay.collider != null))
+                {
+                    jumpCancellation?.Cancel();
+                    jumpCancellation = new CancellationTokenSource();
+
+                    myRigidbody.linearVelocityY = 0;
+                    GravityChange(0);
+                    isCeilingHang = true;
+                    float timer = 0.0f;
+                    float ceilingTime = 0.08f;
+                    while (timer < ceilingTime)
+                    {
+                        timer += Time.fixedDeltaTime;
+                        if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
+                        {
+                            Debug.Log("천장 딜레이 캔슬");
+                            isCeilingHang = false;
+                            return;
+                        }
+                    }
+                    GravityChange(myGravity);
+                    isCeilingHang = false;
+                }
+            }
+            else
+            {
+                Vector2 downLeftRayPos = new Vector2(colPos.x - physSize.x * 0.5f, colPos.y);
+                Vector2 downRightRayPos = new Vector2(colPos.x + physSize.x * 0.5f, colPos.y);
+            
+                float distance = 0.1f;
+                RaycastHit2D leftRay = Physics2D.Raycast(downLeftRayPos, Vector2.down, distance, groundAndPlatformLayerMask);
+                Debug.DrawRay(downLeftRayPos, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
+            
+                RaycastHit2D rightRay = Physics2D.Raycast(downRightRayPos, Vector2.down, distance, groundAndPlatformLayerMask);
+                Debug.DrawRay(downRightRayPos, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
+        
+                if (leftRay.collider != null || rightRay.collider != null)
+                {
+                    // 랜딩상태
+                    if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
+                    {
+                        LandingStateSetting(ELandingState.Ground);
+                        jumpAttackCount = 0;
+                    }
+                }
+            }
+        }
+    }
+    
     // 점프
     public async void Jump()
     {
@@ -839,10 +909,10 @@ public abstract class Player : Character
             LandingStateSetting(ELandingState.Air);
             
             jumpLimitY = transform.position.y + myStat.jumpHeight;
-            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 20);
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 17.5f);
 
             float timer = 0.0f;
-            float jumpTime = 0.10f;
+            float jumpTime = 0.125f; // 0.1f
             jumpCancellation = new CancellationTokenSource();
             while (timer < jumpTime) // transform.position.y < jumpLimitY && myRigidbody.linearVelocityY > 0
             {

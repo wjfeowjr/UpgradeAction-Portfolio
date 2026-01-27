@@ -820,7 +820,7 @@ public class GameManager : Singleton<GameManager>
         }
         else
         {
-            FirstStart();
+            FirstStart(); 
         }
     }
 

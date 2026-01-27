@@ -672,7 +672,14 @@ public class Room : MonoBehaviour
             case EntranceDir.Up:
                 await GameManager.Instance.CurPlayer.EntranceDown();
                 break;
+            case EntranceDir.Up2:
+                await GameManager.Instance.CurPlayer.EntranceDown();
+                break;
+            
             case EntranceDir.Down:
+                await GameManager.Instance.CurPlayer.EntranceJump();
+                break;
+            case EntranceDir.Down2:
                 await GameManager.Instance.CurPlayer.EntranceJump();
                 break;
         }

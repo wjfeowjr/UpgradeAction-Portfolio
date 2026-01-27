@@ -153,8 +153,9 @@ public abstract class Character : MonoBehaviour
     protected int monsterWalkLayerMask;
     protected int agroLayerMask;
 
-    [SerializeField] protected bool immortal;
-    [SerializeField] protected bool immuneStagger;
+    protected bool isCeilingHang;
+    protected bool immortal;
+    protected bool immuneStagger;
 
     // 프로퍼티
     public BasicStat OriginStat => originStat;
@@ -1689,8 +1690,8 @@ public abstract class Character : MonoBehaviour
             // 점프 착지
             if (normalState is ENormalState.Jump)
             {
-                myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-                myRigidbody.linearVelocity = Vector2.zero;
+                //myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+                //myRigidbody.linearVelocity = Vector2.zero;
                 StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
             }
             // 에어본 처리
@@ -1704,16 +1705,16 @@ public abstract class Character : MonoBehaviour
     }
     protected virtual void OnTriggerStay2D(Collider2D col)
     {
-        if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
+        if (!isCeilingHang && (col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
         {
             // 랜딩상태
-            Vector2 contactPoint = col.ClosestPoint(transform.position);
-            if (landingState == ELandingState.Air && normalState != ENormalState.Dash && transform.position.y > contactPoint.y)
-            {
-                LandingStateSetting(ELandingState.Ground);
-                jumpAttackCount = 0;
-                Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
-            }
+            // Vector2 contactPoint = col.ClosestPoint(transform.position);
+            // if (landingState == ELandingState.Air && normalState != ENormalState.Dash && transform.position.y > contactPoint.y)
+            // {
+            //     LandingStateSetting(ELandingState.Ground);
+            //     jumpAttackCount = 0;
+            //     Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
+            // }
             
             // 점프 착지
             if (normalState is ENormalState.Jump)
@@ -1730,10 +1731,6 @@ public abstract class Character : MonoBehaviour
                 myRigidbody.linearVelocity = Vector2.zero;
                 DownAndStand();
             }
-            
-            // 플랫폼 감지
-            // if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
-            //     isOnPlatform = true;
         }
     }
 
