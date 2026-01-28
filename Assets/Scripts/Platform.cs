@@ -30,6 +30,7 @@ public class Platform : MonoBehaviour
         {
             movingPlatform.IsMoving = true;
             movingPlatform.IsRepeat = true;
+            movingPlatform.Delay = 2.5f;
         }
     }
 

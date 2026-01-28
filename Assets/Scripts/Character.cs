@@ -91,7 +91,7 @@ public class BasicStat
     public float staggerTime;
 }
 
-public abstract class Character : MonoBehaviour
+public abstract class Character : InteractionController
 {
     [SerializeField] protected BasicStat originStat; // 원본 스텟
     [SerializeField] protected BasicStat basicStat; // 내 스텟(변동되어야 함)
@@ -1708,13 +1708,13 @@ public abstract class Character : MonoBehaviour
         if (!isCeilingHang && (col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
         {
             // 랜딩상태
-            // Vector2 contactPoint = col.ClosestPoint(transform.position);
-            // if (landingState == ELandingState.Air && normalState != ENormalState.Dash && transform.position.y > contactPoint.y)
-            // {
-            //     LandingStateSetting(ELandingState.Ground);
-            //     jumpAttackCount = 0;
-            //     Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
-            // }
+            Vector2 contactPoint = col.ClosestPoint(transform.position);
+            if (landingState == ELandingState.Air && normalState != ENormalState.Dash && transform.position.y > contactPoint.y)
+            {
+                LandingStateSetting(ELandingState.Ground);
+                jumpAttackCount = 0;
+                Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
+            }
             
             // 점프 착지
             if (normalState is ENormalState.Jump)

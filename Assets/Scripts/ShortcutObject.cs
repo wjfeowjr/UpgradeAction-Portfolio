@@ -4,48 +4,36 @@ using UnityEngine.Serialization;
 
 public enum ShortcutType
 {
+    Crush,
+    Wall,
     Lever,
-    CrushLeft,
-    CrushLeft2,
-    CrushRight,
-    CrushRight2,
-    CrushUp,
-    CrushUp2,
-    CrushDown,
-    CrushDown2,
-    WallLeft,
-    WallLeft2,
-    WallRight,
-    WallRight2,
-    WallUp,
-    WallUp2,
-    WallDown,
-    WallDown2,
+    Platform,
 }
 
-public class ShortcutObject : MonoBehaviour
+public class ShortcutObject : Lever
 {
     [SerializeField] private ShortcutType type;
     [SerializeField] protected Collider2D myCollider;
     [SerializeField] private GameObject[] shortcutBlockers;// 막고 있는 문/벽(콜라이더 포함)
 
-    private Action<ShortcutType> openAction;
-    private bool opened;
+    private Action<string> openAction;
+    protected bool opened;
     private int hp;
+    
+    public ShortcutType Type => type;
+    public string TypeString => type.ToString();
 
-    public string Type => type.ToString();
-
-    public void OpenSetting(bool isOpen, Action<ShortcutType> action)
+    public void OpenSetting(bool isOpen, Action<string> action)
     {
         if (!isOpen)
         {
+            hp = 0;
+            
             if (type == ShortcutType.Lever)
                 hp = 1;
-            else if (type is ShortcutType.WallLeft or ShortcutType.WallRight or ShortcutType.WallUp or ShortcutType.WallDown)
-                hp = 0;
-            else
+            else if (type is ShortcutType.Crush)
                 hp = 3;
-            
+
             openAction = action;
             return;
         }
@@ -63,7 +51,7 @@ public class ShortcutObject : MonoBehaviour
             return;
         }
         
-        openAction(type);
+        openAction(name);
         OpenProduct();
     }
 
@@ -73,7 +61,7 @@ public class ShortcutObject : MonoBehaviour
     }
     
     // 열리는 연출
-    protected virtual void OpenProduct()
+    public virtual void OpenProduct()
     {
         OpenImmediate();
     }
@@ -114,7 +102,7 @@ public class ShortcutObject : MonoBehaviour
     // 공격판정(Attack 오브젝트)와 충돌했을 때
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (opened || type is ShortcutType.WallLeft or ShortcutType.WallLeft2 or ShortcutType.WallRight or ShortcutType.WallRight2 or ShortcutType.WallUp or ShortcutType.WallDown)
+        if (opened || hp == 0)
             return;
 
         // Attack 컴포넌트로 판정 (프로젝트 구조 기준)

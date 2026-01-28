@@ -224,7 +224,7 @@ public class Attack : MonoBehaviour
         var hitTarget = col.GetComponent<Character>();
         if (hitTarget != null)
         {
-            if((hitTarget.Immortal && !attackInfo.ignoreImmortal) || hitTarget.IsDie)
+            if((hitTarget.Immortal && !attackInfo.ignoreImmortal) || hitTarget.IsDie || hitTarget.BasicStat.hp <= 0)
                 return;
 
             bool isTrapAttack = false;

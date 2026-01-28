@@ -2,14 +2,13 @@ using System;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-public class Elevator_Lever : InteractionController
+public class Elevator_Lever : Lever
 {
-    private Animator myAnimator;
-    [SerializeField] private bool isNotTouch;
+    private bool isNotTouch;
 
     private Elevator elevator;
     private Action elevatorActon;
-
+    
     private void Awake()
     {
         myAnimator = GetComponent<Animator>();
@@ -29,12 +28,7 @@ public class Elevator_Lever : InteractionController
     {
         AnimTrigger(isNotTouch ? ConstValues.SwitchRight : ConstValues.SwitchLeft);
     }
-    
-    private void AnimTrigger(string id)
-    {
-        myAnimator.SetTrigger(id);
-    }
-    
+
     public void SetAction(Action action)
     {
         elevatorActon = action;

@@ -8,12 +8,7 @@ using UnityEngine.Serialization;
 public class Npc : Character
 {
     [SerializeField] private Transform speechPos;
-    [SerializeField] private Transform uiPos;
-    [SerializeField] private Transform interactionSelectPos;
     [SerializeField] private NpcInfo npcInfo;
-        
-    private InteractionObject interactionObject;
-    private InteractionSelect interactionSelect;
 
     private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
     private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
@@ -56,48 +51,9 @@ public class Npc : Character
         speechFrameTitle = RoomManager.Instance.SpeechFrameTitle;
     }
 
-    public void SpawnInteractionObject()
-    {
-        interactionObject.gameObject.SetActive(true);
-        interactionObject.transform.position = uiPos.position;
-        interactionObject.Expansion();
-    }
-
-    public void ReduceInteractionObject()
-    {
-        interactionObject.Reduce();
-    }
-    
     public void SetInteractionAction()
     {
-        if (interactionObject == null && uiPos)
-        {
-            interactionObject = SpawnInteraction(ConstValues.InteractionUI, uiPos).GetComponent<InteractionObject>();
-            interactionObject.SetInteractionAction(StartDialogue);
-            interactionObject.SetText("대화", "↑");
-            interactionObject.gameObject.SetActive(false);
-        }
-    }
-
-    public void SetSelectAction()
-    {
-        if (interactionSelect == null && interactionSelectPos)
-        {
-            interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, interactionSelectPos).GetComponent<InteractionSelect>();
-            
-            var selectList = TableManager.Instance.dialogueChoiceTable.DialogueChoice.FindAll(x => x.npc == npcData.id);
-            
-            List<string> choiceList = new List<string>();
-            foreach (var select in selectList)
-                choiceList.Add(GameManager.Instance.GetTalk(select.talk));
-            
-            List<string> idList = new List<string>();
-            foreach (var select in selectList)
-                idList.Add(select.id);
-            
-            interactionSelect.StartSetting(choiceList, idList);
-            interactionSelect.gameObject.SetActive(false);
-        }
+        SetInteractionAction(StartDialogue, GameManager.Instance.GetTalk(30016), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
     }
 
     public void SetStartTalkAction()
@@ -107,7 +63,7 @@ public class Npc : Character
 
     private async void SetDialogueAction(string choice)
     {
-        interactionSelect.gameObject.SetActive(false);
+        ActiveInteractionSelect(false);
         
         var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice);
         string checkKey = talkDataList[0].checkKey;
@@ -211,7 +167,7 @@ public class Npc : Character
     
     private void SetCloseAction()
     {
-        interactionSelect.gameObject.SetActive(false);
+        ActiveInteractionSelect(false);
         GameManager.Instance.ControlStart = true;
         SpawnInteractionObject();
     }
@@ -236,7 +192,7 @@ public class Npc : Character
 
     private async void StartDialogue()
     {
-        //interactionObject.gameObject.SetActive(false);
+        //ActiveInteractionObject(false);
         ReduceInteractionObject();
         GameManager.Instance.InitDialogueCancellation();
         GameManager.Instance.ControlStart = false;
@@ -258,10 +214,7 @@ public class Npc : Character
             isFirstTalk = true;
         }
 
-        // 대화 선택지 및 선택 액션
-        interactionSelect.gameObject.SetActive(true);
-        interactionSelect.SetAction(SetDialogueAction, SetCloseAction);
-        interactionSelect.SetDelay();
+        SetActionInteractionSelect(SetDialogueAction, SetCloseAction);
     }
 
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
@@ -279,31 +232,9 @@ public class Npc : Character
         
     }
     
-    private GameObject SpawnInteraction(string id, Transform uiTransform)
+    public void SetSelectAction()
     {
-        var obj = GameManager.Instance.SpawnToUIObjectPoolInstantiate(id, uiTransform);
-        
-        var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if (uiData == null)
-            return obj;
-        
-        var spawnedObject = obj.GetComponent<SpawnedObject>();
-        if (!spawnedObject)
-            spawnedObject = obj.AddComponent<SpawnedObject>();
-        
-        spawnedObject.SetupData(uiData, transform.localScale.x);
-        spawnedObject.EnableSetting();
-        
-        if (spawnedObject.GetTrace())
-        {
-            var trace = obj.GetComponent<Trace>();
-            if(!trace)
-                trace = obj.AddComponent<Trace>();
-            
-            trace.SetTarget(uiTransform);
-        }
-
-        return obj;
+        SpawnInteractionSelect(npcData);
     }
 
     // 커스텀

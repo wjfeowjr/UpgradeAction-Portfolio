@@ -124,7 +124,7 @@ public class Gauge : MonoBehaviour
         while (mainGauge.value < reduceGauge.value)
         {
             if(reduceGauge) 
-                reduceGauge.value -=speed * Time.deltaTime;
+                reduceGauge.value -= speed * Time.deltaTime;
             if (await YieldDelay().SuppressCancellationThrow())
                 return;
         }

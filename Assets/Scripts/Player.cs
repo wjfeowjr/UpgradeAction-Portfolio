@@ -195,23 +195,26 @@ public abstract class Player : Character
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
         UpdateBuff();
+        UpdateAirRay();
     }
 
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
         UpdateCameraLimit();
-        FixedUpdateAirRay();
-        
+
         // 입력이 없어서 Move가 안 불릴 때도 플랫폼 속도는 유지
         if (IsPlatformFollow() && currentPlatform != null)
         {
-            var v = myRigidbody.linearVelocity;
-            v.x = currentPlatform.Velocity.x; // 기본은 플랫폼 속도
-            v.y = currentPlatform.Velocity.y;
-            myRigidbody.linearVelocity = v;
-            if (currentPlatform.Velocity == Vector2.zero)
-                currentPlatform = null;
+            if (currentPlatform.Velocity != Vector2.zero)
+            {
+                var v = myRigidbody.linearVelocity;
+                v.x = currentPlatform.Velocity.x; // 기본은 플랫폼 속도
+                v.y = currentPlatform.Velocity.y;
+                myRigidbody.linearVelocity = v;
+            }
+            // if (currentPlatform.Velocity == Vector2.zero)
+            //     currentPlatform = null;
         }
     }
 
@@ -821,7 +824,7 @@ public abstract class Player : Character
     }
     
     // 체공 레이캐스트
-    private async void FixedUpdateAirRay()
+    private async void UpdateAirRay()
     {
         Vector2 colPos = physicsCollider.transform.position;
         Vector2 physSize = physicsCollider.size;
@@ -833,12 +836,12 @@ public abstract class Player : Character
                 Vector2 airLeftRayPos = new Vector2(colPos.x - physSize.x * 0.5f, colPos.y + physSize.y);
                 Vector2 airRightRayPos = new Vector2(colPos.x + physSize.x * 0.5f, colPos.y + physSize.y);
             
-                float distance = 0.1f;
+                float distance = 0.2f;
                 RaycastHit2D leftRay = Physics2D.Raycast(airLeftRayPos, Vector2.up, distance, groundLayerMask);
-                Debug.DrawRay(airLeftRayPos, Vector2.up * distance, ConstValues.BlueColor, 0.02f);
+                Debug.DrawRay(airLeftRayPos, Vector2.up * distance, ConstValues.BlueColor, 0.016f);
             
                 RaycastHit2D rightRay = Physics2D.Raycast(airRightRayPos, Vector2.up, distance, groundLayerMask);
-                Debug.DrawRay(airRightRayPos, Vector2.up * distance, ConstValues.BlueColor, 0.02f);
+                Debug.DrawRay(airRightRayPos, Vector2.up * distance, ConstValues.BlueColor, 0.016f);
 
                 if (!isCeilingHang && (leftRay.collider != null || rightRay.collider != null))
                 {
@@ -866,25 +869,25 @@ public abstract class Player : Character
             }
             else
             {
-                Vector2 downLeftRayPos = new Vector2(colPos.x - physSize.x * 0.5f, colPos.y);
-                Vector2 downRightRayPos = new Vector2(colPos.x + physSize.x * 0.5f, colPos.y);
-            
-                float distance = 0.1f;
-                RaycastHit2D leftRay = Physics2D.Raycast(downLeftRayPos, Vector2.down, distance, groundAndPlatformLayerMask);
-                Debug.DrawRay(downLeftRayPos, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
-            
-                RaycastHit2D rightRay = Physics2D.Raycast(downRightRayPos, Vector2.down, distance, groundAndPlatformLayerMask);
-                Debug.DrawRay(downRightRayPos, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
-        
-                if (leftRay.collider != null || rightRay.collider != null)
-                {
-                    // 랜딩상태
-                    if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
-                    {
-                        LandingStateSetting(ELandingState.Ground);
-                        jumpAttackCount = 0;
-                    }
-                }
+                // Vector2 downLeftRayPos = new Vector2(colPos.x - physSize.x * 0.5f, colPos.y);
+                // Vector2 downRightRayPos = new Vector2(colPos.x + physSize.x * 0.5f, colPos.y);
+                //
+                // float distance = 0.1f;
+                // RaycastHit2D leftRay = Physics2D.Raycast(downLeftRayPos, Vector2.down, distance, groundAndPlatformLayerMask);
+                // Debug.DrawRay(downLeftRayPos, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
+                //
+                // RaycastHit2D rightRay = Physics2D.Raycast(downRightRayPos, Vector2.down, distance, groundAndPlatformLayerMask);
+                // Debug.DrawRay(downRightRayPos, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
+                //
+                // if (leftRay.collider != null || rightRay.collider != null)
+                // {
+                //     // 랜딩상태
+                //     if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
+                //     {
+                //         LandingStateSetting(ELandingState.Ground);
+                //         jumpAttackCount = 0;
+                //     }
+                // }
             }
         }
     }

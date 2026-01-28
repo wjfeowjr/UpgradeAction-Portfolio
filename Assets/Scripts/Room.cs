@@ -12,13 +12,9 @@ using UnityEngine.Tilemaps;
 public enum EntranceDir
 {
     Left,
-    Left2,
     Right,
-    Right2,
     Up,
-    Up2,
     Down,
-    Down2
 }
 
 public class Room : MonoBehaviour
@@ -61,42 +57,27 @@ public class Room : MonoBehaviour
     [SerializeField] private Transform maxCameraLimitY;
 
     [SerializeField] private SaveObject saveObject;
-    
-    [SerializeField] private GameObject leftBossGate;
-    [SerializeField] private GameObject leftBossGate2;
-    [SerializeField] private GameObject rightBossGate;
-    [SerializeField] private GameObject rightBossGate2;
-    [SerializeField] private GameObject upBossGate;
-    [SerializeField] private GameObject downBossGate;
-    
-    [SerializeField] private Transform leftPlayerPos;
-    [SerializeField] private Transform leftPlayerPos2;
-    [SerializeField] private Transform rightPlayerPos;
-    [SerializeField] private Transform rightPlayerPos2;
-    [SerializeField] private Transform upPlayerPos;
-    [SerializeField] private Transform upPlayerPos2;
-    [SerializeField] private Transform downPlayerPos;
-    [SerializeField] private Transform downPlayerPos2;
-    
+
+    [Header("플레이어 도착위치")]
+    [SerializeField] private List<Transform> leftPlayerPos;
+    [SerializeField] private List<Transform> rightPlayerPos;
+    [SerializeField] private List<Transform> upPlayerPos;
+    [SerializeField] private List<Transform> downPlayerPos;
+
     [Header("인접한 방")]
-    [SerializeField] private Room leftRoom;
-    [SerializeField] private Room leftRoom2;
-    [SerializeField] private Room rightRoom;
-    [SerializeField] private Room rightRoom2;
-    [SerializeField] private Room upRoom;
-    [SerializeField] private Room upRoom2;
-    [SerializeField] private Room downRoom;
-    [SerializeField] private Room downRoom2;
-    
+    [SerializeField] private Room[] leftRoom;
+    [SerializeField] private Room[] rightRoom;
+    [SerializeField] private Room[] upRoom;
+    [SerializeField] private Room[] downRoom;
+
     [Header("방의 입구")]
-    [SerializeField] private RoomEntrance leftEntrance;
-    [SerializeField] private RoomEntrance leftEntrance2;
-    [SerializeField] private RoomEntrance rightEntrance;
-    [SerializeField] private RoomEntrance rightEntrance2;
-    [SerializeField] private RoomEntrance upEntrance;
-    [SerializeField] private RoomEntrance upEntrance2;
-    [SerializeField] private RoomEntrance downEntrance;
-    [SerializeField] private RoomEntrance downEntrance2;
+    [SerializeField] private List<RoomEntrance> leftEntrance;
+    [SerializeField] private List<RoomEntrance> rightEntrance;
+    [SerializeField] private List<RoomEntrance> upEntrance;
+    [SerializeField] private List<RoomEntrance> downEntrance;
+    
+    [Header("숏컷으로 뚫을 방")]
+    [SerializeField] private Room[] shortCutRoom;
     
     [SerializeField] protected Monster[] monsters;
     [SerializeField] protected List<Vector2> firstMonsterPosList = new List<Vector2>();
@@ -227,13 +208,12 @@ public class Room : MonoBehaviour
         SetBgm(true);
         isFading = true;
         GameManager.Instance.ControlStart = false;
-        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos.position;
+        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[0].position;
         SetCameraLimit();
         RoomManager.Instance.SetCameraPos();
         
         SetTrap();
         SetSavePoint();
-        SetBossGate();
         await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         
         if(!firstStart)
@@ -259,9 +239,7 @@ public class Room : MonoBehaviour
         SetShortCut();
         // 여기서 세이브포인트 데이터 넣기
          SetSavePoint();
-        // 여기서 인접 방 확인하기
-        SetBossGate();
-        
+
         await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         GameManager.Instance.ControlStart = true;
         isFading = false;
@@ -282,29 +260,73 @@ public class Room : MonoBehaviour
 
     public void EntranceSetting()
     {
-        if (leftEntrance != null)
-            leftEntrance.SetAction(() => leftRoom.SettingRoom(EntranceDir.Right, this));
+        if (leftEntrance.Count > 0 && leftRoom.Length > 0)
+        {
+            for (int i = 0; i < leftEntrance.Count; i++)
+            {
+                int idx = i;
+                for (var j = 0; j < leftRoom[idx].rightRoom.Length; j++)
+                {
+                    int value = j;
+                    if (leftRoom[i].rightRoom[value] == this)
+                    {
+                        leftEntrance[i].SetAction(() => leftRoom[idx].SettingRoom(value, EntranceDir.Right, this));
+                        break;
+                    }
+                }
+            }
+        }
         
-        if (leftEntrance2 != null)
-            leftEntrance2.SetAction(() => leftRoom2.SettingRoom(EntranceDir.Right2, this));
+        if (rightEntrance.Count > 0 && rightRoom.Length > 0)
+        {
+            for (int i = 0; i < rightEntrance.Count; i++)
+            {
+                int idx = i;
+                for (var j = 0; j < rightRoom[idx].leftRoom.Length; j++)
+                {
+                    int value = j;
+                    if (rightRoom[i].leftRoom[value] == this)
+                    {
+                        rightEntrance[i].SetAction(() => rightRoom[idx].SettingRoom(value, EntranceDir.Left, this));
+                        break;
+                    }
+                }
+            }
+        }
         
-        if (rightEntrance != null)
-            rightEntrance.SetAction(() => rightRoom.SettingRoom(EntranceDir.Left, this));
+        if (upEntrance.Count > 0 && upRoom.Length > 0)
+        {
+            for (int i = 0; i < upEntrance.Count; i++)
+            {
+                int idx = i;
+                for (var j = 0; j < upRoom[idx].downRoom.Length; j++)
+                {
+                    int value = j;
+                    if (upRoom[i].downRoom[value] == this)
+                    {
+                        upEntrance[i].SetAction(() => upRoom[idx].SettingRoom(value, EntranceDir.Down, this));
+                        break;
+                    }
+                }
+            }
+        }
         
-        if (rightEntrance2 != null)
-            rightEntrance2.SetAction(() => rightRoom2.SettingRoom(EntranceDir.Left2, this));
-        
-        if (upEntrance != null)
-            upEntrance.SetAction(() => upRoom.SettingRoom(EntranceDir.Down, this));
-        
-        if (upEntrance2 != null)
-            upEntrance2.SetAction(() => upRoom2.SettingRoom(EntranceDir.Down2, this));
-        
-        if (downEntrance != null)
-            downEntrance.SetAction(() => downRoom.SettingRoom(EntranceDir.Up, this));
-        
-        if (downEntrance2 != null)
-            downEntrance2.SetAction(() => downRoom2.SettingRoom(EntranceDir.Up2, this));
+        if (downEntrance.Count > 0 && downRoom.Length > 0)
+        {
+            for (int i = 0; i < downEntrance.Count; i++)
+            {
+                int idx = i;
+                for (var j = 0; j < downRoom[idx].upRoom.Length; j++)
+                {
+                    int value = j;
+                    if (downRoom[i].upRoom[value] == this)
+                    {
+                        downEntrance[i].SetAction(() => downRoom[idx].SettingRoom(value, EntranceDir.Up, this));
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     public void InfoSetting()
@@ -341,7 +363,8 @@ public class Room : MonoBehaviour
             foreach (var shortcutObject in shortCutObjects)
             {
                 ShortCut addShortcut = new ShortCut();
-                addShortcut.type = shortcutObject.Type;
+                addShortcut.id = shortcutObject.name;
+                addShortcut.type = shortcutObject.TypeString;
                 addShortcut.isOpened = false;
                 roomInfo.shortCut.Add(addShortcut);
             }
@@ -586,7 +609,7 @@ public class Room : MonoBehaviour
         return true;
     }
 
-    private async void SettingRoom(EntranceDir dir, Room pastRoom)
+    private async void SettingRoom(int idx, EntranceDir dir, Room pastRoom)
     {
         isFading = true;
         GameManager.Instance.ControlStart = false;
@@ -601,41 +624,21 @@ public class Room : MonoBehaviour
         switch (dir)
         {
             case EntranceDir.Left:
-                SetLeftPlayerPos();
-                GameManager.Instance.CurPlayer.ForceIdle();
-                break;
-            case EntranceDir.Left2:
-                SetLeftPlayerPos2();
+                SetLeftPlayerPos(idx);
                 GameManager.Instance.CurPlayer.ForceIdle();
                 break;
             case EntranceDir.Right:
-                SetRightPlayerPos();
-                GameManager.Instance.CurPlayer.ForceIdle();
-                break;
-            case EntranceDir.Right2:
-                SetRightPlayerPos2();
+                SetRightPlayerPos(idx);
                 GameManager.Instance.CurPlayer.ForceIdle();
                 break;
             case EntranceDir.Up:
-                SetUpPlayerPos();
-                GameManager.Instance.CurPlayer.SetJumpState();
-                GameManager.Instance.CurPlayer.ZeroVelocity();
-                GameManager.Instance.CurPlayer.GravityChange(0);
-                break;
-            case EntranceDir.Up2:
-                SetUpPlayerPos2();
+                SetUpPlayerPos(idx);
                 GameManager.Instance.CurPlayer.SetJumpState();
                 GameManager.Instance.CurPlayer.ZeroVelocity();
                 GameManager.Instance.CurPlayer.GravityChange(0);
                 break;
             case EntranceDir.Down:
-                SetDownPlayerPos();
-                GameManager.Instance.CurPlayer.ForceJump();
-                GameManager.Instance.CurPlayer.ZeroVelocity();
-                GameManager.Instance.CurPlayer.GravityChange(0);
-                break;
-            case EntranceDir.Down2:
-                SetDownPlayerPos2();
+                SetDownPlayerPos(idx);
                 GameManager.Instance.CurPlayer.ForceJump();
                 GameManager.Instance.CurPlayer.ZeroVelocity();
                 GameManager.Instance.CurPlayer.GravityChange(0);
@@ -657,8 +660,6 @@ public class Room : MonoBehaviour
         SetShortCut();
         // 여기서 세이브포인트 데이터 넣기
         SetSavePoint();
-        // 여기서 인접 방 확인하기
-        SetBossGate();
 
         GameManager.Instance.InitFadeCancellation();
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
@@ -672,14 +673,8 @@ public class Room : MonoBehaviour
             case EntranceDir.Up:
                 await GameManager.Instance.CurPlayer.EntranceDown();
                 break;
-            case EntranceDir.Up2:
-                await GameManager.Instance.CurPlayer.EntranceDown();
-                break;
-            
+
             case EntranceDir.Down:
-                await GameManager.Instance.CurPlayer.EntranceJump();
-                break;
-            case EntranceDir.Down2:
                 await GameManager.Instance.CurPlayer.EntranceJump();
                 break;
         }
@@ -690,44 +685,24 @@ public class Room : MonoBehaviour
         SetBgm(false);
     }
     
-    private void SetLeftPlayerPos()
+    private void SetLeftPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos.position;
+        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[idx].position;
     }
-    
-    private void SetLeftPlayerPos2()
+
+    private void SetRightPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos2.position;
+        GameManager.Instance.CurPlayer.transform.position = rightPlayerPos[idx].position;
     }
-    
-    private void SetRightPlayerPos()
+
+    private void SetUpPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = rightPlayerPos.position;
+        GameManager.Instance.CurPlayer.transform.position = upPlayerPos[idx].position;
     }
-    
-    private void SetRightPlayerPos2()
+
+    private void SetDownPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = rightPlayerPos2.position;
-    }
-    
-    private void SetUpPlayerPos()
-    {
-        GameManager.Instance.CurPlayer.transform.position = upPlayerPos.position;
-    }
-    
-    private void SetUpPlayerPos2()
-    {
-        GameManager.Instance.CurPlayer.transform.position = upPlayerPos2.position;
-    }
-    
-    private void SetDownPlayerPos()
-    {
-        GameManager.Instance.CurPlayer.transform.position = downPlayerPos.position;
-    }
-    
-    private void SetDownPlayerPos2()
-    {
-        GameManager.Instance.CurPlayer.transform.position = downPlayerPos2.position;
+        GameManager.Instance.CurPlayer.transform.position = downPlayerPos[idx].position;
     }
 
     private void SetCameraLimit()
@@ -810,58 +785,25 @@ public class Room : MonoBehaviour
         Debug.Log($"남은 {character}의 포인트: {currentPoint}");
     }
 
-    // 숏컷 뚫기
-    private void UnlockShortCut(ShortcutType type)
-    {
-        ShortcutOpen(type);
-
-        switch (type)
-        {
-            case ShortcutType.CrushLeft:
-                leftRoom.ShortcutOpen(ShortcutType.WallRight);
-                break;
-            
-            case ShortcutType.CrushLeft2:
-                leftRoom2.ShortcutOpen(ShortcutType.WallRight2);
-                break;
-            
-            case ShortcutType.CrushRight:
-                rightRoom.ShortcutOpen(ShortcutType.WallLeft);
-                break;
-            
-            case ShortcutType.CrushRight2:
-                rightRoom2.ShortcutOpen(ShortcutType.WallLeft2);
-                break;
-            
-            case ShortcutType.CrushUp:
-                upRoom.ShortcutOpen(ShortcutType.WallDown);
-                break;
-            
-            case ShortcutType.CrushUp2:
-                upRoom2.ShortcutOpen(ShortcutType.WallDown2);
-                break;
-            
-            case ShortcutType.CrushDown:
-                downRoom.ShortcutOpen(ShortcutType.WallUp);
-                break;
-            
-            case ShortcutType.CrushDown2:
-                downRoom2.ShortcutOpen(ShortcutType.WallUp2);
-                break;
-        }
-    }
-    
     // 숏컷정보 저장
-    private void ShortcutOpen(ShortcutType type)
+    public void ShortcutOpen(string id)
     {
-        var targetShortcut = roomInfo.shortCut.Find(x => x.type == type.ToString());
+        var targetShortcut = roomInfo.shortCut.Find(x => x.id == id);
         
         if (targetShortcut == null)
             return;
         
         targetShortcut.isOpened = true;
         GameManager.Instance.SaveGame();
-        SetShortCut();
+        foreach (var shortCut in shortCutObjects)
+        {
+            if (shortCut.name == id)
+            {
+                shortCut.OpenProduct();
+                break;
+            }
+        }
+        //SetShortCut();
     }
 
     private async void SpawnMonster(bool isExplosion = true)
@@ -891,8 +833,33 @@ public class Room : MonoBehaviour
 
     private void SetShortCut()
     {
+        int idx = 0;
         for (int i = 0; i < shortCutObjects.Length; i++)
-            shortCutObjects[i].OpenSetting(roomInfo.shortCut[i].isOpened, UnlockShortCut);
+        {
+            if (shortCutObjects[i].GetComponent<Shortcut_Crush>())
+            {
+                var crush = shortCutObjects[i].GetComponent<Shortcut_Crush>();
+                crush.TargetRoom = shortCutRoom[idx];
+                idx += 1;
+            }
+        }
+
+        for (int i = 0; i < shortCutObjects.Length; i++)
+            shortCutObjects[i].OpenSetting(roomInfo.shortCut[i].isOpened, ShortcutOpen);
+    }
+
+    public string GetWallShortCutName(int idx)
+    {
+        List<ShortcutObject> wallList = new List<ShortcutObject>();
+        foreach (var shortCut in shortCutObjects)
+        {
+            if (shortCut.Type == ShortcutType.Wall)
+            {
+                wallList.Add(shortCut);
+            }
+        }
+
+        return wallList[idx].name;
     }
 
     private void SetSavePoint()
@@ -911,51 +878,6 @@ public class Room : MonoBehaviour
         });
     }
     
-    private void SetBossGate()
-    {
-        bool alreadyBoss = false;
-        if (leftBossGate != null)
-        {
-            alreadyBoss = leftRoom.isBossRoom;
-            leftBossGate.SetActive(alreadyBoss && !leftRoom.roomInfo.bossClear);
-        }
-        if (!alreadyBoss && leftBossGate2 != null)
-        {
-            alreadyBoss = leftRoom2.isBossRoom;
-            leftBossGate2.SetActive(alreadyBoss && !leftRoom2.roomInfo.bossClear);
-        }
-        if (!alreadyBoss && rightBossGate != null)
-        {
-            alreadyBoss = rightRoom.isBossRoom;
-            rightBossGate.SetActive(alreadyBoss && !rightRoom.roomInfo.bossClear);
-        }
-        if (!alreadyBoss && rightBossGate2 != null)
-        {
-            alreadyBoss = rightRoom2.isBossRoom;
-            rightBossGate2.SetActive(alreadyBoss && !rightRoom2.roomInfo.bossClear);
-        }
-        if (!alreadyBoss && upBossGate != null)
-        {
-            alreadyBoss = upRoom.isBossRoom;
-            upBossGate.SetActive(alreadyBoss && !upRoom.roomInfo.bossClear);
-        }
-        if (!alreadyBoss && downBossGate != null)
-        {
-            alreadyBoss = downRoom.isBossRoom;
-            downBossGate.SetActive(alreadyBoss && !downRoom.roomInfo.bossClear);
-        }
-
-        // if (isBossRoom)
-        //     alreadyBoss = true;
-        
-        // nearBossRoom = alreadyBoss;
-        //
-        // if(nearBossRoom)
-        //     BgmManager.Instance.Stop();
-        // else if (!BgmManager.Instance.IsPlaying())
-        //     BgmManager.Instance.Play();
-    }
-
     private void SetBgm(bool immediately)
     {
         if (isBossRoom)
@@ -1389,7 +1311,7 @@ public class Room : MonoBehaviour
         foreach (var productDialogue in productDialogueList)
             talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
 
-        await RoomManager.Instance.ProductEpisode(title);
+        //await RoomManager.Instance.ProductEpisode(title);
         GameManager.Instance.InitDialogueCancellation();
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
@@ -1771,12 +1693,10 @@ public class Room : MonoBehaviour
         UIOff();
         
         // 연출 시작 전 세팅
-        StopBGM();
-        PlayBGM(ConstValues.BGMEpisode2Battle);
         // 에피소드 팝업부터 시작
         int titleTalk = TableManager.Instance.productDialogueTable.ProductDialogue.Find(x => x.id == ConstValues.Episode2Title).talk;
         string title = GameManager.Instance.GetTalk(titleTalk);
-        await RoomManager.Instance.ProductEpisode(title);
+        //await RoomManager.Instance.ProductEpisode(title);
         
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
             return;
@@ -1925,109 +1845,110 @@ public class Room : MonoBehaviour
         Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
         if (playerPosArray != null)
         {
-            leftPlayerPos = null;
-            leftPlayerPos2 = null;
-            rightPlayerPos = null;
-            rightPlayerPos2 = null;
-            upPlayerPos = null;
-            upPlayerPos2 = null;
-            downPlayerPos = null;
-            downPlayerPos2 = null;
-            
+            leftPlayerPos = new List<Transform>();
+            rightPlayerPos = new List<Transform>();
+            upPlayerPos = new List<Transform>();
+            downPlayerPos = new List<Transform>();
+
             Transform[] possArray = playerPosArray.GetComponentsInChildren<Transform>();
             foreach (var poss in possArray)
             {
-                if (poss.name == $"{ConstValues.LeftPlayerPos}_1")
-                    leftPlayerPos = poss;
+                if (poss.name.Split(' ')[0] == $"{ConstValues.LeftPlayerPos}")
+                    leftPlayerPos.Add(poss);
                 
-                if (poss.name == $"{ConstValues.LeftPlayerPos}_2")
-                    leftPlayerPos2 = poss;
+                if (poss.name.Split(' ')[0] == $"{ConstValues.RightPlayerPos}")
+                    rightPlayerPos.Add(poss);
                 
-                if (poss.name == $"{ConstValues.RightPlayerPos}_1")
-                    rightPlayerPos = poss;
+                if (poss.name.Split(' ')[0] == $"{ConstValues.UpPlayerPos}")
+                    upPlayerPos.Add(poss);
                 
-                if (poss.name == $"{ConstValues.RightPlayerPos}_2")
-                    rightPlayerPos2 = poss;
-                
-                if (poss.name == $"{ConstValues.UpPlayerPos}_1")
-                    upPlayerPos = poss;
-                
-                if (poss.name == $"{ConstValues.UpPlayerPos}_2")
-                    upPlayerPos2 = poss;
-                
-                if (poss.name == $"{ConstValues.DownPlayerPos}_1")
-                    downPlayerPos = poss;
-                
-                if (poss.name == $"{ConstValues.DownPlayerPos}_2")
-                    downPlayerPos2 = poss;
+                if (poss.name.Split(' ')[0] == $"{ConstValues.DownPlayerPos}")
+                    downPlayerPos.Add(poss);
             }
         }
         
         Transform entrancePosArray = roomGameObject.transform.Find(ConstValues.EntranceArray);
         if (entrancePosArray != null)
         {
-            leftEntrance = null;
-            leftEntrance2 = null;
-            rightEntrance = null;
-            rightEntrance2 = null;
-            upEntrance = null;
-            upEntrance2 = null;
-            downEntrance = null;
-            downEntrance2 = null;
-            
+            leftEntrance = new List<RoomEntrance>();
+            rightEntrance = new List<RoomEntrance>();
+            upEntrance = new List<RoomEntrance>();
+            downEntrance = new List<RoomEntrance>();
+
+            RoomEntrance[] entranceArray = entrancePosArray.GetComponentsInChildren<RoomEntrance>();
+            foreach (var entrance in entranceArray)
+            {
+                if (entrance.name.Split(' ')[0] == $"{ConstValues.LeftEntrance}")
+                    leftEntrance.Add(entrance);
+                
+                if (entrance.name.Split(' ')[0] == $"{ConstValues.RightEntrance}")
+                    rightEntrance.Add(entrance);
+                
+                if (entrance.name.Split(' ')[0] == $"{ConstValues.UpEntrance}")
+                    upEntrance.Add(entrance);
+                
+                if (entrance.name.Split(' ')[0] == $"{ConstValues.DownEntrance}")
+                    downEntrance.Add(entrance);
+            }
+        }
+    }
+    
+    // 캐싱
+    public void ObjectNameChange()
+    {
+        Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
+        if (playerPosArray != null)
+        {
+            Transform[] possArray = playerPosArray.GetComponentsInChildren<Transform>();
+            foreach (var poss in possArray)
+            {
+                if (poss.name == $"{ConstValues.LeftPlayerPos}_1")
+                    poss.name = ConstValues.LeftPlayerPos;
+                if (poss.name == $"{ConstValues.LeftPlayerPos}_2")
+                    poss.name = $"{ConstValues.LeftPlayerPos} (1)";
+                
+                if (poss.name == $"{ConstValues.RightPlayerPos}_1")
+                    poss.name = ConstValues.RightPlayerPos;
+                if (poss.name == $"{ConstValues.RightPlayerPos}_2")
+                    poss.name = $"{ConstValues.RightPlayerPos} (1)";
+                
+                if (poss.name == $"{ConstValues.UpPlayerPos}_1")
+                    poss.name = ConstValues.UpPlayerPos;
+                if (poss.name == $"{ConstValues.UpPlayerPos}_2")
+                    poss.name = $"{ConstValues.UpPlayerPos} (1)";
+                
+                if (poss.name == $"{ConstValues.DownPlayerPos}_1")
+                    poss.name = ConstValues.DownPlayerPos;
+                if (poss.name == $"{ConstValues.DownPlayerPos}_2")
+                    poss.name = $"{ConstValues.DownPlayerPos} (1)";
+            }
+        }
+        
+        Transform entrancePosArray = roomGameObject.transform.Find(ConstValues.EntranceArray);
+        if (entrancePosArray != null)
+        {
             RoomEntrance[] entranceArray = entrancePosArray.GetComponentsInChildren<RoomEntrance>();
             foreach (var entrance in entranceArray)
             {
                 if (entrance.name == $"{ConstValues.LeftEntrance}_1")
-                    leftEntrance = entrance;
-                
+                    entrance.name = ConstValues.LeftEntrance;
                 if (entrance.name == $"{ConstValues.LeftEntrance}_2")
-                    leftEntrance2 = entrance;
+                    entrance.name = $"{ConstValues.LeftEntrance} (1)";
                 
                 if (entrance.name == $"{ConstValues.RightEntrance}_1")
-                    rightEntrance = entrance;
-                
+                    entrance.name = ConstValues.RightEntrance;
                 if (entrance.name == $"{ConstValues.RightEntrance}_2")
-                    rightEntrance2 = entrance;
+                    entrance.name = $"{ConstValues.RightEntrance} (1)";
                 
                 if (entrance.name == $"{ConstValues.UpEntrance}_1")
-                    upEntrance = entrance;
-                
+                    entrance.name = ConstValues.UpEntrance;
                 if (entrance.name == $"{ConstValues.UpEntrance}_2")
-                    upEntrance2 = entrance;
+                    entrance.name = $"{ConstValues.UpEntrance} (1)";
                 
                 if (entrance.name == $"{ConstValues.DownEntrance}_1")
-                    downEntrance = entrance;
-                
+                    entrance.name = ConstValues.DownEntrance;
                 if (entrance.name == $"{ConstValues.DownEntrance}_2")
-                    downEntrance2 = entrance;
-            }
-        }
-        
-        Transform bossGateArray = roomGameObject.transform.Find(ConstValues.BossGateArray);
-        if (bossGateArray != null)
-        {
-
-            Transform[] gateArray = bossGateArray.GetComponentsInChildren<Transform>();
-            foreach (var gate in gateArray)
-            {
-                if (gate.name == $"{ConstValues.LeftBossGate}_1")
-                    leftBossGate = gate.gameObject;
-                
-                if (gate.name == $"{ConstValues.LeftBossGate}_2")
-                    leftBossGate2 = gate.gameObject;
-                
-                if (gate.name == $"{ConstValues.RightBossGate}_1")
-                    rightBossGate = gate.gameObject;
-                
-                if (gate.name == $"{ConstValues.RightBossGate}_2")
-                    rightBossGate2 = gate.gameObject;
-                
-                if (gate.name == $"{ConstValues.UpBossGate}_1")
-                    upBossGate = gate.gameObject;
-                
-                if (gate.name == $"{ConstValues.DownBossGate}_1")
-                    downBossGate = gate.gameObject;
+                    entrance.name = $"{ConstValues.DownEntrance} (1)";
             }
         }
     }

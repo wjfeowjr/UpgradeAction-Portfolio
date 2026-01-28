@@ -142,4 +142,21 @@ public class TotalRoom : MonoBehaviour
         Debug.LogWarning("CachePrefabs는 에디터 모드에서만 동작합니다.");
 #endif
     }
+    
+    // 인스펙터 우클릭 메뉴에 “Cache Prefabs” 항목 추가
+    [ContextMenu("ObjectNameChange")]
+    private void ObjectNameChange()
+    {
+#if UNITY_EDITOR
+        roomArray = GetComponentsInChildren<Room>();
+        Debug.Log($"오브젝트 이름 변경 완료");
+        foreach (var room in roomArray)
+            room.ObjectNameChange();
+        
+        EditorUtility.SetDirty(this);          // 이 스크립트 붙은 객체도 더티
+        EditorSceneManager.MarkSceneDirty(gameObject.scene); // 씬 더티 표시
+#else
+        Debug.LogWarning("CachePrefabs는 에디터 모드에서만 동작합니다.");
+#endif
+    }
 }

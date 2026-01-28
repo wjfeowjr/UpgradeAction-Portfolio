@@ -1,11 +1,15 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 public class InteractionController : MonoBehaviour
 {
-    [SerializeField] protected Transform interactionPos;
+    [SerializeField] private Transform objectPos;
+    [SerializeField] private Transform selectPos;
+    
     private InteractionObject interactionObject;
+    private InteractionSelect interactionSelect;
 
     protected bool isPlayerTouch;
 
@@ -20,7 +24,7 @@ public class InteractionController : MonoBehaviour
     public virtual void SpawnInteractionObject()
     {
         interactionObject.gameObject.SetActive(true);
-        interactionObject.transform.position = interactionPos.position;
+        interactionObject.transform.position = objectPos.position;
         interactionObject.Expansion();
     }
     
@@ -28,21 +32,26 @@ public class InteractionController : MonoBehaviour
     {
         interactionObject.Reduce();
     }
+
+    protected void ActiveInteractionObject(bool active)
+    {
+        interactionObject.gameObject.SetActive(active);
+    }
     
     protected void SetInteractionAction(Action action, string text, string key)
     {
         if (interactionObject == null)
         {
-            interactionObject = SpawnInteraction(ConstValues.InteractionUI, interactionPos).GetComponent<InteractionObject>();
+            interactionObject = SpawnInteraction(ConstValues.InteractionUI, objectPos).GetComponent<InteractionObject>();
             interactionObject.SetInteractionAction(action);
             interactionObject.SetText(text, key);
             interactionObject.gameObject.SetActive(false);
         }
     }
     
-    private GameObject SpawnInteraction(string id, Transform uiTransform)
+    private GameObject SpawnInteraction(string id, Transform pos)
     {
-        var obj = GameManager.Instance.SpawnToUIObjectPoolInstantiate(id, uiTransform);
+        var obj = GameManager.Instance.SpawnToUIObjectPoolInstantiate(id, pos);
         
         var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (uiData == null)
@@ -61,9 +70,46 @@ public class InteractionController : MonoBehaviour
             if(!trace)
                 trace = obj.AddComponent<Trace>();
             
-            trace.SetTarget(uiTransform);
+            trace.SetTarget(pos);
         }
 
         return obj;
+    }
+    
+    // 선택지
+    
+    // 대화 선택지 및 선택 액션
+    protected void SetActionInteractionSelect(Action<string> dialogueAction, Action closeAction)
+    {
+        interactionSelect.gameObject.SetActive(true);
+        interactionSelect.SetAction(dialogueAction, closeAction);
+        interactionSelect.SetDelay();
+    }
+    
+    protected virtual void SpawnInteractionSelect(NpcData npcData)
+    {
+        var selectList = TableManager.Instance.dialogueChoiceTable.DialogueChoice.FindAll(x => x.npc == npcData.id);
+        
+        if (selectList.Count > 0 && interactionSelect == null)
+        {
+            interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, selectPos).GetComponent<InteractionSelect>();
+            
+            List<string> choiceList = new List<string>();
+            foreach (var select in selectList)
+                choiceList.Add(GameManager.Instance.GetTalk(select.talk));
+            
+            List<string> idList = new List<string>();
+            foreach (var select in selectList)
+                idList.Add(select.id);
+            
+            interactionSelect.StartSetting(choiceList, idList);
+            interactionSelect.gameObject.SetActive(false);
+        }
+    }
+
+    protected void ActiveInteractionSelect(bool active)
+    {
+        if(interactionSelect)
+            interactionSelect.gameObject.SetActive(active);
     }
 }

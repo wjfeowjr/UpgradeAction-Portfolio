@@ -105,12 +105,13 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
     // 체력
     public void SetHp(Character character)
     {
-        if(character.BasicStat.hp > 0 && !gameObject.activeSelf)
+        if (character.BasicStat.hp > 0 && !gameObject.activeSelf)
+        {
             gameObject.SetActive(true);
-
-        hpGauge.GaugeSetting(character.BasicStat.hp, character.BasicStat.maxHp);
-        SetHpText(character);
+            hpGauge.GaugeSetting(character.BasicStat.hp, character.BasicStat.maxHp);
+        }
         
+        SetHpText(character);
         if(character.BasicStat.hp <= 0)
             gameObject.SetActive(false);
     }
@@ -130,17 +131,16 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
     {
         if (character.BasicStat.bodyType != EBodyType.StrongArmor && character.BasicStat.bodyType != EBodyType.HyperArmor)
             return;
-        
-        if(!staggerGauge.gameObject.activeSelf)
-            staggerGauge.gameObject.SetActive(true);
-        
-        staggerGauge.GaugeSetting(character.BasicStat.stagger, character.BasicStat.maxStagger);
-        SetStaggerText(character);
 
-        if (character.BasicStat.stagger <= 0)
+        if (!staggerGauge.gameObject.activeSelf)
         {
-            staggerGauge.gameObject.SetActive(false);
+            staggerGauge.gameObject.SetActive(true);
+            staggerGauge.GaugeSetting(character.BasicStat.stagger, character.BasicStat.maxStagger);
         }
+        
+        SetStaggerText(character);
+        if (character.BasicStat.stagger <= 0)
+            staggerGauge.gameObject.SetActive(false);
     }
     public void SetStaggerText(Character character)
     {

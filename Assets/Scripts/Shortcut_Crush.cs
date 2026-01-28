@@ -6,13 +6,21 @@ using Random = UnityEngine.Random;
 
 public  class Shortcut_Crush : ShortcutObject
 {
+    [SerializeField] private int targetIdx;
     [SerializeField] private GameObject shakeObject;
     [SerializeField] private Transform[] fragmentsPos;
     [SerializeField] private Sprite[] fragmentSprites;
-    
+    private Room targetRoom;
+
     private CancellationTokenSource shakeCancellation;
     private Vector2 firstVector;
     private Vector2 centerVector;
+
+    public Room TargetRoom
+    {
+        get => targetRoom;
+        set => targetRoom = value;
+    }
 
     private void Awake()
     {
@@ -20,7 +28,7 @@ public  class Shortcut_Crush : ShortcutObject
         centerVector = new Vector2(transform.position.x + myCollider.offset.x, transform.position.y + myCollider.offset.y);
     }
 
-    protected override void OpenProduct()
+    public override void OpenProduct()
     {
         SpawnObject(ConstValues.ShortcutCrashExplosion, centerVector);
         
@@ -46,9 +54,16 @@ public  class Shortcut_Crush : ShortcutObject
                 spin.SetSpinSpeed(true);
         }
         
-        base.OpenImmediate();
+        base.OpenProduct();
     }
-    
+
+    protected override void OpenImmediate()
+    {
+        base.OpenImmediate();
+        if(targetRoom)
+            targetRoom.ShortcutOpen(targetRoom.GetWallShortCutName(targetIdx));
+    }
+
     protected override async void HitProduct()
     {
         // 대략적인 연출과정

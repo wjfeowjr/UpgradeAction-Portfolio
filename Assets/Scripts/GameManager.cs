@@ -447,6 +447,7 @@ public class SettingSkill
 // 숏컷
 public class ShortCut
 {
+    public string id;
     public string type;
     public bool isOpened;
 }

@@ -1,21 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class MovingPlatform : MonoBehaviour
 {
     [SerializeField] private Transform[] points;
-    [SerializeField] private bool isCollision;
     [SerializeField] private bool isMoving;
     [SerializeField] private bool isRepeat;
+    [SerializeField] private float delay;
     [SerializeField] private float speed = 2f;
     [SerializeField] private float accelerateDistance = 1f;
     [SerializeField] private float slowDownDistance = 1f;
     [SerializeField, Range(0f, 1f)] private float minSpeedMultiplier = 0.2f;
-
+    
+    private float curDelay;
     private Rigidbody2D myRigidbody;
-    private Collider2D myCollider;
-    [SerializeField] private int targetIdx;
+    private int targetIdx;
     private Vector2 prevPos;
     private Vector2 segmentStartPos;
     private Vector2 platformVelocity;
@@ -34,6 +36,11 @@ public class MovingPlatform : MonoBehaviour
         get => isRepeat;
         set => isRepeat = value;
     }
+    public float Delay
+    {
+        get => delay;
+        set => delay = value;
+    }
 
     public int TargetIdx
     {
@@ -45,7 +52,6 @@ public class MovingPlatform : MonoBehaviour
     private void Awake()
     {
         myRigidbody = GetComponent<Rigidbody2D>();
-        myCollider = GetComponent<Collider2D>();
         myRigidbody.bodyType = RigidbodyType2D.Kinematic;
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
         prevPos = transform.position;
@@ -53,6 +59,11 @@ public class MovingPlatform : MonoBehaviour
         
         foreach (var point in points)
             movePos.Add(point.position);
+    }
+
+    private void Update()
+    {
+        UpdateDelay();
     }
 
     private void FixedUpdate()
@@ -70,9 +81,6 @@ public class MovingPlatform : MonoBehaviour
         Vector2 next = Vector2.MoveTowards(cur, movePos[targetIdx], currentSpeed * Time.fixedDeltaTime);
 
         myRigidbody.MovePosition(next);
-        // 2) 이번 프레임 플랫폼이 실제로 이동한 delta
-        Vector2 delta = next - prevPos;
-        platformVelocity = delta / Time.fixedDeltaTime;
         prevPos = next;
 
         // 4) 목적지 도착하면 다음 포인트
@@ -81,17 +89,31 @@ public class MovingPlatform : MonoBehaviour
             transform.position = movePos[targetIdx];
             targetIdx = (targetIdx + 1) % movePos.Count;
             segmentStartPos = next;
-            if (!isRepeat)
-            {
-                isMoving = false;
-                platformVelocity = Vector2.zero;
-            }
+            isMoving = false;
+            
+            if (isRepeat && delay > 0)
+                curDelay = 0;
 
             if (arriveAction != null)
                 arriveAction();
         }
     }
     
+    private void UpdateDelay()
+    {
+        if (delay == 0)
+            return;
+        
+        if (curDelay < delay)
+            curDelay += Time.deltaTime;
+
+        if (curDelay > delay)
+        {
+            curDelay = delay;
+            isMoving = true;
+        }
+    }
+
     public void SetSaveAction(Action action)
     {
         arriveAction = action;

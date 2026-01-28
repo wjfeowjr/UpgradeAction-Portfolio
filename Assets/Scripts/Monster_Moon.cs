@@ -163,8 +163,6 @@ public class Monster_Moon : Monster
     // 등장
     public override async void Appear(Action<string> bossProduct)
     {
-        PlaySound($"{ConstValues.Scream}6");
-        
         faceSpin.enabled = true;
         faceSpin.StopAndReset();
         faceReduction.enabled = true;
