@@ -444,6 +444,23 @@ public class SettingSkill
 }
 
 [Serializable]
+// 연출 이벤트
+public class RoomProduct
+{
+    public int idx;
+    public int count;
+    public bool isFinish;
+}
+
+[Serializable]
+// 이벤트를 처리해야하는 Npc
+public class EventNpc
+{
+    public string id;
+    public bool isActive;
+}
+
+[Serializable]
 // 숏컷
 public class ShortCut
 {
@@ -489,13 +506,13 @@ public class LockDoorData
 public class RoomInfo
 {
     public string roomId;
-    public int productCount;
-    public bool bossClear;
 
     public string visitedCells;         // 방문한 구역
     public string visitedShortcutCells; // 방문한 숏컷
     public bool savePointCheck;         // 세이브 포인트
-    
+
+    public List<RoomProduct> roomProduct = new List<RoomProduct>();
+    public List<EventNpc> eventNpc = new List<EventNpc>();
     public List<ShortCut> shortCut = new List<ShortCut>();
     public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
     public List<TreasureBox> treasureBox = new List<TreasureBox>();

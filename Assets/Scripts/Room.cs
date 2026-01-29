@@ -336,18 +336,23 @@ public class Room : MonoBehaviour
         if (roomsData == null)
             return;
         
-        var productCount = roomsData.productCount;
-        var npcAppearProductIdxArray = roomsData.npcAppearProductIdx.Split(';');
-        List<int> npcAppearProductIdxList = new List<int>();
-        foreach (var productIdx in npcAppearProductIdxArray)
-            npcAppearProductIdxList.Add(int.Parse(productIdx));
-        
+        // 연출 트리거 세팅
         var productIdxArray = roomsData.productIdx.Split(';');
         List<int> productIdxList = new List<int>();
         foreach (var productIdx in productIdxArray)
             productIdxList.Add(int.Parse(productIdx));
-
-        // 연출 트리거에, 해당하는 인덱스의 프로덕트 연출 삽입
+        if (roomInfo.roomProduct.Count < productTriggers.Length)
+        {
+            foreach (var productIdx in productIdxList)
+            {
+                RoomProduct roomProduct = new RoomProduct();
+                roomProduct.idx = productIdx;
+                roomProduct.count = 0;
+                roomProduct.isFinish = false;
+                roomInfo.roomProduct.Add(roomProduct);
+            }
+        }
+        // 연출 액션 넣기
         for (var i = 0; i < productTriggers.Length; i++)
         {
             int idx = i;
@@ -355,6 +360,29 @@ public class Room : MonoBehaviour
             {
                 ProductAction(productIdxList[idx]);
             });
+        }
+        
+        // 이벤트가 있는 Npc세팅
+        var eventNpcArray = roomsData.npc.Split('ㅗ');
+        if (roomInfo.eventNpc.Count < eventNpcArray.Length)
+        {
+            if (eventNpcArray[0] != ConstValues.None)
+            {
+                for (int i = 0; i < eventNpcArray.Length; i++)
+                {
+                    var npcArray = eventNpcArray[i].Split(';');
+                    var npcId = npcArray[0];
+                    var npcActive = bool.Parse(npcArray[1]);
+                    
+                    var eventNpc = new EventNpc()
+                    {
+                        id = npcId,
+                        isActive = npcActive, 
+                    };
+                    roomInfo.eventNpc.Add(eventNpc);
+                }
+                GameManager.Instance.SaveGame();
+            }
         }
 
         // 맵에 있는 숏컷 세팅
@@ -448,25 +476,21 @@ public class Room : MonoBehaviour
             }
             GameManager.Instance.SaveGame();
         }
-
-        // 연출을 봤다면, 다시 나오지 않게 조정
-        if (productCount > 0)
-        {
-            if (roomInfo.productCount >= productCount)
-            {
-                productTriggers[0].gameObject.SetActive(false);
-            }
-        }
+        
+        // 연출이 끝났다면, 연출 트리거를 제거
+        for (int i = 0; i < roomInfo.roomProduct.Count; i++)
+            productTriggers[i].gameObject.SetActive(!roomInfo.roomProduct[i].isFinish);
 
         // 여기서 npc 활성화
-        foreach (var arr in npc)
+        foreach (var person in npc)
         {
-            foreach (var npcAppearProductIdx in npcAppearProductIdxList)
-                arr.gameObject.SetActive(roomInfo.productCount == npcAppearProductIdx);
-
-            arr.SetInteractionAction();
-            arr.SetSelectAction();
-            arr.SetStartTalkAction();
+            var targetNpc = roomInfo.eventNpc.Find(x => x.id == person.name);
+            if (targetNpc != null)
+                person.gameObject.SetActive(targetNpc.isActive);
+            
+            person.SetInteractionAction();
+            person.SetSelectAction();
+            person.SetStartTalkAction();
         }
 
         // 스킬 및 패시브를 획득했으면, 나오지 않게 조정
@@ -1355,7 +1379,7 @@ public class Room : MonoBehaviour
         roomCustomObjects[0].SetActive(true);
         UIOn();
 
-        roomInfo.productCount += 1;
+        roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
         firstStart = false;
     }
@@ -1387,7 +1411,7 @@ public class Room : MonoBehaviour
         RoomManager.Instance.Guide(40000);
         
         UIOn();
-        roomInfo.productCount += 1;
+        roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
     }
 
@@ -1413,7 +1437,7 @@ public class Room : MonoBehaviour
 
         RoomManager.Instance.Guide(40001);
         UIOn();
-        roomInfo.productCount += 1;
+        roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
     }
     
@@ -1438,7 +1462,7 @@ public class Room : MonoBehaviour
         Vector2 sunSpeechPos;
         Vector2 moonSpeechPos; 
         
-        if (roomInfo.productCount == 0)
+        if (roomInfo.roomProduct[0].count == 0)
         {
             UIOff();
             
@@ -1462,14 +1486,14 @@ public class Room : MonoBehaviour
             // 게임 시작
             GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
             UIOn();
-            roomInfo.productCount += 1;
+            roomInfo.roomProduct[0].count += 1;
             GameManager.Instance.SaveGame();
         }
         
         if(await WaitUntil(() => bosses[0].IsDie, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
             return;
 
-        if (roomInfo.productCount == 1)
+        if (roomInfo.roomProduct[0].count == 1)
         {
             UIOff();
             
@@ -1497,7 +1521,7 @@ public class Room : MonoBehaviour
         // BGM 끄기
         StopBGM();
 
-        if (roomInfo.productCount == 1)
+        if (roomInfo.roomProduct[0].count == 1)
         {
             berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
@@ -1545,7 +1569,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
             return;
 
-        if (roomInfo.productCount == 1)
+        if (roomInfo.roomProduct[0].count == 1)
         {
             berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
 
@@ -1566,7 +1590,7 @@ public class Room : MonoBehaviour
         // 달 보스 소환
         SpawnBoss(bosses[1], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y + 3.5f));
 
-        if (roomInfo.productCount == 1)
+        if (roomInfo.roomProduct[0].count == 1)
         {
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
                 return;
@@ -1596,7 +1620,7 @@ public class Room : MonoBehaviour
             await NextDialog(speechFrame1[0]);
             
             UIOn();
-            roomInfo.productCount += 1;
+            roomInfo.roomProduct[0].isFinish = true;
             GameManager.Instance.SaveGame();
         }
 
@@ -1673,8 +1697,7 @@ public class Room : MonoBehaviour
 
         // 문 열기
         DoorActive(false);
-        roomInfo.productCount += 1;
-        roomInfo.bossClear = true;
+        roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
         UIOn();
     }
@@ -1735,7 +1758,7 @@ public class Room : MonoBehaviour
         RoomManager.Instance.Guide(40004);
         
         UIOn();
-        roomInfo.productCount += 1;
+        roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
     }
     
@@ -1759,13 +1782,12 @@ public class Room : MonoBehaviour
 
         // 문 열기
         DoorActive(false);
-        roomInfo.productCount += 1;
-        roomInfo.bossClear = true;
+        roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
         UIOn();
     }
     
-    // 스킬을 획득 후 이벤트
+    // 스킬 획득 후 이벤트
     private async void GetSkillEvent(string skillName)
     {
         string getMessage = string.Format(GameManager.Instance.GetTalk(30200), skillName);;

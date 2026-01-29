@@ -245,7 +245,8 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string SpawnedObject = "SpawnedObject";
     public const string Animations = "Animations";
-
+    public const string Arena = "Arena";
+    
     public const string MoveSpeed = "MoveSpeed";
     public const string AttackSpeed = "AttackSpeed";
     

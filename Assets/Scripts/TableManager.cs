@@ -6,29 +6,6 @@ using UnityEngine;
 using UnityEngine.Serialization;
 
 [Serializable]
-public class SpawnedObjectData
-{
-    public string id;
-    public bool xFlip;
-    public bool yFlip;
-    public bool zFlip;
-    public bool tracePos;
-    public bool timeScale;
-    public string basicAngle;
-    public string flipAngle;
-    public float objectTime;
-    public string sound;
-    public float soundVolume;
-    public string cameraShake;
-    public float shakeTime;
-}
-[Serializable]
-public class SpawnedObjectDataList
-{
-    public List<SpawnedObjectData> SpawnedObject;
-}
-
-[Serializable]
 public class AnimationsData
 {
     public string id;
@@ -42,6 +19,20 @@ public class AnimationsData
 public class AnimationsDataList
 {
     public List<AnimationsData> Animations;
+}
+
+[Serializable]
+public class ArenaData
+{
+    public string id;
+    public int round;
+    public string monster;
+    public int posIdx;
+}
+[Serializable]
+public class ArenaDataList
+{
+    public List<ArenaData> Arena;
 }
 
 [Serializable]
@@ -72,21 +63,40 @@ public class AttackDataList
 }
 
 [Serializable]
-public class MissileData
+public class DialogueData
 {
     public string id;
-    public string type;
-    public float speed;
-    public float limitLength;
-    public string hitTag;
-    public string spawnObject;
-    public bool hitSpawn;
-    public bool afterImage;
+    public bool isSpeaker;
+    public int talk;
+    public bool isEnd;
+    public string choiceGroupId;
+    public string speechFrame;
+    public string speechPose;
+    public string sound;
+    public string cameraShake;
+    public float shakeTime;
+    public string checkKey;
+    public bool checkKeyValue;
+    public string endEvent;
+    public string reward;
 }
 [Serializable]
-public class MissileDataList
+public class DialogueDataList
 {
-    public List<MissileData> Missile;
+    public List<DialogueData> Dialogue;
+}
+
+[Serializable]
+public class DialogueChoiceData
+{
+    public string id;
+    public string npc;
+    public int talk;
+}
+[Serializable]
+public class DialogueChoiceDataList
+{
+    public List<DialogueChoiceData> DialogueChoice;
 }
 
 [Serializable]
@@ -106,35 +116,21 @@ public class GrenadeDataList
 }
 
 [Serializable]
-public class PlayerData
+public class MissileData
 {
-    // 공통 데이터
     public string id;
-    public int talk;
-    public string bodyType;
-    public int hp;
-    public int power;
-    public int defence;
-    public float moveSpeed;
-    public float attackSpeed;
-    public float criticalChance;
-    public float criticalDamage;
-    public float weight;
-    public int stagger;
-    public float staggerTime;
-    
-    // 독립 데이터
-    public int passiveComment;
-    public string passive;
-    public float jumpForce;
-    public float jumpHeight;
-    public int jumpAttackCount;
-    public float jumpAttackForce;
+    public string type;
+    public float speed;
+    public float limitLength;
+    public string hitTag;
+    public string spawnObject;
+    public bool hitSpawn;
+    public bool afterImage;
 }
 [Serializable]
-public class PlayerDataList
+public class MissileDataList
 {
-    public List<PlayerData> Player;
+    public List<MissileData> Missile;
 }
 
 [Serializable]
@@ -186,6 +182,83 @@ public class MonsterDataList
 }
 
 [Serializable]
+public class NpcData
+{
+    public string id;
+    public int talk;
+    public string startDialog;
+    public string dialogKey;
+}
+[Serializable]
+public class NpcDataList
+{
+    public List<NpcData> Npc;
+}
+
+[Serializable]
+public class PlayerData
+{
+    // 공통 데이터
+    public string id;
+    public int talk;
+    public string bodyType;
+    public int hp;
+    public int power;
+    public int defence;
+    public float moveSpeed;
+    public float attackSpeed;
+    public float criticalChance;
+    public float criticalDamage;
+    public float weight;
+    public int stagger;
+    public float staggerTime;
+    
+    // 독립 데이터
+    public int passiveComment;
+    public string passive;
+    public float jumpForce;
+    public float jumpHeight;
+    public int jumpAttackCount;
+    public float jumpAttackForce;
+}
+[Serializable]
+public class PlayerDataList
+{
+    public List<PlayerData> Player;
+}
+
+[Serializable]
+public class ProductDialogueData
+{
+    public string id;
+    public int talk;
+}
+[Serializable]
+public class ProductDialogueDataList
+{
+    public List<ProductDialogueData> ProductDialogue;
+}
+
+[Serializable]
+public class RoomsData
+{
+    public string id;
+    public string productIdx;
+    public string npc;
+    public string skill;
+    public string treasureBox;
+    public string namedMonster;
+    public string bgSprite;
+    public bool bgDeco;
+    public string bgm;
+}
+[Serializable]
+public class RoomsDataList
+{
+    public List<RoomsData> Rooms;
+}
+
+[Serializable]
 public class SkillData
 {
     public string id;
@@ -218,86 +291,26 @@ public class SkillAttributeDataList
 }
 
 [Serializable]
-public class RoomsData
+public class SpawnedObjectData
 {
     public string id;
-    public int productCount;
-    public string productIdx;
-    public string skill;
-    public string treasureBox;
-    public string namedMonster;
-    public string npcAppearProductIdx;
-    public string bgSprite;
-    public bool bgDeco;
-    public string bgm;
-}
-[Serializable]
-public class RoomsDataList
-{
-    public List<RoomsData> Rooms;
-}
-
-[Serializable]
-public class NpcData
-{
-    public string id;
-    public int talk;
-    public string startDialog;
-    public string dialogKey;
-}
-[Serializable]
-public class NpcDataList
-{
-    public List<NpcData> Npc;
-}
-
-[Serializable]
-public class DialogueData
-{
-    public string id;
-    public bool isSpeaker;
-    public int talk;
-    public bool isEnd;
-    public string choiceGroupId;
-    public string speechFrame;
-    public string speechPose;
+    public bool xFlip;
+    public bool yFlip;
+    public bool zFlip;
+    public bool tracePos;
+    public bool timeScale;
+    public string basicAngle;
+    public string flipAngle;
+    public float objectTime;
     public string sound;
+    public float soundVolume;
     public string cameraShake;
     public float shakeTime;
-    public string checkKey;
-    public bool checkKeyValue;
-    public string endEvent;
-    public string reward;
 }
 [Serializable]
-public class DialogueDataList
+public class SpawnedObjectDataList
 {
-    public List<DialogueData> Dialogue;
-}
-
-[Serializable]
-public class DialogueChoiceData
-{
-    public string id;
-    public string npc;
-    public int talk;
-}
-[Serializable]
-public class DialogueChoiceDataList
-{
-    public List<DialogueChoiceData> DialogueChoice;
-}
-
-[Serializable]
-public class ProductDialogueData
-{
-    public string id;
-    public int talk;
-}
-[Serializable]
-public class ProductDialogueDataList
-{
-    public List<ProductDialogueData> ProductDialogue;
+    public List<SpawnedObjectData> SpawnedObject;
 }
 
 [Serializable]
@@ -314,38 +327,40 @@ public class TalkDataList
 
 public class TableManager : SingletonMono<TableManager>
 {
-    public SpawnedObjectDataList spawnedObjectTable;
     public AnimationsDataList animationsTable;
+    public ArenaDataList arenaTable;
     public AttackDataList attackTable;
-    public MissileDataList missileTable;
-    public GrenadeDataList grenadeTable;
-    public PlayerDataList playerTable;
-    public MonsterDataList monsterTable;
-    public SkillDataList skillTable;
-    public SkillAttributeDataList skillAttributeTable;
-    public RoomsDataList roomsTable;
-    public NpcDataList npcTable;
     public DialogueDataList dialogueTable;
     public DialogueChoiceDataList dialogueChoiceTable;
+    public GrenadeDataList grenadeTable;
+    public MissileDataList missileTable;
+    public MonsterDataList monsterTable;
+    public NpcDataList npcTable;
+    public PlayerDataList playerTable;
     public ProductDialogueDataList productDialogueTable;
+    public RoomsDataList roomsTable;
+    public SkillDataList skillTable;
+    public SkillAttributeDataList skillAttributeTable;
+    public SpawnedObjectDataList spawnedObjectTable;
     public TalkDataList talkTable;
     
     public void Init()
     {
-        spawnedObjectTable = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject);
         animationsTable = LoadDataFromJson<AnimationsDataList>(ConstValues.Animations);
+        arenaTable = LoadDataFromJson<ArenaDataList>(ConstValues.Arena);
         attackTable = LoadDataFromJson<AttackDataList>(ConstValues.Attack);
-        missileTable = LoadDataFromJson<MissileDataList>(ConstValues.Missile);
-        grenadeTable = LoadDataFromJson<GrenadeDataList>(ConstValues.Grenade);
-        playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
-        monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
-        skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);
-        skillAttributeTable = LoadDataFromJson<SkillAttributeDataList>(ConstValues.SkillAttribute);
-        roomsTable = LoadDataFromJson<RoomsDataList>(ConstValues.Rooms);
-        npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);
         dialogueTable = LoadDataFromJson<DialogueDataList>(ConstValues.Dialogue);
         dialogueChoiceTable = LoadDataFromJson<DialogueChoiceDataList>(ConstValues.DialogueChoice);
+        grenadeTable = LoadDataFromJson<GrenadeDataList>(ConstValues.Grenade);
+        missileTable = LoadDataFromJson<MissileDataList>(ConstValues.Missile);
+        monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
+        npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);
+        playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
         productDialogueTable = LoadDataFromJson<ProductDialogueDataList>(ConstValues.ProductDialogue);
+        roomsTable = LoadDataFromJson<RoomsDataList>(ConstValues.Rooms);
+        skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);
+        skillAttributeTable = LoadDataFromJson<SkillAttributeDataList>(ConstValues.SkillAttribute);
+        spawnedObjectTable = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject);
         talkTable = LoadDataFromJson<TalkDataList>(ConstValues.Talk);
         
         Debug.Log($"{name} 초기화 완료");
