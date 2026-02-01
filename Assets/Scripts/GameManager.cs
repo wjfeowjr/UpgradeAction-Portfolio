@@ -507,9 +507,9 @@ public class RoomInfo
 {
     public string roomId;
 
-    public string visitedCells;         // 방문한 구역
-    public string visitedShortcutCells; // 방문한 숏컷
-    public bool savePointCheck;         // 세이브 포인트
+    public string visitedCells;                                    // 방문한 구역
+    public List<string> visitedShortcutCells = new List<string>(); // 방문한 숏컷
+    public bool savePointCheck;                                    // 세이브 포인트
 
     public List<RoomProduct> roomProduct = new List<RoomProduct>();
     public List<EventNpc> eventNpc = new List<EventNpc>();
@@ -1232,6 +1232,16 @@ public class GameManager : Singleton<GameManager>
         monsterList.Add(monster);
         return monster;
     }
+    public Monster ActiveAndHideMonster(string id, Transform monsterTransform, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false)
+    {
+        var monster = SpawnToPoolInstantiate(id, monsterTransform, monsterVector).GetComponent<Monster>();
+        monster.IsExplosion = isExplosion;
+        monster.IsBoss = isBoss;
+        monster.gameObject.SetActive(false);
+        monsterList.Add(monster);
+        return monster;
+    }
+    
     public void ActiveMonster(Monster monster, Action<string> bossProduct = null)
     {
         monster.gameObject.SetActive(true);

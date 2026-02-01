@@ -557,11 +557,8 @@ public abstract class Character : InteractionController
         effectObj.transform.localScale = randomVector;
     }
 
-    // 공격 소환(데이터 삽입용)
-    protected GameObject SpawnAttackObject(string id, Transform attackTransform, int zAngle = 0, int missileDir = 0)
+    private void SetSpawnedObjectData(string id, GameObject obj, int zAngle, Transform attackTransform = null, bool isBuff = false)
     {
-        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
-
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (objectData != null)
         {
@@ -578,23 +575,35 @@ public abstract class Character : InteractionController
                     finalAngle = -zAngle;
 
                 var objectAngle = spawnedObject.transform.eulerAngles;
-                spawnedObject.transform.eulerAngles =
-                    new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+                spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
+            }
+            
+            if (spawnedObject.GetObjectTime() == 0)
+            {
+                if (isBuff)
+                    AddObjectList(buffObject, obj);
+                else
+                    AddObjectList(normalObject, obj);
             }
 
             if (spawnedObject.GetObjectTime() == 0)
                 AddObjectList(controlObject, obj);
 
-            if (spawnedObject.GetTrace())
+            if (attackTransform != null)
             {
-                var trace = obj.GetComponent<Trace>();
-                if (!trace)
-                    trace = obj.AddComponent<Trace>();
+                if (spawnedObject.GetTrace())
+                {
+                    var trace = obj.GetComponent<Trace>();
+                    if (!trace)
+                        trace = obj.AddComponent<Trace>();
 
-                trace.SetTarget(attackTransform);
+                    trace.SetTarget(attackTransform);
+                }
             }
         }
-
+    }
+    private void SetAttackData(string id, GameObject obj)
+    {
         var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
         if (attackData != null)
         {
@@ -606,7 +615,9 @@ public abstract class Character : InteractionController
             attack.SetupData(attackData);
             attack.EnableSetting();
         }
-
+    }
+    private void SetMissileData(string id, GameObject obj, int missileDir = 0)
+    {
         var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
         if (missileData != null)
         {
@@ -628,7 +639,9 @@ public abstract class Character : InteractionController
 
             missile.SetupData(missileData, dir, SpawnAttack);
         }
-
+    }
+    private void SetGrenadeData(string id, GameObject obj, Vector2 targetVector = default)
+    {
         var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
         if (grenadeData != null)
         {
@@ -640,280 +653,62 @@ public abstract class Character : InteractionController
             if (transform.localScale.x < 0)
                 dir = Vector2.left;
             grenade.SetupData(grenadeData, dir, SpawnAttack);
-            grenade.Throw();
-        }
 
+            if (targetVector == default)
+                grenade.Throw();
+            else
+                grenade.TargetThrow(targetVector);
+        }
+    }
+    
+    // 공격 소환(데이터 삽입용)
+    protected GameObject SpawnAttackObject(string id, Transform attackTransform, int zAngle = 0, int missileDir = 0, Vector2 targetVector = default)
+    {
+        var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
+        SetSpawnedObjectData(id, obj, zAngle, attackTransform);
+        SetAttackData(id, obj);
+        SetMissileData(id, obj, missileDir);
+        SetGrenadeData(id, obj, targetVector);
+        
         return obj;
     }
 
     // 공격 소환
-    protected void SpawnAttack(string id, Transform attackTransform, int zAngle = 0)
+    protected void SpawnAttack(string id, Transform attackTransform, int zAngle = 0, Vector2 targetVector = default)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
-
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if (objectData != null)
-        {
-            var spawnedObject = obj.GetComponent<SpawnedObject>();
-            if (!spawnedObject)
-                spawnedObject = obj.AddComponent<SpawnedObject>();
-
-            spawnedObject.SetupData(objectData, transform.localScale.x);
-            spawnedObject.EnableSetting();
-            if (zAngle != 0)
-            {
-                var finalAngle = zAngle;
-                if (transform.localScale.x < 0)
-                    finalAngle = -zAngle;
-
-                var objectAngle = spawnedObject.transform.eulerAngles;
-                spawnedObject.transform.eulerAngles =
-                    new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
-            }
-
-            if (spawnedObject.GetObjectTime() == 0)
-                AddObjectList(controlObject, obj);
-
-            if (spawnedObject.GetTrace())
-            {
-                var trace = obj.GetComponent<Trace>();
-                if (!trace)
-                    trace = obj.AddComponent<Trace>();
-
-                trace.SetTarget(attackTransform);
-            }
-        }
-
-        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
-        if (attackData != null)
-        {
-            var attack = obj.GetComponent<Attack>();
-            if (!attack)
-                attack = obj.AddComponent<Attack>();
-            
-            attack.SetupCastChar(this);
-            attack.SetupData(attackData);
-            attack.EnableSetting();
-        }
-
-        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
-        if (missileData != null)
-        {
-            var missile = obj.GetComponent<Missile>();
-            if (!missile)
-                missile = obj.AddComponent<Missile>();
-
-            var dir = Vector2.right;
-            if (transform.localScale.x < 0)
-                dir = Vector2.left;
-            missile.SetupData(missileData, dir, SpawnAttack);
-        }
-
-        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
-        if (grenadeData != null)
-        {
-            var grenade = obj.GetComponent<Grenade>();
-            if (!grenade)
-                grenade = obj.AddComponent<Grenade>();
-
-            var dir = Vector2.right;
-            if (transform.localScale.x < 0)
-                dir = Vector2.left;
-            grenade.SetupData(grenadeData, dir, SpawnAttack);
-            grenade.Throw();
-        }
-    }
-
-    protected void SpawnAttack(string id, Vector2 pos, int zAngle = 0)
+        SetSpawnedObjectData(id, obj, zAngle, attackTransform);
+        SetAttackData(id, obj);
+        SetMissileData(id, obj);
+        SetGrenadeData(id, obj, targetVector);
+    } 
+    // 공격 소환 (오버로딩)
+    protected void SpawnAttack(string id, Vector2 pos, int zAngle = 0, Vector2 targetVector = default)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
-
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if (objectData != null)
-        {
-            var spawnedObject = obj.GetComponent<SpawnedObject>();
-            if (!spawnedObject)
-                spawnedObject = obj.AddComponent<SpawnedObject>();
-
-            spawnedObject.SetupData(objectData, transform.localScale.x);
-            spawnedObject.EnableSetting();
-            if (zAngle != 0)
-            {
-                var finalAngle = zAngle;
-                if (transform.localScale.x < 0)
-                    finalAngle = -zAngle;
-
-                var objectAngle = spawnedObject.transform.eulerAngles;
-                spawnedObject.transform.eulerAngles =
-                    new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
-            }
-
-            if (spawnedObject.GetObjectTime() == 0)
-                AddObjectList(controlObject, obj);
-        }
-
-        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
-        if (attackData != null)
-        {
-            var attack = obj.GetComponent<Attack>();
-            if (!attack)
-                attack = obj.AddComponent<Attack>();
-            
-            attack.SetupCastChar(this);
-            attack.SetupData(attackData);
-            attack.EnableSetting();
-        }
-
-        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
-        if (missileData != null)
-        {
-            var missile = obj.GetComponent<Missile>();
-            if (!missile)
-                missile = obj.AddComponent<Missile>();
-
-            var dir = Vector2.right;
-            if (transform.localScale.x < 0)
-                dir = Vector2.left;
-            missile.SetupData(missileData, dir, SpawnAttack);
-        }
-
-        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
-        if (grenadeData != null)
-        {
-            var grenade = obj.GetComponent<Grenade>();
-            if (!grenade)
-                grenade = obj.AddComponent<Grenade>();
-
-            var dir = Vector2.right;
-            if (transform.localScale.x < 0)
-                dir = Vector2.left;
-            grenade.SetupData(grenadeData, dir, SpawnAttack);
-            grenade.Throw();
-        }
+        SetSpawnedObjectData(id, obj, zAngle);
+        SetAttackData(id, obj);
+        SetMissileData(id, obj);
+        SetGrenadeData(id, obj, targetVector);
     }
 
     // 공격판정이 없는 오브젝트 소환
-    protected GameObject SpawnObject(string id, Transform attackTransform, int zAngle = 0, bool isBuff = false)
+    protected GameObject SpawnObject(string id, Transform attackTransform, int zAngle = 0, bool isBuff = false, Vector2 targetVector = default)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
-
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if (objectData == null)
-            return obj;
-
-        var spawnedObject = obj.GetComponent<SpawnedObject>();
-        if (!spawnedObject)
-            spawnedObject = obj.AddComponent<SpawnedObject>();
-
-        spawnedObject.SetupData(objectData, transform.localScale.x);
-        spawnedObject.EnableSetting();
-        if (zAngle != 0)
-        {
-            var finalAngle = zAngle;
-            if (transform.localScale.x < 0)
-                finalAngle = -zAngle;
-
-            var objectAngle = spawnedObject.transform.eulerAngles;
-            spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
-        }
-
-        if (spawnedObject.GetObjectTime() == 0)
-        {
-            if (isBuff)
-                AddObjectList(buffObject, obj);
-            else
-                AddObjectList(normalObject, obj);
-        }
-
-        if (spawnedObject.GetTrace())
-        {
-            var trace = obj.GetComponent<Trace>();
-            if (!trace)
-                trace = obj.AddComponent<Trace>();
-
-            trace.SetTarget(attackTransform);
-        }
-
-        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
-        if (missileData != null)
-        {
-            var missile = obj.GetComponent<Missile>();
-            if (!missile)
-                missile = obj.AddComponent<Missile>();
-
-            var dir = Vector2.right;
-            if (transform.localScale.x < 0)
-                dir = Vector2.left;
-            missile.SetupData(missileData, dir, SpawnAttack);
-        }
-
-        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
-        if (grenadeData != null)
-        {
-            var grenade = obj.GetComponent<Grenade>();
-            if (!grenade)
-                grenade = obj.AddComponent<Grenade>();
-
-            var dir = Vector2.right;
-            if (transform.localScale.x < 0)
-                dir = Vector2.left;
-            grenade.SetupData(grenadeData, dir, SpawnAttack);
-            grenade.Throw();
-        }
+        SetSpawnedObjectData(id, obj, zAngle, attackTransform, isBuff);
+        SetMissileData(id, obj);
+        SetGrenadeData(id, obj, targetVector);
 
         return obj;
-    }
-
-    public GameObject SpawnObject(string id, Vector2 pos, int zAngle = 0)
+    } 
+    // 공격판정이 없는 오브젝트 소환 (오버로딩)
+    public GameObject SpawnObject(string id, Vector2 pos, int zAngle = 0, Vector2 targetVector = default)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
-
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if (objectData == null)
-            return obj;
-
-        var spawnedObject = obj.GetComponent<SpawnedObject>();
-        if (!spawnedObject)
-            spawnedObject = obj.AddComponent<SpawnedObject>();
-
-        spawnedObject.SetupData(objectData, transform.localScale.x);
-        spawnedObject.EnableSetting();
-        if (zAngle != 0)
-        {
-            var finalAngle = zAngle;
-            if (transform.localScale.x < 0)
-                finalAngle = -zAngle;
-
-            var objectAngle = spawnedObject.transform.eulerAngles;
-            spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
-        }
-
-        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
-        if (missileData != null)
-        {
-            var missile = obj.GetComponent<Missile>();
-            if (!missile)
-                missile = obj.AddComponent<Missile>();
-
-            var dir = Vector2.right;
-            if (transform.localScale.x < 0)
-                dir = Vector2.left;
-            missile.SetupData(missileData, dir, SpawnAttack);
-        }
-
-        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
-        if (grenadeData != null)
-        {
-            var grenade = obj.GetComponent<Grenade>();
-            if (!grenade)
-                grenade = obj.AddComponent<Grenade>();
-
-            var dir = Vector2.right;
-            if (transform.localScale.x < 0)
-                dir = Vector2.left;
-            grenade.SetupData(grenadeData, dir, SpawnAttack);
-            grenade.Throw();
-        }
+        SetSpawnedObjectData(id, obj, zAngle);
+        SetMissileData(id, obj);
+        SetGrenadeData(id, obj, targetVector);
 
         return obj;
     }
@@ -921,26 +716,7 @@ public abstract class Character : InteractionController
     protected GameObject SpawnUIObject(string id, Transform uiTransform)
     {
         var obj = GameManager.Instance.SpawnToUIObjectPool(id, uiTransform);
-
-        var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if (uiData == null)
-            return obj;
-
-        var spawnedObject = obj.GetComponent<SpawnedObject>();
-        if (!spawnedObject)
-            spawnedObject = obj.AddComponent<SpawnedObject>();
-
-        spawnedObject.SetupData(uiData, transform.localScale.x);
-        spawnedObject.EnableSetting();
-
-        if (spawnedObject.GetTrace())
-        {
-            var trace = obj.GetComponent<Trace>();
-            if (!trace)
-                trace = obj.AddComponent<Trace>();
-
-            trace.SetTarget(uiTransform);
-        }
+        SetSpawnedObjectData(id, obj, 0, uiTransform);
 
         return obj;
     }
@@ -948,17 +724,7 @@ public abstract class Character : InteractionController
     protected GameObject SpawnUI(string id, Vector2 objectVector)
     {
         var obj = GameManager.Instance.SpawnToUIPool(id, objectVector);
-
-        var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if (uiData == null)
-            return obj;
-
-        var spawnedObject = obj.GetComponent<SpawnedObject>();
-        if (!spawnedObject)
-            spawnedObject = obj.AddComponent<SpawnedObject>();
-
-        spawnedObject.SetupData(uiData, transform.localScale.x);
-        spawnedObject.EnableSetting();
+        SetSpawnedObjectData(id, obj, 0);
 
         return obj;
     }
@@ -1148,10 +914,11 @@ public abstract class Character : InteractionController
             dir = Vector2.left;
 
         float distance = chargeLength;
-        
-        Vector2 rayVector1 = transform.position;
-        Vector2 rayVector2 = new Vector2(rayVector1.x, rayVector1.y + physicsCollider.size.y * 0.5f);
-        Vector2 rayVector3 = new Vector2(rayVector1.x, rayVector1.y + physicsCollider.size.y);
+
+        var rayVector = transform.position;
+        Vector2 rayVector1 = new Vector2(rayVector.x, rayVector.y + 0.1f);
+        Vector2 rayVector2 = new Vector2(rayVector.x, rayVector.y + physicsCollider.size.y * 0.5f);
+        Vector2 rayVector3 = new Vector2(rayVector.x, rayVector.y + physicsCollider.size.y);
         
         var ray1 = Physics2D.Raycast(rayVector1, dir, distance, groundLayerMask);
         Debug.DrawRay(rayVector1, dir, ConstValues.BlueColor, 0.1f);

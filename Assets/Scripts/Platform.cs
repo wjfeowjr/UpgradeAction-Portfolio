@@ -87,7 +87,7 @@ public class Platform : MonoBehaviour
         return obj;
     }
 
-    private void SpawnDust(string id, Transform dustTransform, int zAngle = 0)
+    private void SpawnDust(string id, Transform dustTransform, int zAngle = 0, Vector2 targetVector = default)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, dustTransform);
         

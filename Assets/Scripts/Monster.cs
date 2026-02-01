@@ -309,6 +309,11 @@ public class Monster : Character
         //await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
         var myName = name.Split(' ')[0];
         var targetStat = TableManager.Instance.monsterTable.Monster.Find(x => x.id == myName);
+        if (targetStat == null)
+        {
+            myName = name.Split('(')[0];
+            targetStat = TableManager.Instance.monsterTable.Monster.Find(x => x.id == myName);
+        }
 
         basicStat = new BasicStat()
         {

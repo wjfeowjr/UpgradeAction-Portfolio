@@ -1,6 +1,6 @@
 using UnityEngine;
 
-public class Monster_IceWizzard : Monster
+public class Monster_IceWizard : Monster
 {
     protected override void MonsterPattern(int idx)
     {

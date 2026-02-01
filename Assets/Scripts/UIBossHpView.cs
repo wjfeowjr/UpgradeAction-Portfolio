@@ -132,14 +132,14 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
         if (character.BasicStat.bodyType != EBodyType.StrongArmor && character.BasicStat.bodyType != EBodyType.HyperArmor)
             return;
 
-        if (!staggerGauge.gameObject.activeSelf)
+        if (!staggerGauge.gameObject.activeSelf) // 
         {
             staggerGauge.gameObject.SetActive(true);
             staggerGauge.GaugeSetting(character.BasicStat.stagger, character.BasicStat.maxStagger);
         }
         
         SetStaggerText(character);
-        if (character.BasicStat.stagger <= 0)
+        if (character.BasicStat.hp <= 0 || character.BasicStat.stagger <= 0)
             staggerGauge.gameObject.SetActive(false);
     }
     public void SetStaggerText(Character character)

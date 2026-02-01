@@ -9,12 +9,13 @@ using Random = UnityEngine.Random;
 public class GrenadeInfo
 {
     public string id;
+    public bool isTarget;
     public Vector2 minForce;
     public Vector2 maxForce;
     public bool dirObject;
-    [FormerlySerializedAs("hitLayerList")] public List<string> hitTagList;
+    public List<string> hitTagList;
     public string spawnObject;
-    public Action<string, Transform, int> explosionAction;
+    public Action<string, Transform, int, Vector2> explosionAction;
 }
 public class Grenade : MonoBehaviour
 {
@@ -74,12 +75,14 @@ public class Grenade : MonoBehaviour
             myRigidbody.angularVelocity = 0f;
     }
     
-    public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform, int> action)
+    public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform, int, Vector2> action)
     {
         if (grenadeInfo == null)
         {
             grenadeInfo = new GrenadeInfo();
             grenadeInfo.id = grenadeData.id;
+
+            grenadeInfo.isTarget = grenadeData.isTarget;
 
             var minForceSplit = grenadeData.minForce.Split(';');
             grenadeInfo.minForce = new Vector2(float.Parse(minForceSplit[0]), float.Parse(minForceSplit[1]));
@@ -121,6 +124,17 @@ public class Grenade : MonoBehaviour
         myRigidbody.linearVelocity = new Vector2(throwForce.x, throwForce.y);
         myRigidbody.angularVelocity = (myRigidbody.linearVelocity.x >= 0) ? -angular : angular;
     }
+
+    public void TargetThrow(Vector2 target)
+    {
+        // 상태 초기화
+        isGrounded = false;
+        myRigidbody.linearDamping = ConstValues.DefaultLinearDamping;
+        myRigidbody.angularDamping = ConstValues.DefaultAngularDamping;
+        
+        // 발사
+        myRigidbody.linearVelocity = CalculateVelocity(transform.position, target, throwForce.y);
+    }
     
     // 최대 중력가속도 조정
     private void VelocityControl()
@@ -147,10 +161,40 @@ public class Grenade : MonoBehaviour
         isDelete = true;
         
         if (grenadeInfo.spawnObject != ConstValues.None)
-            grenadeInfo.explosionAction(grenadeInfo.spawnObject, transform, 0);
+            grenadeInfo.explosionAction(grenadeInfo.spawnObject, transform, 0, default);
 
         myCollider.enabled = false;
         gameObject.SetActive(false);
+    }
+    
+    private Vector2 CalculateVelocity(Vector2 start, Vector2 target, float height)
+    {
+        // 중력 가속도 (Unity 프로젝트 설정에 따름, 보통 -9.81)
+        float gravity = Physics2D.gravity.y;
+        
+        // 목표가 시작점보다 위에 있을 경우를 대비해, 최고점은 둘 중 높은 곳 + 추가 높이로 설정
+        float maxY = Mathf.Max(start.y, target.y) + height;
+        
+        // 1. 수직 속도 (Vy) 계산: 시작점에서 최고점(maxY)까지 도달하는 데 필요한 속도
+        // 공식: v^2 = 2 * g * h
+        float displacementY_up = maxY - start.y;
+        Vector2 velocityY = Vector2.up * Mathf.Sqrt(-2 * gravity * displacementY_up);
+
+        // 2. 총 소요 시간 계산
+        // 최고점까지 올라가는 시간 (t_up)
+        float timeUp = Mathf.Sqrt(-2 * displacementY_up / gravity);
+        
+        // 최고점에서 목표점까지 떨어지는 시간 (t_down)
+        float displacementY_down = maxY - target.y;
+        float timeDown = Mathf.Sqrt(-2 * displacementY_down / gravity);
+        
+        float totalTime = timeUp + timeDown;
+
+        // 3. 수평 속도 (Vx) 계산: 총 시간 동안 수평 거리를 이동해야 함
+        Vector2 displacementX = new Vector2(target.x - start.x, 0);
+        Vector2 velocityX = displacementX / totalTime;
+
+        return velocityX + velocityY;
     }
     
     private void OnCollisionEnter2D(Collision2D col)
@@ -164,17 +208,6 @@ public class Grenade : MonoBehaviour
         }
     }
 
-    // private void OnCollisionExit2D(Collision2D collision)
-    // {
-    //     // groundLayer를 벗어나면 공중 상태로 되돌리기
-    //     if (((1 << collision.gameObject.layer) & groundLayer) != 0)
-    //     {
-    //         isGrounded       = false;
-    //         myRigidbody.drag          = DefaultLinearDamping;
-    //         myRigidbody.angularDrag   = DefaultAngularDamping;
-    //     }
-    // }
-    
     // 수류탄 소멸에만 관여(공격판정은 여기서 정하지 않는다)
     private void OnTriggerEnter2D(Collider2D col)
     {

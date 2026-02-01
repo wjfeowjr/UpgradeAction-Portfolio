@@ -29,7 +29,7 @@ public class Room : MonoBehaviour
     [Header("디자인 타일이 미리 그려진 미니맵 Tilemap")]
     [SerializeField] private Tilemap minimapFrameTilemap;
     [SerializeField] private Tilemap minimapInTilemap;
-    [SerializeField] private Tilemap shortcutFrameTileMap;
+    [SerializeField] private Tilemap[] shortcutFrameTileMaps;
     
     [Header("카메라 & 저장키")]
     private Camera gameCamera;
@@ -138,18 +138,21 @@ public class Room : MonoBehaviour
         }
         minimapInTilemap.ClearAllTiles();
 
-        if (shortcutFrameTileMap)
+        if (shortcutFrameTileMaps.Length > 0)
         {
-            var shortcutFrameBounds = shortcutFrameTileMap.cellBounds;
-            foreach (var pos in shortcutFrameBounds.allPositionsWithin)
+            foreach (var shortcutFrameTileMap in shortcutFrameTileMaps)
             {
-                if (shortcutFrameTileMap.HasTile(pos))
+                var shortcutFrameBounds = shortcutFrameTileMap.cellBounds;
+                foreach (var pos in shortcutFrameBounds.allPositionsWithin)
                 {
-                    allshortcutCells.Add(pos);
-                    originalshortcutTiles[pos] = shortcutFrameTileMap.GetTile(pos);
+                    if (shortcutFrameTileMap.HasTile(pos))
+                    {
+                        allshortcutCells.Add(pos);
+                        originalshortcutTiles[pos] = shortcutFrameTileMap.GetTile(pos);
+                    }
                 }
+                shortcutFrameTileMap.ClearAllTiles();
             }
-            shortcutFrameTileMap.ClearAllTiles();
         }
     }
 
@@ -1115,9 +1118,9 @@ public class Room : MonoBehaviour
         }
         
         // 저장 데이터 없음: 모든 숏컷 비활성화
-        if (string.IsNullOrEmpty(roomInfo.visitedShortcutCells))
+        if (roomInfo.visitedShortcutCells.Count == 0)
         {
-            if(shortcutFrameTileMap)
+            foreach (var shortcutFrameTileMap in shortcutFrameTileMaps)
                 shortcutFrameTileMap.ClearAllTiles();
         }
         // 저장 데이터 있음: 불러와서 해당 숏컷만 활성화
@@ -1126,8 +1129,11 @@ public class Room : MonoBehaviour
             LoadVisitedShortcutCells();
             foreach (var shortcutCell in visitedShortcutCells)
             {
-                if (originalshortcutTiles.TryGetValue(shortcutCell, out var inTile))
-                    shortcutFrameTileMap.SetTile(shortcutCell, inTile);
+                foreach (var shortcutFrameTileMap in shortcutFrameTileMaps)
+                {
+                    if (originalshortcutTiles.TryGetValue(shortcutCell, out var inTile))
+                        shortcutFrameTileMap.SetTile(shortcutCell, inTile);
+                }
             }
         }
         
@@ -1206,8 +1212,8 @@ public class Room : MonoBehaviour
         {
             if (visitedShortcutCells.Contains(shortcutCell))
                 continue;
-            
-            if (shortcutFrameTileMap)
+
+            foreach (var shortcutFrameTileMap in shortcutFrameTileMaps)
             {
                 Vector3 center = shortcutFrameTileMap.GetCellCenterWorld(shortcutCell);
                 Vector2 min = new Vector2(center.x - halfCell.x, center.y - halfCell.y);
@@ -1261,26 +1267,30 @@ public class Room : MonoBehaviour
     {
         var sb = new StringBuilder();
         foreach (var c in visitedShortcutCells)
+        {
             sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
-
-        roomInfo.visitedShortcutCells = sb.ToString();
+            roomInfo.visitedShortcutCells.Add(sb.ToString());
+        }
     }
     // 숏컷 셀 로드
     private void LoadVisitedShortcutCells()
     {
-        if (string.IsNullOrEmpty(roomInfo.visitedShortcutCells))
+        if (roomInfo.visitedShortcutCells.Count == 0)
             return;
 
-        var entries = roomInfo.visitedShortcutCells.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
-        foreach (var e in entries)
+        foreach (var visitedShortcutCell in roomInfo.visitedShortcutCells)
         {
-            var p = e.Split('_');
-            if (p.Length == 3
-                && int.TryParse(p[0], out int x)
-                && int.TryParse(p[1], out int y)
-                && int.TryParse(p[2], out int z))
+            var entries = visitedShortcutCell.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
+            foreach (var e in entries)
             {
-                visitedShortcutCells.Add(new Vector3Int(x, y, z));
+                var p = e.Split('_');
+                if (p.Length == 3
+                    && int.TryParse(p[0], out int x)
+                    && int.TryParse(p[1], out int y)
+                    && int.TryParse(p[2], out int z))
+                {
+                    visitedShortcutCells.Add(new Vector3Int(x, y, z));
+                }
             }
         }
     }
@@ -1308,6 +1318,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.CurPlayer.Immortal = true;
     }
 
+    // 최초 스타트
     private async void Product1()
     {
         // 연출 시작 전 세팅
@@ -1384,6 +1395,7 @@ public class Room : MonoBehaviour
         firstStart = false;
     }
 
+    // 지도 가이드
     private async void Product2()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
@@ -1415,6 +1427,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.SaveGame();
     }
 
+    // 세이브 포인트 발견
     private async void Product3()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
@@ -1441,6 +1454,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.SaveGame();
     }
     
+    // 태양과 대결
     private async void Product4()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
@@ -1520,7 +1534,7 @@ public class Room : MonoBehaviour
         
         // BGM 끄기
         StopBGM();
-
+        
         if (roomInfo.roomProduct[0].count == 1)
         {
             berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
@@ -1606,18 +1620,18 @@ public class Room : MonoBehaviour
             SpawnSpeechFrame(speechFrame2[0], moonSpeechPos, talkList[13]); 
             await NextDialog(speechFrame2[0]);
         
-            PlaySound(ConstValues.PlayerScream);
-            CameraShake(0.4f, 0.4f, 1.0f);
-            SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[14]);
-            for (int i = 0; i < 2; i++)
-            {
-                GameManager.Instance.CurPlayer.CustomJump(new Vector2(0, 6.0f));
-                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
-
-                if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
-                    return;
-            }
-            await NextDialog(speechFrame1[0]);
+            // PlaySound(ConstValues.PlayerScream);
+            // CameraShake(0.4f, 0.4f, 1.0f);
+            // SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[14]);
+            // for (int i = 0; i < 2; i++)
+            // {
+            //     GameManager.Instance.CurPlayer.CustomJump(new Vector2(0, 6.0f));
+            //     GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
+            //
+            //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            //         return;
+            // }
+            // await NextDialog(speechFrame1[0]);
             
             UIOn();
             roomInfo.roomProduct[0].isFinish = true;
@@ -1698,10 +1712,12 @@ public class Room : MonoBehaviour
         // 문 열기
         DoorActive(false);
         roomInfo.roomProduct[0].isFinish = true;
+        roomInfo.eventNpc[0].isActive = true;
         GameManager.Instance.SaveGame();
         UIOn();
     }
 
+    // 거너를 만남
     private async void Product5()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
@@ -1759,6 +1775,7 @@ public class Room : MonoBehaviour
         
         UIOn();
         roomInfo.roomProduct[0].isFinish = true;
+        roomInfo.eventNpc[0].isActive = false;
         GameManager.Instance.SaveGame();
     }
     
