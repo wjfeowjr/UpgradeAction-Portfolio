@@ -1232,9 +1232,9 @@ public class GameManager : Singleton<GameManager>
         monsterList.Add(monster);
         return monster;
     }
-    public Monster ActiveAndHideMonster(string id, Transform monsterTransform, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false)
+    public Monster ActiveAndHideMonster(string id, Transform monsterTransform, Vector3 monsterVector, bool isActive, bool isExplosion = true, bool isBoss = false)
     {
-        var monster = SpawnToPoolInstantiate(id, monsterTransform, monsterVector).GetComponent<Monster>();
+        var monster = SpawnToMonster(id, monsterTransform, monsterVector, isActive).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
         monster.IsBoss = isBoss;
         monster.gameObject.SetActive(false);
@@ -1469,9 +1469,17 @@ public class GameManager : Singleton<GameManager>
         go.SetActive(true);
         return go;
     }
+    public GameObject SpawnToMonster(string id, Transform pool, Vector3 objVector, bool isActive)
+    {
+        GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
+        
+        go.transform.position = objVector;
+        go.SetActive(isActive);
+        return go;
+    }
+    
     public GameObject SpawnToPoolInstantiate(string id, Transform pool, Transform objTransform)
-    { 
-        var objectName = $"{id} (Clone)";
+    {
         GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
         objectList.Add(go);
         
@@ -1481,8 +1489,7 @@ public class GameManager : Singleton<GameManager>
     }
     
     public GameObject SpawnToPoolInstantiate(string id, Transform pool, Vector3 objVector)
-    { 
-        var objectName = $"{id} (Clone)";
+    {
         GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
         objectList.Add(go);
         
@@ -1894,5 +1901,10 @@ public class GameManager : Singleton<GameManager>
             selectPresenter.SetModel();
             selectPresenter.SetAction();
         }
+    }
+
+    public FadeSystem fadeUI()
+    {
+        return SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
     }
 }

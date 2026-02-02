@@ -1231,6 +1231,9 @@ public abstract class Character : InteractionController
 
     public virtual async void Damaged(float damagedTime)
     {
+        if (damagedTime == 0)
+            return;
+        
         if (normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
         {
             Debug.Log($"상위 판정이 존재함: {normalState}");
@@ -1250,6 +1253,9 @@ public abstract class Character : InteractionController
     // 넉백
     public async void KnockBack(float knockBackLength)
     {
+        if (knockBackLength == 0)
+            return;
+        
         // 넉백 중 다운 상태라면 무시
         if (normalState == ENormalState.Down)
             return;

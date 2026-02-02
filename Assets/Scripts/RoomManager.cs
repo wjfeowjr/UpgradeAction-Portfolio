@@ -77,9 +77,11 @@ public class RoomManager : Singleton<RoomManager>
         GameManager.Instance.RefreshPlayerHp();
         GameManager.Instance.RefreshGoods();
 
-        fadeUI = GameManager.Instance.SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
-        fadeUI.gameObject.SetActive(false);
+        if (!fadeUI)
+            fadeUI = GameManager.Instance.SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
         
+        fadeUI.gameObject.SetActive(false);
+
         CashingSpeechFrame();
 
         foreach (var room in totalRoom.RoomArray)

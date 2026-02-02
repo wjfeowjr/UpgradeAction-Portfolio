@@ -26,6 +26,7 @@ public class Monster_IceWizard : Monster
         SetTriggerAnimator(ConstValues.Pattern);
         while (patternInfo[0].playerInAttackRange)
         {
+            LookAt(GameManager.Instance.CurPlayer.CenterPos.position.x);
             var playerPos = GameManager.Instance.CurPlayer.CenterPos.position;
             
             SpawnObject(ConstValues.MonsterMoonAttack3DelayObject, playerPos);

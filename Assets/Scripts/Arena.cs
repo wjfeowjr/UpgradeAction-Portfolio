@@ -26,7 +26,7 @@ public class Arena : MonoBehaviour
             List<Monster> monsterList = new List<Monster>();
             foreach (var monster in roundMonster)
             {
-                Monster spawnedMonster = GameManager.Instance.ActiveAndHideMonster(monster.monster, monsterPool, monsterPos[monster.posIdx].position);
+                Monster spawnedMonster = GameManager.Instance.ActiveAndHideMonster(monster.monster, monsterPool, monsterPos[monster.posIdx].position, false);
                 monsterList.Add(spawnedMonster);
             }
             roundList.Add(monsterList);

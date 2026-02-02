@@ -1418,7 +1418,7 @@ public class Monster : Character
     }
 
     // 적 패턴 끝(해당하는 패턴의 쿨타임이 돌아감)
-    public void PatternEnd(bool movingStart = true)
+    protected virtual void PatternEnd(bool movingStart = true)
     {
         patternInfo[currentSkillIdx].canPattern = false;
 
