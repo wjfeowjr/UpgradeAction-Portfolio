@@ -46,10 +46,12 @@ public class Room : MonoBehaviour
     [SerializeField] private bool isBossRoom;
     [SerializeField] private GameObject roomGameObject;
 
+    // 나중에 한번에 데이터 처리하기
     [SerializeField] protected RoomSkillAndPassive[] roomSkillAndPassive;
     [SerializeField] protected RoomTreasureBox[] roomTreasureBox;
     [SerializeField] protected Elevator[] elevators;
     [SerializeField] protected LockDoor[] lockDoors;
+    [SerializeField] protected Arena[] arenas;
     
     [SerializeField] private Transform minCameraLimitX;
     [SerializeField] private Transform maxCameraLimitX;
@@ -75,7 +77,7 @@ public class Room : MonoBehaviour
     [SerializeField] private List<RoomEntrance> rightEntrance;
     [SerializeField] private List<RoomEntrance> upEntrance;
     [SerializeField] private List<RoomEntrance> downEntrance;
-    
+
     [Header("숏컷으로 뚫을 방")]
     [SerializeField] private Room[] shortCutRoom;
     
@@ -108,6 +110,9 @@ public class Room : MonoBehaviour
 
     private RoomsData roomsData;
 
+    private Vector2 firstMaxLimit;
+    private Vector2 firstMinLimit;
+    
     private void Awake()
     {
         if (!RoomManager.Instance.MainCamera)
@@ -734,8 +739,12 @@ public class Room : MonoBehaviour
 
     private void SetCameraLimit()
     {
-        GameManager.Instance.MainCamera.MaxXAndY = new Vector2(maxCameraLimitX.position.x, maxCameraLimitY.position.y);
-        GameManager.Instance.MainCamera.MinXAndY = new Vector2(minCameraLimitX.position.x, minCameraLimitY.position.y);
+        var maxLimit = new Vector2(maxCameraLimitX.position.x, maxCameraLimitY.position.y);
+        var minLimit = new Vector2(minCameraLimitX.position.x, minCameraLimitY.position.y);
+        
+        firstMaxLimit = maxLimit;
+        firstMinLimit = minLimit;
+        GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
     }
 
     public float SetCenterX()
@@ -1011,7 +1020,7 @@ public class Room : MonoBehaviour
     {
         speechFrame.NextObjectActive();
         // 스페이스바를 누르면 넘어간다
-        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.DialogCancellation.Token).SuppressCancellationThrow())
+        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.ProductCancellation.Token).SuppressCancellationThrow())
         {
             speechFrame.SpeechEnd();
             return;
@@ -1068,6 +1077,9 @@ public class Room : MonoBehaviour
                 break;
             case 6:
                 Product6();
+                break;
+            case 7:
+                Product7();
                 break;
         }
     }
@@ -1308,12 +1320,15 @@ public class Room : MonoBehaviour
     private void UIOn()
     {
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
-        GameManager.Instance.ControlStart = true;
-        GameManager.Instance.CurPlayer.Immortal = false;
+        StopPlayer();
     }
     private void UIOff()
     {
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+        StopPlayer();
+    }
+    private void StopPlayer()
+    {
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.Immortal = true;
     }
@@ -1347,7 +1362,7 @@ public class Room : MonoBehaviour
             talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
 
         //await RoomManager.Instance.ProductEpisode(title);
-        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.InitProductCancellation();
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
         var berserkerPos = GameManager.Instance.CurPlayer.FontPos.position;
@@ -1366,7 +1381,7 @@ public class Room : MonoBehaviour
             GameManager.Instance.CurPlayer.CustomJump(new Vector2(0, 6.0f));
             GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
 
-            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
         }
 
@@ -1379,11 +1394,11 @@ public class Room : MonoBehaviour
         PlaySound($"{ConstValues.MonsterSun}_{ConstValues.Laugh}");
         var sunMoveVector = new Vector2(bosses[0].transform.position.x + 7.5f, bosses[0].transform.position.y);
         bosses[0].transform.DOMove(sunMoveVector, 2.0f);
-        if (await GameManager.Instance.NormalDelay(2.0f, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(2.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         bosses[0].gameObject.SetActive(false);
 
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         // 게임 시작
@@ -1400,7 +1415,7 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitWaitCancellation();
-        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.InitProductCancellation();
         
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product2);
         List<string> talkList = new List<string>();
@@ -1409,7 +1424,7 @@ public class Room : MonoBehaviour
         
         UIOff();
             
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
@@ -1432,7 +1447,7 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitWaitCancellation();
-        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.InitProductCancellation();
         
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product3);
         List<string> talkList = new List<string>();
@@ -1440,7 +1455,7 @@ public class Room : MonoBehaviour
             talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
 
         UIOff();
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
@@ -1459,7 +1474,7 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitWaitCancellation();
-        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.InitProductCancellation();
         
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product4);
         List<string> talkList = new List<string>();
@@ -1480,7 +1495,7 @@ public class Room : MonoBehaviour
         {
             UIOff();
             
-            if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             
             berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
@@ -1504,7 +1519,7 @@ public class Room : MonoBehaviour
             GameManager.Instance.SaveGame();
         }
         
-        if(await WaitUntil(() => bosses[0].IsDie, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if(await WaitUntil(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         if (roomInfo.roomProduct[0].count == 1)
@@ -1514,12 +1529,12 @@ public class Room : MonoBehaviour
             // 이 부분 강제이동으로 변경
             bosses[0].CancelMotion();
             bosses[0].transform.DOMove(bossPos[0].position, 0.5f);
-            if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             bosses[0].Flip(-1);
             await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
 
-            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
             GameManager.Instance.CurPlayer.ForceIdle();
@@ -1542,7 +1557,7 @@ public class Room : MonoBehaviour
             
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[5]);
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(1, 0);
-            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[6]);
@@ -1550,13 +1565,13 @@ public class Room : MonoBehaviour
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(2, 0.2f);
             bosses[0].DieShake();
             await bosses[0].GetComponent<Monster_Sun>().DieBomb(10, 0.1f);
-            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             
             bosses[0].DieExplosion();
             speechFrame2[0].SpeechEnd();
 
-            if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[7]);
@@ -1571,7 +1586,7 @@ public class Room : MonoBehaviour
         else
         {
             bosses[0].GetComponent<Monster_Sun>().SunDie();
-            if (await WaitUntil(() => !bosses[0].gameObject.activeSelf, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await WaitUntil(() => !bosses[0].gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
         }
 
@@ -1580,7 +1595,7 @@ public class Room : MonoBehaviour
         var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, fadePos).GetComponent<FadeSystem>();
         fadeBg.SetParameter(0, 1.0f, 1.5f, false);
         await fadeBg.Fade();
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         if (roomInfo.roomProduct[0].count == 1)
@@ -1606,7 +1621,7 @@ public class Room : MonoBehaviour
 
         if (roomInfo.roomProduct[0].count == 1)
         {
-            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             
             berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
@@ -1638,14 +1653,14 @@ public class Room : MonoBehaviour
             GameManager.Instance.SaveGame();
         }
 
-        if (await WaitUntil(() => bosses[1].IsDie, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await WaitUntil(() => bosses[1].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         UIOff();
-        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.InitProductCancellation();
         bosses[1].CancelMotion();
         bosses[1].transform.DOMove(bossPos[0].position, 0.5f);
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         moonSpeechPos = new Vector2(bosses[1].CenterPos.position.x - 2.0f, bosses[1].CenterPos.position.y);
@@ -1665,13 +1680,13 @@ public class Room : MonoBehaviour
 
         bosses[1].DieExplosion();
         BgmManager.Instance.Stop();
-        if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         fadeBg.gameObject.SetActive(true);
         fadeBg.SetParameter(0, 1.0f, 1.5f, false);
         await fadeBg.Fade();
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         RoomManager.Instance.BgSpriteChange(ConstValues.BgSunHill);
@@ -1722,7 +1737,7 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitWaitCancellation();
-        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.InitProductCancellation();
         
         var productDialogueList = TableManager.Instance.productDialogueTable.ProductDialogue.FindAll(x => x.id == ConstValues.Product5);
         List<string> talkList = new List<string>();
@@ -1737,7 +1752,7 @@ public class Room : MonoBehaviour
         string title = GameManager.Instance.GetTalk(titleTalk);
         //await RoomManager.Instance.ProductEpisode(title);
         
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
@@ -1783,7 +1798,24 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitWaitCancellation();
-        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.InitProductCancellation();
+        StopPlayer();
+        
+        await arenas[0].ReduceCameraLimitX(firstMaxLimit, firstMinLimit);
+        Debug.Log("우리만나요");
+        
+        if (await GameManager.Instance.NormalDelay(2.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+            return;
+        
+        GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
+        Debug.Log("귀신태그");
+    }
+    
+    private async void Product7()
+    {
+        GameManager.Instance.CurPlayer.ForceProduct();
+        GameManager.Instance.InitWaitCancellation();
+        GameManager.Instance.InitProductCancellation();
 
         // 문 닫기
         DoorActive(true);
@@ -1822,8 +1854,8 @@ public class Room : MonoBehaviour
             GameManager.Instance.CurPlayer.ForceProduct();
             await GameManager.Instance.SpawnWarningPopup(getMessage);
             
-            GameManager.Instance.InitDialogueCancellation();
-            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            GameManager.Instance.InitProductCancellation();
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
             RoomManager.Instance.Guide(40002);
@@ -1849,8 +1881,8 @@ public class Room : MonoBehaviour
             GameManager.Instance.CurPlayer.ForceProduct();
             await GameManager.Instance.SpawnWarningPopup(getMessage);
             
-            GameManager.Instance.InitDialogueCancellation();
-            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
+            GameManager.Instance.InitProductCancellation();
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
             RoomManager.Instance.Guide(40003);

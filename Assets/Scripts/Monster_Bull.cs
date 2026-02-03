@@ -50,7 +50,7 @@ public class Monster_Bull : Monster
         SetTriggerAnimator(ConstValues.Pattern);
         LandingStateSetting(ELandingState.Air);
         SpawnAttackObject($"{basicStat.id}_{ConstValues.Jump}{ConstValues.Effect}", transform);
-        myRigidbody.linearVelocity = CalculateVelocity(transform.position, target, 5);
+        myRigidbody.linearVelocity = CalculateVelocity(transform.position, target, 4);
         
         if(await WaitUntilDelay(()=> myRigidbody.linearVelocityY < -0.1f, stateCancellation).SuppressCancellationThrow())
             return;

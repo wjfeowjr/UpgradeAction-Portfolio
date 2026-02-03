@@ -659,7 +659,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private Transform miniMapCamera;
     [SerializeField] private Canvas uiObjectCanvas;
 
-    private CancellationTokenSource dialogCancellation;
+    private CancellationTokenSource productCancellation;
     private CancellationTokenSource fadeCancellation;
     private CancellationTokenSource waitCancellation;
 
@@ -767,7 +767,7 @@ public class GameManager : Singleton<GameManager>
         set => miniMapCamera = value;
     }
 
-    public CancellationTokenSource DialogCancellation => dialogCancellation;
+    public CancellationTokenSource ProductCancellation => productCancellation;
     public CancellationTokenSource FadeCancellation => fadeCancellation;
     public CancellationTokenSource WaitCancellation => waitCancellation;
     
@@ -1791,9 +1791,9 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-    public void InitDialogueCancellation()
+    public void InitProductCancellation()
     {
-        dialogCancellation = new CancellationTokenSource();
+        productCancellation = new CancellationTokenSource();
     }
     public void InitFadeCancellation()
     {
@@ -1807,6 +1807,11 @@ public class GameManager : Singleton<GameManager>
     public async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+    }
+    
+    public async UniTask YieldDelay(CancellationTokenSource tokenSource)
+    {
+        await UniTask.Yield(cancellationToken: tokenSource.Token);
     }
     
     // 대기 딜레이

@@ -182,7 +182,7 @@ public class Npc : Character
     {
         speechFrame.NextObjectActive();
         // 스페이스바를 누르면 넘어간다
-        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.DialogCancellation.Token).SuppressCancellationThrow())
+        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.ProductCancellation.Token).SuppressCancellationThrow())
         {
             speechFrame.SpeechEnd();
             return;
@@ -194,7 +194,7 @@ public class Npc : Character
     {
         //ActiveInteractionObject(false);
         ReduceInteractionObject();
-        GameManager.Instance.InitDialogueCancellation();
+        GameManager.Instance.InitProductCancellation();
         GameManager.Instance.ControlStart = false;
         
         // 최초응답

@@ -278,7 +278,7 @@ public class Stage2 : Stage
     
     private void Product3()
     {
-        GameManager.Instance.MainCamera.MaxXAndY = new Vector2(46.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+        //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(46.5f, GameManager.Instance.MainCamera.MinXAndY.y);
         // 벽 제거
         foreach (var stageWall in stageWalls)
             stageWall.SetActive(false);
@@ -368,7 +368,7 @@ public class Stage2 : Stage
 
             GameManager.Instance.ControlStart = false;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-            GameManager.Instance.MainCamera.MinXAndY = new Vector2(46.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+            //GameManager.Instance.MainCamera.MinXAndY = new Vector2(46.5f, GameManager.Instance.MainCamera.MinXAndY.y);
             
             await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
             
@@ -611,7 +611,7 @@ public class Stage2 : Stage
             gameSystem.transform.position = new Vector2(chargeMonster.transform.position.x + 5.0f, chargeMonster.FontPos.position.y);
             gameSystem.SpawnObject(ConstValues.BangEffect, gameSystem.CenterPos.position);
             GameManager.Instance.SetCameraTarget(gameSystem.transform);
-            GameManager.Instance.MainCamera.MaxXAndY = new Vector2(59.0f, GameManager.Instance.MainCamera.MinXAndY.y);
+            //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(59.0f, GameManager.Instance.MainCamera.MinXAndY.y);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
@@ -711,8 +711,8 @@ public class Stage2 : Stage
             stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[2]));
 
             // 카메라 위치 변경 및 캐릭터 세팅
-            GameManager.Instance.MainCamera.MinXAndY = new Vector2(82f, GameManager.Instance.MainCamera.MinXAndY.y);
-            GameManager.Instance.MainCamera.MaxXAndY = new Vector2(82f, GameManager.Instance.MainCamera.MinXAndY.y);
+            //GameManager.Instance.MainCamera.MinXAndY = new Vector2(82f, GameManager.Instance.MainCamera.MinXAndY.y);
+            //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(82f, GameManager.Instance.MainCamera.MinXAndY.y);
             GameManager.Instance.SetCameraTarget(curPlayer.transform);
             // 이곳에서 광전사와 거너의 주도권이 바낌
             GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
@@ -840,8 +840,8 @@ public class Stage2 : Stage
             gunner.SpawnObject(ConstValues.BangEffect, gunner.CenterPos.position);
             gunner.gameObject.SetActive(false);
             
-            GameManager.Instance.MainCamera.MinXAndY = new Vector2(77.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-            GameManager.Instance.MainCamera.MaxXAndY = new Vector2(89.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+            //GameManager.Instance.MainCamera.MinXAndY = new Vector2(77.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+            //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(89.5f, GameManager.Instance.MainCamera.MinXAndY.y);
 
             // 게임 시작
             GameManager.Instance.ControlStart = true;
@@ -885,7 +885,7 @@ public class Stage2 : Stage
         // 벽 제거
         foreach (var stageWall in stageWalls)
             stageWall.SetActive(false);
-        GameManager.Instance.MainCamera.MaxXAndY = new Vector2(120f, GameManager.Instance.MainCamera.MinXAndY.y);
+        //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(120f, GameManager.Instance.MainCamera.MinXAndY.y);
         PlayerStepUp();
     }
 
@@ -1274,38 +1274,7 @@ public class Stage2 : Stage
     
     private async void AccumulatedStep()
     {
-        if(episodeStep.eventStep <= 1)
-            PlayBGM(ConstValues.BGMEpisode2);
-        else
-            PlayBGM(ConstValues.BGMEpisode2Battle);
-
-        switch (episodeStep.eventStep)
-        {
-            case 0:
-                // 카메라 제한
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(0, GameManager.Instance.MainCamera.MinXAndY.y);
-                break;
-            
-            case 1:
-                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(36.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-                // 벽 설치
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallRight, stageWallPos[0]));
-                break;
-
-            // 거너가 땅에서 구출된 이후
-            case 2:
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(77.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(89.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[2]));
-                break;
-            
-            case 3:
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(103f, GameManager.Instance.MainCamera.MinXAndY.y);
-                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(120f, GameManager.Instance.MainCamera.MinXAndY.y);
-                // 벽 설치
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[4]));
-                break;
-        }
+        
     }
     
     private void Guide3()

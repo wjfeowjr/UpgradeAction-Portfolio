@@ -35,17 +35,6 @@ public class FollowCamera : MonoBehaviour
     
     private CancellationTokenSource delayCancellation;
     private CancellationTokenSource zoomCancellation;
-    
-    public Vector2 MaxXAndY
-    {
-        get => maxXAndY;
-        set => maxXAndY = new Vector2(value.x * myCamera.orthographicSize / defaultSize, value.y * myCamera.orthographicSize / defaultSize);
-    }
-    public Vector2 MinXAndY
-    {
-        get => minXAndY;
-        set => minXAndY = new Vector2(value.x * myCamera.orthographicSize / defaultSize, value.y * myCamera.orthographicSize / defaultSize);
-    }
 
     public Camera MyCamera => myCamera;
     
@@ -86,7 +75,20 @@ public class FollowCamera : MonoBehaviour
         bgSprite.gameObject.SetActive(true);
         bgSprite.sprite = GameManager.Instance.GetAtlasSprite(bgId);
     }
-    
+
+    public void SetCameraLimit(Vector2 maxLimit, Vector2 minLimit)
+    {
+        var orthographicSize = myCamera.orthographicSize;
+        maxXAndY = new Vector2(maxLimit.x * orthographicSize / defaultSize, maxLimit.y * orthographicSize / defaultSize);
+        minXAndY = new Vector2(minLimit.x * orthographicSize / defaultSize, minLimit.y * orthographicSize / defaultSize);
+    }
+    public void SetCameraCurrentPos(float length)
+    {
+        var orthographicSize = myCamera.orthographicSize;
+        maxXAndY = new Vector2((maxXAndY.x + length) * orthographicSize / defaultSize, maxXAndY.y * orthographicSize / defaultSize);
+        minXAndY = new Vector2((minXAndY.x - length) * orthographicSize / defaultSize, minXAndY.y * orthographicSize / defaultSize);
+    }
+
     public void SetBgDeco(bool deco)
     {
         bgDeco.SetActive(deco);

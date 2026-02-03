@@ -167,7 +167,7 @@ public class Stage1 : Stage
     {
         // 카메라 제한
         SetEventStep(idx);
-        GameManager.Instance.MainCamera.MinXAndY = new Vector2(40.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+        //GameManager.Instance.MainCamera.MinXAndY = new Vector2(40.5f, GameManager.Instance.MainCamera.MinXAndY.y);
         if (episodeStep.dialogStep == 1)
         {
             string dialog1 = "이거나 먹어랏~!";
@@ -439,7 +439,7 @@ public class Stage1 : Stage
     {
         foreach (var stageWall in stageWalls)
             stageWall.SetActive(false);
-        GameManager.Instance.MainCamera.MaxXAndY = new Vector2(117.4f, GameManager.Instance.MainCamera.MinXAndY.y);
+        //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(117.4f, GameManager.Instance.MainCamera.MinXAndY.y);
         SaveEpisode();
     }
     
@@ -566,7 +566,7 @@ public class Stage1 : Stage
     {
         foreach (var stageWall in stageWalls)
             stageWall.SetActive(false);
-        GameManager.Instance.MainCamera.MaxXAndY = new Vector2(138.5f, GameManager.Instance.MainCamera.MinXAndY.y);
+        //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(138.5f, GameManager.Instance.MainCamera.MinXAndY.y);
         SaveEpisode();
     }
 
@@ -874,61 +874,7 @@ public class Stage1 : Stage
 
     private void AccumulatedStep()
     {
-        if(episodeStep.dialogStep > 0)
-            PlayBGM(ConstValues.BGMSunHill);
-        else
-            PlayBGM(ConstValues.BGMEpisodeStart);
-
-        switch (episodeStep.eventStep)
-        {
-            case 0:
-                // 카메라 제한
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(0, GameManager.Instance.MainCamera.MinXAndY.y);
-                if (episodeStep.dialogStep == 0)
-                {
-                    sunObject.gameObject.SetActive(true);
-                    sunObject.Flip(-1);
-                }
-
-                foreach (var guideObject in guideObjects)
-                    guideObject.SetActive(false);
-                break;
-            case 1:
-                // 카메라 제한
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(40.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-                // 함정 설치
-                //GameManager.Instance.SpawnTrap(ConstValues.TrapPillar, trapPos[0].position);
-                break;
-            case 2:
-                // 카메라 제한
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(76, GameManager.Instance.MainCamera.MinXAndY.y);
-                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(92, GameManager.Instance.MainCamera.MinXAndY.y);
-
-                // 벽 설치
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[0]));
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallRight, stageWallPos[1]));
-                break;
-
-            case 3:
-                // 카메라 제한
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(110.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(117.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-
-                // 벽 설치
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[2]));
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallRight, stageWallPos[3]));
-                break;
-
-            case 4:
-                // 카메라 제한
-                GameManager.Instance.MainCamera.MinXAndY = new Vector2(133.7f, GameManager.Instance.MainCamera.MinXAndY.y);
-                GameManager.Instance.MainCamera.MaxXAndY = new Vector2(138.5f, GameManager.Instance.MainCamera.MinXAndY.y);
-                
-                // 벽 설치
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallLeft, stageWallPos[4]));
-                stageWalls.Add(GameManager.Instance.SpawnToObjectPool(ConstValues.StageWallRight, stageWallPos[5]));
-                break;
-        }
+        
     }
     
     private void Guide1()
