@@ -1164,6 +1164,7 @@ public abstract class Player : Character
     // 대시
     protected async UniTask<bool> Dash()
     {
+        jumpCancellation?.Cancel();
         StateSetting(ENormalState.Dash, ConstValues.Dash, ConstValues.Dash);
         immortal = true;
         myBoxCollider.enabled = false;

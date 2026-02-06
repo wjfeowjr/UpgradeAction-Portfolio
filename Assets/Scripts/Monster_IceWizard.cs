@@ -17,8 +17,8 @@ public class Monster_IceWizard : Monster
     private async void TraceFrost()
     {
         float delay1 = 0.2f;
-        float delay2 = 0.8f;
-        float delay3 = 0.4f;
+        float delay2 = 0.9f;
+        float delay3 = 0.5f;
         
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
@@ -33,7 +33,7 @@ public class Monster_IceWizard : Monster
             if(await AttackDelay(delay2, true).SuppressCancellationThrow())
                 return;
             
-            SpawnAttack(ConstValues.MonsterIceWizzardAttack, playerPos);
+            SpawnAttack(ConstValues.MonsterIceWizardAttack, playerPos);
         }
         
         if(await AttackDelay(delay3).SuppressCancellationThrow())

@@ -10,6 +10,11 @@ public enum ShortcutType
     Platform,
 }
 
+public interface IHitProduct
+{
+    public void HitProduct();
+}
+
 public class ShortcutObject : Lever
 {
     [SerializeField] private ShortcutType type;
@@ -47,7 +52,8 @@ public class ShortcutObject : Lever
         hp -= 1;
         if (hp > 0)
         {
-            HitProduct();
+            if(GetComponent<IHitProduct>() != null)
+                GetComponent<IHitProduct>().HitProduct();
             return;
         }
         
@@ -55,11 +61,6 @@ public class ShortcutObject : Lever
         OpenProduct();
     }
 
-    protected virtual void HitProduct()
-    {
-        
-    }
-    
     // 열리는 연출
     public virtual void OpenProduct()
     {
@@ -80,25 +81,7 @@ public class ShortcutObject : Lever
             }
         }
     }
-    
-    protected GameObject SpawnObject(string id, Vector2 pos)
-    {
-        var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
-        
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
-        if(objectData == null)
-            return obj;
 
-        var spawnedObject = obj.GetComponent<SpawnedObject>();
-        if (!spawnedObject)
-            spawnedObject = obj.AddComponent<SpawnedObject>();
-
-        spawnedObject.SetupData(objectData, transform.localScale.x);
-        spawnedObject.EnableSetting();
-
-        return obj;
-    }
-    
     // 공격판정(Attack 오브젝트)와 충돌했을 때
     private void OnTriggerEnter2D(Collider2D other)
     {

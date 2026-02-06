@@ -43,7 +43,7 @@ public class BgmManager : Singleton<BgmManager>
         
         // 서서히 음악 줄어들게 하기
         if(!immediately)
-            await FadeVolume();
+            await FadeVolume(0.05f);
         
         myAudioSource.Stop();
         
@@ -57,13 +57,15 @@ public class BgmManager : Singleton<BgmManager>
         currentBgm = uniqueId;
     }
 
-    private async UniTask FadeVolume()
+    private async UniTask FadeVolume(float value)
     {
-        for (int i = 0; i < 5; i++)
+        while (myAudioSource.volume > 0)
         {
-            myAudioSource.volume -= 0.05f;
+            myAudioSource.volume -= value;
             await UniTask.Delay(TimeSpan.FromSeconds(0.1f));
         }
+
+        myAudioSource.volume = 0;
     }
 
     public void Play()
@@ -75,6 +77,12 @@ public class BgmManager : Singleton<BgmManager>
     {
         myAudioSource.Stop();
         currentBgm = default;
+    }
+
+    public async void DelayStop(float value)
+    {
+        await FadeVolume(value);
+        myAudioSource.Stop();
     }
 
     public bool IsPlaying()

@@ -28,6 +28,7 @@ public class ArenaData
     public int round;
     public string monster;
     public int posIdx;
+    public float range;
 }
 [Serializable]
 public class ArenaDataList

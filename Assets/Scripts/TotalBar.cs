@@ -14,7 +14,7 @@ public class TotalBar : MonoBehaviour
     [SerializeField] private Gauge hpBar;
     [SerializeField] private Gauge staggerBar;
     //[SerializeField] private Gauge passiveBar;
-    
+
     private void OnEnable()
     {
         if(hpBar) 
@@ -44,7 +44,7 @@ public class TotalBar : MonoBehaviour
     {
         if (!hpBar)
             return;
-        
+
         DisplayHp();
         hpBar.GaugeReduce(currentValue, maxValue, speed);
     }
@@ -52,6 +52,9 @@ public class TotalBar : MonoBehaviour
     // Hp글씨 표시해서 보여주기
     private void DisplayHp()
     {
+        if (castCharacter == null)
+            return;
+        
         if (castCharacter.GetComponent<Player>())
         {
             hpBar.DisplayPercent(castCharacter);
@@ -104,28 +107,5 @@ public class TotalBar : MonoBehaviour
             // 스트롱 아머, 하이퍼 아머가 아닐 경우
             staggerBar.gameObject.SetActive(castCharacter.BasicStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor);
         }
-    }
-    
-    // public void SetGauge(float currentHp, float maxHp, float currentStagger = 0, float maxStagger = 0)
-    // {
-    //     if (hpBar)
-    //     {
-    //         DisplayHp();
-    //         hpBar.GaugeSetting(currentHp, maxHp);
-    //     }
-    //
-    //     // 무력화 게이지가 존재한다면 무력화 게이지에 값을 넣어준다
-    //     if (staggerBar)
-    //     {
-    //         staggerBar.GaugeSetting(currentStagger, maxStagger);
-    //         // 스트롱 아머, 하이퍼 아머가 아닐 경우
-    //         staggerBar.gameObject.SetActive(castCharacter.GetBodyType() is EBodyType.StrongArmor or EBodyType.HyperArmor);
-    //     }
-    // }
-    
-    // 비활성화
-    public void ActiveObject(bool active)
-    {
-        gameObject.SetActive(active);
     }
 }

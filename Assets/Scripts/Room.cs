@@ -284,7 +284,7 @@ public class Room : MonoBehaviour
                 }
             }
         }
-        
+
         if (rightEntrance.Count > 0 && rightRoom.Length > 0)
         {
             for (int i = 0; i < rightEntrance.Count; i++)
@@ -360,6 +360,11 @@ public class Room : MonoBehaviour
                 roomInfo.roomProduct.Add(roomProduct);
             }
         }
+        else if (roomInfo.roomProduct.Count > productTriggers.Length)
+        {
+            roomInfo.roomProduct.Clear();
+            GameManager.Instance.SaveGame();
+        }
         // 연출 액션 넣기
         for (var i = 0; i < productTriggers.Length; i++)
         {
@@ -406,10 +411,15 @@ public class Room : MonoBehaviour
             }
             GameManager.Instance.SaveGame();
         }
+        else if (shortCutObjects.Length < roomInfo.shortCut.Count)
+        {
+            roomInfo.shortCut.Clear();
+            GameManager.Instance.SaveGame();
+        }
 
         // 맵에 널려있는 스킬 세팅
         var skillArray = roomsData.skill.Split(';');
-        if (roomInfo.skillAndPassive.Count != skillArray.Length)
+        if (roomInfo.skillAndPassive.Count < skillArray.Length)
         {
             if (skillArray[0] != ConstValues.None)
             {
@@ -425,6 +435,11 @@ public class Room : MonoBehaviour
                 }
                 GameManager.Instance.SaveGame();
             }
+        }
+        else if (skillArray.Length < roomInfo.skillAndPassive.Count)
+        {
+            roomInfo.skillAndPassive.Clear();
+            GameManager.Instance.SaveGame();
         }
         
         // 맵에 널려있는 보물상자 세팅
@@ -450,6 +465,11 @@ public class Room : MonoBehaviour
                 GameManager.Instance.SaveGame();
             }
         }
+        else if (treasureBoxArray.Length < roomInfo.treasureBox.Count)
+        {
+            roomInfo.treasureBox.Clear();
+            GameManager.Instance.SaveGame();
+        }
         
         // 엘리베이터 설정
         if (roomInfo.elevators.Count < elevators.Length)
@@ -467,6 +487,11 @@ public class Room : MonoBehaviour
             }
             GameManager.Instance.SaveGame();
         }
+        else if (elevators.Length < roomInfo.elevators.Count)
+        {
+            roomInfo.elevators.Clear();
+            GameManager.Instance.SaveGame();
+        }
 
         // 잠긴 문 설정
         if (roomInfo.lockDoors.Count < lockDoors.Length)
@@ -482,6 +507,11 @@ public class Room : MonoBehaviour
                 };
                 roomInfo.lockDoors.Add(door);
             }
+            GameManager.Instance.SaveGame();
+        }
+        else if (lockDoors.Length < roomInfo.lockDoors.Count)
+        {
+            roomInfo.lockDoors.Clear();
             GameManager.Instance.SaveGame();
         }
         
@@ -851,7 +881,6 @@ public class Room : MonoBehaviour
             monsters[i].LimitLeft = monsterLimitLeft.position.x;
             monsters[i].LimitRight = monsterLimitRight.position.x;
             monsters[i].SetGoldAction(PlusGold);
-            //monsters[i].SpawnHpBar();
             monsters[i].gameObject.SetActive(true);
             monsters[i].ForceIdle();
         }
@@ -946,44 +975,13 @@ public class Room : MonoBehaviour
     {
         boss.transform.position = bossPos;
         boss.IsBoss = true;
+        boss.AlwaysAgro = true;
         boss.LimitLeft = monsterLimitLeft.position.x;
         boss.LimitRight = monsterLimitRight.position.x;
         boss.SetGoldAction(PlusGold);
         boss.SpawnHpBar();
         boss.gameObject.SetActive(true);
         boss.Appear(SpawnBossMessage);
-    }
-
-    public Monster SpawnMonster(string id, Vector3 monsterVector, Action removeAction, bool isExplosion = true, bool isBoss = false, Action<string> bossProduct = null)
-    {
-        var monster = GameManager.Instance.SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
-        monster.IsExplosion = isExplosion;
-        monster.IsBoss = isBoss;
-        //monster.SpawnHpBar();
-        monster.Appear(bossProduct);
-        return monster;
-    }
-    
-    public Monster ActiveAndHideMonster(string id, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false)
-    {
-        var monster = GameManager.Instance.SpawnToPoolInstantiate(id, GameManager.Instance.ObjectPool, monsterVector).GetComponent<Monster>();
-        monster.IsExplosion = isExplosion;
-        monster.IsBoss = isBoss;
-        monster.gameObject.SetActive(false);
-        return monster;
-    }
-    public void ActiveMonster(Monster monster, Action<string> bossProduct = null)
-    {
-        monster.gameObject.SetActive(true);
-        //monster.SpawnHpBar();
-        monster.Appear(bossProduct);
-    }
-    
-    public void SetMonster(Monster monster, bool isBoss, bool isExplosion)
-    {
-        monster.IsBoss = isBoss;
-        monster.IsExplosion = isExplosion;
-        //monster.SpawnHpBar();
     }
 
     private int DieMonsterCount()
@@ -1320,12 +1318,17 @@ public class Room : MonoBehaviour
     private void UIOn()
     {
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
-        StopPlayer();
+        MovePlayer();
     }
     private void UIOff()
     {
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
         StopPlayer();
+    }
+    private void MovePlayer()
+    {
+        GameManager.Instance.ControlStart = true;
+        GameManager.Instance.CurPlayer.Immortal = false;
     }
     private void StopPlayer()
     {
@@ -1797,18 +1800,28 @@ public class Room : MonoBehaviour
     private async void Product6()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         StopPlayer();
-        
+
         await arenas[0].ReduceCameraLimitX(firstMaxLimit, firstMinLimit);
-        Debug.Log("우리만나요");
-        
-        if (await GameManager.Instance.NormalDelay(2.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        BgmManager.Instance.DelayStop(0.01f);
+        if (await GameManager.Instance.NormalDelay(1.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
+
+        arenas[0].CreateTile();
         
+        if (await GameManager.Instance.NormalDelay(1.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        PlayBGM(ConstValues.BGMArena, true);
+        
+        MovePlayer();
+        await arenas[0].RoundStart();
+        StopPlayer();
+        await arenas[0].RoundEnd();
+        
+        SetBgm(true);
         GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
-        Debug.Log("귀신태그");
     }
     
     private async void Product7()

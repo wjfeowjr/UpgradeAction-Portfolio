@@ -152,6 +152,7 @@ public abstract class Character : InteractionController
     protected int groundAndPlatformLayerMask;
     protected int monsterWalkLayerMask;
     protected int agroLayerMask;
+    protected int bossLayerMask;
 
     protected bool isCeilingHang;
     protected bool immortal;
@@ -196,6 +197,29 @@ public abstract class Character : InteractionController
 
     protected virtual void Awake()
     {
+        DataCaching();
+    }
+
+    protected virtual void OnEnable()
+    {
+        isDie = false;
+        StandHitBox();
+    }
+
+    protected virtual void Update()
+    {
+        UpdateBungee();
+        UpdateAirborneDown();
+    }
+
+    protected virtual void FixedUpdate()
+    {
+        UpdateVelocity();
+        FindGroundObject();
+    }
+
+    public void DataCaching()
+    {
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
         myBoxCollider = GetComponent<BoxCollider2D>();
@@ -215,27 +239,10 @@ public abstract class Character : InteractionController
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
         monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Trap));
         agroLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
+        bossLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
         
         ScaleSetting();
         ColSizeSetting();
-    }
-
-    protected virtual void OnEnable()
-    {
-        isDie = false;
-        StandHitBox();
-    }
-
-    protected virtual void Update()
-    {
-        UpdateBungee();
-        UpdateAirborneDown();
-    }
-
-    protected virtual void FixedUpdate()
-    {
-        UpdateVelocity();
-        FindGroundObject();
     }
 
     private void ScaleSetting()
@@ -557,7 +564,7 @@ public abstract class Character : InteractionController
         effectObj.transform.localScale = randomVector;
     }
 
-    private void SetSpawnedObjectData(string id, GameObject obj, int zAngle, Transform attackTransform = null, bool isBuff = false)
+    private void SetSpawnedObjectData(string id, GameObject obj, int zAngle, Transform traceTransform = null, bool isBuff = false)
     {
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
         if (objectData != null)
@@ -573,23 +580,27 @@ public abstract class Character : InteractionController
                 var finalAngle = zAngle;
                 if (transform.localScale.x < 0)
                     finalAngle = -zAngle;
-
+            
                 var objectAngle = spawnedObject.transform.eulerAngles;
                 spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
             }
-            
-            if (spawnedObject.GetObjectTime() == 0)
+
+            // 몬스터 체력바는 제외된다
+            if (obj.GetComponent<TotalBar>() == null)
             {
-                if (isBuff)
-                    AddObjectList(buffObject, obj);
-                else
-                    AddObjectList(normalObject, obj);
+                if (spawnedObject.GetObjectTime() == 0)
+                {
+                    if (isBuff)
+                        AddObjectList(buffObject, obj);
+                    else
+                        AddObjectList(normalObject, obj);
+                }
+            
+                if (spawnedObject.GetObjectTime() == 0)
+                    AddObjectList(controlObject, obj);
             }
 
-            if (spawnedObject.GetObjectTime() == 0)
-                AddObjectList(controlObject, obj);
-
-            if (attackTransform != null)
+            if (traceTransform != null)
             {
                 if (spawnedObject.GetTrace())
                 {
@@ -597,11 +608,12 @@ public abstract class Character : InteractionController
                     if (!trace)
                         trace = obj.AddComponent<Trace>();
 
-                    trace.SetTarget(attackTransform);
+                    trace.SetTarget(traceTransform);
                 }
             }
         }
     }
+
     private void SetAttackData(string id, GameObject obj)
     {
         var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
@@ -1426,6 +1438,17 @@ public abstract class Character : InteractionController
         return groundObject.CompareTag(ConstValues.Platform);
     }
 
+    protected virtual void LandingAction()
+    {
+        // 점프 착지
+        if (normalState is ENormalState.Jump)
+        {
+            // myRigidbody.bodyType = RigidbodyType2D.Dynamic;
+            // myRigidbody.linearVelocity = Vector2.zero;
+            StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        }
+    }
+
     // 물리 처리(발 콜라이더의 충돌만 감지)
     protected virtual void OnTriggerEnter2D(Collider2D col)
     {
@@ -1460,13 +1483,6 @@ public abstract class Character : InteractionController
                 LandingStateSetting(ELandingState.Ground);
                 jumpAttackCount = 0;
             }
-            // 점프 착지
-            if (normalState is ENormalState.Jump)
-            {
-                //myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-                //myRigidbody.linearVelocity = Vector2.zero;
-                StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-            }
             // 에어본 처리
             if (normalState == ENormalState.Airborne)
             {
@@ -1474,6 +1490,7 @@ public abstract class Character : InteractionController
                 myRigidbody.linearVelocity = Vector2.zero;
                 DownAndStand();
             }
+            LandingAction();
         }
     }
     protected virtual void OnTriggerStay2D(Collider2D col)

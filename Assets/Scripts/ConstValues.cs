@@ -321,7 +321,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterPurple = "Monster_Purple";
     public const string MonsterCharge = "Monster_Charge";
     public const string MonsterChargeEventJumpEffect = "Monster_Charge_EventJumpEffect";
-    public const string MonsterIceWizzardAttack = "Monster_IceWizzard_Attack";
+    public const string MonsterIceWizardAttack = "Monster_IceWizard_Attack";
 
     public const string MonsterSun = "Monster_Sun";
     public const string MonsterSunAttack1 = "Monster_Sun_Attack1";
@@ -384,6 +384,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BGMUnderGround = "BGM_Underground";
     public const string BGMEpisode2 = "BGM_Episode2";
     public const string BGMEpisode2Battle = "BGM_Episode2Battle";
+    public const string BGMArena = "BGM_Arena";
     
     // 사운드
     public const string Laugh = "Laugh";
@@ -403,4 +404,5 @@ public class ConstValues : Singleton<ConstValues>
     public const string ChickenCock = "ChickenCock";
     public const string PlayerFlash = "Player_Flash";
     public const string MonsterBigTreeLog = "Monster_BigTree_Log";
+    public const string Star3 = "Star_3";
 }
