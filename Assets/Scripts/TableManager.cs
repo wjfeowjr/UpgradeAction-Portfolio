@@ -118,6 +118,18 @@ public class GrenadeDataList
 }
 
 [Serializable]
+public class ItemData
+{
+    public string id;
+    public int name;
+}
+[Serializable]
+public class ItemDataList
+{
+    public List<ItemData> Item;
+}
+
+[Serializable]
 public class MissileData
 {
     public string id;
@@ -249,6 +261,7 @@ public class RoomsData
     public string npc;
     public string skill;
     public string treasureBox;
+    public string item;
     public string namedMonster;
     public string bgSprite;
     public bool bgDeco;
@@ -335,6 +348,7 @@ public class TableManager : SingletonMono<TableManager>
     public DialogueDataList dialogueTable;
     public DialogueChoiceDataList dialogueChoiceTable;
     public GrenadeDataList grenadeTable;
+    public ItemDataList itemTable;
     public MissileDataList missileTable;
     public MonsterDataList monsterTable;
     public NpcDataList npcTable;
@@ -354,6 +368,7 @@ public class TableManager : SingletonMono<TableManager>
         dialogueTable = LoadDataFromJson<DialogueDataList>(ConstValues.Dialogue);
         dialogueChoiceTable = LoadDataFromJson<DialogueChoiceDataList>(ConstValues.DialogueChoice);
         grenadeTable = LoadDataFromJson<GrenadeDataList>(ConstValues.Grenade);
+        itemTable = LoadDataFromJson<ItemDataList>(ConstValues.Item);
         missileTable = LoadDataFromJson<MissileDataList>(ConstValues.Missile);
         monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
         npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);

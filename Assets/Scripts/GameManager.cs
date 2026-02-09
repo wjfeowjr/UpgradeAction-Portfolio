@@ -478,8 +478,17 @@ public class SkillAndPassive
 }
 
 [Serializable]
-// 재화나 아이템(보물상자)
+// 보물상자
 public class TreasureBox
+{
+    public string id;
+    public int count;
+    public bool alreadyGet;
+}
+
+[Serializable]
+// 아이템(보물상자)
+public class Item
 {
     public string id;
     public int count;
@@ -516,6 +525,7 @@ public class RoomInfo
     public List<ShortCut> shortCut = new List<ShortCut>();
     public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
     public List<TreasureBox> treasureBox = new List<TreasureBox>();
+    public List<Item> item = new List<Item>();
     public List<ElevatorData> elevators = new List<ElevatorData>();
     public List<LockDoorData> lockDoors = new List<LockDoorData>();
 }
@@ -821,6 +831,7 @@ public class GameManager : Singleton<GameManager>
     public void FirstStart()
     {
         DeleteData();
+        DefaultDataSetting();
         DefaultSkillSetting();
         DefaultMapSetting();
         DefaultNpcSetting();
@@ -860,6 +871,11 @@ public class GameManager : Singleton<GameManager>
     {
         return TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).kr;
     }
+    public string GetItemTalk(string id)
+    {
+        int itemName = TableManager.Instance.itemTable.Item.Find(x => x.id == id).name;
+        return TableManager.Instance.talkTable.Talk.Find(x => x.idx == itemName).kr;
+    }
     
     public string GetKeyCode(KeyCode keycode)
     {
@@ -880,7 +896,13 @@ public class GameManager : Singleton<GameManager>
         SceneManager.LoadScene(sceneName);
     }
 
-    public void DefaultSkillSetting()
+    private void DefaultDataSetting()
+    {
+        saveData.gold = 0;
+        saveData.itemList.Clear();
+    }
+
+    private void DefaultSkillSetting()
     {
         FirstGetSkill = false;
         FirstGetAttribute = false;
@@ -1612,7 +1634,7 @@ public class GameManager : Singleton<GameManager>
 
     public void RefreshGoods()
     {
-        Gold = PlayerPrefs.GetInt(ConstValues.Gold);
+        Gold = saveData.gold;
 
         var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();
         var goodsModel = new UIGoodsModel()
@@ -1831,6 +1853,12 @@ public class GameManager : Singleton<GameManager>
     {
         CurPlayer.SpawnObject(ConstValues.GetSkillExplosion, CurPlayer.CenterPos.position);
         customAction.Invoke(count);
+    }
+
+    public void GetItemProduct(string id)
+    {
+        var getMessage = string.Format(GetTalk(30207), id);
+        SpawnWarningPopup(getMessage);
     }
 
     public string GetThousandCommaText(int data)

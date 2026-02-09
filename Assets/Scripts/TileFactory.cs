@@ -20,7 +20,7 @@ public class TileFactory : MonoBehaviour
     [SerializeField] private Tilemap spriteTilemap;
     [SerializeField] private Transform[] explosionPos;
     [SerializeField] private GameObject shakeObject;
-    [SerializeField] private List<TileFragment> fragmentList = new List<TileFragment>();
+    private List<TileFragment> fragmentList = new List<TileFragment>();
     
     private Vector2 firstVector;
     private Vector2 centerVector;
@@ -87,7 +87,7 @@ public class TileFactory : MonoBehaviour
         }
     }
 
-    public void Crash()
+    public void Crash(bool spawnFragment = true)
     {
         foreach (var pos in explosionPos)
             SpawnObject(ConstValues.ShortcutCrashExplosion, pos.position);
@@ -95,22 +95,25 @@ public class TileFactory : MonoBehaviour
         foreach (var fragment in fragmentList)
         {
             SpawnObject(ConstValues.PlatformExplosion, fragment.tilePos);
-            var fragmentObj = SpawnObject(ConstValues.PlatformFragments, fragment.tilePos);
 
-            var spriteChanger = fragmentObj.GetComponent<SpriteChanger>();
-            spriteChanger.ChangeSprite(fragment.tileSprite);
-            
-            var rigidBody = fragmentObj.GetComponent<Rigidbody2D>();
-            float randX = Random.Range(-4.0f, 4.0f);
-            float randY = Random.Range(10.0f, 12.0f);
-            rigidBody.linearVelocity = new Vector2(randX, randY);
+            if (spawnFragment)
+            {
+                var fragmentObj = SpawnObject(ConstValues.PlatformFragments, fragment.tilePos);
+                var spriteChanger = fragmentObj.GetComponent<SpriteChanger>();
+                spriteChanger.ChangeSprite(fragment.tileSprite);
+
+                var rigidBody = fragmentObj.GetComponent<Rigidbody2D>();
+                float randX = Random.Range(-4.0f, 4.0f);
+                float randY = Random.Range(10.0f, 12.0f);
+                rigidBody.linearVelocity = new Vector2(randX, randY);
                 
-            var spin = fragmentObj.GetComponent<Spin>();
+                var spin = fragmentObj.GetComponent<Spin>();
             
-            if(rigidBody.linearVelocityX > 0)
-                spin.SetSpinSpeed(false);
-            else
-                spin.SetSpinSpeed(true);
+                if(rigidBody.linearVelocityX > 0)
+                    spin.SetSpinSpeed(false);
+                else
+                    spin.SetSpinSpeed(true);
+            }
         }
     }
 

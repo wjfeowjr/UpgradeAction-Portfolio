@@ -3,9 +3,8 @@ using UnityEngine;
 
 public class RoomTreasureBox : InteractionController
 {
-    [SerializeField] private SpriteRenderer mySpriteRenderer;
-
-    private bool isOpen;
+    [SerializeField] private Animator myAnimator;
+    [SerializeField] private bool isOpen;
     private Action action;
 
     public bool IsOpen
@@ -16,32 +15,15 @@ public class RoomTreasureBox : InteractionController
 
     private void OnEnable()
     {
-        OpenSetting();
+        myAnimator.SetTrigger(isOpen ? ConstValues.Open : ConstValues.Close);
     }
 
-    public void OpenSetting()
+    public void OpenProduct()
     {
-        if (isOpen)
+        if (!isOpen)
         {
-            mySpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(ConstValues.TreasureBoxOpen);
-        }
-        else
-        {
-            mySpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(ConstValues.TreasureBoxClose);
-        }
-    }
-
-    public void SetSprite(bool alreadyGet)
-    {
-        if (alreadyGet)
-        {
-            mySpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(ConstValues.TreasureBoxOpen);
+            myAnimator.SetTrigger(ConstValues.SwitchOpen);
             isOpen = true;
-        }
-        else
-        {
-            mySpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(ConstValues.TreasureBoxClose);
-            isOpen = false;
         }
     }
 

@@ -134,6 +134,7 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Missile = "Missile";
     public const string Grenade = "Grenade";
+    public const string Item = "Item";
     public const string Player = "Player";
     public const string Monster = "Monster";
     public const string Body = "Body";
@@ -144,6 +145,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BossArray = "BossArray";
     public const string NpcArray = "NpcArray";
     public const string TrapArray = "TrapArray";
+    public const string InteractionArray = "InteractionArray";
     public const string PlayerPosArray = "PlayerPosArray";
     public const string EntranceArray = "EntranceArray";
     public const string BossGateArray = "BossGateArray";
@@ -258,6 +260,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string Right = "Right";
     public const string SwitchLeft = "SwitchLeft";
     public const string SwitchRight = "SwitchRight";
+
+    public const string Open = "Open";
+    public const string Close = "Close";
+    public const string SwitchOpen = "SwitchOpen";
     
     // 직업 공용
     public const string Face = "Face";
@@ -385,6 +391,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BGMEpisode2 = "BGM_Episode2";
     public const string BGMEpisode2Battle = "BGM_Episode2Battle";
     public const string BGMArena = "BGM_Arena";
+    public const string BGMBoss = "BGM_Boss";
     
     // 사운드
     public const string Laugh = "Laugh";
@@ -405,4 +412,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string PlayerFlash = "Player_Flash";
     public const string MonsterBigTreeLog = "Monster_BigTree_Log";
     public const string Star3 = "Star_3";
+    public const string Lever = "Lever";
+    public const string ElevatorHiss = "ElevatorHiss";
+    public const string Pickup = "Pickup";
 }

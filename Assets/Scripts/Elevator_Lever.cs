@@ -54,5 +54,6 @@ public class Elevator_Lever : Lever
         
         elevatorActon();
         ReduceInteractionObject();
+        SoundManager.Instance.PlaySound(ConstValues.Lever);
     }
 }

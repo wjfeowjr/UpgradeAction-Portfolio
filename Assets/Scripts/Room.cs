@@ -48,6 +48,7 @@ public class Room : MonoBehaviour
 
     // 나중에 한번에 데이터 처리하기
     [SerializeField] protected RoomSkillAndPassive[] roomSkillAndPassive;
+    [SerializeField] protected RoomItem[] roomItem;
     [SerializeField] protected RoomTreasureBox[] roomTreasureBox;
     [SerializeField] protected Elevator[] elevators;
     [SerializeField] protected LockDoor[] lockDoors;
@@ -99,7 +100,7 @@ public class Room : MonoBehaviour
     [SerializeField] protected Transform[] strongSpeechPos;
     
     [SerializeField] protected SpriteRenderer[] bgSpriteRenderers;
-    [SerializeField] private GameObject roomDoor;
+    [SerializeField] private TileFactory bossTilemap;
     [SerializeField] private GameObject[] roomCustomObjects;
     [SerializeField] private RoomInfo roomInfo;
     
@@ -471,6 +472,35 @@ public class Room : MonoBehaviour
             GameManager.Instance.SaveGame();
         }
         
+        // 맵에 널려있는 아이템 세팅
+        var itemArray = roomsData.item.Split('ㅗ');
+        if (roomInfo.item.Count < itemArray.Length)
+        {
+            if (itemArray[0] != ConstValues.None)
+            {
+                for (int i = 0; i < itemArray.Length; i++)
+                {
+                    var itemInfoArray = itemArray[i].Split(';');
+                    var itemName = itemInfoArray[0];
+                    var itemCount = int.Parse(itemInfoArray[1]);
+                    
+                    var item = new Item()
+                    {
+                        id = itemName,
+                        count = itemCount,
+                        alreadyGet = false,
+                    };
+                    roomInfo.item.Add(item);
+                }
+                GameManager.Instance.SaveGame();
+            }
+        }
+        else if (itemArray.Length < roomInfo.item.Count)
+        {
+            roomInfo.item.Clear();
+            GameManager.Instance.SaveGame();
+        }
+
         // 엘리베이터 설정
         if (roomInfo.elevators.Count < elevators.Length)
         {
@@ -549,32 +579,51 @@ public class Room : MonoBehaviour
             }
         }
         
+        // 아이템을 얻었으면, 그 아이템은 비활성화
+        for (var i = 0; i < roomItem.Length; i++)
+        {
+            int idx = i;
+
+            if (roomInfo.item[idx].alreadyGet)
+            {
+                roomItem[idx].gameObject.SetActive(false);
+            }
+            else
+            {
+                roomItem[idx].SetInteractionAction();
+                roomItem[idx].SetAction(() =>
+                {
+                    roomItem[idx].IsGet = true;
+                    roomInfo.item[idx].alreadyGet = true;
+                    roomItem[idx].ReduceInteractionObject();
+                    GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
+                    SoundManager.Instance.PlaySound(ConstValues.Pickup);
+                    GameManager.Instance.GetItemProduct(roomInfo.item[idx].id);
+                    GameManager.Instance.SaveGame();
+                });
+            }
+        }
+
         // 보물상자를 열었으면, 열린 상태로 나오게 조정
         for (var i = 0; i < roomTreasureBox.Length; i++)
         {
             int idx = i;
-            
-            roomTreasureBox[i].SetSprite(roomInfo.treasureBox[idx].alreadyGet);
             roomTreasureBox[i].SetInteractionAction();
-            
-            if (!roomInfo.treasureBox[idx].alreadyGet)
+
+            if (roomInfo.treasureBox[idx].alreadyGet)
+            {
+                roomTreasureBox[i].IsOpen = true;
+            }
+            else
             {
                 roomTreasureBox[i].SetAction(() =>
                 {
-                    if (AllMonsterDead())
-                    {
-                        roomTreasureBox[idx].IsOpen = true;
-                        roomTreasureBox[idx].OpenSetting();
-                        roomTreasureBox[idx].ReduceInteractionObject();
-                        roomInfo.treasureBox[idx].alreadyGet = true;
-                        GetTreasureBoxItem(roomInfo.treasureBox[idx].id, roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position);
-                        GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
-                        GameManager.Instance.SaveGame();
-                    }
-                    else
-                    {
-                        GameManager.Instance.SpawnWarningPopup("방 안의 모든 몬스터를 처치해야 합니다.");
-                    }
+                    roomTreasureBox[idx].OpenProduct();
+                    roomTreasureBox[idx].ReduceInteractionObject();
+                    roomInfo.treasureBox[idx].alreadyGet = true;
+                    GetTreasureBoxItem(roomInfo.treasureBox[idx].id, roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position);
+                    GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
+                    GameManager.Instance.SaveGame();
                 });
             }
         }
@@ -599,8 +648,7 @@ public class Room : MonoBehaviour
             elevators[i].SetSaveAction(() =>
             {
                 roomInfo.elevators[idx].idx = elevators[idx].TargetIdx;
-                GameManager.Instance.ControlStart = true;
-                GameManager.Instance.SaveGame();
+                elevators[idx].MovingStop();
             });
         }
 
@@ -786,10 +834,24 @@ public class Room : MonoBehaviour
         return (maxCameraLimitY.position.y + minCameraLimitY.position.y) / 2;
     }
 
-    private void DoorActive(bool active)
+    private void BossTileMapActive(bool active)
     {
-        if(roomDoor)
-            roomDoor.SetActive(active);
+        if (active)
+        {
+            if (bossTilemap)
+            {
+                bossTilemap.gameObject.SetActive(true);
+                bossTilemap.Build();
+            }
+        }
+        else
+        {
+            if (bossTilemap)
+            {
+                bossTilemap.gameObject.SetActive(false);
+                bossTilemap.Crash();
+            }
+        }
     }
     
     protected async UniTask WaitUntil(Func<bool> condition, CancellationTokenSource tokenSource)
@@ -809,6 +871,16 @@ public class Room : MonoBehaviour
         {
             GameManager.Instance.GetGold(gold, GameManager.Instance.Gold);
         });
+    }
+    
+    private void GetItem(string id, int count)
+    {
+        var itemInfo = new ItemInfo()
+        {
+            id = id,
+            count = count,
+        };
+        GameManager.Instance.ItemList.Add(itemInfo);
     }
 
     private void GetTreasureBoxItem(string id, int count, Vector2 itemVector)
@@ -876,18 +948,34 @@ public class Room : MonoBehaviour
     {
         for (var i = 0; i < monsters.Length; i++)
         {
-            monsters[i].transform.position = firstMonsterPosList[i];
-            monsters[i].IsExplosion = isExplosion;
-            monsters[i].LimitLeft = monsterLimitLeft.position.x;
-            monsters[i].LimitRight = monsterLimitRight.position.x;
-            monsters[i].SetGoldAction(PlusGold);
-            monsters[i].gameObject.SetActive(true);
-            monsters[i].ForceIdle();
+            if (!monsters[i].IsDie)
+            {
+                monsters[i].transform.position = firstMonsterPosList[i];
+                monsters[i].IsExplosion = isExplosion;
+                monsters[i].LimitLeft = monsterLimitLeft.position.x;
+                monsters[i].LimitRight = monsterLimitRight.position.x;
+                monsters[i].SetGoldAction(PlusGold);
+                monsters[i].gameObject.SetActive(true);
+                monsters[i].ForceIdle();
+            }
         }
         
         await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
         for (var i = 0; i < monsters.Length; i++)
-            monsters[i].MonsterAwake();
+        {
+            if (!monsters[i].IsDie)
+                monsters[i].MonsterAwake();
+        }
+    }
+    public void AllMonsterArrive()
+    {
+        foreach (var monster in monsters)
+        {
+            if (!monster.IsBoss)
+            {
+                monster.IsDie = false;
+            }
+        }
     }
 
     private void SetTrap()
@@ -934,6 +1022,7 @@ public class Room : MonoBehaviour
         
         saveObject.SetSaveAction(() =>
         {
+            RoomManager.Instance.AllMonsterArrive();
             GameManager.Instance.SavePoint = name;
             GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30206)).Forget();
             GameManager.Instance.RefillPlayerHp();
@@ -1483,9 +1572,21 @@ public class Room : MonoBehaviour
         List<string> talkList = new List<string>();
         foreach (var productDialogue in productDialogueList)
             talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
+        
+        UIOff();
+        BgmManager.Instance.DelayStop(0.01f);
+        float productDelay = 1.0f;
+        if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
 
         // 문 닫기
-        DoorActive(true);
+        BossTileMapActive(true);
+        
+        float productDelay2 = 1.5f;
+        if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        PlayBGM(ConstValues.BGMBoss, true);
         // 태양 보스 소환
         SpawnBoss(bosses[0], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y + 3.5f));
 
@@ -1496,8 +1597,6 @@ public class Room : MonoBehaviour
         
         if (roomInfo.roomProduct[0].count == 0)
         {
-            UIOff();
-            
             if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             
@@ -1517,10 +1616,15 @@ public class Room : MonoBehaviour
 
             // 게임 시작
             GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
-            UIOn();
             roomInfo.roomProduct[0].count += 1;
             GameManager.Instance.SaveGame();
         }
+        else
+        {
+            if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+        }
+        UIOn();
         
         if(await WaitUntil(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
@@ -1588,6 +1692,7 @@ public class Room : MonoBehaviour
         }
         else
         {
+            StopPlayer();
             bosses[0].GetComponent<Monster_Sun>().SunDie();
             if (await WaitUntil(() => !bosses[0].gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
@@ -1618,6 +1723,7 @@ public class Room : MonoBehaviour
         await fadeBg.Fade();
         fadeBg.gameObject.SetActive(false);
         BgmManager.Instance.Play();
+        PlayBGM(ConstValues.BGMBoss, true);
 
         // 달 보스 소환
         SpawnBoss(bosses[1], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y + 3.5f));
@@ -1651,11 +1757,16 @@ public class Room : MonoBehaviour
             // }
             // await NextDialog(speechFrame1[0]);
             
-            UIOn();
-            roomInfo.roomProduct[0].isFinish = true;
+            roomInfo.roomProduct[0].count += 1;
             GameManager.Instance.SaveGame();
         }
-
+        else
+        {
+            if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+        }
+        UIOn();
+        
         if (await WaitUntil(() => bosses[1].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
@@ -1701,8 +1812,8 @@ public class Room : MonoBehaviour
         
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[18]); 
         await NextDialog(speechFrame1[0]);
-
-        BgmManager.Instance.Play();
+        
+        PlayBGM(roomsData.bgm, true);
         PlaySound(ConstValues.ChickenCock);
         fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
         await fadeBg.Fade();
@@ -1728,7 +1839,7 @@ public class Room : MonoBehaviour
         await NextDialog(speechFrame2[0]);
 
         // 문 열기
-        DoorActive(false);
+        BossTileMapActive(false);
         roomInfo.roomProduct[0].isFinish = true;
         roomInfo.eventNpc[0].isActive = true;
         GameManager.Instance.SaveGame();
@@ -1797,6 +1908,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.SaveGame();
     }
     
+    // 아레나 대전
     private async void Product6()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
@@ -1822,6 +1934,9 @@ public class Room : MonoBehaviour
         
         SetBgm(true);
         GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
+        
+        roomInfo.roomProduct[0].isFinish = true;
+        GameManager.Instance.SaveGame();
     }
     
     private async void Product7()
@@ -1829,21 +1944,41 @@ public class Room : MonoBehaviour
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
+        
+        UIOff();
+        BgmManager.Instance.DelayStop(0.01f);
+        float productDelay = 1.0f;
+        if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
 
         // 문 닫기
-        DoorActive(true);
+        BossTileMapActive(true);
+        
+        float productDelay2 = 1.5f;
+        if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        PlayBGM(ConstValues.BGMBoss, true);
+        
         // 쥐새끼 보스 소환
-        SpawnBoss(bosses[0], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y));
+        SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y));
+        
+        if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        UIOn();
         
         if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
             return;
         
+        StopBGM();
         GameManager.Instance.InitWaitCancellation();
         if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
             return;
 
         // 문 열기
-        DoorActive(false);
+        PlayBGM(roomsData.bgm, true);
+        BossTileMapActive(false);
         roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
         UIOn();
@@ -1888,7 +2023,7 @@ public class Room : MonoBehaviour
         else
         {
             GameManager.Instance.FirstGetAttribute = true;
-            //GameManager.Instance.SaveGame();
+            StopPlayer();
 
             UIOff();
             GameManager.Instance.CurPlayer.ForceProduct();
@@ -1900,6 +2035,7 @@ public class Room : MonoBehaviour
 
             RoomManager.Instance.Guide(40003);
             UIOn();
+            MovePlayer();
         }
     }
 
@@ -1918,6 +2054,20 @@ public class Room : MonoBehaviour
         if (npcArray != null)
             npc = npcArray.GetComponentsInChildren<Npc>();
         
+        Transform interactionArray = roomGameObject.transform.Find(ConstValues.InteractionArray);
+        if (interactionArray != null)
+        {
+            roomSkillAndPassive = interactionArray.GetComponentsInChildren<RoomSkillAndPassive>();
+            roomTreasureBox = interactionArray.GetComponentsInChildren<RoomTreasureBox>();
+            roomItem = interactionArray.GetComponentsInChildren<RoomItem>();
+            elevators = interactionArray.GetComponentsInChildren<Elevator>();
+            arenas = interactionArray.GetComponentsInChildren<Arena>();
+        }
+        
+        Transform groundGrid = roomGameObject.transform.Find(ConstValues.GroundGrid);
+        if (groundGrid != null)
+            lockDoors = groundGrid.GetComponentsInChildren<LockDoor>();
+
         Transform trapArray = roomGameObject.transform.Find(ConstValues.TrapArray);
         if (trapArray != null)
             traps = trapArray.GetComponentsInChildren<BoxCollider2D>();

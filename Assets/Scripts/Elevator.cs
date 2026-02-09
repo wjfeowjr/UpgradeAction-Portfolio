@@ -1,9 +1,11 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class Elevator : InteractionController
 {
     [SerializeField] private MovingPlatform movingPlatform;
+    [SerializeField] private AudioSource myAudioSource;
     [SerializeField] private Elevator_Lever[] levers;
     
     private Action startAction;
@@ -69,9 +71,23 @@ public class Elevator : InteractionController
             levers[i].SetState(i == TargetIdx);
             levers[i].AnimSwitch();
         }
+        SoundManager.Instance.PlaySound(ConstValues.Lever);
         GameManager.Instance.ControlStart = false;
+        myAudioSource.Play();
     }
 
+    public async void MovingStop()
+    {
+        myAudioSource.Stop();
+        SoundManager.Instance.PlaySound(ConstValues.ElevatorHiss);
+        await UniTask.Delay(TimeSpan.FromSeconds(1.0f));
+        if (isPlayerTouch)
+            SpawnInteractionObject();
+        
+        GameManager.Instance.ControlStart = true;
+        GameManager.Instance.SaveGame();
+    }
+    
     // 레버를 건드릴 때 나오는 액션
     private void LeverAction()
     {
@@ -91,10 +107,6 @@ public class Elevator : InteractionController
         movingPlatform.SetSaveAction(() =>
         {
             getAction();
-            if (isPlayerTouch)
-            {
-                SpawnInteractionObject();
-            }
         });
     }
 }

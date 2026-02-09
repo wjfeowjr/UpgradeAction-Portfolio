@@ -406,8 +406,10 @@ public class Player_Gunner : Player
     // 수류탄
     private async UniTask<bool> Grenade()
     {
-        var delay1 = 0.15f;
-        var delay2 = 0.1f;
+        var delay1 = 0.1f;
+        var delay2 = 0.15f;
+        
+        myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
         
         StateSetting(ENormalState.Skill, ConstValues.GunnerGrenade, ConstValues.GunnerGrenade);
 

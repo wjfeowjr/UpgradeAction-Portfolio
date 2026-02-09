@@ -136,6 +136,12 @@ public class RoomManager : Singleton<RoomManager>
             SpawnAttribute();
     }
 
+    public void AllMonsterArrive()
+    {
+        foreach (var room in totalRoom.RoomArray)
+            room.AllMonsterArrive();
+    }
+
     public void BgSpriteChange(string spriteName)
     {
         bgSprite.sprite =  GameManager.Instance.GetAtlasSprite(spriteName);

@@ -35,6 +35,7 @@ public class Monster_Knife : Monster
         float delay4 = 0.5f;
 
         // 준비자세 취하기
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
 
@@ -53,10 +54,13 @@ public class Monster_Knife : Monster
             if (await Charge(chargeSpeed1, 0.5f, chargeLength1, 0.5f) == false)
                 return;
             
+            LookAt(GameManager.Instance.CurPlayer.transform.position.x);
             SetTriggerAnimator($"{ConstValues.Attack}_0");
             if(await AttackDelay(delay2).SuppressCancellationThrow())
                 return;
         }
+        
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
 
@@ -224,11 +228,11 @@ public class Monster_Knife : Monster
     {
         dieCancellation?.Cancel();
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-        float xVelocity = 8.0f;
-        float yVelocity = 10.0f;
+        float xVelocity = 6.0f;
+        float yVelocity = 8.0f;
 
         if (transform.localScale.x > 0)
-            xVelocity = -8.0f;
+            xVelocity = -6.0f;
         
         Airborne(xVelocity, yVelocity);
         goldAction?.Invoke(myStat.gold, centerPos.position);
