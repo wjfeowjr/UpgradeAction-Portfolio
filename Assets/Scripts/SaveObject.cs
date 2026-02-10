@@ -8,7 +8,6 @@ using UnityEngine;
 public class SaveObject : InteractionController
 {
     [SerializeField] private Transform savePointPos;
-    [SerializeField] private Transform uiPos;
     [SerializeField] private GameObject minimapObject;
 
     public Transform SavePointPos => savePointPos;

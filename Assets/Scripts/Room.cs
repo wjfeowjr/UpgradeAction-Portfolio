@@ -60,7 +60,8 @@ public class Room : MonoBehaviour
     [SerializeField] private Transform maxCameraLimitY;
 
     [SerializeField] private SaveObject saveObject;
-
+    [SerializeField] private PortalObject portalObject;
+    
     [Header("플레이어 도착위치")]
     [SerializeField] private List<Transform> leftPlayerPos;
     [SerializeField] private List<Transform> rightPlayerPos;
@@ -113,6 +114,8 @@ public class Room : MonoBehaviour
 
     private Vector2 firstMaxLimit;
     private Vector2 firstMinLimit;
+
+    public string Id => roomInfo.roomId;
     
     private void Awake()
     {
@@ -719,10 +722,60 @@ public class Room : MonoBehaviour
         return true;
     }
 
+    private async void MovePortal(string roomId)
+    {
+        var targetRoom = RoomManager.Instance.TargetRoom(roomId);
+        
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+            return;
+        
+        GameManager.Instance.CurPlayer.SpawnObject(ConstValues.BangEffect, GameManager.Instance.CurPlayer.CenterPos.position);
+        GameManager.Instance.CurPlayer.gameObject.SetActive(false);
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+            return;
+        
+        await RoomManager.Instance.FadeOut(ConstValues.BlackColor);
+
+        ObjectActive(false);
+        GameManager.Instance.CurPlayer.RoomMoveState();
+        
+        targetRoom.ObjectActive(true);
+        targetRoom.SetCameraLimit();
+        targetRoom.SetShortCut();
+        targetRoom.SetPortal();
+        targetRoom.PortalSoundActive(false);
+
+        RoomManager.Instance.CurrentRoom = targetRoom;
+        RoomManager.Instance.CurrentRoom.SetGroundVector();
+
+        GameManager.Instance.CurPlayer.transform.position = targetRoom.portalObject.PlayerPos.position;
+        
+        GameManager.Instance.InitFadeCancellation();
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+            return;
+        
+        await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
+        
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+            return;
+        
+        GameManager.Instance.CurPlayer.SpawnObject(ConstValues.BangEffect, GameManager.Instance.CurPlayer.CenterPos.position);
+        GameManager.Instance.CurPlayer.gameObject.SetActive(true);
+        
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+            return;
+        
+        targetRoom.PortalSoundActive(true);
+        
+        GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
+        isFading = false;
+        GameManager.Instance.MovePlayer();
+    }
+
     private async void SettingRoom(int idx, EntranceDir dir, Room pastRoom)
     {
         isFading = true;
-        GameManager.Instance.ControlStart = false;
+        GameManager.Instance.StopPlayer();
         GameManager.Instance.RoomMoveSetting();
         
         // 모든 몬스터들의 행동 정지
@@ -770,6 +823,8 @@ public class Room : MonoBehaviour
         SetShortCut();
         // 여기서 세이브포인트 데이터 넣기
         SetSavePoint();
+        // 여기서 포탈 데이터 넣기
+        SetPortal();
 
         GameManager.Instance.InitFadeCancellation();
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
@@ -789,7 +844,7 @@ public class Room : MonoBehaviour
                 break;
         }
         isFading = false;
-        GameManager.Instance.ControlStart = true;
+        GameManager.Instance.MovePlayer();
 
         // 여기서 BGM재생
         SetBgm(false);
@@ -1030,6 +1085,27 @@ public class Room : MonoBehaviour
             SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
             GameManager.Instance.SaveGame();
         });
+    }
+
+    private void SetPortal()
+    {
+        if (!portalObject)
+            return;
+        
+        portalObject.SetPortalAction(() =>
+        {
+            portalObject.SoundActive(false);
+            portalObject.ReduceInteractionObject();
+            MovePortal(portalObject.TargetRoom);
+        });
+    }
+    
+    private void PortalSoundActive(bool active)
+    {
+        if (!portalObject)
+            return;
+
+        portalObject.SoundActive(active);
     }
     
     private void SetBgm(bool immediately)
@@ -1407,22 +1483,12 @@ public class Room : MonoBehaviour
     private void UIOn()
     {
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
-        MovePlayer();
+        GameManager.Instance.MovePlayer();
     }
     private void UIOff()
     {
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
-        StopPlayer();
-    }
-    private void MovePlayer()
-    {
-        GameManager.Instance.ControlStart = true;
-        GameManager.Instance.CurPlayer.Immortal = false;
-    }
-    private void StopPlayer()
-    {
-        GameManager.Instance.ControlStart = false;
-        GameManager.Instance.CurPlayer.Immortal = true;
+        GameManager.Instance.StopPlayer();
     }
 
     // 최초 스타트
@@ -1692,7 +1758,7 @@ public class Room : MonoBehaviour
         }
         else
         {
-            StopPlayer();
+            GameManager.Instance.StopPlayer();
             bosses[0].GetComponent<Monster_Sun>().SunDie();
             if (await WaitUntil(() => !bosses[0].gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
@@ -1913,7 +1979,7 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
-        StopPlayer();
+        GameManager.Instance.StopPlayer();
 
         await arenas[0].ReduceCameraLimitX(firstMaxLimit, firstMinLimit);
         BgmManager.Instance.DelayStop(0.01f);
@@ -1927,9 +1993,9 @@ public class Room : MonoBehaviour
 
         PlayBGM(ConstValues.BGMArena, true);
         
-        MovePlayer();
+        GameManager.Instance.MovePlayer();
         await arenas[0].RoundStart();
-        StopPlayer();
+        GameManager.Instance.StopPlayer();
         await arenas[0].RoundEnd();
         
         SetBgm(true);
@@ -1960,7 +2026,7 @@ public class Room : MonoBehaviour
 
         PlayBGM(ConstValues.BGMBoss, true);
         
-        // 쥐새끼 보스 소환
+        // 암살자 보스 소환
         SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y));
         
         if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
@@ -2023,7 +2089,7 @@ public class Room : MonoBehaviour
         else
         {
             GameManager.Instance.FirstGetAttribute = true;
-            StopPlayer();
+            GameManager.Instance.StopPlayer();
 
             UIOff();
             GameManager.Instance.CurPlayer.ForceProduct();
@@ -2035,7 +2101,7 @@ public class Room : MonoBehaviour
 
             RoomManager.Instance.Guide(40003);
             UIOn();
-            MovePlayer();
+            GameManager.Instance.MovePlayer();
         }
     }
 

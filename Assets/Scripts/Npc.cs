@@ -190,7 +190,7 @@ public class Npc : Character
         speechFrame.SpeechEnd();
     }
 
-    private async void StartDialogue()
+    protected virtual async void StartDialogue()
     {
         //ActiveInteractionObject(false);
         ReduceInteractionObject();
@@ -213,13 +213,15 @@ public class Npc : Character
             await NextDialog(speechFrame);
             isFirstTalk = true;
         }
-
         SetActionInteractionSelect(SetDialogueAction, SetCloseAction);
     }
 
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
     {
         normalState = changeNormalState;
+        if (triggerName == ConstValues.None)
+            return;
+        
         SetTriggerAnimator(triggerName);
     }
     

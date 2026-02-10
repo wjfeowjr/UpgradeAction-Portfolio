@@ -136,6 +136,11 @@ public class RoomManager : Singleton<RoomManager>
             SpawnAttribute();
     }
 
+    public Room TargetRoom(string id)
+    {
+        return totalRoom.TargetRoom(id);
+    }
+
     public void AllMonsterArrive()
     {
         foreach (var room in totalRoom.RoomArray)

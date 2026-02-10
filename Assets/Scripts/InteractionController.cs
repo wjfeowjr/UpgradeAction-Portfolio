@@ -81,12 +81,12 @@ public class InteractionController : MonoBehaviour
     // 대화 선택지 및 선택 액션
     protected void SetActionInteractionSelect(Action<string> dialogueAction, Action closeAction)
     {
-        interactionSelect.gameObject.SetActive(true);
+        ActiveInteractionSelect(true);
         interactionSelect.SetAction(dialogueAction, closeAction);
         interactionSelect.SetDelay();
     }
     
-    protected virtual void SpawnInteractionSelect(NpcData npcData)
+    protected void SpawnInteractionSelect(NpcData npcData)
     {
         var selectList = TableManager.Instance.dialogueChoiceTable.DialogueChoice.FindAll(x => x.npc == npcData.id);
         
@@ -109,7 +109,10 @@ public class InteractionController : MonoBehaviour
 
     protected void ActiveInteractionSelect(bool active)
     {
-        if(interactionSelect)
+        if (interactionSelect)
+        {
+            interactionSelect.transform.position = selectPos.position;
             interactionSelect.gameObject.SetActive(active);
+        }
     }
 }

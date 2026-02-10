@@ -1,4 +1,6 @@
 using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -21,6 +23,7 @@ public class ShortcutObject : Lever
     [SerializeField] protected Collider2D myCollider;
     [SerializeField] private GameObject[] shortcutBlockers;// 막고 있는 문/벽(콜라이더 포함)
 
+    protected CancellationTokenSource delayCancellation;
     private Action<string> openAction;
     protected bool opened;
     private int hp;
@@ -80,6 +83,12 @@ public class ShortcutObject : Lever
                 shortcutBlocker.SetActive(false);
             }
         }
+    }
+    
+    // 일반 딜레이
+    protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
 
     // 공격판정(Attack 오브젝트)와 충돌했을 때

@@ -40,7 +40,7 @@ public class Monster_Hand : Monster
             return;
 
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
-        SpawnAttackObject($"{basicStat.id}_DropEffect", transform);
+        SpawnAttackObject($"{basicStat.id}_{ConstValues.DropEffect}", transform);
         if(await WaitUntilDelay(()=> myRigidbody.linearVelocityY == 0, stateCancellation).SuppressCancellationThrow())
             return;
 

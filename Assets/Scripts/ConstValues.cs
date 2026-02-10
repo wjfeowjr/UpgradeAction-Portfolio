@@ -72,6 +72,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SpeechFrameTitle = "SpeechFrame_Title";
 
     public const string BangEffect = "BangEffect";
+    public const string DropEffect = "DropEffect";
     public const string Effect = "Effect";
     public const string FadeBg = "FadeBg";
     public const string FadeUI = "FadeUI";
@@ -343,6 +344,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterMoonAttack2SpinObject = "Monster_Moon_Attack2_SpinObject";
     public const string MonsterMoonAttack3 = "Monster_Moon_Attack3";
     public const string MonsterMoonAttack3DelayObject = "Monster_Moon_Attack3_DelayObject";
+
+    public const string Aura = "Aura";
     
     public const string MonsterBigCharge = "Monster_BigCharge";
     public const string Meteor = "Meteor";

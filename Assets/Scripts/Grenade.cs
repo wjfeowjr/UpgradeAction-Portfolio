@@ -77,29 +77,26 @@ public class Grenade : MonoBehaviour
     
     public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform, int, Vector2> action)
     {
-        if (grenadeInfo == null)
-        {
-            grenadeInfo = new GrenadeInfo();
-            grenadeInfo.id = grenadeData.id;
+        grenadeInfo = new GrenadeInfo();
+        grenadeInfo.id = grenadeData.id;
 
-            grenadeInfo.isTarget = grenadeData.isTarget;
+        grenadeInfo.isTarget = grenadeData.isTarget;
 
-            var minForceSplit = grenadeData.minForce.Split(';');
-            grenadeInfo.minForce = new Vector2(float.Parse(minForceSplit[0]), float.Parse(minForceSplit[1]));
+        var minForceSplit = grenadeData.minForce.Split(';');
+        grenadeInfo.minForce = new Vector2(float.Parse(minForceSplit[0]), float.Parse(minForceSplit[1]));
             
-            var maxForceSplit = grenadeData.maxForce.Split(';');
-            grenadeInfo.maxForce = new Vector2(float.Parse(maxForceSplit[0]), float.Parse(maxForceSplit[1]));
+        var maxForceSplit = grenadeData.maxForce.Split(';');
+        grenadeInfo.maxForce = new Vector2(float.Parse(maxForceSplit[0]), float.Parse(maxForceSplit[1]));
 
-            grenadeInfo.dirObject = grenadeData.dirObject;
+        grenadeInfo.dirObject = grenadeData.dirObject;
 
-            var hitLayerSplit = grenadeData.hitTag.Split(',');
-            grenadeInfo.hitTagList = new List<string>();
-            foreach (var hitLayer in hitLayerSplit)
-                grenadeInfo.hitTagList.Add(hitLayer);
+        var hitLayerSplit = grenadeData.hitTag.Split(',');
+        grenadeInfo.hitTagList = new List<string>();
+        foreach (var hitLayer in hitLayerSplit)
+            grenadeInfo.hitTagList.Add(hitLayer);
             
-            grenadeInfo.spawnObject = grenadeData.spawnObject;
-            grenadeInfo.explosionAction = action;
-        }
+        grenadeInfo.spawnObject = grenadeData.spawnObject;
+        grenadeInfo.explosionAction = action;
 
         float xForce = Random.Range(grenadeInfo.minForce.x, grenadeInfo.maxForce.x);
         float yForce = Random.Range(grenadeInfo.minForce.y, grenadeInfo.maxForce.y);

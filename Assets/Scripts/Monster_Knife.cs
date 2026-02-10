@@ -1,14 +1,30 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class Monster_Knife : Monster
 {
     [SerializeField] private Transform knifeStabPos;
     [SerializeField] private Transform jumpSlashPos;
 
+    protected override void Update()
+    {
+        base.Update();
+
+        if (basicStat.hp <= basicStat.maxHp * 0.5f)
+        {
+            if (Math.Abs(basicStat.moveSpeed - originStat.moveSpeed) < 0.1f)
+            {
+                SpawnObject($"{basicStat.id}_{ConstValues.Aura}", transform);
+                basicStat.moveSpeed = 7;
+            }
+        }
+    }
+    
     protected override void MonsterPattern(int idx)
     {
         base.MonsterPattern(idx);
@@ -23,6 +39,12 @@ public class Monster_Knife : Monster
             case 2:
                 JumpSlash();
                 break;
+            case 3:
+                TripleSlash();
+                break;
+            case 4:
+                KnifeGrenade();
+                break;
         }
     }
     
@@ -30,8 +52,8 @@ public class Monster_Knife : Monster
     private async void KnifeStab()
     {
         float delay1 = 0.4f;
-        float delay2 = 0.15f;
-        float delay3 = 0.2f;
+        float delay2 = 0.3f;
+        float delay3 = 0.4f;
         float delay4 = 0.5f;
 
         // 준비자세 취하기
@@ -59,7 +81,7 @@ public class Monster_Knife : Monster
             if(await AttackDelay(delay2).SuppressCancellationThrow())
                 return;
         }
-        
+
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
@@ -97,7 +119,11 @@ public class Monster_Knife : Monster
         SetTriggerAnimator(ConstValues.Pattern);
         LandingStateSetting(ELandingState.Air);
         
-        int bombCount = 6;
+        int bombCount = 3;
+
+        if (basicStat.hp <= basicStat.maxHp * 0.5f)
+            bombCount = 6;
+        
         for (int i = 0; i < bombCount; i++)
         {
             SpawnAttack($"{basicStat.id}_{ConstValues.Attack}3_{ConstValues.Object}", centerPos);
@@ -110,7 +136,6 @@ public class Monster_Knife : Monster
         
         SetTriggerAnimator(ConstValues.Pattern);
         LandingStateSetting(ELandingState.Ground);
-        SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
         
@@ -172,6 +197,225 @@ public class Monster_Knife : Monster
         spawnObject.gameObject.SetActive(false);
         PatternEnd();
     }
+    
+    // 3단베기
+    private async void TripleSlash()
+    {
+        float delay1 = 0.5f;
+        float delay2 = 0.3f;
+        float delay3 = 1.0f;
+        float delay4 = 0.25f;
+        
+        // 레이로 벽 감지
+        var rayVector = CenterPos.position;
+        var leftPos = Vector2.zero;
+        var rightPos = Vector2.zero;
+        
+        var leftRay = Physics2D.Raycast(rayVector, Vector2.left, 15.0f, groundLayerMask);
+        Debug.DrawRay(rayVector, Vector2.left * 15.0f, ConstValues.BlueColor, 0.025f);
+        if (leftRay.collider != null)
+            leftPos = new Vector2(leftRay.point.x + myBoxCollider.size.x / 2, transform.position.y);
+        
+        var rightRay = Physics2D.Raycast(rayVector, Vector2.right, 15.0f, groundLayerMask);
+        Debug.DrawRay(rayVector, Vector2.right * 15.0f, ConstValues.BlueColor, 0.025f);
+        if (rightRay.collider != null)
+            rightPos = new Vector2(rightRay.point.x - myBoxCollider.size.x / 2, transform.position.y);
+
+        int rand = Random.Range(0, 2);
+
+        List<Vector2> posList = new List<Vector2>();
+
+        switch (rand)
+        {
+            case 0:
+                posList.Add(leftPos);
+                posList.Add(rightPos);
+                break;
+            
+            case 1:
+                posList.Add(rightPos);
+                posList.Add(leftPos);
+                break;
+        }
+
+        // 사라짐
+        await FadeOut();
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        
+        immortal = true;
+        
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+
+        transform.position = posList[0];
+        immortal = false;
+
+        float chargeLength = 12.0f;
+        float chargeSpeed = 25;
+        foreach (var pos in posList)
+        {
+            if (pos == leftPos)
+            {
+                Flip(1);
+            }
+            else if (pos == rightPos)
+            {
+                Flip(-1);
+            }
+            // 다시 나타남
+            await FadeIn();
+            
+            SpawnObject(ConstValues.GreenFlash, CenterPos);
+            SetTriggerAnimator(ConstValues.Pattern);
+            if(await AttackDelay(delay1).SuppressCancellationThrow())
+                return;
+            
+            var spawnObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}4", jumpSlashPos).GetComponent<Attack>();
+            SetTriggerAnimator(ConstValues.Pattern);
+            if(transform.localScale.x > 0)
+                chargeVector = new Vector2(transform.position.x + chargeLength, transform.position.y);
+            else
+                chargeVector = new Vector2(transform.position.x - chargeLength, transform.position.y);
+            if (await Charge(chargeSpeed, 0.5f, chargeLength, 0.5f) == false)
+                return;
+            
+            spawnObject.DisActiveCollider();
+            if(await AttackDelay(delay2).SuppressCancellationThrow())
+                return;
+            
+            spawnObject.gameObject.SetActive(false);
+        }
+        
+        SetTriggerAnimator(ConstValues.Pattern);
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        
+        // 점프
+        var jumpPos = new Vector2(transform.position.x, transform.position.y + 11.0f);
+        SetTriggerAnimator(ConstValues.Pattern);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 35);
+        LandingStateSetting(ELandingState.Air);
+        SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
+        
+        if (transform.position.y > jumpPos.y)
+        {
+            transform.position = jumpPos;
+            myRigidbody.linearVelocity = Vector2.zero;
+            GravityChange(0);
+        }
+        
+        if(await AttackDelay(delay3).SuppressCancellationThrow())
+            return;
+
+        transform.position = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, transform.position.y);
+        var dropPos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, RoomManager.Instance.GroundPosY);
+        SpawnObject($"{basicStat.id}_{ConstValues.Warning}", dropPos);
+        
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        
+        SetTriggerAnimator(ConstValues.Pattern);
+        var dropAttackObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}5", transform).GetComponent<Attack>();
+        GravityChange(myGravity);
+        float dropForce = 30.0f;
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
+        
+        if(await WaitUntilDelay(()=> myRigidbody.linearVelocityY == 0, stateCancellation).SuppressCancellationThrow())
+            return;
+        
+        dropAttackObject.DisActiveCollider();
+        SpawnObject($"{basicStat.id}_{ConstValues.DropEffect}", transform);
+        SetTriggerAnimator(ConstValues.Pattern);
+
+        float length = 0;
+        for (int i = 0; i < 3; i++)
+        {
+            length += 1.25f;
+            var leftMissilePos = new Vector2(transform.position.x - length, transform.position.y);
+            var rightMissilePos = new Vector2(transform.position.x + length, transform.position.y);
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}6", leftMissilePos);
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}6", rightMissilePos);
+            if(await AttackDelay(delay4).SuppressCancellationThrow())
+                return;
+        }
+        
+        if(await AttackDelay(delay3).SuppressCancellationThrow())
+            return;
+        
+        dropAttackObject.gameObject.SetActive(false);
+        PatternEnd();
+    }
+    
+    // 칼날 수류탄
+    private async void KnifeGrenade()
+    {
+        float delay1 = 0.5f;
+        float delay2 = 0.15f;
+        float delay3 = 0.3f;
+        float delay4 = 0.75f;
+        
+        // 준비자세 취하기
+        SpawnObject(ConstValues.GreenFlash, CenterPos);
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+
+        SetTriggerAnimator(ConstValues.Pattern);
+        
+        for (int i = 0; i < 3; i++)
+        {
+            var targetVector = GameManager.Instance.CurPlayer.CenterPos.position;
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}7", centerPos, 0, targetVector);
+            if(await AttackDelay(delay2).SuppressCancellationThrow())
+                return;
+        }
+        
+        if(await AttackDelay(delay3).SuppressCancellationThrow())
+            return;
+        
+        for (int i = 0; i < 3; i++)
+        {
+            var targetVector = GameManager.Instance.CurPlayer.CenterPos.position;
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}7", centerPos, 0, targetVector);
+            if(await AttackDelay(delay2).SuppressCancellationThrow())
+                return;
+        }
+        
+        if(await AttackDelay(delay4).SuppressCancellationThrow())
+            return;
+        
+        PatternEnd();
+    }
+    
+    private async UniTask FadeOut()
+    {
+        if (stateCancellation == null)
+            stateCancellation = new CancellationTokenSource();
+
+        float speed = 2.0f;
+        while (mySpriteRenderers[0].color.a > 0)
+        {
+            var alpha = mySpriteRenderers[0].color.a - Time.deltaTime * speed;
+            mySpriteRenderers[0].color = new Color(1, 1, 1, alpha);
+            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+    }
+    
+    private async UniTask FadeIn()
+    {
+        if (stateCancellation == null)
+            stateCancellation = new CancellationTokenSource();
+
+        float speed = 2.0f;
+        while (mySpriteRenderers[0].color.a < 1)
+        {
+            var alpha = mySpriteRenderers[0].color.a + Time.deltaTime * speed;
+            mySpriteRenderers[0].color = new Color(1, 1, 1, alpha);
+            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+    }
 
     // 등장(연출 포함)
     public override async void Appear(Action<string> bossProduct)
@@ -185,8 +429,9 @@ public class Monster_Knife : Monster
         LandingStateSetting(ELandingState.Air);
         immortal = true;
         GravityChange(myGravity);
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 10);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 15);
         await UniTask.WaitUntil(() => landingState == ELandingState.Ground);
+        
         SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
         StateSetting(ENormalState.AppearEnd, ConstValues.Landing, ConstValues.Landing);
         if (await NormalDelay(1.0f, stateCancellation).SuppressCancellationThrow())

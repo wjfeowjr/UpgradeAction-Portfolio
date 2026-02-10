@@ -1146,6 +1146,17 @@ public class GameManager : Singleton<GameManager>
             player.InitSkill();
         }
     }
+    
+    public void MovePlayer()
+    {
+        ControlStart = true;
+        CurPlayer.Immortal = false;
+    }
+    public void StopPlayer()
+    {
+        ControlStart = false;
+        CurPlayer.Immortal = true;
+    }
 
     public void SetPlayerHp(int hp)
     {

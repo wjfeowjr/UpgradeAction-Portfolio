@@ -1050,10 +1050,15 @@ public class Monster : Character
         if (myStat.pattern.Count > 1)
         {
             var hpPercent = (float)basicStat.hp / OriginStat.hp;
+            int percentage = (int)(hpPercent * 100);
+            
             for (var i = 0; i < myStat.pattern.Count; i++)
             {
-                if (hpPercent <= myStat.pattern[page].pageHp)
+                // page
+                if (percentage <= myStat.pattern[i].pageHp)
+                {
                     page = i;
+                }
             }
         }
 

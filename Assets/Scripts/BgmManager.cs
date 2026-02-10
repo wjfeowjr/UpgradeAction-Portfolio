@@ -32,20 +32,26 @@ public class BgmManager : Singleton<BgmManager>
 
     public async void PlayBgm(string uniqueId, bool immediately = false)
     {
-        if (!myAudioSource || uniqueId == ConstValues.None)
-            return;
+        if (uniqueId != ConstValues.None)
+        {
+            if (!myAudioSource)
+                return;
 
-        if (myAudioSource.resource == bgmDic[uniqueId])
-            return;
+            if (myAudioSource.resource == bgmDic[uniqueId])
+                return;
 
-        if (currentBgm == uniqueId)
-            return;
+            if (currentBgm == uniqueId)
+                return;
+        }
         
         // 서서히 음악 줄어들게 하기
         if(!immediately)
             await FadeVolume(0.05f);
         
         myAudioSource.Stop();
+
+        if (uniqueId == ConstValues.None)
+            return;
         
         if(!immediately)
             await UniTask.Delay(TimeSpan.FromSeconds(0.5f));

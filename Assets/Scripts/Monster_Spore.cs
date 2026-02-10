@@ -31,7 +31,7 @@ public class Monster_Spore : Monster
             return;
         
         SetTriggerAnimator(ConstValues.Pattern);
-        SpawnAttack($"{basicStat.id}_Attack", attackPos, 0, GameManager.Instance.CurPlayer.CenterPos.position);
+        SpawnAttack($"{basicStat.id}_{ConstValues.Attack}", attackPos, 0, GameManager.Instance.CurPlayer.CenterPos.position);
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
             

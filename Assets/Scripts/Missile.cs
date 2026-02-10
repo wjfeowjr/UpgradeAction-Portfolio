@@ -25,7 +25,7 @@ public class MissileInfo
 }
 public class Missile : MonoBehaviour
 {
-    [SerializeField] private Vector2 dir;
+    private Vector2 dir;
     private float limitPosX;
     private float limitPosY;
     private bool isDelete;
@@ -70,54 +70,54 @@ public class Missile : MonoBehaviour
 
     public void SetupData(MissileData missileData, Vector2 missileDir, Action<string, Transform, int, Vector2> action)
     {
-        if (missileInfo == null)
-        {
-            missileInfo = new MissileInfo();
-            missileInfo.id = missileData.id;
-            missileInfo.type = (MissileType)Enum.Parse(typeof(MissileType), missileData.type);
-            missileInfo.speed = missileData.speed;
-            defaultLimit = missileData.limitLength;
+        missileInfo = new MissileInfo();
+        missileInfo.id = missileData.id;
+        missileInfo.type = (MissileType)Enum.Parse(typeof(MissileType), missileData.type);
+        missileInfo.speed = missileData.speed;
+        defaultLimit = missileData.limitLength;
             
-            missileInfo.hitTagList = new List<string>();
-            var hitTagSplit = missileData.hitTag.Split(',');
-            if (hitTagSplit.Length > 0)
-            {
-                foreach (var hitLayer in hitTagSplit)
-                    missileInfo.hitTagList.Add(hitLayer);
-            }
-
-            missileInfo.spawnObject = missileData.spawnObject;
-            missileInfo.hitSpawn = missileData.hitSpawn;
-            missileInfo.afterImage = missileData.afterImage;
+        missileInfo.hitTagList = new List<string>();
+        var hitTagSplit = missileData.hitTag.Split(',');
+        if (hitTagSplit.Length > 0)
+        {
+            foreach (var hitLayer in hitTagSplit)
+                missileInfo.hitTagList.Add(hitLayer);
         }
+
+        missileInfo.spawnObject = missileData.spawnObject;
+        missileInfo.hitSpawn = missileData.hitSpawn;
+        missileInfo.afterImage = missileData.afterImage;
         
         missileInfo.explosionAction = action;
         dir = missileDir;
         
         // 레이캐스트
-        if (dir == Vector2.left)
+        if (missileInfo.type == MissileType.Horizontal)
         {
-            var rayDir = -transform.right;
-            var rayVector = new Vector2(transform.position.x, transform.position.y);
-            var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
-            Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
-            if (ray.collider == null)
-                missileInfo.limitLength = defaultLimit;
-            else
-                missileInfo.limitLength = Vector2.Distance(transform.position, ray.point);
+            if (dir == Vector2.left)
+            {
+                var rayDir = -transform.right;
+                var rayVector = new Vector2(transform.position.x, transform.position.y);
+                var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
+                Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
+                if (ray.collider == null)
+                    missileInfo.limitLength = defaultLimit;
+                else
+                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point);
+            }
+            if (dir == Vector2.right)
+            {
+                var rayDir = transform.right;
+                var rayVector = new Vector2(transform.position.x, transform.position.y);
+                var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
+                Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
+                if (ray.collider == null)
+                    missileInfo.limitLength = defaultLimit;
+                else
+                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point);
+            }
         }
-        if (dir == Vector2.right)
-        {
-            var rayDir = transform.right;
-            var rayVector = new Vector2(transform.position.x, transform.position.y);
-            var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
-            Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
-            if (ray.collider == null)
-                missileInfo.limitLength = defaultLimit;
-            else
-                missileInfo.limitLength = Vector2.Distance(transform.position, ray.point);
-        }
-        
+
         SetLimit();
     }
 
@@ -166,7 +166,6 @@ public class Missile : MonoBehaviour
                     if (mySpin)
                         mySpin.SetSpinSpeed(false);
                 }
-
                 break;
         }
     }

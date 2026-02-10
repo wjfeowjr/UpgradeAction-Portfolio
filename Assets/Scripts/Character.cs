@@ -1239,6 +1239,10 @@ public abstract class Character : InteractionController
         stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Stagger, ConstValues.Stagger, ConstValues.Stagger);
         immuneStagger = true;
+
+        // 투명화 해제
+        foreach (var spriteRenderer in mySpriteRenderers)
+            spriteRenderer.color = ConstValues.WhiteColor;
     }
 
     public virtual async void Damaged(float damagedTime)

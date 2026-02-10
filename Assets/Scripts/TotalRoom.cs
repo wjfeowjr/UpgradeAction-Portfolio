@@ -58,6 +58,20 @@ public class TotalRoom : MonoBehaviour
         }
     }
 
+    public Room TargetRoom(string roomId)
+    {
+        Room targetRoom = null;
+        foreach (var room in roomArray)
+        {
+            if (room.Id == roomId)
+            {
+                targetRoom = room;
+                break;
+            }
+        }
+        return targetRoom;
+    }
+
     public void SpawnChecker()
     {
         bool isFull = true;
