@@ -306,7 +306,8 @@ public class Monster : Character
                     break;
             }
 
-            Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + physicsCollider.size.y * 0.5f), patternRange);
+            // physicsCollider.size.y
+            Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + myBoxCollider.size.y * 0.5f), patternRange);
         }
     }
 
@@ -1465,7 +1466,8 @@ public class Monster : Character
     private void UpdateRoomLimit()
     {
         // 1) 절반 크기
-        float halfWidth = physicsCollider.size.x * 0.5f;
+        // physicsCollider.size.x * 0.5f;
+        float halfWidth = myBoxCollider.size.x * 0.5f;
 
         // 3) 플레이어 센터 기준으로 클램프 경계 계산
         float leftLimit = limitLeft + halfWidth;
@@ -1564,7 +1566,8 @@ public class Monster : Character
     {
         var rayVector = new Vector2(transform.position.x, transform.position.y + 0.02f);
         var distance = myBoxCollider.size.x * 0.5f + 0.2f;
-        float halfWidth = physicsCollider.size.x * 0.5f;
+        // physicsCollider.size.x * 0.5f;
+        float halfWidth = myBoxCollider.size.x * 0.5f;
 
         float leftLimit = limitLeft + halfWidth;
         float leftRight = limitRight - halfWidth;
@@ -1595,9 +1598,11 @@ public class Monster : Character
     // 몬스터 절벽감지
     private int MonsterCheckFall()
     {
-        var rayVector = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+        // physicsCollider.size.x
+        var rayVector = new Vector2(transform.position.x + myBoxCollider.size.x / 2, transform.position.y);
         if (transform.localScale.x < 0)
-            rayVector = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+            // physicsCollider.size.x / 2
+            rayVector = new Vector2(transform.position.x - myBoxCollider.size.x / 2, transform.position.y);
 
         float distance = 1.0f;
         RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, distance, groundAndPlatformLayerMask);

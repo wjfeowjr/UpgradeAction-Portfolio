@@ -480,15 +480,18 @@ public abstract class Player : Character
     
     public float GetRightPosX()
     {
-        return transform.position.x + physicsCollider.size.x * 0.5f;
+        // physicsCollider.size.x * 0.5f;
+        return transform.position.x + myBoxCollider.size.x * 0.5f;
     }
     public float GetLeftPosX()
     {
-        return transform.position.x - physicsCollider.size.x * 0.5f;
+        // physicsCollider.size.x * 0.5f;
+        return transform.position.x - myBoxCollider.size.x * 0.5f;
     }
-    public float  GetUpPosY()
+    public float GetUpPosY()
     {
-        return transform.position.y + physicsCollider.size.y;
+        // physicsCollider.size.y;
+        return transform.position.y + myBoxCollider.size.y;
     }
     public float GetDownPosY()
     {
@@ -827,7 +830,8 @@ public abstract class Player : Character
     private async void UpdateAirRay()
     {
         Vector2 colPos = physicsCollider.transform.position;
-        Vector2 physSize = physicsCollider.size;
+        // physicsCollider.size
+        Vector2 physSize = myBoxCollider.size;
         
         if (landingState == ELandingState.Air)
         {
@@ -1254,7 +1258,6 @@ public abstract class Player : Character
     protected override void OnTriggerEnter2D(Collider2D col)
     {
         base.OnTriggerEnter2D(col);
-        
         if (!GameManager.Instance.ControlStart)
             return;
 
@@ -1282,15 +1285,13 @@ public abstract class Player : Character
 
     protected override void OnTriggerStay2D(Collider2D col)
     {
-        base.OnTriggerStay2D(col);
-        
         // 체공중 발 콜라이더가 벽 타입 몬스터와 충돌했을 때
         if (col.CompareTag(ConstValues.WallBody))
         {
             if (landingState == ELandingState.Air && normalState != ENormalState.Dash && footTrigger.Distance(col).normal.y < -0.5f)
             {
                 var monster = col.GetComponentInParent<Character>();
-
+        
                 // 몹이 오른쪽을 보고있음
                 if (monster.transform.localScale.x > 0)
                 {
