@@ -177,6 +177,7 @@ public abstract class Character : InteractionController
     [Header("Offsets")]
     [SerializeField] private float horizontalOffset; // 중심에서 좌우로 얼마나 떨어질지
     [SerializeField] private float verticalOffset;   // 중심에서 위아래로 얼마나 떨어질지
+    [SerializeField] private float footOffset; // 중심에서 좌우로 얼마나 떨어질지
 
     public bool isGrounded;
     public bool isCeilingHit;
@@ -220,6 +221,7 @@ public abstract class Character : InteractionController
         verticalBoxSize = new Vector2(myBoxCollider.size.x * 0.8f, 0.1f); // 상하 (가로로 긴 박스)
         horizontalOffset = myBoxCollider.size.x * 0.5f; // 중심에서 좌우로 얼마나 떨어질지
         verticalOffset = myBoxCollider.size.y * 0.5f; // 중심에서 위아래로 얼마나 떨어질지
+        footOffset = myBoxCollider.size.x * 0.4f;
     }
 
     protected virtual void OnEnable()
@@ -243,12 +245,6 @@ public abstract class Character : InteractionController
 
     private void CheckCollisions()
     {
-        // if (hit.collider != null)
-        // {
-        //     // 충돌 지점에 빨간색 점(짧은 선)을 그려서 확인
-        //     Debug.DrawRay(hit.point, hit.normal * 0.2f, Color.red);
-        // }
-        
         // 1. 왼쪽 벽 체크
         RaycastHit2D hitLeft = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.left * horizontalOffset, 
             horizontalBoxSize, 0f, Vector2.left, castDistance, groundLayerMask);
@@ -260,19 +256,42 @@ public abstract class Character : InteractionController
         // 3. 천장 체크 (위)
         RaycastHit2D hitUp = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.up * verticalOffset, 
             verticalBoxSize, 0f, Vector2.up, castDistance, groundLayerMask);
-        
-        // 4. 바닥 체크 (아래)
-        RaycastHit2D hitDown = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.down * verticalOffset, 
-            verticalBoxSize, 0f, Vector2.down, castDistance, groundAndPlatformLayerMask);
 
+        // 4. 바닥 체크 (아래)
+        Vector2 leftRayPos = (Vector2)transform.position + new Vector2(-footOffset, 0);
+        Vector2 rightRayPos = (Vector2)transform.position + new Vector2(footOffset, 0);
+        RaycastHit2D leftHit = Physics2D.Raycast(leftRayPos, Vector2.down, 0.1f, groundAndPlatformLayerMask);
+        RaycastHit2D rightHit = Physics2D.Raycast(rightRayPos, Vector2.down, 0.1f, groundAndPlatformLayerMask);
+        
         isWallLeft = hitLeft.collider != null;
         isWallRight = hitRight.collider != null;
         isCeilingHit = hitUp.collider != null;
-        isGrounded = hitDown.collider != null;
+        isGrounded = false;
+        
+        if (myRigidbody.linearVelocityY < 0)
+            isGrounded = leftHit || rightHit;
 
+        // 4. [핵심] 미끄러짐 방지 로직
         if (isGrounded)
         {
-            Debug.DrawRay(hitDown.point, hitDown.normal * 0.2f, Color.red);
+            float yPos = 0;
+            if (leftHit)
+                yPos = leftHit.point.y;
+            if (rightHit)
+                yPos = rightHit.point.y;
+            
+            transform.position =new Vector2(transform.position.x, yPos);
+            
+            // 땅에 있고 입력이 없다면 물리 엔진의 간섭을 차단
+            if (!Controller.Instance.IsLeftMove && !Controller.Instance.IsRightMove)
+            {
+                myRigidbody.linearVelocity = Vector2.zero;
+                GravityChange(0);
+            }
+        }
+        else
+        {
+            GravityChange(myGravity);
         }
     }
 
@@ -287,13 +306,24 @@ public abstract class Character : InteractionController
         Gizmos.color = isWallRight ? Color.green : Color.red;
         DrawBox((Vector2)CenterPos.position + Vector2.right * (horizontalOffset + castDistance), horizontalBoxSize);
 
-        // 바닥 박스 (감지 시 초록색)
-        Gizmos.color = isGrounded ? Color.green : Color.red;
-        DrawBox((Vector2)CenterPos.position + Vector2.down * (verticalOffset + castDistance), verticalBoxSize);
-
         // 천장 박스
         Gizmos.color = isCeilingHit ? Color.green : Color.red;
         DrawBox((Vector2)CenterPos.position + Vector2.up * (verticalOffset + castDistance), verticalBoxSize);
+
+        if (myRigidbody.linearVelocityY < 0)
+        {
+            // 디버그 레이 시각화
+            Vector2 leftRayPos = (Vector2)transform.position + new Vector2(-footOffset, 0);
+            Vector2 rightRayPos = (Vector2)transform.position + new Vector2(footOffset, 0);
+
+            // 왼쪽 레이 디버그
+            Gizmos.color = Physics2D.Raycast(leftRayPos, Vector2.down, 0.1f, groundAndPlatformLayerMask) ? Color.green : Color.red;
+            Gizmos.DrawLine(leftRayPos, leftRayPos + Vector2.down * 0.1f);
+
+            // 오른쪽 레이 디버그
+            Gizmos.color = Physics2D.Raycast(rightRayPos, Vector2.down, 0.1f, groundAndPlatformLayerMask) ? Color.green : Color.red;
+            Gizmos.DrawLine(rightRayPos, rightRayPos + Vector2.down * 0.1f);
+        }
     }
 
     private void DrawBox(Vector2 position, Vector2 size)
