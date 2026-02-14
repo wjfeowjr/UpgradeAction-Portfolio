@@ -98,7 +98,7 @@ public abstract class Character : InteractionController
 
     protected Rigidbody2D myRigidbody;
     protected BoxCollider2D myBoxCollider;
-    protected BoxCollider2D physicsCollider;
+    protected Collider2D physicsCollider;
     protected Animator myAnimator;
     protected SpriteRenderer[] mySpriteRenderers;
     [SerializeField] protected GameObject groundObject;
@@ -166,6 +166,22 @@ public abstract class Character : InteractionController
     public GameObject GroundObject => groundObject;
     public Transform CenterPos => centerPos;
     public Transform FontPos => fontPos;
+    
+    // 실험
+    [SerializeField] private float castDistance;
+
+    [Header("Box Sizes")]
+    [SerializeField] private Vector2 horizontalBoxSize; // 좌우 (세로로 긴 박스)
+    [SerializeField] private Vector2 verticalBoxSize;   // 상하 (가로로 긴 박스)
+
+    [Header("Offsets")]
+    [SerializeField] private float horizontalOffset; // 중심에서 좌우로 얼마나 떨어질지
+    [SerializeField] private float verticalOffset;   // 중심에서 위아래로 얼마나 떨어질지
+
+    public bool isGrounded;
+    public bool isCeilingHit;
+    public bool isWallLeft;
+    public bool isWallRight;
 
     public bool Immortal
     {
@@ -198,6 +214,12 @@ public abstract class Character : InteractionController
     protected virtual void Awake()
     {
         DataCaching();
+
+        castDistance = 0.0f;
+        horizontalBoxSize = new Vector2(0.1f, myBoxCollider.size.y * 0.8f); // 좌우 (세로로 긴 박스)
+        verticalBoxSize = new Vector2(myBoxCollider.size.x * 0.8f, 0.1f); // 상하 (가로로 긴 박스)
+        horizontalOffset = myBoxCollider.size.x * 0.5f; // 중심에서 좌우로 얼마나 떨어질지
+        verticalOffset = myBoxCollider.size.y * 0.5f; // 중심에서 위아래로 얼마나 떨어질지
     }
 
     protected virtual void OnEnable()
@@ -210,6 +232,7 @@ public abstract class Character : InteractionController
     {
         UpdateBungee();
         UpdateAirborneDown();
+        CheckCollisions();
     }
 
     protected virtual void FixedUpdate()
@@ -218,12 +241,72 @@ public abstract class Character : InteractionController
         FindGroundObject();
     }
 
+    private void CheckCollisions()
+    {
+        // if (hit.collider != null)
+        // {
+        //     // 충돌 지점에 빨간색 점(짧은 선)을 그려서 확인
+        //     Debug.DrawRay(hit.point, hit.normal * 0.2f, Color.red);
+        // }
+        
+        // 1. 왼쪽 벽 체크
+        RaycastHit2D hitLeft = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.left * horizontalOffset, 
+            horizontalBoxSize, 0f, Vector2.left, castDistance, groundLayerMask);
+
+        // 2. 오른쪽 벽 체크
+        RaycastHit2D hitRight = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.right * horizontalOffset, 
+            horizontalBoxSize, 0f, Vector2.right, castDistance, groundLayerMask);
+
+        // 3. 천장 체크 (위)
+        RaycastHit2D hitUp = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.up * verticalOffset, 
+            verticalBoxSize, 0f, Vector2.up, castDistance, groundLayerMask);
+        
+        // 4. 바닥 체크 (아래)
+        RaycastHit2D hitDown = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.down * verticalOffset, 
+            verticalBoxSize, 0f, Vector2.down, castDistance, groundAndPlatformLayerMask);
+
+        isWallLeft = hitLeft.collider != null;
+        isWallRight = hitRight.collider != null;
+        isCeilingHit = hitUp.collider != null;
+        isGrounded = hitDown.collider != null;
+
+        if (isGrounded)
+        {
+            Debug.DrawRay(hitDown.point, hitDown.normal * 0.2f, Color.red);
+        }
+    }
+
+    // 디버그 시각화 (Scene 뷰에서 확인 가능)
+    private void OnDrawGizmos()
+    {
+        // 왼쪽 벽 박스
+        Gizmos.color = isWallLeft ? Color.green : Color.red;
+        DrawBox((Vector2)CenterPos.position + Vector2.left * (horizontalOffset + castDistance), horizontalBoxSize);
+
+        // 오른쪽 벽 박스
+        Gizmos.color = isWallRight ? Color.green : Color.red;
+        DrawBox((Vector2)CenterPos.position + Vector2.right * (horizontalOffset + castDistance), horizontalBoxSize);
+
+        // 바닥 박스 (감지 시 초록색)
+        Gizmos.color = isGrounded ? Color.green : Color.red;
+        DrawBox((Vector2)CenterPos.position + Vector2.down * (verticalOffset + castDistance), verticalBoxSize);
+
+        // 천장 박스
+        Gizmos.color = isCeilingHit ? Color.green : Color.red;
+        DrawBox((Vector2)CenterPos.position + Vector2.up * (verticalOffset + castDistance), verticalBoxSize);
+    }
+
+    private void DrawBox(Vector2 position, Vector2 size)
+    {
+        Gizmos.DrawWireCube(position, size);
+    }
+    
     public void DataCaching()
     {
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
         myBoxCollider = GetComponent<BoxCollider2D>();
-        foreach (var component in GetComponentsInChildren<BoxCollider2D>())
+        foreach (var component in GetComponentsInChildren<Collider2D>())
         {
             if (!component.isTrigger)
             {
@@ -345,9 +428,11 @@ public abstract class Character : InteractionController
         if (groundObject && !downJumping)
             return;
 
-        var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+        // physicsCollider.size.x
+        var rayVector1 = new Vector2(transform.position.x - myBoxCollider.size.x / 2, transform.position.y);
         var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-        var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+        // physicsCollider.size.x
+        var rayVector3 = new Vector2(transform.position.x + myBoxCollider.size.x / 2, transform.position.y);
 
         GroundRay(rayVector1);
         GroundRay(rayVector2);
@@ -364,7 +449,8 @@ public abstract class Character : InteractionController
 
     protected void IgnorePlatform(Vector2 dir, float distance)
     {
-        var rayVector1 = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
+        // physicsCollider.size.x / 2
+        var rayVector1 = new Vector2(transform.position.x - myBoxCollider.size.x / 2, transform.position.y);
         var downRay1 = Physics2D.Raycast(rayVector1, dir, distance, platformLayerMask);
         Debug.DrawRay(rayVector1, dir * 1.0f, ConstValues.BlueColor, 0.02f);
         if (downRay1.collider != null)
@@ -390,7 +476,8 @@ public abstract class Character : InteractionController
             }
         }
 
-        var rayVector3 = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
+        // physicsCollider.size.x / 2
+        var rayVector3 = new Vector2(transform.position.x + myBoxCollider.size.x / 2, transform.position.y);
         var downRay3 = Physics2D.Raycast(rayVector3, dir, distance, platformLayerMask);
         Debug.DrawRay(rayVector3, dir * distance, ConstValues.BlueColor, 0.02f);
         if (downRay3.collider != null)
@@ -929,8 +1016,10 @@ public abstract class Character : InteractionController
 
         var rayVector = transform.position;
         Vector2 rayVector1 = new Vector2(rayVector.x, rayVector.y + 0.1f);
-        Vector2 rayVector2 = new Vector2(rayVector.x, rayVector.y + physicsCollider.size.y * 0.5f);
-        Vector2 rayVector3 = new Vector2(rayVector.x, rayVector.y + physicsCollider.size.y);
+        // physicsCollider.size.y * 0.5f
+        Vector2 rayVector2 = new Vector2(rayVector.x, rayVector.y + myBoxCollider.size.y * 0.5f);
+        // physicsCollider.size.y
+        Vector2 rayVector3 = new Vector2(rayVector.x, rayVector.y + myBoxCollider.size.y);
         
         var ray1 = Physics2D.Raycast(rayVector1, dir, distance, groundLayerMask);
         Debug.DrawRay(rayVector1, dir, ConstValues.BlueColor, 0.1f);
