@@ -31,26 +31,12 @@ public class Monster_Sun : Monster
         if (moveState != EMoveState.Moving)
             return;
 
-        var rayVector = CenterPos.transform.position;
-        var distance = myBoxCollider.size.x * 0.5f + 1f;
-        
         // 왼쪽
-        if (dir == Vector2.left)
-        {
-            RaycastHit2D leftRay = Physics2D.Raycast(rayVector, Vector2.left, distance, groundLayerMask);
-            Debug.DrawRay(rayVector, Vector2.left * distance, ConstValues.CyanColor, 0.02f);
-            if (leftRay.collider != null)
-                dir = Vector2.right;
-        }
+        if (myRigidbody.linearVelocityX < 0 && isWallLeft)
+            dir = Vector2.right;
         // 오른쪽
-        if (dir == Vector2.right)
-        {
-            
-            RaycastHit2D rightRay = Physics2D.Raycast(rayVector, Vector2.right, distance, groundLayerMask);
-            Debug.DrawRay(rayVector, Vector2.right * distance, ConstValues.CyanColor, 0.02f);
-            if (rightRay.collider != null)
-                dir = Vector2.left;
-        }
+        if (myRigidbody.linearVelocityX > 0 && isWallRight)
+            dir = Vector2.left;
 
         myRigidbody.linearVelocity = dir * basicStat.moveSpeed;
     }
@@ -60,7 +46,7 @@ public class Monster_Sun : Monster
     {
         float delay1 = 0.8f; // 0.2f
         float delay2 = 0.5f;
-        float fadeSpeed = 0.4f;
+        //float fadeSpeed = 0.4f;
         
         var firePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, RoomManager.Instance.GroundPosY);
         var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterSunAttack1);
@@ -221,9 +207,9 @@ public class Monster_Sun : Monster
         PlaySound($"{ConstValues.Scream}7");
     }
 
-    protected override void Bound(float xVelocity, float yVelocity)
+    protected override void AirborneBound(float xVelocity, float yVelocity)
     {
-        base.Bound(xVelocity, yVelocity);
+        base.AirborneBound(xVelocity, yVelocity);
         faceSpin.SpinSwitchOn(true);
     }
 

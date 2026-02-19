@@ -7,7 +7,7 @@ public class ConstValues : Singleton<ConstValues>
     public const float BasicGravity = 1.0f;
     public const float DownSecond = 0.9f;
     public const float ReboundSecond = 0.05f;
-    public const float ReboundForce = 2.5f;
+    public const float ReboundForce = 3.0f;
     public const float KnockBackTime = 0.1f;
     public const float GrabbedSpeed = 30.0f;
     public const float GrabbedBoundX = 8.0f;

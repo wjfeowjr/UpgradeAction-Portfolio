@@ -211,6 +211,8 @@ public class Player_Berserker : Player
         else
         {
             jumpAttackCount += 1;
+            groundToken = true;
+
             float jumpAttackDelay3 = 0.12f;
             float jumpAttackDelay4 = 0.6f;
             float jumpAttackForce = 6;
@@ -226,7 +228,7 @@ public class Player_Berserker : Player
             SpawnAttack(ConstValues.BerserkerJumpAttack2, jumpAttack2Pos);
             float dropForce = 30.0f;
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
-            while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f)
+            while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f && !isGrounded)
             {
                 if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                     return false;
@@ -234,12 +236,13 @@ public class Player_Berserker : Player
             jumpAttackCount = 0;
             StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2End);
             SpawnAttack(ConstValues.BerserkerJumpAttack2Effect, jumpAttack2Pos);
-            
+
             //SpawnSwordWave(attackPos[2]);
             //GameManager.Instance.playerShare.currentJumpAttack = 0;
             if (await AttackDelay(jumpAttackDelay4).SuppressCancellationThrow())
                 return false;
             ClearObjectList(controlObject);
+            groundToken = false;
         }
         canAttack = true;
         return true;

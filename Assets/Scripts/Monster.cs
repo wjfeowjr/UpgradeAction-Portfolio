@@ -252,10 +252,12 @@ public class Monster : Character
         totalBar = null;
     }
 
-    protected void OnDrawGizmos()
+    protected override void OnDrawGizmos()
     {
         if (isDie)
             return;
+
+        base.OnDrawGizmos();
 
         var myPosition = transform.position;
 
@@ -266,19 +268,19 @@ public class Monster : Character
             Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + CenterPos.localPosition.y), agroRange);
         }
 
-        if (myStat.jumpRange != Vector2.zero)
-        {
-            Vector2 jumpRange = new Vector2(myStat.jumpRange.x * 2, myStat.jumpRange.y * 2);
-            Gizmos.color = ConstValues.CyanColor;
-            Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + myStat.jumpRange.y), jumpRange);
-        }
-
-        if (myStat.dropRange != Vector2.zero)
-        {
-            Vector2 dropRange = new Vector2(myStat.dropRange.x * 2, myStat.dropRange.y * 2);
-            Gizmos.color = ConstValues.MagentaColor;
-            Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y - myStat.dropRange.y), dropRange);
-        }
+        // if (myStat.jumpRange != Vector2.zero)
+        // {
+        //     Vector2 jumpRange = new Vector2(myStat.jumpRange.x * 2, myStat.jumpRange.y * 2);
+        //     Gizmos.color = ConstValues.CyanColor;
+        //     Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + myStat.jumpRange.y), jumpRange);
+        // }
+        //
+        // if (myStat.dropRange != Vector2.zero)
+        // {
+        //     Vector2 dropRange = new Vector2(myStat.dropRange.x * 2, myStat.dropRange.y * 2);
+        //     Gizmos.color = ConstValues.MagentaColor;
+        //     Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y - myStat.dropRange.y), dropRange);
+        // }
 
         if (patternInfo == null)
             return;
@@ -305,10 +307,35 @@ public class Monster : Character
                     Gizmos.color = ConstValues.BlueColor;
                     break;
             }
-
-            // physicsCollider.size.y
-            Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + myBoxCollider.size.y * 0.5f), patternRange);
+            
+            Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + physicsCollider.size.y * 0.5f), patternRange);
         }
+    }
+
+    protected override void CeilingCheck()
+    {
+        if (myStat.hovering)
+            return;
+
+        base.CeilingCheck();
+    }
+
+    protected override void GroundCheck()
+    {
+        if (myStat.hovering)
+            return;
+
+        base.GroundCheck();
+    }
+
+    protected override void GetOffGroundState()
+    {
+        if (myStat.hovering)
+            return;
+        
+        LandingStateSetting(ELandingState.Air);
+        if (normalState is ENormalState.Idle or ENormalState.Move)
+            StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
     }
 
     // 테이블의 값으로 스텟 초기화(기본 스텟)
@@ -484,14 +511,6 @@ public class Monster : Character
             landingState = ELandingState.Ground;
     }
 
-    protected override void FindGroundObject()
-    {
-        if (myStat.hovering)
-            return;
-
-        base.FindGroundObject();
-    }
-
     public async void SpawnHpBar()
     {
         if (isBoss)
@@ -597,6 +616,7 @@ public class Monster : Character
 
         StateSetting(ENormalState.Leap, ConstValues.Leap, ConstValues.Leap);
         MoveStateSetting(EMoveState.Stopping);
+        LandingStateSetting(ELandingState.Air);
     }
 
     protected override void StateCheck()
@@ -660,7 +680,7 @@ public class Monster : Character
 
         downJumping = true;
 
-        IgnorePlatform(Vector2.down, 1.0f);
+        IgnorePlatformCheck(lastStandPlatform);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
 
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
@@ -681,7 +701,6 @@ public class Monster : Character
     {
         if (IsDamaged())
         {
-            Debug.Log("꽥");
             normalState = ENormalState.Idle;
         }
 
@@ -1466,8 +1485,7 @@ public class Monster : Character
     private void UpdateRoomLimit()
     {
         // 1) 절반 크기
-        // physicsCollider.size.x * 0.5f;
-        float halfWidth = myBoxCollider.size.x * 0.5f;
+        float halfWidth = physicsCollider.size.x * 0.5f;
 
         // 3) 플레이어 센터 기준으로 클램프 경계 계산
         float leftLimit = limitLeft + halfWidth;
@@ -1564,29 +1582,18 @@ public class Monster : Character
     // 몬스터 뒤돌기
     private int MonsterCheckWalk()
     {
-        var rayVector = new Vector2(transform.position.x, transform.position.y + 0.02f);
-        var distance = myBoxCollider.size.x * 0.5f + 0.2f;
-        // physicsCollider.size.x * 0.5f;
-        float halfWidth = myBoxCollider.size.x * 0.5f;
-
-        float leftLimit = limitLeft + halfWidth;
-        float leftRight = limitRight - halfWidth;
-
         // 오른쪽
         if (transform.localScale.x > 0)
         {
-            RaycastHit2D rightRay = Physics2D.Raycast(rayVector, Vector2.right, distance, monsterWalkLayerMask);
-            Debug.DrawRay(rayVector, Vector2.right * distance, ConstValues.CyanColor, 0.02f);
-            if (transform.position.x >= leftRight || rightRay.collider != null)
+            if (isWallRight)
             {
                 return 0;
             }
         }
+        // 왼쪽
         else
         {
-            RaycastHit2D leftRay = Physics2D.Raycast(rayVector, Vector2.left, distance, monsterWalkLayerMask);
-            Debug.DrawRay(rayVector, Vector2.left * distance, ConstValues.CyanColor, 0.02f);
-            if (transform.position.x <= leftLimit || leftRay.collider != null)
+            if (isWallLeft)
             {
                 return 1;
             }
@@ -1598,11 +1605,9 @@ public class Monster : Character
     // 몬스터 절벽감지
     private int MonsterCheckFall()
     {
-        // physicsCollider.size.x
-        var rayVector = new Vector2(transform.position.x + myBoxCollider.size.x / 2, transform.position.y);
+        var rayVector = new Vector2(transform.position.x + physicsCollider.size.x / 2, transform.position.y);
         if (transform.localScale.x < 0)
-            // physicsCollider.size.x / 2
-            rayVector = new Vector2(transform.position.x - myBoxCollider.size.x / 2, transform.position.y);
+            rayVector = new Vector2(transform.position.x - physicsCollider.size.x / 2, transform.position.y);
 
         float distance = 1.0f;
         RaycastHit2D downRay = Physics2D.Raycast(rayVector, Vector2.down, distance, groundAndPlatformLayerMask);
@@ -1776,26 +1781,10 @@ public class Monster : Character
         // 점프 착지
         if (normalState is ENormalState.Jump)
         {
-            // myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            // myRigidbody.linearVelocity = Vector2.zero;
             if (alwaysAgro)
                 StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
             else
                 StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-        }
-    }
-
-    protected void OnCollisionExit2D(Collision2D col)
-    {
-        // 점프
-        if (col.gameObject.CompareTag(ConstValues.Ground) || col.gameObject.CompareTag(ConstValues.Platform))
-        {
-            if (myRigidbody.gravityScale != 0 && myRigidbody.linearVelocityY is <= 0.05f and >= -0.05f)
-                return;
-            
-            LandingStateSetting(ELandingState.Air);
-            if (normalState is ENormalState.Idle or ENormalState.Move)
-                StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         }
     }
 }

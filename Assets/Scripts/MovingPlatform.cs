@@ -17,14 +17,21 @@ public class MovingPlatform : MonoBehaviour
     
     private float curDelay;
     private Rigidbody2D myRigidbody;
+    private BoxCollider2D myBoxCollider;
     private int targetIdx;
     private Vector2 prevPos;
     private Vector2 segmentStartPos;
     private Vector2 platformVelocity;
     private List<Vector2> movePos = new List<Vector2>();
+    private PlatformObject platformObject;
 
     private Action arriveAction;
     public Transform[] Points => points;
+
+    public PlatformObject PlatformObject
+    {
+        set => platformObject = value;
+    }
 
     public bool IsMoving
     {
@@ -54,6 +61,9 @@ public class MovingPlatform : MonoBehaviour
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.bodyType = RigidbodyType2D.Kinematic;
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
+
+        myBoxCollider = GetComponent<BoxCollider2D>();
+        
         prevPos = transform.position;
         segmentStartPos = prevPos;
         
@@ -64,12 +74,16 @@ public class MovingPlatform : MonoBehaviour
     private void Update()
     {
         UpdateDelay();
+        SetHeight();
     }
 
     private void FixedUpdate()
     {
         if (movePos.Count == 0 || !isMoving)
+        {
+            platformVelocity = Vector2.zero;
             return;
+        }
         
         Vector2 cur = myRigidbody.position;
         float distFromStart = (cur - segmentStartPos).magnitude;
@@ -81,6 +95,9 @@ public class MovingPlatform : MonoBehaviour
         Vector2 next = Vector2.MoveTowards(cur, movePos[targetIdx], currentSpeed * Time.fixedDeltaTime);
 
         myRigidbody.MovePosition(next);
+        
+        platformVelocity = (next - cur) / Time.fixedDeltaTime;
+        
         prevPos = next;
 
         // 4) 목적지 도착하면 다음 포인트
@@ -90,6 +107,8 @@ public class MovingPlatform : MonoBehaviour
             targetIdx = (targetIdx + 1) % movePos.Count;
             segmentStartPos = next;
             isMoving = false;
+            
+            platformVelocity = Vector2.zero; // 정지 시 속도 명확히 0
             
             if (isRepeat && delay > 0)
                 curDelay = 0;
@@ -112,6 +131,12 @@ public class MovingPlatform : MonoBehaviour
             curDelay = delay;
             isMoving = true;
         }
+    }
+
+    private void SetHeight()
+    {
+        if (platformObject != null)
+            platformObject.height = transform.position.y + myBoxCollider.size.y * 0.5f + myBoxCollider.offset.y - 0.2f;
     }
 
     public void SetSaveAction(Action action)

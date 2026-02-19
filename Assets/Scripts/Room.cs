@@ -35,14 +35,14 @@ public class Room : MonoBehaviour
     private Camera gameCamera;
 
     // 내부 저장용
-    private HashSet<Vector3Int> allRoomCells = new HashSet<Vector3Int>();
+    private List<Vector3Int> allRoomCells = new List<Vector3Int>();
     private Dictionary<Vector3Int, TileBase> originalTiles = new Dictionary<Vector3Int, TileBase>();
-    private HashSet<Vector3Int> visitedCells = new HashSet<Vector3Int>();
+    private List<Vector3Int> visitedCells = new List<Vector3Int>();
     
-    private HashSet<Vector3Int> allshortcutCells = new HashSet<Vector3Int>();
-    private Dictionary<Vector3Int, TileBase> originalshortcutTiles = new Dictionary<Vector3Int, TileBase>();
-    private HashSet<Vector3Int> visitedShortcutCells = new HashSet<Vector3Int>();
-
+    private List<Vector3Int> allshortcutCells = new List<Vector3Int>();
+    private List<Dictionary<Vector3Int, TileBase>> originalshortcutTilesList = new List<Dictionary<Vector3Int, TileBase>>();
+    private List<List<Vector3Int>> visitedShortcutCells = new List<List<Vector3Int>>();
+    
     [SerializeField] private bool isBossRoom;
     [SerializeField] private GameObject roomGameObject;
 
@@ -149,18 +149,27 @@ public class Room : MonoBehaviour
 
         if (shortcutFrameTileMaps.Length > 0)
         {
-            foreach (var shortcutFrameTileMap in shortcutFrameTileMaps)
+            for (int i = 0; i < shortcutFrameTileMaps.Length; i++)
             {
-                var shortcutFrameBounds = shortcutFrameTileMap.cellBounds;
-                foreach (var pos in shortcutFrameBounds.allPositionsWithin)
+                visitedShortcutCells.Add(new List<Vector3Int>());
+                originalshortcutTilesList.Add(new Dictionary<Vector3Int, TileBase>()); // 딕셔너리 개별 생성
+
+                var targetMap = shortcutFrameTileMaps[i];
+                var bounds = targetMap.cellBounds;
+
+                foreach (var pos in bounds.allPositionsWithin)
                 {
-                    if (shortcutFrameTileMap.HasTile(pos))
+                    if (targetMap.HasTile(pos))
                     {
-                        allshortcutCells.Add(pos);
-                        originalshortcutTiles[pos] = shortcutFrameTileMap.GetTile(pos);
+                        // i번째 타일맵 전용 딕셔너리에 저장
+                        originalshortcutTilesList[i][pos] = targetMap.GetTile(pos);
+                    
+                        // 전체 좌표 리스트에도 추가 (중복 방지를 위해 확인 후 추가하거나 유지)
+                        if (!allshortcutCells.Contains(pos))
+                            allshortcutCells.Add(pos);
                     }
                 }
-                shortcutFrameTileMap.ClearAllTiles();
+                targetMap.ClearAllTiles();
             }
         }
     }
@@ -247,8 +256,6 @@ public class Room : MonoBehaviour
         SpawnMonster();
         // 여기서 트랩 데이터 넣기
         SetTrap();
-        // 여기서 숏컷 제어
-        SetShortCut();
         // 여기서 세이브포인트 데이터 넣기
          SetSavePoint();
 
@@ -741,7 +748,6 @@ public class Room : MonoBehaviour
         
         targetRoom.ObjectActive(true);
         targetRoom.SetCameraLimit();
-        targetRoom.SetShortCut();
         targetRoom.SetPortal();
         targetRoom.PortalSoundActive(false);
 
@@ -819,8 +825,6 @@ public class Room : MonoBehaviour
         SpawnMonster();
         // 여기서 트랩 데이터 넣기
         SetTrap();
-        // 여기서 숏컷 제어
-        SetShortCut();
         // 여기서 세이브포인트 데이터 넣기
         SetSavePoint();
         // 여기서 포탈 데이터 넣기
@@ -1039,7 +1043,8 @@ public class Room : MonoBehaviour
             GameManager.Instance.InputDataTrap(trap.name, trap);
     }
 
-    private void SetShortCut()
+    // 숏컷 오브젝트 진행도에 맞춰 변경(미니맵 포함)
+    public void SetShortCut()
     {
         int idx = 0;
         for (int i = 0; i < shortCutObjects.Length; i++)
@@ -1051,6 +1056,9 @@ public class Room : MonoBehaviour
                 idx += 1;
             }
         }
+        
+        if(name == "Room_2_1")
+            Debug.Log("귀신");
 
         for (int i = 0; i < shortCutObjects.Length; i++)
             shortCutObjects[i].OpenSetting(roomInfo.shortCut[i].isOpened, ShortcutOpen);
@@ -1293,21 +1301,21 @@ public class Room : MonoBehaviour
         }
         
         // 저장 데이터 없음: 모든 숏컷 비활성화
-        if (roomInfo.visitedShortcutCells.Count == 0)
-        {
-            foreach (var shortcutFrameTileMap in shortcutFrameTileMaps)
-                shortcutFrameTileMap.ClearAllTiles();
-        }
         // 저장 데이터 있음: 불러와서 해당 숏컷만 활성화
-        else
+        if (roomInfo.visitedShortcutCells.Count > 0)
         {
             LoadVisitedShortcutCells();
-            foreach (var shortcutCell in visitedShortcutCells)
+            for (int i = 0; i < visitedShortcutCells.Count; i++)
             {
-                foreach (var shortcutFrameTileMap in shortcutFrameTileMaps)
+                if (i >= shortcutFrameTileMaps.Length) break;
+
+                foreach (var cell in visitedShortcutCells[i])
                 {
-                    if (originalshortcutTiles.TryGetValue(shortcutCell, out var inTile))
-                        shortcutFrameTileMap.SetTile(shortcutCell, inTile);
+                    // i번째 딕셔너리에서 타일을 찾아 복원
+                    if (originalshortcutTilesList[i].TryGetValue(cell, out var inTile))
+                    {
+                        shortcutFrameTileMaps[i].SetTile(cell, inTile);
+                    }
                 }
             }
         }
@@ -1385,22 +1393,24 @@ public class Room : MonoBehaviour
         bool shortcutNew = false;
         foreach (var shortcutCell in allshortcutCells)
         {
-            if (visitedShortcutCells.Contains(shortcutCell))
-                continue;
-
-            foreach (var shortcutFrameTileMap in shortcutFrameTileMaps)
+            for (int i = 0; i < shortcutFrameTileMaps.Length; i++)
             {
-                Vector3 center = shortcutFrameTileMap.GetCellCenterWorld(shortcutCell);
-                Vector2 min = new Vector2(center.x - halfCell.x, center.y - halfCell.y);
-                Vector2 max = new Vector2(center.x + halfCell.x, center.y + halfCell.y);
+                if (visitedShortcutCells[i].Contains(shortcutCell)) continue;
 
-                // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
-                if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
-                    max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+                // 해당 인덱스의 타일맵에 원래 이 좌표의 타일이 있었는지 확인
+                if (originalshortcutTilesList[i].TryGetValue(shortcutCell, out var originalTile))
                 {
-                    visitedShortcutCells.Add(shortcutCell);
-                    shortcutFrameTileMap.SetTile(shortcutCell, originalshortcutTiles[shortcutCell]);
-                    shortcutNew = true;
+                    var targetMap = shortcutFrameTileMaps[i];
+                    Vector3 center = targetMap.GetCellCenterWorld(shortcutCell);
+                    Vector2 min = new Vector2(center.x - halfCell.x, center.y - halfCell.y);
+                    Vector2 max = new Vector2(center.x + halfCell.x, center.y + halfCell.y);
+
+                    if (max.x >= viewRect.xMin && min.x <= viewRect.xMax && max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+                    {
+                        visitedShortcutCells[i].Add(shortcutCell);
+                        targetMap.SetTile(shortcutCell, originalTile); // 정확한 자기 타일 설치
+                        shortcutNew = true;
+                    }
                 }
             }
         }
@@ -1440,10 +1450,16 @@ public class Room : MonoBehaviour
     // 숏컷 셀 저장
     private void SaveVisitedShortcutCells()
     {
-        var sb = new StringBuilder();
-        foreach (var c in visitedShortcutCells)
+        roomInfo.visitedShortcutCells.Clear(); // 기존 데이터 클리어
+
+        for (int i = 0; i < visitedShortcutCells.Count; i++)
         {
-            sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
+            var sb = new StringBuilder();
+            foreach (var c in visitedShortcutCells[i])
+            {
+                sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
+            }
+            // 각 인덱스별로 하나의 문자열로 묶어 리스트에 추가
             roomInfo.visitedShortcutCells.Add(sb.ToString());
         }
     }
@@ -1453,18 +1469,18 @@ public class Room : MonoBehaviour
         if (roomInfo.visitedShortcutCells.Count == 0)
             return;
 
-        foreach (var visitedShortcutCell in roomInfo.visitedShortcutCells)
+        for (int i = 0; i < roomInfo.visitedShortcutCells.Count; i++)
         {
-            var entries = visitedShortcutCell.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
+            // 인덱스 안전망
+            if (i >= visitedShortcutCells.Count) break;
+
+            var entries = roomInfo.visitedShortcutCells[i].Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
             foreach (var e in entries)
             {
                 var p = e.Split('_');
-                if (p.Length == 3
-                    && int.TryParse(p[0], out int x)
-                    && int.TryParse(p[1], out int y)
-                    && int.TryParse(p[2], out int z))
+                if (p.Length == 3 && int.TryParse(p[0], out int x) && int.TryParse(p[1], out int y) && int.TryParse(p[2], out int z))
                 {
-                    visitedShortcutCells.Add(new Vector3Int(x, y, z));
+                    visitedShortcutCells[i].Add(new Vector3Int(x, y, z));
                 }
             }
         }

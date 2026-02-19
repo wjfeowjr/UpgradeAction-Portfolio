@@ -121,6 +121,24 @@ public class PlayerStat
 
 public abstract class Player : Character
 {
+    // 벽 판정 몬스터 체크
+    private RaycastHit2D wallBodyDownLeftHit;
+    private RaycastHit2D wallBodyDownCenterHit;
+    private RaycastHit2D wallBodyDownRightHit;
+
+    // 벽판정 몬스터 체크 레이 위치
+    private Vector2 leftDownWallBodyRayPos;
+    private Vector2 centerDownWallBodyRayPos;
+    private Vector2 rightDownWallBodyRayPos;
+
+    // 벽판정 몬스터 체크 레이 길이
+    private float wallBodyDownRayDistance;  // 하단
+
+    // 하단 벽판정 몬스터 체크
+    public bool isWallBodyLeft;
+    public bool isWallBodyRight;
+    public bool isWallBodyDown;
+    
     private bool isChanging;
     private float jumpLimitY;
     protected bool attackBuffer;
@@ -165,6 +183,9 @@ public abstract class Player : Character
     protected override void Awake()
     {
         base.Awake();
+        var colSize = physicsCollider.size;
+        wallBodyDownRayDistance = colSize.y * 0.5f + 0.05f;
+
         globalCoolTime = 0.1f;
         dashDelay = 0.2f;
         changeGlobalCoolTime = 0.1f;
@@ -189,38 +210,96 @@ public abstract class Player : Character
     {
         base.Update();
         UpdateFlip();
-        UpdateJumpDown();
         UpdateGlobalCoolTime();
         UpdateDashDelay();
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
         UpdateBuff();
-        UpdateAirRay();
     }
 
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
         UpdateCameraLimit();
-
-        // 입력이 없어서 Move가 안 불릴 때도 플랫폼 속도는 유지
-        if (IsPlatformFollow() && currentPlatform != null)
-        {
-            if (currentPlatform.Velocity != Vector2.zero)
-            {
-                var v = myRigidbody.linearVelocity;
-                v.x = currentPlatform.Velocity.x; // 기본은 플랫폼 속도
-                v.y = currentPlatform.Velocity.y;
-                myRigidbody.linearVelocity = v;
-            }
-            // if (currentPlatform.Velocity == Vector2.zero)
-            //     currentPlatform = null;
-        }
+        UpdateJumpDown();
     }
 
     private void OnDisable()
     {
         stateCancellation?.Cancel();
+    }
+
+    protected override void CheckCollisions()
+    {
+        base.CheckCollisions();
+        WallMonsterDownCheck();
+    }
+
+    protected override void LayerMaskSetting()
+    {
+        base.LayerMaskSetting();
+        groundLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.WallBody));
+    }
+
+    // 하단 벽판정 몬스터 체크
+    private void WallMonsterDownCheck()
+    {
+        leftDownWallBodyRayPos = (Vector2)physicCenterPos.position + new Vector2(-footOffset, 0);
+        centerDownWallBodyRayPos = physicCenterPos.position;
+        rightDownWallBodyRayPos = (Vector2)physicCenterPos.position + new Vector2(footOffset, 0);
+        
+        wallBodyDownLeftHit = Physics2D.Raycast(leftDownWallBodyRayPos, Vector2.down, wallBodyDownRayDistance, wallBodyLayerMask);
+        wallBodyDownCenterHit = Physics2D.Raycast(centerDownWallBodyRayPos, Vector2.down, wallBodyDownRayDistance, wallBodyLayerMask);
+        wallBodyDownRightHit = Physics2D.Raycast(rightDownWallBodyRayPos, Vector2.down, wallBodyDownRayDistance, wallBodyLayerMask);
+        
+        isWallBodyDown = wallBodyDownLeftHit || wallBodyDownCenterHit || wallBodyDownRightHit;
+        if (isWallBodyDown)
+        {
+            if (myRigidbody.linearVelocityY > 0.01f)
+                return;
+            
+            Character wallMonster = null;
+            if (wallBodyDownLeftHit.collider != null)
+                wallMonster = wallBodyDownLeftHit.collider.GetComponentInParent<Character>();
+            if (wallBodyDownCenterHit.collider != null)
+                wallMonster = wallBodyDownCenterHit.collider.GetComponentInParent<Character>();
+            if (wallBodyDownRightHit.collider != null)
+                wallMonster = wallBodyDownRightHit.collider.GetComponentInParent<Character>();
+
+            if (wallMonster != null)
+            {
+                // 체공중 벽 타입 몬스터가 감지되었을 때
+                if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
+                {
+                    // 몹이 오른쪽을 보고있음
+                    if (wallMonster.transform.localScale.x > 0)
+                    {
+                        if (transform.position.x > wallMonster.transform.position.x)
+                        {
+                            transform.position = new Vector2(wallMonster.ColFront(), transform.position.y - 0.1f);
+                        }
+                        else
+                        {
+                            transform.position = new Vector2(wallMonster.ColBehind(), transform.position.y - 0.1f);
+                        }
+                    }
+                    // 몹이 왼쪽을 보고있음
+                    else
+                    {
+                        if (transform.position.x > wallMonster.transform.position.x)
+                        {
+                            transform.position = new Vector2(wallMonster.ColBehind(), transform.position.y - 0.1f);
+                            
+                        }
+                        else
+                        {
+                            transform.position = new Vector2(wallMonster.ColFront(), transform.position.y - 0.1f);
+                            
+                        }
+                    }
+                }
+            }
+        }
     }
 
     // 테이블의 값으로 스텟 초기화(기본 스텟)
@@ -424,7 +503,7 @@ public abstract class Player : Character
     
     private void UpdateJumpDown()
     {
-        if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Jump) && myRigidbody.linearVelocity.y < 0)
+        if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Jump) && myRigidbody.linearVelocity.y < 0.01f)
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
     }
 
@@ -480,18 +559,15 @@ public abstract class Player : Character
     
     public float GetRightPosX()
     {
-        // physicsCollider.size.x * 0.5f;
-        return transform.position.x + myBoxCollider.size.x * 0.5f;
+        return transform.position.x + physicsCollider.size.x * 0.5f;
     }
     public float GetLeftPosX()
     {
-        // physicsCollider.size.x * 0.5f;
-        return transform.position.x - myBoxCollider.size.x * 0.5f;
+        return transform.position.x - physicsCollider.size.x * 0.5f;
     }
     public float GetUpPosY()
     {
-        // physicsCollider.size.y;
-        return transform.position.y + myBoxCollider.size.y;
+        return transform.position.y + physicsCollider.size.y;
     }
     public float GetDownPosY()
     {
@@ -532,6 +608,7 @@ public abstract class Player : Character
     {
         StandHitBox();
         DeleteDashFrameUI();
+        ClearIgnorePlatform();
     }
 
     private void UpdateCameraLimit()
@@ -635,10 +712,17 @@ public abstract class Player : Character
         float inputSpeedX = dir.x * basicStat.moveSpeed * (moveRatio * 0.01f);
 
         float platformSpeedX = 0f;
-        if (landingState == ELandingState.Ground && currentPlatform != null)
-            platformSpeedX = currentPlatform.Velocity.x;
+        if (landingState == ELandingState.Ground && currentMovingPlatform != null)
+            platformSpeedX = currentMovingPlatform.Velocity.x;
 
         float targetSpeedY = myRigidbody.linearVelocity.y;
+
+        if (inputSpeedX < 0 && (isWallLeft || isWallBodyLeft))
+            inputSpeedX = 0;
+        
+        if (inputSpeedX > 0 && (isWallRight || isWallBodyRight))
+            inputSpeedX = 0;
+        
         myRigidbody.linearVelocity = new Vector2(inputSpeedX + platformSpeedX, targetSpeedY);
     }
     
@@ -665,7 +749,7 @@ public abstract class Player : Character
 
         canAttack = false;
         curGlobalCoolTime = 0;
-        Debug.Log("공격 시작");
+        //Debug.Log("공격 시작");
         return true;
     }
 
@@ -825,77 +909,7 @@ public abstract class Player : Character
         if(dir != 0)
             myRigidbody.linearVelocity = dir * new Vector2(distance, myRigidbody.linearVelocity.y);
     }
-    
-    // 체공 레이캐스트
-    private async void UpdateAirRay()
-    {
-        Vector2 colPos = physicsCollider.transform.position;
-        // physicsCollider.size
-        Vector2 physSize = myBoxCollider.size;
-        
-        if (landingState == ELandingState.Air)
-        {
-            if (myRigidbody.linearVelocityY > 0)
-            {
-                Vector2 airLeftRayPos = new Vector2(colPos.x - physSize.x * 0.5f, colPos.y + physSize.y);
-                Vector2 airRightRayPos = new Vector2(colPos.x + physSize.x * 0.5f, colPos.y + physSize.y);
-            
-                float distance = 0.2f;
-                RaycastHit2D leftRay = Physics2D.Raycast(airLeftRayPos, Vector2.up, distance, groundLayerMask);
-                Debug.DrawRay(airLeftRayPos, Vector2.up * distance, ConstValues.BlueColor, 0.016f);
-            
-                RaycastHit2D rightRay = Physics2D.Raycast(airRightRayPos, Vector2.up, distance, groundLayerMask);
-                Debug.DrawRay(airRightRayPos, Vector2.up * distance, ConstValues.BlueColor, 0.016f);
 
-                if (!isCeilingHang && (leftRay.collider != null || rightRay.collider != null))
-                {
-                    jumpCancellation?.Cancel();
-                    jumpCancellation = new CancellationTokenSource();
-
-                    myRigidbody.linearVelocityY = 0;
-                    GravityChange(0);
-                    isCeilingHang = true;
-                    float timer = 0.0f;
-                    float ceilingTime = 0.08f;
-                    while (timer < ceilingTime)
-                    {
-                        timer += Time.fixedDeltaTime;
-                        if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
-                        {
-                            Debug.Log("천장 딜레이 캔슬");
-                            isCeilingHang = false;
-                            return;
-                        }
-                    }
-                    GravityChange(myGravity);
-                    isCeilingHang = false;
-                }
-            }
-            else
-            {
-                // Vector2 downLeftRayPos = new Vector2(colPos.x - physSize.x * 0.5f, colPos.y);
-                // Vector2 downRightRayPos = new Vector2(colPos.x + physSize.x * 0.5f, colPos.y);
-                //
-                // float distance = 0.1f;
-                // RaycastHit2D leftRay = Physics2D.Raycast(downLeftRayPos, Vector2.down, distance, groundAndPlatformLayerMask);
-                // Debug.DrawRay(downLeftRayPos, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
-                //
-                // RaycastHit2D rightRay = Physics2D.Raycast(downRightRayPos, Vector2.down, distance, groundAndPlatformLayerMask);
-                // Debug.DrawRay(downRightRayPos, Vector2.down * distance, ConstValues.BlueColor, 0.02f);
-                //
-                // if (leftRay.collider != null || rightRay.collider != null)
-                // {
-                //     // 랜딩상태
-                //     if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
-                //     {
-                //         LandingStateSetting(ELandingState.Ground);
-                //         jumpAttackCount = 0;
-                //     }
-                // }
-            }
-        }
-    }
-    
     // 점프
     public async void Jump()
     {
@@ -955,8 +969,9 @@ public abstract class Player : Character
         
         curGlobalCoolTime = 0;
         downJumping = true;
-
-        IgnorePlatform(Vector2.down, 1.0f);
+        
+        IgnorePlatformCheck(lastStandPlatform, true);
+        GravityChange(myGravity);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
         
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
@@ -973,7 +988,7 @@ public abstract class Player : Character
         }
         canMove = true;
         
-        while (transform.position.y >= groundObject.transform.position.y)
+        while (transform.position.y >= lastStandPlatform.height - 0.64f)
         {
             if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
                 return;
@@ -988,7 +1003,7 @@ public abstract class Player : Character
         PlaySound(ConstValues.Jump2, 2.0f);
         CancelMotion();
 
-        IgnorePlatform(Vector2.down, 1.0f);
+        IgnorePlatformCheck(lastStandPlatform);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
         
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
@@ -1160,7 +1175,7 @@ public abstract class Player : Character
 
     public void ReceiveChangeData(Player player)
     {
-        currentPlatform = player.currentPlatform;
+        currentMovingPlatform = player.currentMovingPlatform;
         if (player.landingState == ELandingState.Ground)
             landingState = ELandingState.Ground;
     }
@@ -1255,9 +1270,8 @@ public abstract class Player : Character
         StopVelocity_X();
     }
 
-    protected override void OnTriggerEnter2D(Collider2D col)
+    private void OnTriggerEnter2D(Collider2D col)
     {
-        base.OnTriggerEnter2D(col);
         if (!GameManager.Instance.ControlStart)
             return;
 
@@ -1283,74 +1297,8 @@ public abstract class Player : Character
         }
     }
 
-    protected override void OnTriggerStay2D(Collider2D col)
+    private void OnTriggerExit2D(Collider2D col)
     {
-        // 체공중 발 콜라이더가 벽 타입 몬스터와 충돌했을 때
-        if (col.CompareTag(ConstValues.WallBody))
-        {
-            if (landingState == ELandingState.Air && normalState != ENormalState.Dash && footTrigger.Distance(col).normal.y < -0.5f)
-            {
-                var monster = col.GetComponentInParent<Character>();
-        
-                // 몹이 오른쪽을 보고있음
-                if (monster.transform.localScale.x > 0)
-                {
-                    if (transform.position.x > monster.transform.position.x)
-                    {
-                        transform.position = new Vector2(monster.ColFront(), transform.position.y - 0.1f);
-                    }
-                    else
-                    {
-                        transform.position = new Vector2(monster.ColBehind(), transform.position.y - 0.1f);
-                    }
-                }
-                // 몹이 왼쪽을 보고있음
-                else
-                {
-                    if (transform.position.x > monster.transform.position.x)
-                    {
-                        transform.position = new Vector2(monster.ColBehind(), transform.position.y - 0.1f);
-                    }
-                    else
-                    {
-                        transform.position = new Vector2(monster.ColFront(), transform.position.y - 0.1f);
-                    }
-                }
-            }
-        }
-    }
-
-    protected override void OnTriggerExit2D(Collider2D col)
-    {
-        base.OnTriggerExit2D(col);
-        if (col.gameObject.CompareTag(ConstValues.Ground))
-        {
-            if (!isOnPlatform)
-            {
-                LandingStateSetting(ELandingState.Air);
-                if (normalState is ENormalState.Idle or ENormalState.Move)
-                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-                //Debug.Log("꽥1");
-            }
-            // 땅 떠나기
-            if (isOnGround)
-                isOnGround = false;
-        }
-        
-        if (col.gameObject.CompareTag(ConstValues.Platform))
-        {
-            if (!isOnGround)
-            {
-                LandingStateSetting(ELandingState.Air);
-                if (normalState is ENormalState.Idle or ENormalState.Move)
-                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-                //Debug.Log("꽥2");
-            }
-            // 플랫폼 떠나기
-            if (isOnPlatform)
-                isOnPlatform = false;
-        }
-
         // 상호작용
         if (col.CompareTag(ConstValues.Interaction))
         {

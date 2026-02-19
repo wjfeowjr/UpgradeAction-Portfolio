@@ -938,8 +938,6 @@ public class Stage2 : Stage
 
             await curPlayer.WaitIdle();
             
-            while (curPlayer.IsOnPlatform())
-                await curPlayer.DialogDownJump();
 
             await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position,
                 curPlayer.BasicStat.moveSpeed, 1);

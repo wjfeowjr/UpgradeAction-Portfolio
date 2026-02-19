@@ -3,8 +3,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
+using UnityEngine.Tilemaps;
 using Random = UnityEngine.Random;
 
 [Serializable]
@@ -91,6 +93,13 @@ public class BasicStat
     public float staggerTime;
 }
 
+[Serializable]
+public class PlatformObject
+{
+    public Collider2D collider;
+    public float height;
+}
+
 public abstract class Character : InteractionController
 {
     [SerializeField] protected BasicStat originStat; // 원본 스텟
@@ -98,7 +107,7 @@ public abstract class Character : InteractionController
 
     protected Rigidbody2D myRigidbody;
     protected BoxCollider2D myBoxCollider;
-    protected Collider2D physicsCollider;
+    protected BoxCollider2D physicsCollider;
     protected Animator myAnimator;
     protected SpriteRenderer[] mySpriteRenderers;
     [SerializeField] protected GameObject groundObject;
@@ -112,8 +121,10 @@ public abstract class Character : InteractionController
     protected CancellationTokenSource jumpCancellation;
     protected CancellationTokenSource anotherCancellation; // 우선 넉백에만사용되고 있음
     
-    [SerializeField] protected Collider2D footTrigger;
-    [SerializeField] protected Collider2D ignorePlatformCollider;
+    //[SerializeField] protected Collider2D footTrigger;
+    [SerializeField] protected PlatformObject lastStandPlatform;
+    [SerializeField] protected List<PlatformObject> ignorePlatformList = new List<PlatformObject>();
+    [SerializeField] protected MovingPlatform currentMovingPlatform;
 
     [SerializeField] protected List<GameObject> controlObject = new List<GameObject>(); // 직접 시간을 관리하는 '공격판정'
     [SerializeField] protected List<GameObject> normalObject = new List<GameObject>(); // 직접 시간을 관리하는 '일반 오브젝트'
@@ -128,23 +139,21 @@ public abstract class Character : InteractionController
     [SerializeField] protected Transform buffEffectPos;
     [SerializeField] protected Transform centerPos;
     [SerializeField] protected Transform fontPos;
+    [SerializeField] protected Transform physicCenterPos;
 
     [SerializeField] protected Vector2 standHitBoxSize;
     [SerializeField] protected Vector2 downHitBoxSize;
     [SerializeField] protected Vector2 standOffset;
     [SerializeField] protected Vector2 downOffset;
-    
-    [SerializeField] protected MovingPlatform currentPlatform;
 
     protected Vector2 chargeVector;
-    [SerializeField] protected int landingAttackCount;
+    protected int landingAttackCount;
     protected int jumpAttackCount;
     protected bool isDie;
     protected float myGravity;
     protected bool downJumping;
     
-    [SerializeField] protected bool isOnGround;     // 이어지는 플랫폼 처리에만 사용
-    [SerializeField] protected bool isOnPlatform;   // 아랫점프, 이어지는 땅 처리에만 사용
+    protected bool isOnPlatform;   // 아랫점프, 이어지는 땅 처리에만 사용
 
     protected int airborneCount; // 에어본 카운트
     private int platformLayerMask;
@@ -153,6 +162,7 @@ public abstract class Character : InteractionController
     protected int monsterWalkLayerMask;
     protected int agroLayerMask;
     protected int bossLayerMask;
+    protected int wallBodyLayerMask;
 
     protected bool isCeilingHang;
     protected bool immortal;
@@ -167,7 +177,7 @@ public abstract class Character : InteractionController
     public Transform CenterPos => centerPos;
     public Transform FontPos => fontPos;
     
-    // 실험
+    // 물리판정 변수들
     [SerializeField] private float castDistance;
 
     [Header("Box Sizes")]
@@ -177,16 +187,41 @@ public abstract class Character : InteractionController
     [Header("Offsets")]
     [SerializeField] private float horizontalOffset; // 중심에서 좌우로 얼마나 떨어질지
     [SerializeField] private float verticalOffset;   // 중심에서 위아래로 얼마나 떨어질지
-    [SerializeField] private float footOffset; // 중심에서 좌우로 얼마나 떨어질지
+    [SerializeField] protected float footOffset; // 중심에서 좌우로 얼마나 떨어질지
 
+    // 왼쪽 벽 체크
+    private RaycastHit2D hitLeft;
+    // 오른쪽 벽 체크
+    private RaycastHit2D hitRight;
+    // 천장 체크
+    private RaycastHit2D hitUp;
+    // 바닥 체크
+    private RaycastHit2D downLeftHit;
+    private RaycastHit2D downRightHit;
+    // 에어본 체크
+    private RaycastHit2D airborneLeftHit;
+    private RaycastHit2D airborneRightHit;
+    
+    // 바닥 레이 위치
     private Vector2 leftGroundRayPos;
     private Vector2 rightGroundRayPos;
-    protected float groundRayDistance;
-
-    public bool isGrounded;
-    public bool isCeilingHit;
+    
+    // 에어본 레이 위치
+    private Vector2 leftAirborneRayPos;
+    private Vector2 rightAirborneRayPos;
+    
+    private float groundRayDistance;
+    private float airborneRayDistance;
+    private float addGroundDistance;
+    private float addAirborneDistance;
+    
     public bool isWallLeft;
     public bool isWallRight;
+    public bool isCeilingHit;
+    public bool isGrounded;
+    public bool isAirborneGrounded;
+
+    [SerializeField] protected bool groundToken;
 
     public bool Immortal
     {
@@ -221,12 +256,18 @@ public abstract class Character : InteractionController
         DataCaching();
 
         castDistance = 0.0f;
-        horizontalBoxSize = new Vector2(0.1f, myBoxCollider.size.y * 0.8f); // 좌우 (세로로 긴 박스)
-        verticalBoxSize = new Vector2(myBoxCollider.size.x * 0.8f, 0.1f); // 상하 (가로로 긴 박스)
-        horizontalOffset = myBoxCollider.size.x * 0.5f; // 중심에서 좌우로 얼마나 떨어질지
-        verticalOffset = myBoxCollider.size.y * 0.5f; // 중심에서 위아래로 얼마나 떨어질지
-        footOffset = myBoxCollider.size.x * 0.5f;
-        groundRayDistance = 0.1f;
+        var hitBoxColSize = myBoxCollider.size;
+        var physicsColSize = physicsCollider.size;
+        
+        horizontalBoxSize = new Vector2(0.1f, physicsColSize.y * 0.8f); // 좌우 (세로로 긴 박스)
+        verticalBoxSize = new Vector2(physicsColSize.x * 0.9f, 0.1f); // 상하 (가로로 긴 박스)
+        horizontalOffset = hitBoxColSize.x * 0.5f; // 중심에서 좌우로 얼마나 떨어질지
+        verticalOffset = physicsColSize.y * 0.5f; // 중심에서 위아래로 얼마나 떨어질지
+        footOffset = physicsColSize.x * 0.5f;
+        addGroundDistance = 0.05f;
+        addAirborneDistance = 0.05f;
+        groundRayDistance = physicsColSize.y * 0.5f + addGroundDistance;
+        airborneRayDistance = physicsColSize.y * 0.5f + addAirborneDistance;
     }
 
     protected virtual void OnEnable()
@@ -237,65 +278,312 @@ public abstract class Character : InteractionController
 
     protected virtual void Update()
     {
-        UpdateBungee();
         UpdateAirborneDown();
-        CheckCollisions();
     }
 
     protected virtual void FixedUpdate()
     {
         UpdateVelocity();
-        FindGroundObject();
+        CheckCollisions();
+        CeilingCheck();
+        AddIgnorePlatform();
+        RemoveIgnorePlatform();
+        UpdateMovingPlatform();
     }
 
-    private void CheckCollisions()
+    protected virtual void CheckCollisions()
     {
-        // 1. 왼쪽 벽 체크
-        RaycastHit2D hitLeft = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.left * horizontalOffset, 
-            horizontalBoxSize, 0f, Vector2.left, castDistance, groundLayerMask);
+        WallCheck();
+        GroundCheck();
+        AirborneCheck();
+    }
 
-        // 2. 오른쪽 벽 체크
-        RaycastHit2D hitRight = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.right * horizontalOffset, 
-            horizontalBoxSize, 0f, Vector2.right, castDistance, groundLayerMask);
+    // 벽 체크
+    private void WallCheck()
+    {
+        // 왼쪽 벽 체크
+        hitLeft = Physics2D.BoxCast((Vector2)centerPos.position + Vector2.left * horizontalOffset, horizontalBoxSize, 0f, Vector2.left, castDistance, groundLayerMask);
 
-        // 3. 천장 체크 (위)
-        RaycastHit2D hitUp = Physics2D.BoxCast((Vector2)CenterPos.position + Vector2.up * verticalOffset, 
-            verticalBoxSize, 0f, Vector2.up, castDistance, groundLayerMask);
+        // 오른쪽 벽 체크
+        hitRight = Physics2D.BoxCast((Vector2)centerPos.position + Vector2.right * horizontalOffset, horizontalBoxSize, 0f, Vector2.right, castDistance, groundLayerMask);
 
-        // 4. 바닥 체크 (아래)
-        leftGroundRayPos = (Vector2)transform.position + new Vector2(-footOffset, 0);
-        rightGroundRayPos = (Vector2)transform.position + new Vector2(footOffset, 0);
-        RaycastHit2D leftHit = Physics2D.Raycast(leftGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
-        RaycastHit2D rightHit = Physics2D.Raycast(rightGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
-        
         isWallLeft = hitLeft.collider != null;
         isWallRight = hitRight.collider != null;
+    }
+    
+    // 천장 체크
+    protected virtual async void CeilingCheck()
+    {
+        // 천장 체크 (위)
+        hitUp = Physics2D.BoxCast((Vector2)centerPos.position + Vector2.up * verticalOffset, verticalBoxSize, 0f, Vector2.up, castDistance, groundLayerMask);
         isCeilingHit = hitUp.collider != null;
-        isGrounded = leftHit || rightHit;
+
+        if (landingState == ELandingState.Air)
+        {
+            if (myRigidbody.linearVelocityY > 0.01f)
+            {
+                if (!isCeilingHang && isCeilingHit)
+                {
+                    jumpCancellation?.Cancel();
+                    jumpCancellation = new CancellationTokenSource();
+
+                    myRigidbody.linearVelocityY = 0;
+                    GravityChange(0);
+                    isCeilingHang = true;
+                    float timer = 0.0f;
+                    float ceilingTime = 0.08f;
+                    while (timer < ceilingTime)
+                    {
+                        timer += Time.fixedDeltaTime;
+                        if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
+                        {
+                            Debug.Log("천장 딜레이 캔슬");
+                            isCeilingHang = false;
+                            return;
+                        }
+                    }
+                    GravityChange(myGravity);
+                    isCeilingHang = false;
+                }
+            }
+        }
+    }
+
+    // 바닥 및 착지 체크
+    protected virtual void GroundCheck()
+    {
+        leftGroundRayPos = (Vector2)physicCenterPos.position + new Vector2(-footOffset, 0);
+        rightGroundRayPos = (Vector2)physicCenterPos.position + new Vector2(footOffset, 0);
+        downLeftHit = Physics2D.Raycast(leftGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
+        downRightHit = Physics2D.Raycast(rightGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
+        
+        isGrounded = downLeftHit || downRightHit;
+        
+        // 그라운드 오브젝트
+        if(downLeftHit.collider != null)
+            groundObject = downLeftHit.collider.gameObject;
+        if(downRightHit.collider != null)
+            groundObject = downRightHit.collider.gameObject;
+        
+        // 낙하 도중 플랫폼 중간라인에 걸칠 때 예외처리
+        if (myRigidbody.linearVelocityY < 0.01f && downLeftHit.collider != null && downLeftHit.collider.CompareTag(ConstValues.Platform))
+        {
+            if (!ignorePlatformList.Exists(x => x.collider == downLeftHit.collider))
+            {
+                IgnorePlatformCheck(downLeftHit.collider);
+            }
+        }
+        if (myRigidbody.linearVelocityY < 0.01f && downRightHit.collider != null && downRightHit.collider.CompareTag(ConstValues.Platform))
+        {
+            if (!ignorePlatformList.Exists(x => x.collider == downRightHit.collider))
+            {
+                IgnorePlatformCheck(downRightHit.collider);
+            }
+        }
+        
+        // 무시된 플랫폼 감지
+        if ((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) || 
+            (downRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == downRightHit.collider)))
+            isGrounded = false;
+        
+        if (isGrounded)
+            SetGroundState();
+        else
+            GetOffGroundState();
+    }
+
+    // 에어본 도중 바닥체크
+    private void AirborneCheck()
+    {
+        leftAirborneRayPos = (Vector2)physicCenterPos.position + new Vector2(-footOffset, 0); 
+        rightAirborneRayPos = (Vector2)physicCenterPos.position + new Vector2(footOffset, 0);
+        airborneLeftHit = Physics2D.Raycast(leftAirborneRayPos, Vector2.down, airborneRayDistance, groundAndPlatformLayerMask);
+        airborneRightHit = Physics2D.Raycast(rightAirborneRayPos, Vector2.down, airborneRayDistance, groundAndPlatformLayerMask);
+
+        isAirborneGrounded = airborneLeftHit || airborneRightHit;
+        
+        // 에어본 도중 플랫폼 중간라인에 걸칠 때 예외처리
+        if (myRigidbody.linearVelocityY < 0.01f && airborneLeftHit.collider != null && airborneLeftHit.collider.CompareTag(ConstValues.Platform))
+        {
+            if (!ignorePlatformList.Exists(x => x.collider == airborneLeftHit.collider))
+            {
+                IgnorePlatformCheck(airborneLeftHit.collider);
+            }
+        }
+        if (myRigidbody.linearVelocityY < 0.01f && airborneRightHit.collider != null && airborneRightHit.collider.CompareTag(ConstValues.Platform))
+        {
+            if (!ignorePlatformList.Exists(x => x.collider == airborneRightHit.collider))
+            {
+                IgnorePlatformCheck(airborneRightHit.collider);
+            }
+        }
+        
+        // 무시된 플랫폼 감지
+        if ((airborneLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == airborneLeftHit.collider)) || 
+            (airborneRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == airborneRightHit.collider)))
+            isAirborneGrounded = false;
+        
+        if (isAirborneGrounded)
+            AirborneState();
+    }
+
+    // 정상적인 상태에서 땅으로 내려왔을 때 상태변환
+    private void SetGroundState()
+    {
+        bool leftPlatform = downLeftHit && downLeftHit.collider.CompareTag(ConstValues.Platform);
+        bool rightPlatform = downRightHit && downRightHit.collider.CompareTag(ConstValues.Platform);
+        bool leftGround = downLeftHit && downLeftHit.collider.CompareTag(ConstValues.Ground);
+        bool rightGround = downRightHit && downRightHit.collider.CompareTag(ConstValues.Ground);
+
+        // 올라서있는 플랫폼 감지
+        if ((leftPlatform || rightPlatform) && !leftGround && !rightGround)
+        {
+            isOnPlatform = true;
+            if (leftPlatform)
+            {
+                lastStandPlatform = new PlatformObject()
+                {
+                    collider = downLeftHit.collider,
+                    height = ColliderHeight(downLeftHit.collider)
+                };
+                if (downLeftHit.collider.GetComponent<MovingPlatform>())
+                {
+                    currentMovingPlatform = downLeftHit.collider.GetComponent<MovingPlatform>();
+                    currentMovingPlatform.PlatformObject = lastStandPlatform;
+                }
+            }
+            if (rightPlatform)
+            {
+                lastStandPlatform = new PlatformObject()
+                {
+                    collider = downRightHit.collider,
+                    height = ColliderHeight(downRightHit.collider)
+                };
+                if (downRightHit.collider.GetComponent<MovingPlatform>())
+                {
+                    currentMovingPlatform = downRightHit.collider.GetComponent<MovingPlatform>();
+                    currentMovingPlatform.PlatformObject = lastStandPlatform;
+                }
+            }
+        }
+        else
+        {
+            isOnPlatform = false;
+        }
+
+        if (myRigidbody.linearVelocityY < 0.01f)
+        {
+            // 랜딩상태
+            if (landingState == ELandingState.Air && normalState != ENormalState.Dash && normalState != ENormalState.JumpAttack)
+            {
+                LandingStateSetting(ELandingState.Ground);
+            }
+            jumpAttackCount = 0;
+            // 점프 착지
+            LandingAction();
+        }
+    }
+
+    // 땅을 벗어날때의 상태변화
+    protected virtual void GetOffGroundState()
+    {
+        LandingStateSetting(ELandingState.Air);
+
+        if (normalState is ENormalState.Idle or ENormalState.Move)
+        {
+            if (lastStandPlatform.collider != null)
+            {
+                IgnorePlatformCheck(lastStandPlatform, true);
+                //downJumping = true;
+            }
+
+            // if(GameManager.Instance.ControlStart)
+            //     myRigidbody.linearVelocityY = -1f;
+            StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+        }
+        isOnPlatform = false;
+        currentMovingPlatform = null;
+    }
+
+    // 에어본 당하여 땅으로 떨어질때의 상태변화
+    private void AirborneState()
+    {
+        if (normalState == ENormalState.Airborne)
+        {
+            if (myRigidbody.linearVelocityY < 0.01f)
+            {
+                DownAndStand();
+            }
+        }
+    }
+    
+    private void UpdateMovingPlatform()
+    {
+        // 입력이 없어서 Move가 안 불릴 때도 플랫폼 속도는 유지
+        if (currentMovingPlatform != null)
+        {
+            if (IsPlatformFollow())
+            {
+                var v = myRigidbody.linearVelocity;
+                v.x = currentMovingPlatform.Velocity.x; // 기본은 플랫폼 속도
+                v.y = currentMovingPlatform.Velocity.y;
+                myRigidbody.linearVelocity = v;
+                // if (currentMovingPlatform.Velocity != Vector2.zero)
+                // {
+                //     
+                // }
+            }
+            else if (normalState == ENormalState.Jump)
+            {
+                //Debug.Log($"{myRigidbody.linearVelocity}, {currentMovingPlatform.Velocity.y}");
+                if (MathF.Abs(myRigidbody.linearVelocityY - currentMovingPlatform.Velocity.y) < 0.5f)
+                {
+                    LandingStateSetting(ELandingState.Ground);
+                    jumpAttackCount = 0;
+                    LandingAction();
+                }
+            }
+        }
     }
 
     // 디버그 시각화 (Scene 뷰에서 확인 가능)
-    private void OnDrawGizmos()
+    protected virtual void OnDrawGizmos()
     {
         // 왼쪽 벽 박스
         Gizmos.color = isWallLeft ? ConstValues.BlueColor : ConstValues.RedColor;
-        DrawBox((Vector2)CenterPos.position + Vector2.left * (horizontalOffset + castDistance), horizontalBoxSize);
+        DrawBox((Vector2)physicCenterPos.position + Vector2.left * (horizontalOffset + castDistance), horizontalBoxSize);
 
         // 오른쪽 벽 박스
         Gizmos.color = isWallRight ? ConstValues.BlueColor : ConstValues.RedColor;
-        DrawBox((Vector2)CenterPos.position + Vector2.right * (horizontalOffset + castDistance), horizontalBoxSize);
+        DrawBox((Vector2)physicCenterPos.position + Vector2.right * (horizontalOffset + castDistance), horizontalBoxSize);
 
         // 천장 박스
         Gizmos.color = isCeilingHit ? ConstValues.BlueColor : ConstValues.RedColor;
-        DrawBox((Vector2)CenterPos.position + Vector2.up * (verticalOffset + castDistance), verticalBoxSize);
-        
-        // 왼쪽 아래 레이 디버그
-        Gizmos.color = Physics2D.Raycast(leftGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask) ? ConstValues.BlueColor : ConstValues.RedColor;
-        Gizmos.DrawLine(leftGroundRayPos, leftGroundRayPos + Vector2.down * groundRayDistance);
+        DrawBox((Vector2)physicCenterPos.position + Vector2.up * (verticalOffset + castDistance), verticalBoxSize);
 
-        // 오른쪽 아래 레이 디버그
-        Gizmos.color = Physics2D.Raycast(rightGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask) ? ConstValues.BlueColor : ConstValues.RedColor;
-        Gizmos.DrawLine(rightGroundRayPos, rightGroundRayPos + Vector2.down * groundRayDistance);
+        if (myRigidbody)
+        {
+            if (normalState is ENormalState.Airborne or ENormalState.Down)
+            {
+                // 왼쪽 아래 레이 디버그
+                Gizmos.color = Physics2D.Raycast(leftGroundRayPos, Vector2.down, airborneRayDistance, groundAndPlatformLayerMask) ? ConstValues.BlueColor : ConstValues.RedColor;
+                Gizmos.DrawLine(leftGroundRayPos, leftGroundRayPos + Vector2.down * airborneRayDistance);
+
+                // 오른쪽 아래 레이 디버그
+                Gizmos.color = Physics2D.Raycast(rightGroundRayPos, Vector2.down, airborneRayDistance, groundAndPlatformLayerMask) ? ConstValues.BlueColor : ConstValues.RedColor;
+                Gizmos.DrawLine(rightGroundRayPos, rightGroundRayPos + Vector2.down * airborneRayDistance);
+            }
+            else
+            {
+                // 왼쪽 아래 레이 디버그
+                Gizmos.color = Physics2D.Raycast(leftGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask) ? ConstValues.BlueColor : ConstValues.RedColor;
+                Gizmos.DrawLine(leftGroundRayPos, leftGroundRayPos + Vector2.down * groundRayDistance);
+
+                // 오른쪽 아래 레이 디버그
+                Gizmos.color = Physics2D.Raycast(rightGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask) ? ConstValues.BlueColor : ConstValues.RedColor;
+                Gizmos.DrawLine(rightGroundRayPos, rightGroundRayPos + Vector2.down * groundRayDistance);
+            }
+        }
     }
 
     private void DrawBox(Vector2 position, Vector2 size)
@@ -308,7 +596,7 @@ public abstract class Character : InteractionController
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
         myBoxCollider = GetComponent<BoxCollider2D>();
-        foreach (var component in GetComponentsInChildren<Collider2D>())
+        foreach (var component in GetComponentsInChildren<BoxCollider2D>())
         {
             if (!component.isTrigger)
             {
@@ -316,20 +604,25 @@ public abstract class Character : InteractionController
                 break;
             }
         }
-
         myAnimator = GetComponentInChildren<Animator>();
         mySpriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        
+        LayerMaskSetting();
+        ScaleSetting();
+        ColSizeSetting();
+    }
+
+    protected virtual void LayerMaskSetting()
+    {
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
         monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Trap));
         agroLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
         bossLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
-        
-        ScaleSetting();
-        ColSizeSetting();
+        wallBodyLayerMask = 1 << LayerMask.NameToLayer(ConstValues.WallBody);
     }
-
+    
     private void ScaleSetting()
     {
         defaultScale = transform.localScale;
@@ -367,21 +660,12 @@ public abstract class Character : InteractionController
         return transform.position.x + dir * myBoxCollider.size.x * 0.5f;
     }
 
-    protected void UpdateAirborneDown()
+    private void UpdateAirborneDown()
     {
         if (myAnimator.GetCurrentAnimatorStateInfo(0).IsName(ConstValues.Airborne) && myRigidbody.linearVelocity.y < 0)
         {
             SetTriggerAnimator(ConstValues.AirborneDown);
         }
-    }
-
-    protected virtual void UpdateBungee()
-    {
-        // if (!isDie && transform.position.y < ConstValues.BungeePosY)
-        // {
-        //     TakeDamage(basicStat.maxHp);
-        //     Die();
-        // }
     }
 
     protected void UpdateBuff()
@@ -425,82 +709,111 @@ public abstract class Character : InteractionController
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -30);
     }
 
-    protected virtual void FindGroundObject()
+    // 플랫폼 무시
+    private void IgnorePlatformCheck(Collider2D col)
     {
-        if (groundObject && !downJumping)
+        var height = ColliderHeight(col);
+        if (transform.position.y < height)
+        {
+            Physics2D.IgnoreCollision(physicsCollider, col, true);
+            if (col == lastStandPlatform.collider)
+            {
+                ignorePlatformList.Add(lastStandPlatform);
+            }
+            else if (!ignorePlatformList.Exists(x => x.collider == col))
+            {
+                var platformObject = new PlatformObject()
+                {
+                    collider = col,
+                    height = height,
+                };
+                ignorePlatformList.Add(platformObject);
+            }
+        }
+    }
+    // 플랫폼 무시 오버로딩
+    protected void IgnorePlatformCheck(PlatformObject platformObject, bool forceIgnore = false)
+    {
+        var height = ColliderHeight(platformObject.collider);
+        if (transform.position.y < height || forceIgnore)
+        {
+            Physics2D.IgnoreCollision(physicsCollider, platformObject.collider, true);
+            if (!ignorePlatformList.Exists(x => x.collider == platformObject.collider))
+            {
+                ignorePlatformList.Add(platformObject);
+            }
+        }
+    }
+    
+    // 플랫폼의 무시 취소 높이
+    private float ColliderHeight(Collider2D col)
+    {
+        float height = 0;
+        if (col.GetComponent<BoxCollider2D>())
+        {
+            height = col.transform.position.y + col.GetComponent<BoxCollider2D>().size.y * 0.5f + col.offset.y - 0.2f;
+        }
+
+        if (col.GetComponent<TilemapCollider2D>())
+        {
+            Tilemap tilemap = col.GetComponent<Tilemap>();
+    
+            BoundsInt bounds = tilemap.cellBounds;
+            float halfHeight = tilemap.layoutGrid.cellSize.y / 2f;
+            
+            // 2. 해당 영역 안의 모든 칸(Cell)을 순회합니다.
+            foreach (Vector3Int pos in bounds.allPositionsWithin)
+            {
+                // 3. 해당 칸에 타일이 존재하는지 확인
+                if (!tilemap.HasTile(pos))
+                    continue;
+                
+                // 4. 타일의 중앙 좌표를 구하고 윗면 좌표를 계산
+                Vector3 center = tilemap.GetCellCenterWorld(pos);
+                Vector3 topPos = new Vector3(center.x, center.y + halfHeight, center.z);
+                height = topPos.y - 0.2f;
+                break;
+            }
+        }
+
+        return (float)Math.Round(height, 2);;
+    }
+
+    private void AddIgnorePlatform()
+    {
+        if (lastStandPlatform.collider == null || !lastStandPlatform.collider.gameObject.activeInHierarchy)
             return;
-
-        // physicsCollider.size.x
-        var rayVector1 = new Vector2(transform.position.x - myBoxCollider.size.x / 2, transform.position.y);
-        var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-        // physicsCollider.size.x
-        var rayVector3 = new Vector2(transform.position.x + myBoxCollider.size.x / 2, transform.position.y);
-
-        GroundRay(rayVector1);
-        GroundRay(rayVector2);
-        GroundRay(rayVector3);
+        
+        if (transform.position.y < lastStandPlatform.height)
+            IgnorePlatformCheck(lastStandPlatform);
     }
-
-    private void GroundRay(Vector2 rayVector)
+    private void RemoveIgnorePlatform()
     {
-        var downRay = Physics2D.Raycast(rayVector, Vector2.down, 1.0f, groundAndPlatformLayerMask);
-        Debug.DrawRay(rayVector, Vector2.down * 1.0f, ConstValues.BlueColor, 0.025f);
-        if (downRay.collider != null)
-            groundObject = downRay.collider.gameObject;
-    }
-
-    protected void IgnorePlatform(Vector2 dir, float distance)
-    {
-        // physicsCollider.size.x / 2
-        var rayVector1 = new Vector2(transform.position.x - myBoxCollider.size.x / 2, transform.position.y);
-        var downRay1 = Physics2D.Raycast(rayVector1, dir, distance, platformLayerMask);
-        Debug.DrawRay(rayVector1, dir * 1.0f, ConstValues.BlueColor, 0.02f);
-        if (downRay1.collider != null)
+        if (ignorePlatformList.Count == 0 || downJumping)
+            return;
+        
+        PlatformObject removedPlatformObject = null;
+        foreach (var ignorePlatform in ignorePlatformList)
         {
-            if (!ignorePlatformCollider)
+            if (transform.position.y > ignorePlatform.height)
             {
-                ignorePlatformCollider = downRay1.collider;
-                Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
-                Physics2D.IgnoreCollision(footTrigger, ignorePlatformCollider, true);
+                Physics2D.IgnoreCollision(physicsCollider, ignorePlatform.collider, false);
+                removedPlatformObject = ignorePlatform;
             }
         }
 
-        var rayVector2 = new Vector2(transform.position.x, transform.position.y);
-        var downRay2 = Physics2D.Raycast(rayVector2, dir, distance, platformLayerMask);
-        Debug.DrawRay(rayVector2, dir * distance, ConstValues.BlueColor, 0.02f);
-        if (downRay2.collider != null)
+        if (removedPlatformObject != null)
         {
-            if (!ignorePlatformCollider)
-            {
-                ignorePlatformCollider = downRay2.collider;
-                Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
-                Physics2D.IgnoreCollision(footTrigger, ignorePlatformCollider, true);
-            }
-        }
-
-        // physicsCollider.size.x / 2
-        var rayVector3 = new Vector2(transform.position.x + myBoxCollider.size.x / 2, transform.position.y);
-        var downRay3 = Physics2D.Raycast(rayVector3, dir, distance, platformLayerMask);
-        Debug.DrawRay(rayVector3, dir * distance, ConstValues.BlueColor, 0.02f);
-        if (downRay3.collider != null)
-        {
-            if (!ignorePlatformCollider)
-            {
-                ignorePlatformCollider = downRay3.collider;
-                Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, true);
-                Physics2D.IgnoreCollision(footTrigger, ignorePlatformCollider, true);
-            }
+            ignorePlatformList.Remove(removedPlatformObject);
         }
     }
 
     protected void ClearIgnorePlatform()
     {
-        if (ignorePlatformCollider)
-        {
-            Physics2D.IgnoreCollision(physicsCollider, ignorePlatformCollider, false);
-            Physics2D.IgnoreCollision(footTrigger, ignorePlatformCollider, false);
-            ignorePlatformCollider = null;
-        }
+        foreach (var ignorePlatform in ignorePlatformList)
+            Physics2D.IgnoreCollision(physicsCollider, ignorePlatform.collider, false);
+        
+        ignorePlatformList.Clear();
     }
 
     // 반동
@@ -869,7 +1182,7 @@ public abstract class Character : InteractionController
             landingAttackCount = 0;
         
         downJumping = false;
-        ClearIgnorePlatform();
+        groundToken = false;
         GravityChange(myGravity);
 
         float timer = 0.0f;
@@ -1016,26 +1329,15 @@ public abstract class Character : InteractionController
 
         float distance = chargeLength;
 
-        var rayVector = transform.position;
-        Vector2 rayVector1 = new Vector2(rayVector.x, rayVector.y + 0.1f);
-        // physicsCollider.size.y * 0.5f
-        Vector2 rayVector2 = new Vector2(rayVector.x, rayVector.y + myBoxCollider.size.y * 0.5f);
-        // physicsCollider.size.y
-        Vector2 rayVector3 = new Vector2(rayVector.x, rayVector.y + myBoxCollider.size.y);
-        
-        var ray1 = Physics2D.Raycast(rayVector1, dir, distance, groundLayerMask);
-        Debug.DrawRay(rayVector1, dir, ConstValues.BlueColor, 0.1f);
-        var ray2 = Physics2D.Raycast(rayVector2, dir, distance, groundLayerMask);
-        Debug.DrawRay(rayVector2, dir, ConstValues.BlueColor, 0.1f);
-        var ray3 = Physics2D.Raycast(rayVector2, dir, distance, groundLayerMask);
-        Debug.DrawRay(rayVector3, dir, ConstValues.BlueColor, 0.1f);
+        var physicsColSize = physicsCollider.size;
+        var boxSize = new Vector2(0.1f, physicsColSize.y * 0.8f); // 좌우 (세로로 긴 박스)
+        var offset = physicsColSize.x * 0.5f; // 중심에서 좌우로 얼마나 떨어질지
 
-        if (ray1.collider != null)
-            realDist = Vector2.Distance(rayVector1, ray1.point);
-        if (ray2.collider != null)
-            realDist = Vector2.Distance(rayVector2, ray2.point);
-        if (ray3.collider != null)
-            realDist = Vector2.Distance(rayVector3, ray3.point);
+        var boxVector = physicCenterPos.position;
+        var boxRay = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, distance, groundLayerMask);
+
+        if (boxRay.collider != null)
+            realDist = Vector2.Distance(boxVector, boxRay.point);
 
         // 2) 전체 돌진 시간 계산 (평균 속도 = (basic + target) / 2)
         float totalDuration = totalDist / ((basicSpeed + targetSpeed) * 0.5f);
@@ -1211,13 +1513,14 @@ public abstract class Character : InteractionController
         ResetTriggerAnimator(ConstValues.Jump);
 
         stateCancellation = new CancellationTokenSource();
-        Bound(xVelocity, yVelocity);
+        AirborneBound(xVelocity, yVelocity);
         DownHitBox();
     }
 
-    protected virtual void Bound(float xVelocity, float yVelocity)
+    protected virtual void AirborneBound(float xVelocity, float yVelocity)
     {
         StateSetting(ENormalState.Airborne, ConstValues.Airborne, ConstValues.Airborne);
+        LandingStateSetting(ELandingState.Air);
         // 공중몹도 떴다 떨어지기 때문에 기본 중력값으로 변환
         GravityChange(ConstValues.BasicGravity);
         myRigidbody.linearVelocity = new Vector2(xVelocity, yVelocity);
@@ -1226,6 +1529,7 @@ public abstract class Character : InteractionController
     protected virtual async void DownAndStand()
     {
         StateSetting(ENormalState.Down, ConstValues.Down, ConstValues.Down);
+        LandingStateSetting(ELandingState.Ground);
         MoveStateSetting(EMoveState.Stopping);
         SpawnObject(ConstValues.DownDust, transform.position);
 
@@ -1236,7 +1540,7 @@ public abstract class Character : InteractionController
             if (await NormalDelay(ConstValues.ReboundSecond, stateCancellation).SuppressCancellationThrow())
                 return;
 
-            Bound(0, ConstValues.ReboundForce);
+            AirborneBound(0, ConstValues.ReboundForce);
         }
         // 이후에는 고정된 시간만큼 누워있다가 일어난다
         else
@@ -1528,11 +1832,6 @@ public abstract class Character : InteractionController
         gameObject.SetActive(false);
     }
 
-    public bool IsOnPlatform()
-    {
-        return groundObject.CompareTag(ConstValues.Platform);
-    }
-
     protected virtual void LandingAction()
     {
         // 점프 착지
@@ -1542,87 +1841,5 @@ public abstract class Character : InteractionController
             // myRigidbody.linearVelocity = Vector2.zero;
             StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         }
-    }
-
-    // 물리 처리(발 콜라이더의 충돌만 감지)
-    protected virtual void OnTriggerEnter2D(Collider2D col)
-    {
-        if ((col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)))
-        {
-            // 땅 감지
-            if (!isOnGround && col.CompareTag(ConstValues.Ground))
-                isOnGround = true;
-            
-            // 플랫폼 감지
-            if (!isOnPlatform && col.CompareTag(ConstValues.Platform))
-                isOnPlatform = true;
-            
-            int intVel = (int)myRigidbody.linearVelocity.y;
-            if (intVel > 0)
-                return;
-            
-            float disNormal = Mathf.Abs(footTrigger.Distance(col).normal.y);
-            if (disNormal < 0.5f)
-                return;
-            
-            var movingPlatform = col.GetComponent<MovingPlatform>();
-            if (movingPlatform != null)
-            {
-                if(movingPlatform.Velocity != Vector2.zero)
-                    currentPlatform = movingPlatform;
-            }
-
-            // 랜딩상태
-            if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
-            {
-                LandingStateSetting(ELandingState.Ground);
-                jumpAttackCount = 0;
-            }
-            // 에어본 처리
-            if (normalState == ENormalState.Airborne)
-            {
-                myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-                myRigidbody.linearVelocity = Vector2.zero;
-                DownAndStand();
-            }
-            LandingAction();
-        }
-    }
-    protected virtual void OnTriggerStay2D(Collider2D col)
-    {
-        // if (!isCeilingHang && (col.CompareTag(ConstValues.Ground) || col.CompareTag(ConstValues.Platform)) && myRigidbody.linearVelocityY is >= -0.01f and <= 0.01f)
-        // {
-        //     // 랜딩상태
-        //     Vector2 contactPoint = col.ClosestPoint(transform.position);
-        //     if (landingState == ELandingState.Air && normalState != ENormalState.Dash && transform.position.y > contactPoint.y)
-        //     {
-        //         LandingStateSetting(ELandingState.Ground);
-        //         jumpAttackCount = 0;
-        //         Debug.Log($"Landing {footTrigger.Distance(col).normal.y}");
-        //     }
-        //     
-        //     // 점프 착지
-        //     if (normalState is ENormalState.Jump)
-        //     {
-        //         myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-        //         myRigidbody.linearVelocity = Vector2.zero;
-        //         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-        //     }
-        //         
-        //     // 에어본 처리
-        //     if (normalState == ENormalState.Airborne)
-        //     {
-        //         myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-        //         myRigidbody.linearVelocity = Vector2.zero;
-        //         DownAndStand();
-        //     }
-        // }
-    }
-
-    protected virtual void OnTriggerExit2D(Collider2D col)
-    {
-        var movingPlatform = col.GetComponent<MovingPlatform>();
-        if (movingPlatform != null && currentPlatform == movingPlatform)
-            currentPlatform = null;
     }
 }

@@ -94,6 +94,7 @@ public class RoomManager : Singleton<RoomManager>
             room.MonsterPosSetting();
             room.BossPosSetting();
             room.ObjectActive(false);
+            room.SetShortCut();
         }
 
         if (string.IsNullOrEmpty(GameManager.Instance.SavePoint))
