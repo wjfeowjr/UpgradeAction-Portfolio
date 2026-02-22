@@ -18,4 +18,9 @@ public class SaveObject : InteractionController
     {
         SetInteractionAction(action, GameManager.Instance.GetTalk(30002), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
     }
+
+    public void SetParents(Transform targetTransform)
+    {
+        minimapObject.transform.SetParent(targetTransform);
+    }
 }

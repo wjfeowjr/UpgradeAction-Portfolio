@@ -516,9 +516,11 @@ public class RoomInfo
 {
     public string roomId;
 
-    public string visitedCells;                                    // 방문한 구역
-    public List<string> visitedShortcutCells = new List<string>(); // 방문한 숏컷
-    public bool savePointCheck;                                    // 세이브 포인트
+    public string visitedFrameCells;                                 // 방문한 구역 테두리
+    public string visitedInCells;                                    // 방문한 구역 내부
+    public List<string> visitedShortcutCells = new List<string>();   // 방문한 숏컷
+    public bool savePointCheck;                                      // 세이브 포인트
+    public bool portalCheck;                                         // 포탈
 
     public List<RoomProduct> roomProduct = new List<RoomProduct>();
     public List<EventNpc> eventNpc = new List<EventNpc>();
@@ -887,6 +889,7 @@ public class GameManager : Singleton<GameManager>
             KeyCode.DownArrow => "↓",
             KeyCode.Escape => "Esc",
             KeyCode.Return => "Enter",
+            KeyCode.LeftShift => "Shift",
             _ => keycode.ToString()
         };
     }
@@ -1008,6 +1011,17 @@ public class GameManager : Singleton<GameManager>
         };
         return skillKey;
     }
+
+    public KeyCode BerserkerSkillKey(string skillId)
+    {
+        KeyCode keyCode = default;
+        var targetSkill = saveData.playerSkillKey.berserkerSkillKeyList.Find(x => x.skillId == skillId);
+        if (targetSkill != null)
+            keyCode = targetSkill.keyCode;
+
+        return keyCode;
+    }
+   
 
     public void AddNewSkill(string id)
     {
@@ -1819,7 +1833,7 @@ public class GameManager : Singleton<GameManager>
     {
         foreach (var list in objectList)
         {
-            if(list.activeSelf && list.GetComponent<Missile>())
+            if(list.activeSelf && (list.GetComponent<Missile>() || list.GetComponent<Grenade>()))
                 list.SetActive(false);
         }
     }
@@ -1868,7 +1882,7 @@ public class GameManager : Singleton<GameManager>
 
     public void GetItemProduct(string id)
     {
-        var getMessage = string.Format(GetTalk(30207), id);
+        string getMessage = string.Format(GetTalk(30207), GetItemTalk(id));
         SpawnWarningPopup(getMessage);
     }
 

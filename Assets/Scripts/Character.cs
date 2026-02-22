@@ -221,8 +221,6 @@ public abstract class Character : InteractionController
     public bool isGrounded;
     public bool isAirborneGrounded;
 
-    [SerializeField] protected bool groundToken;
-
     public bool Immortal
     {
         get => immortal;
@@ -474,7 +472,7 @@ public abstract class Character : InteractionController
         if (myRigidbody.linearVelocityY < 0.01f)
         {
             // 랜딩상태
-            if (landingState == ELandingState.Air && normalState != ENormalState.Dash && normalState != ENormalState.JumpAttack)
+            if (landingState == ELandingState.Air && normalState != ENormalState.Dash)
             {
                 LandingStateSetting(ELandingState.Ground);
             }
@@ -524,18 +522,14 @@ public abstract class Character : InteractionController
         {
             if (IsPlatformFollow())
             {
+                // 여기에 플랫폼별로 상하, 좌우인지 구별
                 var v = myRigidbody.linearVelocity;
                 v.x = currentMovingPlatform.Velocity.x; // 기본은 플랫폼 속도
                 v.y = currentMovingPlatform.Velocity.y;
                 myRigidbody.linearVelocity = v;
-                // if (currentMovingPlatform.Velocity != Vector2.zero)
-                // {
-                //     
-                // }
             }
             else if (normalState == ENormalState.Jump)
             {
-                //Debug.Log($"{myRigidbody.linearVelocity}, {currentMovingPlatform.Velocity.y}");
                 if (MathF.Abs(myRigidbody.linearVelocityY - currentMovingPlatform.Velocity.y) < 0.5f)
                 {
                     LandingStateSetting(ELandingState.Ground);
@@ -544,6 +538,12 @@ public abstract class Character : InteractionController
                 }
             }
         }
+    }
+
+    public void ClearLastPlatform()
+    {
+        lastStandPlatform.collider = null;
+        lastStandPlatform.height = 0;
     }
 
     // 디버그 시각화 (Scene 뷰에서 확인 가능)
@@ -715,10 +715,10 @@ public abstract class Character : InteractionController
         var height = ColliderHeight(col);
         if (transform.position.y < height)
         {
-            Physics2D.IgnoreCollision(physicsCollider, col, true);
             if (col == lastStandPlatform.collider)
             {
                 ignorePlatformList.Add(lastStandPlatform);
+                Physics2D.IgnoreCollision(physicsCollider, col, true);
             }
             else if (!ignorePlatformList.Exists(x => x.collider == col))
             {
@@ -728,6 +728,7 @@ public abstract class Character : InteractionController
                     height = height,
                 };
                 ignorePlatformList.Add(platformObject);
+                Physics2D.IgnoreCollision(physicsCollider, col, true);
             }
         }
     }
@@ -919,7 +920,8 @@ public abstract class Character : InteractionController
         if (damage == 0)
             return;
 
-        var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, fontPos).GetComponent<TextFont>();
+        Vector3 randomPos = fontPos.position + new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(0, 1.0f));
+        var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, randomPos).GetComponent<TextFont>();
         StringBuilder damageText = new StringBuilder();
         damageText.Append(damage);
 
@@ -1165,6 +1167,21 @@ public abstract class Character : InteractionController
     {
         await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
     }
+    
+    protected void ShakeSpritePos(float range)
+    {
+        if (myAnimator)
+        {
+            float randX = Random.Range(-range, range);
+            myAnimator.transform.localPosition = new Vector3(randX, 0, 0);
+        }
+    }
+
+    protected void ResetSpritePos()
+    {
+        if(myAnimator)
+            myAnimator.transform.localPosition = Vector3.zero;
+    }
 
     // 행동 캔슬
     public virtual void CancelMotion(bool cancelJump = true, bool velocity0 = true, bool zeroLandingAttack = true)
@@ -1182,8 +1199,8 @@ public abstract class Character : InteractionController
             landingAttackCount = 0;
         
         downJumping = false;
-        groundToken = false;
         GravityChange(myGravity);
+        ResetSpritePos();
 
         float timer = 0.0f;
         switch (normalState)
@@ -1505,6 +1522,10 @@ public abstract class Character : InteractionController
 
     public virtual void Airborne(float xVelocity, float yVelocity)
     {
+        Vector2 airborneVector = new Vector2(xVelocity, yVelocity);
+        if (airborneVector == Vector2.zero)
+            return;
+        
         CancelMotion();
 
         airborneCount = 1;

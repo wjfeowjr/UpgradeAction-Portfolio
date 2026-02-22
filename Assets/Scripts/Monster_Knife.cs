@@ -10,17 +10,25 @@ public class Monster_Knife : Monster
 {
     [SerializeField] private Transform knifeStabPos;
     [SerializeField] private Transform jumpSlashPos;
+    [SerializeField] private GameObject auraObject;
 
     protected override void Update()
     {
         base.Update();
 
-        if (basicStat.hp <= basicStat.maxHp * 0.5f)
+        if (basicStat.hp <= basicStat.maxHp * 0.5f && !isDie)
         {
             if (Math.Abs(basicStat.moveSpeed - originStat.moveSpeed) < 0.1f)
-            {
-                SpawnObject($"{basicStat.id}_{ConstValues.Aura}", transform);
                 basicStat.moveSpeed = 7;
+
+            if (auraObject)
+            {
+                if(!normalObject.Contains(auraObject))
+                    auraObject = SpawnObject($"{basicStat.id}_{ConstValues.Aura}", transform);
+            }
+            else
+            {
+                auraObject = SpawnObject($"{basicStat.id}_{ConstValues.Aura}", transform);
             }
         }
     }
@@ -147,7 +155,7 @@ public class Monster_Knife : Monster
     {
         float delay1 = 0.5f;
         float delay2 = 0.4f;
-        float delay3 = 0.8f;
+        float delay3 = 0.6f;
         float delay4 = 0.75f;
 
         float arriveY = transform.position.y;
@@ -203,7 +211,7 @@ public class Monster_Knife : Monster
     {
         float delay1 = 0.5f;
         float delay2 = 0.3f;
-        float delay3 = 1.0f;
+        float delay3 = 0.75f;
         float delay4 = 0.25f;
         
         // 레이로 벽 감지
@@ -392,7 +400,7 @@ public class Monster_Knife : Monster
         if (stateCancellation == null)
             stateCancellation = new CancellationTokenSource();
 
-        float speed = 2.0f;
+        float speed = 3.0f;
         while (mySpriteRenderers[0].color.a > 0)
         {
             var alpha = mySpriteRenderers[0].color.a - Time.deltaTime * speed;
@@ -407,7 +415,7 @@ public class Monster_Knife : Monster
         if (stateCancellation == null)
             stateCancellation = new CancellationTokenSource();
 
-        float speed = 2.0f;
+        float speed = 3.0f;
         while (mySpriteRenderers[0].color.a < 1)
         {
             var alpha = mySpriteRenderers[0].color.a + Time.deltaTime * speed;
@@ -430,7 +438,7 @@ public class Monster_Knife : Monster
         immortal = true;
         GravityChange(myGravity);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 15);
-        await UniTask.WaitUntil(() => landingState == ELandingState.Ground);
+        await UniTask.WaitUntil(() => isGrounded);
         
         SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
         StateSetting(ENormalState.AppearEnd, ConstValues.Landing, ConstValues.Landing);
@@ -444,7 +452,7 @@ public class Monster_Knife : Monster
         immortal = false;
         bossProduct?.Invoke(basicStat.name);
     }
-    
+
     public override async void Die()
     {
         base.Die();
@@ -469,7 +477,7 @@ public class Monster_Knife : Monster
         DieAirborne();
     }
 
-    public void DieAirborne()
+    private void DieAirborne()
     {
         dieCancellation?.Cancel();
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);

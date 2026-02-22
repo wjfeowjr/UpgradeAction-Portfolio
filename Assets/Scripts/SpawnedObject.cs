@@ -12,6 +12,8 @@ public class SpawnObjectInfo
     public bool zFlip;
     public bool tracePos;
     public bool timeScale;
+    public Vector3 basicPosition;
+    public Vector3 flipPosition;
     public Vector3 basicAngle;
     public Vector3 flipAngle;
     public float objectTime;
@@ -74,6 +76,12 @@ public class SpawnedObject : MonoBehaviour
         spawnObjectInfo.tracePos = objectData.tracePos;
         spawnObjectInfo.timeScale = objectData.timeScale;
         
+        var basicPosition = objectData.basicPosition.Split(',');
+        spawnObjectInfo.basicPosition = new Vector3(float.Parse(basicPosition[0]), float.Parse(basicPosition[1]), float.Parse(basicPosition[2]));
+        
+        var flipPosition = objectData.flipPosition.Split(',');
+        spawnObjectInfo.flipPosition = new Vector3(float.Parse(flipPosition[0]), float.Parse(flipPosition[1]), float.Parse(flipPosition[2]));
+        
         var basicAngle = objectData.basicAngle.Split(',');
         spawnObjectInfo.basicAngle = new Vector3(float.Parse(basicAngle[0]), float.Parse(basicAngle[1]), float.Parse(basicAngle[2]));
         
@@ -122,6 +130,9 @@ public class SpawnedObject : MonoBehaviour
                     boxCollider2D.offset = defaultBoxColOffset;
                 if (circleCollider2D)
                     circleCollider2D.offset = defaultCircleColOffset;
+
+                if (spawnObjectInfo.basicPosition != Vector3.zero)
+                    firstChildTransform.localPosition = spawnObjectInfo.basicPosition;
             }
             else
             {
@@ -130,6 +141,9 @@ public class SpawnedObject : MonoBehaviour
                     boxCollider2D.offset = reverseBoxColOffset;
                 if (circleCollider2D)
                     circleCollider2D.offset = reverseCircleColOffset;
+                
+                if (spawnObjectInfo.flipPosition != Vector3.zero)
+                    firstChildTransform.localPosition = spawnObjectInfo.flipPosition;
             }
         }
 

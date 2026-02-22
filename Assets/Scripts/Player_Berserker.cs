@@ -18,6 +18,7 @@ public class Player_Berserker : Player
     [SerializeField] private Transform crashPos;
     [SerializeField] private Transform crashExplosionPos;
     [SerializeField] private Transform fireStrikePos;
+    [SerializeField] private Transform fireStrikeChargePos;
     [SerializeField] private Transform chargeCrashSmashPos;
     [SerializeField] private Transform chargeCrashSmashEffectPos;
     
@@ -211,7 +212,6 @@ public class Player_Berserker : Player
         else
         {
             jumpAttackCount += 1;
-            groundToken = true;
 
             float jumpAttackDelay3 = 0.12f;
             float jumpAttackDelay4 = 0.6f;
@@ -242,7 +242,6 @@ public class Player_Berserker : Player
             if (await AttackDelay(jumpAttackDelay4).SuppressCancellationThrow())
                 return false;
             ClearObjectList(controlObject);
-            groundToken = false;
         }
         canAttack = true;
         return true;
@@ -284,10 +283,7 @@ public class Player_Berserker : Player
         
         CancelMotion(false, false);
         MotionFlip();
-        // 스킬 특성: 슈퍼아머 체크
-        if(skillKey != GameManager.Instance.dashKey && GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SuperArmor))
-            BodyTypeSetting(ConstValues.SuperArmor);
-        
+
         stateCancellation = new CancellationTokenSource();
         bool finishSuccess = true;
         if (skillKey == GameManager.Instance.dashKey)
@@ -330,34 +326,73 @@ public class Player_Berserker : Player
         StateSetting(ENormalState.Skill, ConstValues.BerserkerUpperSlash, ConstValues.BerserkerUpperSlash);
 
         var delay1 = 0.16f;
-        var delay2 = 0.16f;
+        var delay2 = 0.2f;
+        var delay3 = 0.3f;
+        var delay4 = 0.1f;
         
-        myRigidbody.linearVelocity = Vector2.zero;
-
+        // if(landingState == ELandingState.Ground)
+        //     myRigidbody.linearVelocity = Vector2.zero;
+        
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
+        //Leap(6, 20, 1.6f);
+        //Leap(0, 20, 0.8f);
 
-        Attack attackObject = SpawnAttackObject(ConstValues.BerserkerUpperSlash, upperSlashPos).GetComponent<Attack>();
-
+        bool swordBeam = false;
+        bool comboAttack = false;
         foreach (var attribute in GameManager.Instance.PlayerSkill.GetSkillAttribute(ConstValues.BerserkerUpperSlash))
         {
             switch (attribute.attributeId)
             {
-                case ConstValues.HighUpper:
-                    attackObject.AttackInfo.upperPower = new Vector2(0, 12);
+                case ConstValues.SwordBeam:
+                    swordBeam = true;
                     break;
-                case ConstValues.JumpUpper:
-                    Leap(0, 20, 0.8f);
+                case ConstValues.ComboAttack:
+                    comboAttack = true;
                     break;
             }
         }
+        SpawnAttackObject(ConstValues.BerserkerUpperSlash, upperSlashPos);
 
-        //myRigidbody.linearVelocity = Vector2.zero;
-        //Leap(6, 20, 1.6f);
-        Leap(0, 20, 0.8f);
+        float addTime = 0;
+        bool firstSword = false;
+        bool inputCombo = false;
+        while (addTime < delay3)
+        {
+            addTime += Time.deltaTime * basicStat.attackSpeed;
+            if (Input.GetKeyDown(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerUpperSlash)))
+                inputCombo = true;
+            
+            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                return false;
 
-        if (await AttackDelay(delay2).SuppressCancellationThrow())
-            return false;
+            if (swordBeam && addTime > delay4 && !firstSword)
+            {
+                SpawnAttackObject(ConstValues.BerserkerSwordBeam, upperSlashPos);
+                firstSword = true;
+            }
+            
+            // 추가 타격
+            if (comboAttack && inputCombo && addTime >= delay2)
+            {
+                comboAttack = false;
+                StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.BerserkerUpperSlashComboAttack);
+                if (await AttackDelay(delay1).SuppressCancellationThrow())
+                    return false;
+            
+                SpawnAttackObject(ConstValues.BerserkerUpperSlashComboAttack, upperSlashPos);
+                Leap(0, 15, 2.0f);
+                
+                if (await AttackDelay(delay4).SuppressCancellationThrow())
+                    return false;
+                
+                if(swordBeam)
+                    SpawnAttackObject(ConstValues.BerserkerSwordBeam, upperSlashPos);
+            
+                if (await WaitUntilDelay(()=> myRigidbody.linearVelocityY < 0.01f, stateCancellation).SuppressCancellationThrow())
+                    return false;
+            }
+        }
 
         return true;
     }
@@ -367,33 +402,106 @@ public class Player_Berserker : Player
     {
         StateSetting(ENormalState.Skill, ConstValues.BerserkerFireStrike, ConstValues.BerserkerFireStrike);
 
-        var delay1 = 0.2f;
-        var delay2 = 0.2f;
+        var delay1 = 0.1f;
+        var delay2 = 0.1f;
+        var delay3 = 0.4f;
         
         if(landingState == ELandingState.Ground)
             myRigidbody.linearVelocity = Vector2.zero;
-        
-        if (await AttackDelay(delay1).SuppressCancellationThrow())
-            return false;
 
-        var objectId = ConstValues.BerserkerFireStrike;
+        bool afterBurn = false;
+        bool chargingFlame = false;
         foreach (var attribute in GameManager.Instance.PlayerSkill.GetSkillAttribute(ConstValues.BerserkerFireStrike))
         {
             switch (attribute.attributeId)
             {
-                case ConstValues.PiercingFire:
-                    objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Pierce}";
+                case ConstValues.AfterBurn:
+                    afterBurn = true;
+                    break;
+                
+                case ConstValues.ChargingFlame:
+                    chargingFlame = true;
+                    BodyTypeSetting(ConstValues.SuperArmor);
                     break;
             }
         }
+        
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+            return false;
+        
+        string objectId = ConstValues.BerserkerFireStrike;
+        
+        bool isCharge = false;
+        GameObject chargeEffect = null;
+        if (chargingFlame)
+        {
+            float addTime = 0;
+            float chargeTime = 1.0f;
+            bool isSpawnedEffect = false;
+            while (addTime < chargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+            {
+                if (!isSpawnedEffect)
+                {
+                    chargeEffect = SpawnObject(ConstValues.BerserkerFireStrikeChargeEffect, fireStrikeChargePos);
+                    isSpawnedEffect = true;
+                }
+            
+                addTime += Time.deltaTime * basicStat.attackSpeed;
+                if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                    return false;
+            
+                ShakeSpritePos(0.05f);
+            }
 
-        SpawnAttack(objectId, fireStrikePos);
+            if (addTime >= chargeTime)
+                isCharge = true;
+            
+            if(isCharge)
+                SpawnObject(ConstValues.BerserkerFlash, centerPos);
+            
+            // 충전 완료 뒤에도 잠시 모을시간 주기
+            if (isCharge)
+            {
+                float addTime2 = 0;
+                float extraChargeTime = 0.5f;
+                while (addTime2 < extraChargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+                {
+                    addTime2 += Time.deltaTime * basicStat.attackSpeed;
+                    if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                        return false;
+                    ShakeSpritePos(0.05f);
+                }
+            }
+        }
+        ResetSpritePos();
+        if (isCharge)
+            objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Big}";
+        
+        if(chargeEffect != null)
+            chargeEffect.SetActive(false);
+
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.BerserkerFireStrike);
         if (await AttackDelay(delay2).SuppressCancellationThrow())
+            return false;
+
+        var missileObject = SpawnAttackObject(objectId, fireStrikePos).GetComponent<Missile>();
+        // 후속화염 추가
+        if (afterBurn)
+        {
+            string burnId = ConstValues.BerserkerFireStrikeAfterBurn;
+            if (isCharge)
+                burnId = $"{ConstValues.BerserkerFireStrikeAfterBurn}_{ConstValues.Big}";
+            
+            missileObject.AddSpawnObject(burnId);
+        }
+        
+        if (await AttackDelay(delay3).SuppressCancellationThrow())
             return false;
 
         return true;
     }
     
+    // 박살내기
     private async UniTask<bool> Crash()
     {
         float delay1 = 0.5f;

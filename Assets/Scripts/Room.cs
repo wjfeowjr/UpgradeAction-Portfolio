@@ -34,11 +34,17 @@ public class Room : MonoBehaviour
     [Header("카메라 & 저장키")]
     private Camera gameCamera;
 
-    // 내부 저장용
-    private List<Vector3Int> allRoomCells = new List<Vector3Int>();
-    private Dictionary<Vector3Int, TileBase> originalTiles = new Dictionary<Vector3Int, TileBase>();
-    private List<Vector3Int> visitedCells = new List<Vector3Int>();
+    // 미니맵 프레임
+    private List<Vector3Int> allFrameCells = new List<Vector3Int>();
+    private Dictionary<Vector3Int, TileBase> originalFrameTiles = new Dictionary<Vector3Int, TileBase>();
+    private List<Vector3Int> visitedFrameCells = new List<Vector3Int>();
     
+    // 미니맵 내부
+    private List<Vector3Int> allInCells = new List<Vector3Int>();
+    private Dictionary<Vector3Int, TileBase> originalInTiles = new Dictionary<Vector3Int, TileBase>();
+    private List<Vector3Int> visitedInCells = new List<Vector3Int>();
+    
+    // 미니맵 숏컷
     private List<Vector3Int> allshortcutCells = new List<Vector3Int>();
     private List<Dictionary<Vector3Int, TileBase>> originalshortcutTilesList = new List<Dictionary<Vector3Int, TileBase>>();
     private List<List<Vector3Int>> visitedShortcutCells = new List<List<Vector3Int>>();
@@ -130,8 +136,8 @@ public class Room : MonoBehaviour
         {
             if (minimapFrameTilemap.HasTile(pos))
             {
-                allRoomCells.Add(pos);
-                originalTiles[pos] = minimapFrameTilemap.GetTile(pos);
+                allFrameCells.Add(pos);
+                originalFrameTiles[pos] = minimapFrameTilemap.GetTile(pos);
             }
         }
         minimapFrameTilemap.ClearAllTiles();
@@ -141,8 +147,8 @@ public class Room : MonoBehaviour
         {
             if (minimapInTilemap.HasTile(pos))
             {
-                allRoomCells.Add(pos);
-                originalTiles[pos] = minimapInTilemap.GetTile(pos);
+                allInCells.Add(pos);
+                originalInTiles[pos] = minimapInTilemap.GetTile(pos);
             }
         }
         minimapInTilemap.ClearAllTiles();
@@ -182,7 +188,8 @@ public class Room : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        SaveVisitedCells();
+        SaveVisitedFrameCells();
+        SaveVisitedInCells();
         SaveVisitedShortcutCells();
     }
 
@@ -732,7 +739,8 @@ public class Room : MonoBehaviour
     private async void MovePortal(string roomId)
     {
         var targetRoom = RoomManager.Instance.TargetRoom(roomId);
-        
+        GameManager.Instance.StopPlayer();
+
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
             return;
         
@@ -776,6 +784,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
         isFading = false;
         GameManager.Instance.MovePlayer();
+        GameManager.Instance.CurPlayer.ClearLastPlatform();
     }
 
     private async void SettingRoom(int idx, EntranceDir dir, Room pastRoom)
@@ -783,7 +792,7 @@ public class Room : MonoBehaviour
         isFading = true;
         GameManager.Instance.StopPlayer();
         GameManager.Instance.RoomMoveSetting();
-        
+
         // 모든 몬스터들의 행동 정지
         foreach (var monster in monsters)
             monster.CancelMotion();
@@ -849,7 +858,8 @@ public class Room : MonoBehaviour
         }
         isFading = false;
         GameManager.Instance.MovePlayer();
-
+        GameManager.Instance.CurPlayer.ClearLastPlatform();
+        
         // 여기서 BGM재생
         SetBgm(false);
     }
@@ -1043,8 +1053,8 @@ public class Room : MonoBehaviour
             GameManager.Instance.InputDataTrap(trap.name, trap);
     }
 
-    // 숏컷 오브젝트 진행도에 맞춰 변경(미니맵 포함)
-    public void SetShortCut()
+    // 숏컷과 세이브 오브젝트 진행도에 맞춰 변경(미니맵 포함)
+    public void SetShortCutAndMinimapObject()
     {
         int idx = 0;
         for (int i = 0; i < shortCutObjects.Length; i++)
@@ -1056,12 +1066,25 @@ public class Room : MonoBehaviour
                 idx += 1;
             }
         }
-        
-        if(name == "Room_2_1")
-            Debug.Log("귀신");
 
         for (int i = 0; i < shortCutObjects.Length; i++)
             shortCutObjects[i].OpenSetting(roomInfo.shortCut[i].isOpened, ShortcutOpen);
+        
+        if (saveObject)
+        {
+            Transform tilemapObject = roomGameObject.transform.Find(ConstValues.TilemapObject);
+            saveObject.SetParents(tilemapObject);
+            // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
+            saveObject.MinimapObject.SetActive(roomInfo.savePointCheck);
+        }
+        
+        if (portalObject)
+        {
+            Transform tilemapObject = roomGameObject.transform.Find(ConstValues.TilemapObject);
+            portalObject.SetParents(tilemapObject);
+            // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
+            portalObject.MinimapObject.SetActive(roomInfo.portalCheck);
+        }
     }
 
     public string GetWallShortCutName(int idx)
@@ -1283,19 +1306,34 @@ public class Room : MonoBehaviour
     // 2. 저장된 데이터 유무에 따라 초기 복원
     private void StartMinimap()
     {
-        // 저장 데이터 없음: 모든 타일 비활성화
-        if (string.IsNullOrEmpty(roomInfo.visitedCells))
+        // 저장 데이터 없음: 모든 테두리 비활성화
+        if (string.IsNullOrEmpty(roomInfo.visitedFrameCells))
         {
             minimapFrameTilemap.ClearAllTiles();
-            minimapInTilemap.ClearAllTiles();
         }
-        // 저장 데이터 있음: 불러와서 해당 셀만 활성화
+        // 저장 데이터 있음: 불러와서 해당 테두리만 활성화
         else
         {
-            LoadVisitedCells();
-            foreach (var cell in visitedCells)
+            LoadVisitedFrameCells();
+            foreach (var cell in visitedFrameCells)
             {
-                if (originalTiles.TryGetValue(cell, out var inTile))
+                if (originalFrameTiles.TryGetValue(cell, out var inTile))
+                    minimapFrameTilemap.SetTile(cell, inTile);
+            }
+        }
+        
+        // 저장 데이터 없음: 모든 내부 비활성화
+        if (string.IsNullOrEmpty(roomInfo.visitedInCells))
+        {
+            minimapInTilemap.ClearAllTiles();
+        }
+        // 저장 데이터 있음: 불러와서 해당 내부만 활성화
+        else
+        {
+            LoadVisitedInCells();
+            foreach (var cell in visitedInCells)
+            {
+                if (originalInTiles.TryGetValue(cell, out var inTile))
                     minimapInTilemap.SetTile(cell, inTile);
             }
         }
@@ -1319,19 +1357,6 @@ public class Room : MonoBehaviour
                 }
             }
         }
-        
-        // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화
-        if (roomInfo.savePointCheck)
-        {
-            if(saveObject)
-                saveObject.MinimapObject.SetActive(true);
-        }
-        // 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
-        else
-        {
-            if(saveObject)
-                saveObject.MinimapObject.SetActive(false);
-        }
     }
     // 3. 카메라 뷰 영역에 조금이라도 겹치면 활성화
     private void RevealCellsInView()
@@ -1342,34 +1367,61 @@ public class Room : MonoBehaviour
         float halfW = halfH * gameCamera.aspect;
         Rect viewRect = new Rect(camPos.x - halfW, camPos.y - halfH, halfW * 2, halfH * 2);
         
-        float extraV = minimapFrameTilemap.cellSize.y;
-        viewRect.yMin += extraV * -1;
-        viewRect.yMax += extraV * 3;
+        // 미니맵 테두리
+        float extraFrameVertical = minimapFrameTilemap.cellSize.y;
+        viewRect.yMin += extraFrameVertical * -1; //
+        viewRect.yMax += extraFrameVertical * 3; //
 
-        Vector2 halfCell = minimapFrameTilemap.cellSize; // * 0.5f minimapTilemap.cellSize
-        
-        bool anyNew = false;
-        foreach (var cell in allRoomCells)
+        Vector2 halfFrameCell = minimapFrameTilemap.cellSize; // minimapTilemap.cellSize
+        bool frameNew = false;
+        foreach (var cell in allFrameCells)
         {
-            if (visitedCells.Contains(cell))
+            if (visitedFrameCells.Contains(cell))
                 continue;
 
             Vector3 center = minimapFrameTilemap.GetCellCenterWorld(cell);
-            Vector2 min = new Vector2(center.x - halfCell.x, center.y - halfCell.y);
-            Vector2 max = new Vector2(center.x + halfCell.x, center.y + halfCell.y);
+            Vector2 min = new Vector2(center.x - halfFrameCell.x, center.y - halfFrameCell.y);
+            Vector2 max = new Vector2(center.x + halfFrameCell.x, center.y + halfFrameCell.y);
 
             // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
             if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
                 max.y >= viewRect.yMin && min.y <= viewRect.yMax)
             {
-                visitedCells.Add(cell);
-                minimapFrameTilemap.SetTile(cell, originalTiles[cell]);
-                minimapInTilemap.SetTile(cell, originalTiles[cell]);
-                anyNew = true;
+                visitedFrameCells.Add(cell);
+                minimapFrameTilemap.SetTile(cell, originalFrameTiles[cell]);
+                frameNew = true;
             }
         }
-        if (anyNew)
-            SaveVisitedCells();
+        if (frameNew)
+            SaveVisitedFrameCells();
+        
+        // 미니맵 내부
+        float extraInVertical = minimapInTilemap.cellSize.y;
+        viewRect.yMin += extraInVertical;
+        viewRect.yMax += extraInVertical;
+        
+        Vector2 halfInCell = minimapInTilemap.cellSize; // * 0.5f
+        bool inNew = false;
+        foreach (var cell in allInCells)
+        {
+            if (visitedInCells.Contains(cell))
+                continue;
+        
+            Vector3 center = minimapInTilemap.GetCellCenterWorld(cell);
+            Vector2 min = new Vector2(center.x - halfInCell.x, center.y - halfInCell.y);
+            Vector2 max = new Vector2(center.x + halfInCell.x, center.y + halfInCell.y);
+        
+            // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
+            if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
+                max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+            {
+                visitedInCells.Add(cell);
+                minimapInTilemap.SetTile(cell, originalInTiles[cell]);
+                inNew = true;
+            }
+        }
+        if (inNew)
+            SaveVisitedInCells();
         
         // 이곳에 세이브 포인트 뭐시기
         bool saveNew = false;
@@ -1389,6 +1441,24 @@ public class Room : MonoBehaviour
         }
         if (saveNew)
             SaveSaveObject();
+
+        bool portalNew = false;
+        if (portalObject)
+        {
+            Vector2 portalPos = portalObject.transform.position;
+            Vector2 saveSize = portalObject.ColSize;
+            
+            Vector2 min = new Vector2(portalPos.x - saveSize.x, portalPos.y - saveSize.y);
+            Vector2 max = new Vector2(portalPos.x + saveSize.x, portalPos.y + saveSize.y);
+            // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
+            if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
+                max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+            {
+                portalNew = true;
+            }
+        }
+        if (portalNew)
+            SavePortalObject();
         
         bool shortcutNew = false;
         foreach (var shortcutCell in allshortcutCells)
@@ -1402,8 +1472,8 @@ public class Room : MonoBehaviour
                 {
                     var targetMap = shortcutFrameTileMaps[i];
                     Vector3 center = targetMap.GetCellCenterWorld(shortcutCell);
-                    Vector2 min = new Vector2(center.x - halfCell.x, center.y - halfCell.y);
-                    Vector2 max = new Vector2(center.x + halfCell.x, center.y + halfCell.y);
+                    Vector2 min = new Vector2(center.x - halfFrameCell.x, center.y - halfFrameCell.y);
+                    Vector2 max = new Vector2(center.x + halfFrameCell.x, center.y + halfFrameCell.y);
 
                     if (max.x >= viewRect.xMin && min.x <= viewRect.xMax && max.y >= viewRect.yMin && min.y <= viewRect.yMax)
                     {
@@ -1418,22 +1488,22 @@ public class Room : MonoBehaviour
             SaveVisitedShortcutCells();
     }
 
-    // 방문 셀 저장
-    private void SaveVisitedCells()
+    // 방문 테두리 저장
+    private void SaveVisitedFrameCells()
     {
         var sb = new StringBuilder();
-        foreach (var c in visitedCells)
+        foreach (var c in visitedFrameCells)
             sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
 
-        roomInfo.visitedCells = sb.ToString();
+        roomInfo.visitedFrameCells = sb.ToString();
     }
-    // 방문 셀 로드
-    private void LoadVisitedCells()
+    // 방문 테두리 로드
+    private void LoadVisitedFrameCells()
     {
-        if (string.IsNullOrEmpty(roomInfo.visitedCells))
+        if (string.IsNullOrEmpty(roomInfo.visitedFrameCells))
             return;
 
-        var entries = roomInfo.visitedCells.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
+        var entries = roomInfo.visitedFrameCells.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
         foreach (var e in entries)
         {
             var p = e.Split('_');
@@ -1442,7 +1512,36 @@ public class Room : MonoBehaviour
              && int.TryParse(p[1], out int y)
              && int.TryParse(p[2], out int z))
             {
-                visitedCells.Add(new Vector3Int(x, y, z));
+                visitedFrameCells.Add(new Vector3Int(x, y, z));
+            }
+        }
+    }
+    
+    // 방문 내부 저장
+    private void SaveVisitedInCells()
+    {
+        var sb = new StringBuilder();
+        foreach (var c in visitedInCells)
+            sb.Append(c.x).Append('_').Append(c.y).Append('_').Append(c.z).Append(';');
+    
+        roomInfo.visitedInCells = sb.ToString();
+    }
+    // 방문 내부 로드
+    private void LoadVisitedInCells()
+    {
+        if (string.IsNullOrEmpty(roomInfo.visitedInCells))
+            return;
+
+        var entries = roomInfo.visitedInCells.Split(new[] { ';' }, System.StringSplitOptions.RemoveEmptyEntries);
+        foreach (var e in entries)
+        {
+            var p = e.Split('_');
+            if (p.Length == 3
+                && int.TryParse(p[0], out int x)
+                && int.TryParse(p[1], out int y)
+                && int.TryParse(p[2], out int z))
+            {
+                visitedInCells.Add(new Vector3Int(x, y, z));
             }
         }
     }
@@ -1490,6 +1589,12 @@ public class Room : MonoBehaviour
     {
         saveObject.MinimapObject.SetActive(true);
         roomInfo.savePointCheck = true;
+    }
+    
+    private void SavePortalObject()
+    {
+        portalObject.MinimapObject.SetActive(true);
+        roomInfo.portalCheck = true;
     }
 
     /// <summary>

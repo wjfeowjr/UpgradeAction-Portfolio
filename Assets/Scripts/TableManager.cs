@@ -45,6 +45,7 @@ public class AttackData
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
     public bool continuous;
+    public float continuousDelay;
     public bool duplicate;
     public string directionType;
     public int coefficient;
@@ -314,6 +315,8 @@ public class SpawnedObjectData
     public bool zFlip;
     public bool tracePos;
     public bool timeScale;
+    public string basicPosition;
+    public string flipPosition;
     public string basicAngle;
     public string flipAngle;
     public float objectTime;

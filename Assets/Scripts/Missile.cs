@@ -18,19 +18,19 @@ public class MissileInfo
     public float speed;
     public float limitLength;
     public List<string> hitTagList;
-    public string spawnObject;
+    public List<string> spawnObjectList;
     public bool hitSpawn;
     public bool afterImage;
     public Action<string, Transform, int, Vector2> explosionAction;
 }
 public class Missile : MonoBehaviour
 {
-    private Vector2 dir;
+    [SerializeField] private Vector2 dir;
     private float limitPosX;
     private float limitPosY;
     private bool isDelete;
     private Rigidbody2D myRigidbody;
-    private Collider2D myCollider;
+    private BoxCollider2D myCollider;
     private SpriteRenderer missileSprite;
     private Spin mySpin;
     [SerializeField] private MissileInfo missileInfo;
@@ -43,11 +43,11 @@ public class Missile : MonoBehaviour
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-        myCollider = GetComponent<Collider2D>();
+        myCollider = GetComponent<BoxCollider2D>();
         missileSprite = GetComponentInChildren<SpriteRenderer>();
         mySpin = GetComponentInChildren<Spin>();
         
-        missileLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
+        missileLayerMask |= 1 << LayerMask.NameToLayer(ConstValues.Ground);
     }
 
     private void OnEnable()
@@ -84,26 +84,34 @@ public class Missile : MonoBehaviour
                 missileInfo.hitTagList.Add(hitLayer);
         }
 
-        missileInfo.spawnObject = missileData.spawnObject;
+        missileInfo.spawnObjectList = new List<string>();
+        missileInfo.spawnObjectList.Add(missileData.spawnObject);
+        
         missileInfo.hitSpawn = missileData.hitSpawn;
         missileInfo.afterImage = missileData.afterImage;
         
         missileInfo.explosionAction = action;
         dir = missileDir;
-        
-        // 레이캐스트
+
+        // 박스 캐스트
         if (missileInfo.type == MissileType.Horizontal)
         {
+            // var colSize = myCollider.size;
+            // var boxSize = new Vector2(0.1f, colSize.y * 0.8f); // 좌우 (세로로 긴 박스)
+            // var boxVector = new Vector2(myCollider.transform.position.x + myCollider.offset.x, myCollider.transform.position.y + myCollider.offset.y);
+
             if (dir == Vector2.left)
             {
                 var rayDir = -transform.right;
                 var rayVector = new Vector2(transform.position.x, transform.position.y);
                 var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
                 Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
+                //var ray = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, defaultLimit, missileLayerMask);
+
                 if (ray.collider == null)
                     missileInfo.limitLength = defaultLimit;
                 else
-                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point);
+                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
             }
             if (dir == Vector2.right)
             {
@@ -111,10 +119,12 @@ public class Missile : MonoBehaviour
                 var rayVector = new Vector2(transform.position.x, transform.position.y);
                 var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
                 Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
+                //var ray = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, defaultLimit, missileLayerMask);
+                
                 if (ray.collider == null)
                     missileInfo.limitLength = defaultLimit;
                 else
-                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point);
+                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
             }
         }
 
@@ -226,6 +236,11 @@ public class Missile : MonoBehaviour
                 break;
         }
     }
+
+    public void AddSpawnObject(string id)
+    {
+        missileInfo.spawnObjectList.Add(id);
+    }
     
     // 물리값 이동(FixedUpdate에서 사용)
     private void Move2()
@@ -270,17 +285,20 @@ public class Missile : MonoBehaviour
         isDelete = true;
 
         await UniTask.Yield();
-        
-        if (missileInfo.spawnObject != ConstValues.None)
+
+        foreach (var spawnObject in missileInfo.spawnObjectList)
         {
-            if (isCollision)
+            if (spawnObject != ConstValues.None)
             {
-                missileInfo.explosionAction(missileInfo.spawnObject, transform, 0, default);
-            }
-            else
-            {
-                if (!missileInfo.hitSpawn || missileInfo.limitLength < defaultLimit)
-                    missileInfo.explosionAction(missileInfo.spawnObject, transform, 0, default);
+                if (isCollision)
+                {
+                    missileInfo.explosionAction(spawnObject, transform, 0, default);
+                }
+                else
+                {
+                    if (!missileInfo.hitSpawn || missileInfo.limitLength < defaultLimit)
+                        missileInfo.explosionAction(spawnObject, transform, 0, default);
+                }
             }
         }
 

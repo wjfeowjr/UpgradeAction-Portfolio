@@ -30,6 +30,11 @@ public class PortalObject : InteractionController
     {
         SetInteractionAction(action, GameManager.Instance.GetTalk(30018), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
     }
+    
+    public void SetParents(Transform targetTransform)
+    {
+        minimapObject.transform.SetParent(targetTransform);
+    }
 
     public void SoundActive(bool active)
     {

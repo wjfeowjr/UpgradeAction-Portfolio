@@ -216,10 +216,11 @@ public class Monster : Character
 
     protected override void FixedUpdate()
     {
+        base.FixedUpdate();
+        
         if (!GameManager.Instance.ControlStart)
             return;
-
-        base.FixedUpdate();
+        
         PlayerInAgroRangeCheck();
 
         if (agroState == EAgroState.Agro)

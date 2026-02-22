@@ -6,6 +6,7 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 using static ENormalState;
+using Random = UnityEngine.Random;
 
 [Serializable]
 public class PlayerSkill
@@ -1068,7 +1069,7 @@ public abstract class Player : Character
         if(xVelocity == 0)
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, yVelocity);
         else
-            myRigidbody.linearVelocity = new Vector2(transform.localScale.x * xVelocity, yVelocity);
+            myRigidbody.linearVelocity = new Vector2(xVelocity, yVelocity);
         
         stateCancellation = new CancellationTokenSource();
         while (transform.position.y < currentHeight + leapHeight)

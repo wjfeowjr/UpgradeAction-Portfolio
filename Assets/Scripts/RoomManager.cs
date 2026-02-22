@@ -94,7 +94,7 @@ public class RoomManager : Singleton<RoomManager>
             room.MonsterPosSetting();
             room.BossPosSetting();
             room.ObjectActive(false);
-            room.SetShortCut();
+            room.SetShortCutAndMinimapObject();
         }
 
         if (string.IsNullOrEmpty(GameManager.Instance.SavePoint))
@@ -356,8 +356,8 @@ public class RoomManager : Singleton<RoomManager>
             var gameOverInterface = popupGameOver.GameOverView.ConvertTo<IPopupGameOverView>();
             var gameOverModel = new PopupGameOverModel()
             {
-                title = "게임 오버",
-                message = "다시 하기(Space)",
+                title = GameManager.Instance.GetTalk(30019),
+                message = string.Format(GameManager.Instance.GetTalk(30106), GameManager.Instance.GetKeyCode(GameManager.Instance.spaceKey)),
                 replayAction = () =>
                 {
                     GameManager.Instance.GoScene(ConstValues.BattleScene);

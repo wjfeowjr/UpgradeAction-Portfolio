@@ -7,7 +7,7 @@ using UnityEngine;
 
 public interface IPopupAttributeView
 {
-    void SetModel(string playerId, List<SkillData> berserkerSkillList, List<SkillData> gunnerSkillList, List<SkillAttributeData> attributeList, SkillCollection playerSkill);
+    void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillAttributeData> attributeList, SkillCollection playerSkill);
     void SetAction(Action playMoveSound, Action playSelectSound, Action playCancelSound, Action closeAction, Action<string, Sprite, int, Action, Action> popupAction);
 }
 
@@ -84,6 +84,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [SerializeField] private TMP_Text[] enterTexts;
     [SerializeField] private TMP_Text selectText;
     [SerializeField] private TMP_Text backText;
+    [SerializeField] private TMP_Text changeText;
     
     [SerializeField] private GameObject berserkerObject;
     [SerializeField] private GameObject gunnerObject;
@@ -101,6 +102,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private SkillCollection skillInfo;
     private SkillSetting skillSetting;
     private readonly List<SkillData> skillTableList = new List<SkillData>();
+    private List<SkillData> berserkerSkillList = new List<SkillData>();
+    private List<SkillData> gunnerSkillList = new List<SkillData>();
     
     private List<SkillAttributeData> allAttributeList;
     private List<SkillAttributeData> attributeTableList;
@@ -109,6 +112,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private readonly List<string> attributeIdList = new List<string>();
     private readonly HashSet<string> attributeIdSet = new HashSet<string>();
 
+    private string curPlayerId;
     private string curSkillId;
     private string curAttributeId;
 
@@ -154,6 +158,10 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         {
             SetSkillIndex(curSkillIndex + 1);
         }
+        else if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            ChangeModel();
+        }
         else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             // 스킬 선택 확정 → 특성 선택 단계 진입
@@ -169,12 +177,21 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     {
         var showCount = Mathf.Min(skillTableList.Count, skillArray.Length);
 
+        List<SkillData> playerSkillList = new List<SkillData>();
+        foreach (var skillTable in skillTableList)
+        {
+            if (skillTable.caster == curPlayerId)
+            {
+                playerSkillList.Add(skillTable);
+            }
+        }
+
         for (var i = 0; i < skillArray.Length; i++)
         {
             if (i < showCount)
             {
                 skillArray[i].gameObject.SetActive(true);
-                skillArray[i].SetData(skillSetting.skillList.Find(x => x.skillId == skillTableList[i].id) != null, skillTableList[i]);
+                skillArray[i].SetData(skillSetting.skillList.Find(x => x.skillId == playerSkillList[i].id) != null, playerSkillList[i]);
             }
             else
             {
@@ -532,12 +549,49 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     #region Data/Refresh
 
-    public void SetModel(string playerId, List<SkillData> berserkerSkillList, List<SkillData> gunnerSkillList, List<SkillAttributeData> attributeList, SkillCollection playerSkill)
+    public void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillAttributeData> attributeList, SkillCollection playerSkill)
     {
         skillInfo = playerSkill;
-        skillTableList.Clear();
+        
+        curPlayerId = playerId;
+        allAttributeList = attributeList;
 
-        switch (playerId)
+        berserkerSkillList = berserkerList;
+        gunnerSkillList = gunnerList;
+
+        SetPlayerInfo();
+
+        skillText.text = GameManager.Instance.GetTalk(30004);
+        attributeText.text = GameManager.Instance.GetTalk(30005);
+        activeText.text = GameManager.Instance.GetTalk(30006);
+        disActiveText.text = GameManager.Instance.GetTalk(30007);
+        
+        buyText.text = GameManager.Instance.GetTalk(30008);
+        sellText.text = GameManager.Instance.GetTalk(30009);
+
+        foreach (var enterText in enterTexts)
+            enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey);
+        
+        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
+        backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
+        changeText.text = string.Format(GameManager.Instance.GetTalk(30105), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
+    }
+
+    private void ChangeModel()
+    {
+        if (curPlayerId == GameManager.Instance.FirstPlayer)
+            curPlayerId = GameManager.Instance.SecondPlayer;
+        else if (curPlayerId == GameManager.Instance.SecondPlayer)
+            curPlayerId = GameManager.Instance.FirstPlayer;
+
+        SetPlayerInfo();
+    }
+
+    private void SetPlayerInfo()
+    {
+        skillTableList.Clear();
+        
+        switch (curPlayerId)
         {
             case ConstValues.Berserker:
                 skillSetting = skillInfo.berserkerSkillSetting;
@@ -553,8 +607,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                 gunnerObject.SetActive(true);
                 break;
         }
-        allAttributeList = attributeList;
-        
+
         SetSkillList();
         SetupSkillNavigation();
         RefreshLeftPoint();
@@ -563,20 +616,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         curStep = eStep.SkillSelect;
         SetSkillIndex(0, true);
         explainObject.SetActive(false);
-
-        skillText.text = GameManager.Instance.GetTalk(30004);
-        attributeText.text = GameManager.Instance.GetTalk(30005);
-        activeText.text = GameManager.Instance.GetTalk(30006);
-        disActiveText.text = GameManager.Instance.GetTalk(30007);
-        
-        buyText.text = GameManager.Instance.GetTalk(30008);
-        sellText.text = GameManager.Instance.GetTalk(30009);
-
-        foreach (var enterText in enterTexts)
-            enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey);
-        
-        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
-        backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
     }
 
     private void RefreshLeftPoint()
@@ -589,12 +628,11 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     {
         curSkillId = skillId;
         explainObject.SetActive(false);
-        attributeText.gameObject.SetActive(false);
+        //attributeText.gameObject.SetActive(false);
         
         // 배우지 않은 스킬이면 슬롯 숨김
         if (skillSetting == null || skillSetting.skillList.Find(x => x.skillId == curSkillId) == null)
         {
-            
             for (int i = 0; i < attributeArray.Length; i++)
             {
                 if (attributeArray[i] == null)

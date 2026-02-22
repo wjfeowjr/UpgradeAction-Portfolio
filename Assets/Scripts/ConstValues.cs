@@ -128,10 +128,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string AppearEnd = "AppearEnd";
     
     public const string SuperArmor = "SuperArmor";
-    public const string HighUpper = "HighUpper";
-    public const string JumpUpper = "JumpUpper";
-    public const string PiercingFire = "PiercingFire";
-    public const string Pierce = "Pierce";
+    public const string SwordBeam = "SwordBeam";
+    public const string AfterBurn = "AfterBurn";
+    public const string ChargingFlame = "ChargingFlame";
+    public const string Big = "Big";
     
     public const string Missile = "Missile";
     public const string Grenade = "Grenade";
@@ -162,11 +162,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string RightEntrance = "RightEntrance";
     public const string UpEntrance = "UpEntrance";
     public const string DownEntrance = "DownEntrance";
-    public const string LeftBossGate = "LeftBossGate";
-    public const string RightBossGate = "RightBossGate";
-    public const string UpBossGate = "UpBossGate";
-    public const string DownBossGate = "DownBossGate";
-    
+    public const string TilemapObject = "TilemapObject";
+
     public const string Skill = "Skill";
     public const string SkillAttribute = "SkillAttribute";
     public const string PlayerSkill = "PlayerSkill";
@@ -289,10 +286,14 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string BerserkerDash = "Berserker_Dash";
     public const string BerserkerUpperSlash = "Berserker_UpperSlash";
+    public const string BerserkerUpperSlashComboAttack = "Berserker_UpperSlash_ComboAttack";
+    public const string BerserkerSwordBeam = "Berserker_SwordBeam";
     public const string BerserkerCrash = "Berserker_Crash";
     public const string BerserkerCrashSmash = "Berserker_Crash_Smash";
     public const string BerserkerCrashExplosion = "Berserker_Crash_Explosion";
     public const string BerserkerFireStrike = "Berserker_FireStrike";
+    public const string BerserkerFireStrikeAfterBurn = "Berserker_FireStrike_AfterBurn";
+    public const string BerserkerFireStrikeChargeEffect = "Berserker_FireStrike_ChargeEffect";
     public const string BerserkerChargeCrash = "Berserker_ChargeCrash";
     public const string BerserkerChargeCrashSlash = "Berserker_ChargeCrash_Slash";
     public const string BerserkerChargeCrashSmash = "Berserker_ChargeCrash_Smash";

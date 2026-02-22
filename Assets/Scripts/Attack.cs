@@ -27,6 +27,7 @@ public class AttackInfo
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
     public bool continuous;
+    public float continuousDelay;
     public bool duplicate;
     public EDirectionType directionType;
     public int coefficient;
@@ -84,6 +85,7 @@ public class Attack : MonoBehaviour
         attackInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
         attackInfo.ignoreImmortal = attackData.ignoreImmortal;
         attackInfo.continuous = attackData.continuous;
+        attackInfo.continuousDelay = attackData.continuousDelay;
         attackInfo.duplicate = attackData.duplicate;
         attackInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
         attackInfo.coefficient = attackData.coefficient;
@@ -162,9 +164,10 @@ public class Attack : MonoBehaviour
         while (gameObject.activeSelf)
         {
             myCollider.enabled = true;
-            await UniTask.Delay(TimeSpan.FromSeconds(0.05f));
+            await UniTask.Delay(TimeSpan.FromSeconds(attackInfo.continuousDelay));
             myCollider.enabled = false;
-            await UniTask.Delay(TimeSpan.FromSeconds(0.05f));
+            TargetColReset();
+            await UniTask.Yield();
         }
     }
     
