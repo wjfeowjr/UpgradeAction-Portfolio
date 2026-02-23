@@ -218,6 +218,51 @@ public class Attack : MonoBehaviour
     {
         attackInfo.upperPower = upperPower;
     }
+    
+    // 맞는 대상의 반격 여부 판별
+    public bool IsCanCounter(Character hitObject)
+    {
+        bool canCounter = false;
+        var targetScale = hitObject.transform.localScale.x;
+        
+        // 근거리 공격
+        if (GetComponent<Missile>() == null)
+        {
+            switch (attackInfo.directionType)
+            {
+                case EDirectionType.Fixed:
+                    // 오른쪽
+                    if (targetScale > 0)
+                        canCounter = dir == -1;
+                    // 왼쪽
+                    else
+                        canCounter = dir == 1;
+                    break;
+                    
+                case EDirectionType.Relative:
+                    // 오른쪽
+                    if(targetScale > 0)
+                        canCounter = transform.position.x > hitObject.transform.position.x;
+                    // 왼쪽
+                    else
+                        canCounter = transform.position.x < hitObject.transform.position.x;
+                    break;
+            }
+            
+        }
+        // 원거리 공격
+        else
+        {
+            // 오른쪽
+            if(targetScale > 0)
+                canCounter = transform.position.x > hitObject.transform.position.x;
+            // 왼쪽
+            else
+                canCounter = transform.position.x < hitObject.transform.position.x;
+        }
+        
+        return canCounter;
+    }
 
     // 공격판정 적용
     // if (col.GetComponent<Monster>() != null)
@@ -260,6 +305,20 @@ public class Attack : MonoBehaviour
             }
             
             GameManager.Instance.CameraShake(attackInfo.hitShake[0], attackInfo.hitShake[1], attackInfo.shakeTime);
+            
+            // 반격이 가능한지 확인!
+            if (hitTarget.BasicStat.bodyType == EBodyType.Counter)
+            {
+                bool isCanCounter = IsCanCounter(hitTarget);
+                if (isCanCounter)
+                {
+                    hitTarget.IsCounterAttack = true;
+                    return;
+                }
+                
+                // 반격 실패 시 다시 기본 아머타입으로 돌아옴
+                hitTarget.BasicStat.bodyType = hitTarget.OriginStat.bodyType;
+            }
 
             // 피격이팩트 생성
             if(attackInfo.hitEffectId != ConstValues.None)
@@ -275,6 +334,13 @@ public class Attack : MonoBehaviour
             hitTarget.TakeDamage(damage, isTrapAttack);
             // 폰트소환
             hitTarget.SpawnDamageFont(damage, critical);
+            
+            // 피해를 입고, 체력이 0으로 떨어지면 죽는다
+            if (hitTarget.BasicStat.hp <= 0)
+            {
+                hitTarget.Die();
+                return;
+            }
 
             var upperPowerX = attackInfo.upperPower.x;
             var knockBackX = attackInfo.knockBack;
@@ -301,11 +367,7 @@ public class Attack : MonoBehaviour
                     }
                     break;
             }
-            
-            // 피해를 입고, 체력이 0으로 떨어지면 죽는다
-            if (hitTarget.BasicStat.hp <= 0)
-                hitTarget.Die();
-            
+
             if (!attackInfo.duplicate)
                 IgnoreCol(col);
 

@@ -1027,10 +1027,15 @@ public class GameManager : Singleton<GameManager>
     {
         // 키 저장
         var skillKeyData = TableManager.Instance.skillTable.Skill.Find(x => x.id == id);
+        
+        // 이미 가지고 있는 스킬이라면 무시해버린다
         switch (skillKeyData.caster)
         {
             case ConstValues.Berserker:
             {
+                if (PlayerSkill.berserkerSkillSetting.skillList.Exists(x => x.skillId == id))
+                    return;
+                
                 int idx = EmptySkillIdx(PlayerSkillKey.berserkerSkillKeyList);
                 PlayerSkillKey.berserkerSkillKeyList[idx].skillId = id;
 
@@ -1042,6 +1047,9 @@ public class GameManager : Singleton<GameManager>
             }
             case ConstValues.Gunner:
             {
+                if (PlayerSkill.gunnerSkillSetting.skillList.Exists(x => x.skillId == id))
+                    return;
+                
                 int idx = EmptySkillIdx(PlayerSkillKey.gunnerSkillKeyList);
                 PlayerSkillKey.gunnerSkillKeyList[idx].skillId = id;
                 
@@ -1057,6 +1065,43 @@ public class GameManager : Singleton<GameManager>
         // 게임 저장
         SaveGame();
     }
+
+    public void RemoveSkill(string id)
+    {
+        // 키 저장
+        var skillKeyData = TableManager.Instance.skillTable.Skill.Find(x => x.id == id);
+        
+        // 가지고 있지 않은 스킬이라면 무시한다
+        switch (skillKeyData.caster)
+        {
+            case ConstValues.Berserker:
+            {
+                var targetKey = PlayerSkillKey.berserkerSkillKeyList.Find(x => x.skillId == id);
+                if (targetKey != null)
+                    targetKey.skillId = default;
+
+                var targetSkill = PlayerSkill.berserkerSkillSetting.skillList.Find(x => x.skillId == id);
+                if (targetSkill != null)
+                    PlayerSkill.berserkerSkillSetting.skillList.Remove(targetSkill);
+                break;
+            }
+            case ConstValues.Gunner:
+            {
+                var targetKey = PlayerSkillKey.gunnerSkillKeyList.Find(x => x.skillId == id);
+                if (targetKey != null)
+                    targetKey.skillId = default;
+                
+                var targetSkill = PlayerSkill.gunnerSkillSetting.skillList.Find(x => x.skillId == id);
+                if (targetSkill != null)
+                    PlayerSkill.gunnerSkillSetting.skillList.Remove(targetSkill);
+                break;
+            }
+        }
+        RefreshSkill();
+        // 게임 저장
+        SaveGame();
+    }
+    
     private int EmptySkillIdx(List<SkillKey> skillKeyList)
     {
         int idx = 1;
@@ -1854,6 +1899,11 @@ public class GameManager : Singleton<GameManager>
     public async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
+    }
+    
+    public async UniTask IgnoreTimeScaleDelay(float second, CancellationTokenSource tokenSource)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), delayType: DelayType.Realtime, cancellationToken: tokenSource.Token);
     }
     
     public async UniTask YieldDelay(CancellationTokenSource tokenSource)

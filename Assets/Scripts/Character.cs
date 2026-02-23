@@ -63,7 +63,8 @@ public enum EBodyType
     HeavyArmor,
     StrongArmor,
     HyperArmor,
-    UnChange
+    UnChange,
+    Counter,
 }
 
 // 버프 타입
@@ -126,9 +127,9 @@ public abstract class Character : InteractionController
     [SerializeField] protected List<PlatformObject> ignorePlatformList = new List<PlatformObject>();
     [SerializeField] protected MovingPlatform currentMovingPlatform;
 
-    [SerializeField] protected List<GameObject> controlObject = new List<GameObject>(); // 직접 시간을 관리하는 '공격판정'
-    [SerializeField] protected List<GameObject> normalObject = new List<GameObject>(); // 직접 시간을 관리하는 '일반 오브젝트'
-    [SerializeField] protected List<GameObject> buffObject = new List<GameObject>(); // 직접 시간을 관리하는 '버프 오브젝트'
+    [SerializeField] protected List<GameObject> attackObject = new List<GameObject>(); // 직접 관리하는 '공격 오브젝트'
+    [SerializeField] protected List<GameObject> normalObject = new List<GameObject>(); // 직접 관리하는 '일반 오브젝트'
+    [SerializeField] protected List<GameObject> buffObject = new List<GameObject>();   // 직접 관리하는 '버프 오브젝트'
 
     [SerializeField] protected ENormalState normalState;
     [SerializeField] protected EMoveState moveState;
@@ -152,7 +153,6 @@ public abstract class Character : InteractionController
     protected bool isDie;
     protected float myGravity;
     protected bool downJumping;
-    
     protected bool isOnPlatform;   // 아랫점프, 이어지는 땅 처리에만 사용
 
     protected int airborneCount; // 에어본 카운트
@@ -167,6 +167,7 @@ public abstract class Character : InteractionController
     protected bool isCeilingHang;
     protected bool immortal;
     protected bool immuneStagger;
+    [SerializeField] protected bool isCounterAttack;
 
     // 프로퍼티
     public BasicStat OriginStat => originStat;
@@ -233,6 +234,12 @@ public abstract class Character : InteractionController
     {
         get => isDie;
         set => isDie = value;
+    }
+
+    public bool IsCounterAttack
+    {
+        get => isCounterAttack;
+        set => isCounterAttack = value;
     }
 
     public ENormalState NormalState
@@ -710,25 +717,29 @@ public abstract class Character : InteractionController
     }
 
     // 플랫폼 무시
-    private void IgnorePlatformCheck(Collider2D col)
+    private void IgnorePlatformCheck(Collider2D col, bool force = false)
     {
         var height = ColliderHeight(col);
-        if (transform.position.y < height)
+
+        if (transform.position.y < height || force)
         {
-            if (col == lastStandPlatform.collider)
+            if (!ignorePlatformList.Exists(x => x.collider == col))
             {
-                ignorePlatformList.Add(lastStandPlatform);
-                Physics2D.IgnoreCollision(physicsCollider, col, true);
-            }
-            else if (!ignorePlatformList.Exists(x => x.collider == col))
-            {
-                var platformObject = new PlatformObject()
+                if (col == lastStandPlatform.collider)
                 {
-                    collider = col,
-                    height = height,
-                };
-                ignorePlatformList.Add(platformObject);
-                Physics2D.IgnoreCollision(physicsCollider, col, true);
+                    ignorePlatformList.Add(lastStandPlatform);
+                    Physics2D.IgnoreCollision(physicsCollider, col, true);
+                }
+                else
+                {
+                    var platformObject = new PlatformObject()
+                    {
+                        collider = col,
+                        height = height,
+                    };
+                    ignorePlatformList.Add(platformObject);
+                    Physics2D.IgnoreCollision(physicsCollider, col, true);
+                }
             }
         }
     }
@@ -790,7 +801,7 @@ public abstract class Character : InteractionController
     }
     private void RemoveIgnorePlatform()
     {
-        if (ignorePlatformList.Count == 0 || downJumping)
+        if (ignorePlatformList.Count == 0 || downJumping || normalState == ENormalState.Dash)
             return;
         
         PlatformObject removedPlatformObject = null;
@@ -999,9 +1010,6 @@ public abstract class Character : InteractionController
                     else
                         AddObjectList(normalObject, obj);
                 }
-            
-                if (spawnedObject.GetObjectTime() == 0)
-                    AddObjectList(controlObject, obj);
             }
 
             if (traceTransform != null)
@@ -1023,6 +1031,9 @@ public abstract class Character : InteractionController
         var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
         if (attackData != null)
         {
+            if (obj.GetComponent<SpawnedObject>() && obj.GetComponent<SpawnedObject>().GetObjectTime() == 0)
+                AddObjectList(attackObject, obj);
+            
             var attack = obj.GetComponent<Attack>();
             if (!attack)
                 attack = obj.AddComponent<Attack>();
@@ -1199,6 +1210,7 @@ public abstract class Character : InteractionController
             landingAttackCount = 0;
         
         downJumping = false;
+        isCounterAttack = false;
         GravityChange(myGravity);
         ResetSpritePos();
 
@@ -1212,7 +1224,7 @@ public abstract class Character : InteractionController
                 timer = 0.8f;
                 break;
         }
-        ClearObjectList(controlObject, timer);
+        ClearObjectList(attackObject, timer);
         ClearObjectList(normalObject, timer);
     }
 
@@ -1347,14 +1359,23 @@ public abstract class Character : InteractionController
         float distance = chargeLength;
 
         var physicsColSize = physicsCollider.size;
-        var boxSize = new Vector2(0.1f, physicsColSize.y * 0.8f); // 좌우 (세로로 긴 박스)
-        var offset = physicsColSize.x * 0.5f; // 중심에서 좌우로 얼마나 떨어질지
+        var boxSize1 = new Vector2(0.1f, physicsColSize.y); // 좌우 (세로로 긴 박스)  * 0.8f
+        var boxSize2 = new Vector2(0.5f, physicsColSize.y * 1.1f); // 좌우 (세로로 긴 박스)  * 0.8f
 
         var boxVector = physicCenterPos.position;
-        var boxRay = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, distance, groundLayerMask);
+        var boxRay1 = Physics2D.BoxCast(boxVector, boxSize1, 0f, dir, distance, groundLayerMask);
+        var boxRay2 = Physics2D.BoxCastAll(boxVector, boxSize2, 0f, dir, distance, platformLayerMask);
 
-        if (boxRay.collider != null)
-            realDist = Vector2.Distance(boxVector, boxRay.point);
+        if (boxRay1.collider != null)
+            realDist = Vector2.Distance(boxVector, boxRay1.point);
+
+        foreach (var ray in boxRay2)
+        {
+            if (ray.collider != null)
+            {
+                IgnorePlatformCheck(ray.collider, true);
+            }
+        }
 
         // 2) 전체 돌진 시간 계산 (평균 속도 = (basic + target) / 2)
         float totalDuration = totalDist / ((basicSpeed + targetSpeed) * 0.5f);
@@ -1408,6 +1429,27 @@ public abstract class Character : InteractionController
         }
         
         return true;
+    }
+
+    private void ChargeTest()
+    {
+        Vector2 dir = Vector2.right;
+        if(transform.localScale.x < 0)
+            dir = Vector2.left;
+
+        float distance = 5;
+
+        var physicsColSize = physicsCollider.size;
+        var boxSize = new Vector2(0.1f, physicsColSize.y); // 좌우 (세로로 긴 박스)  * 0.8f
+
+        var boxVector = physicCenterPos.position;
+        var boxRay = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, distance, groundAndPlatformLayerMask);
+
+        if (boxRay.collider != null)
+        {
+            if (boxRay.collider.CompareTag(ConstValues.Platform))
+                IgnorePlatformCheck(boxRay.collider, true);
+        }
     }
 
     /// <summary>

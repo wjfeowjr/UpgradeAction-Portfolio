@@ -18,20 +18,17 @@ public class Monster_Spore : Monster
     // 패턴1. 포물선
     private async void SporeShot()
     {
-        float delay1 = 0.9f;
-        float delay2 = 0.1f;
+        float delay1 = 1.0f;
         float delay3 = 0.5f;
+
+        var targetPos = GameManager.Instance.CurPlayer.CenterPos.position;
         
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
-        
-        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-        if(await AttackDelay(delay2).SuppressCancellationThrow())
-            return;
-        
+
         SetTriggerAnimator(ConstValues.Pattern);
-        SpawnAttack($"{basicStat.id}_{ConstValues.Attack}", attackPos, 0, GameManager.Instance.CurPlayer.CenterPos.position);
+        SpawnAttack($"{basicStat.id}_{ConstValues.Attack}", attackPos, 0, targetPos);
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
             

@@ -216,6 +216,13 @@ public abstract class Player : Character
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
         UpdateBuff();
+        
+        // 스킬 추가 테스트
+        if(Input.GetKeyDown(KeyCode.P))
+            GameManager.Instance.AddNewSkill(ConstValues.BerserkerSwordCounter);
+        
+        if(Input.GetKeyDown(KeyCode.O))
+            GameManager.Instance.RemoveSkill(ConstValues.BerserkerSwordCounter);
     }
 
     protected override void FixedUpdate()
@@ -1088,6 +1095,16 @@ public abstract class Player : Character
         while (delay < attackDelay)
         {
             delay += Time.deltaTime * basicStat.attackSpeed;
+            await UniTask.Yield(cancellationToken: stateCancellation.Token);
+        }
+    }
+    // 공격 딜레이(공속의 영향을 받지 않음)
+    protected async UniTask AttackDelayNonAttackSpeed(float attackDelay)
+    {
+        float delay = 0;
+        while (delay < attackDelay)
+        {
+            delay += Time.deltaTime;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
         }
     }

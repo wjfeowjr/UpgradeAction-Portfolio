@@ -239,8 +239,9 @@ public class Monster : Character
         dieCancellation?.Cancel();
         stateCancellation?.Cancel();
 
-        ClearObjectList(controlObject);
+        ClearObjectList(attackObject);
         ClearObjectList(normalObject);
+        ClearObjectList(buffObject);
 
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         MoveStateSetting(EMoveState.Stopping);
