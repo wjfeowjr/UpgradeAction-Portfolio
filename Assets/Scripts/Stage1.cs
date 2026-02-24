@@ -71,7 +71,7 @@ public class Stage1 : Stage
         LoadEpisode();
         StepCharacterSetting();
         
-        GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
+        //GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer, playerPos[episodeStep.playerStep].position);
         GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
         //GameManager.Instance.SetGroundVector();
 

@@ -12,7 +12,9 @@ using Random = UnityEngine.Random;
 [Serializable]
 public class Buff
 {
+    public string buffId;
     public EBuffType buffType;
+    public int buffValue;
     public float buffTime;
     public float currentTime;
 }
@@ -72,6 +74,8 @@ public enum EBuffType
 {
     Stun,
     Stagger,
+    ArmorBreak,
+    PowerUpPercent,
 }
 
 [Serializable]
@@ -95,6 +99,18 @@ public class BasicStat
 }
 
 [Serializable]
+public class BonusStat
+{
+    public int hp;
+    public int power;
+    public int defence;
+    public float moveSpeed;
+    public float attackSpeed;
+    public float criticalChance;
+    public float criticalDamage;
+}
+
+[Serializable]
 public class PlatformObject
 {
     public Collider2D collider;
@@ -104,7 +120,8 @@ public class PlatformObject
 public abstract class Character : InteractionController
 {
     [SerializeField] protected BasicStat originStat; // 원본 스텟
-    [SerializeField] protected BasicStat basicStat; // 내 스텟(변동되어야 함)
+    [SerializeField] protected BasicStat basicStat;  // 내 스텟(변동되어야 함)
+    [SerializeField] protected BonusStat bonusStat;  // 유물, 버프 등으로 얻는 추가 스텟
 
     protected Rigidbody2D myRigidbody;
     protected BoxCollider2D myBoxCollider;
@@ -649,6 +666,56 @@ public abstract class Character : InteractionController
         downOffset = new Vector2(hitBoxOffset.x, hitBoxOffset.y - hitBoxOffset.y * 0.4f);
     }
     
+    // 추가스텟, 장비 탈착, 버프 시작 또는 끝나는 시점에 사용
+    public void InitBonusStat()
+    {
+        bonusStat = new BonusStat()
+        {
+            hp = 0,
+            power = 0,
+            defence = 0,
+            moveSpeed = 0,
+            attackSpeed = 0, // 1이 기본값. %단위로 적을것
+            criticalChance = 0,
+            criticalDamage = 0,
+        };
+
+        foreach (var buff in buffList)
+        {
+            switch (buff.buffType)
+            {
+                case EBuffType.PowerUpPercent:
+                    bonusStat.power += (int)(originStat.power * buff.buffValue * 0.01f);
+                    break;
+            }
+        }
+        
+        // 항상 hp <= maxHp
+        basicStat.maxHp = originStat.hp + bonusStat.hp;
+        var finalHp = basicStat.hp + bonusStat.hp;
+        basicStat.hp = finalHp;
+        
+        basicStat.power = originStat.power + bonusStat.power;
+        basicStat.defence = originStat.defence + bonusStat.defence;
+        
+        // 이동속도
+        var finalMoveSpeed = originStat.moveSpeed + (originStat.moveSpeed * (bonusStat.moveSpeed * 0.01f));
+        var moveAnimSpeed = finalMoveSpeed / originStat.moveSpeed;
+        basicStat.moveSpeed = finalMoveSpeed;
+        if(myAnimator)
+            myAnimator.SetFloat(ConstValues.MoveSpeed, moveAnimSpeed);
+        
+        // 공격속도
+        var finalAttackSpeed = originStat.attackSpeed + (originStat.attackSpeed * (bonusStat.moveSpeed * 0.01f));
+        var attackAnimSpeed = finalAttackSpeed / originStat.attackSpeed;
+        basicStat.attackSpeed = finalAttackSpeed;
+        if(myAnimator)
+            myAnimator.SetFloat(ConstValues.AttackSpeed, attackAnimSpeed);
+        
+        basicStat.criticalChance = originStat.criticalChance + bonusStat.criticalChance;
+        basicStat.criticalDamage = originStat.criticalDamage + bonusStat.criticalDamage;
+    }
+    
     public float ColFront()
     {
         float dir = 1;
@@ -698,7 +765,7 @@ public abstract class Character : InteractionController
                 RemoveObjectList(buffObject, removeEffect);
 
             // 스턴, 무력화 상태 회복
-            if (expiredDeBuff.buffType is EBuffType.Stun or EBuffType.Stagger)
+            if (expiredDeBuff.buffId is ConstValues.Stun or ConstValues.Stagger)
             {
                 StateCheck();
                 if (normalState is ENormalState.Stun or ENormalState.Stagger)
@@ -706,7 +773,18 @@ public abstract class Character : InteractionController
                     StateRecovery();
                 }
             }
+            InitBonusStat();
         }
+    }
+
+    public void AllBuffCancel()
+    {
+        buffList.Clear();
+        foreach (var buff in buffObject)
+            buff.SetActive(false);
+        
+        buffObject.Clear();
+        InitBonusStat();
     }
 
     // 최대 중력가속도 조정
@@ -852,11 +930,6 @@ public abstract class Character : InteractionController
         return !isHovering && landingState == ELandingState.Air;
     }
 
-    public Vector2 GetVelocity()
-    {
-        return myRigidbody.linearVelocity;
-    }
-
     protected virtual void SetTriggerAnimator(string parameter)
     {
         myAnimator.SetTrigger(parameter);
@@ -865,29 +938,6 @@ public abstract class Character : InteractionController
     protected virtual void ResetTriggerAnimator(string parameter)
     {
         myAnimator.ResetTrigger(parameter);
-    }
-
-    // 공격속도 설정
-    private void SetAttackSpeed(float percent)
-    {
-        var valuePercent = percent * 0.01f;
-        var addSpeed = originStat.attackSpeed * valuePercent;
-
-        // 최종적으로 도출되는 공격속도 계수
-        basicStat.attackSpeed += addSpeed;
-        var animSpeed = basicStat.attackSpeed / originStat.attackSpeed;
-        myAnimator.SetFloat(ConstValues.AttackSpeed, animSpeed);
-    }
-
-    // 이동속도 설정
-    private void SetMoveSpeed(float percent)
-    {
-        var valuePercent = percent * 0.01f;
-        var value = (basicStat.moveSpeed / originStat.moveSpeed) + valuePercent;
-
-        // 최종적으로 도출되는 공격속도 계수
-        basicStat.moveSpeed = originStat.moveSpeed * value;
-        myAnimator.SetFloat(ConstValues.MoveSpeed, value);
     }
 
     public void StopVelocity_X()
@@ -1285,6 +1335,10 @@ public abstract class Character : InteractionController
     {
         basicStat.bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), bodyTypeName);
     }
+    protected void BodyTypeSetting(EBodyType bodyType)
+    {
+        basicStat.bodyType = bodyType;
+    }
 
     protected bool SameBodyType(string bodyTypeName)
     {
@@ -1328,13 +1382,13 @@ public abstract class Character : InteractionController
     protected bool IsCc()
     {
         bool normalCondition = normalState is ENormalState.Grabbed or ENormalState.Stun;
-        bool buffCondition = FindBuff(EBuffType.Stun);
+        bool buffCondition = FindBuff(ConstValues.Stun);
         return normalCondition || buffCondition;
     }
 
-    private bool FindBuff(EBuffType buffType)
+    private bool FindBuff(string buffId)
     {
-        return buffList.Find(x => x.buffType == buffType) != null;
+        return buffList.Find(x => x.buffId == buffId) != null;
     }
 
     // 지형을 무시하는 돌진 (기본스피드, 가속 배율, 돌진거리, 가속되는 시점)
@@ -1622,16 +1676,66 @@ public abstract class Character : InteractionController
             StateRecovery();
         }
     }
-
-    public void AddBuff(EBuffType buffType, float buffTime)
+    
+    // 버프
+    protected void AddBuff(string buffId, float buffTime)
     {
-        var findDeBuff = buffList.Find(x => x.buffType == buffType);
-        // 해당 디버프가 적용되어있지 않음
+        var findDeBuff = TargetBuff(buffId);
+        // 해당 버프가 적용되어있지 않음
+        if (findDeBuff == null)
+        {
+            var buffData = TableManager.Instance.buffTable.Buff.Find(x => x.id == buffId);
+            var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.Find(x => x.buffId == buffId);
+            if (buffData != null)
+            {
+                var buffType = (EBuffType)Enum.Parse(typeof(EBuffType), buffData.buffType);
+                var newDeBuff = new Buff()
+                {
+                    buffId = buffId,
+                    buffType = buffType,
+                    buffValue = attributeData.buffValue,
+                    buffTime = buffTime,
+                    currentTime = 0,
+                };
+                buffList.Add(newDeBuff);
+
+                switch (buffType)
+                {
+                    case EBuffType.PowerUpPercent:
+                        SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", transform, 0, true);
+                        break;
+                }
+            }
+            else
+            {
+                Debug.Log("버프가 테이블 시트에 등록되지 않았음");
+            }
+        }
+        // 해당 디버프가 적용되어 있음
+        else
+        {
+            var leftTime = findDeBuff.buffTime - findDeBuff.currentTime;
+
+            if (leftTime < buffTime)
+            {
+                findDeBuff.buffTime = buffTime;
+                findDeBuff.currentTime = 0;
+            }
+        }
+        InitBonusStat();
+    }
+    
+    public void AddDeBuff(EBuffType buffType, float buffTime)
+    {
+        var findDeBuff = TargetBuff(buffType.ToString());
+        // 해당 버프가 적용되어있지 않음
         if (findDeBuff == null)
         {
             var newDeBuff = new Buff()
             {
+                buffId = buffType.ToString(),
                 buffType = buffType,
+                buffValue = 0,
                 buffTime = buffTime,
                 currentTime = 0,
             };
@@ -1639,19 +1743,23 @@ public abstract class Character : InteractionController
             switch (buffType)
             {
                 case EBuffType.Stun:
-                    // 슈퍼 아머만 깨짐
-                    if (originStat.bodyType == EBodyType.SuperArmor)
-                        basicStat.bodyType = EBodyType.Normal;
+                    SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, 0, true);
                     break;
                 case EBuffType.Stagger:
                     // 스트롱 아머만 깨짐
                     if (originStat.bodyType == EBodyType.StrongArmor)
                         basicStat.bodyType = EBodyType.Normal;
                     SpawnObject($"{buffType.ToString()}{ConstValues.Explosion}", buffEffectPos);
+                    SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, 0, true);
+                    break;
+                case EBuffType.ArmorBreak:
+                    if (originStat.bodyType == EBodyType.SuperArmor)
+                    {
+                        basicStat.bodyType = EBodyType.Normal;
+                        SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
+                    }
                     break;
             }
-
-            SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, 0, true);
         }
         // 해당 디버프가 적용되어 있음
         else
@@ -1665,13 +1773,18 @@ public abstract class Character : InteractionController
             }
         }
     }
+    // 버프를 가지고 있는가
+    private Buff TargetBuff(string buffId)
+    {
+        return buffList.Find(x => x.buffId == buffId);
+    }
 
     // 상태이상
     // 스턴
     public void Stun(float stunTime)
     {
         // 스턴 디버프 추가
-        AddBuff(EBuffType.Stun, stunTime);
+        AddDeBuff(EBuffType.Stun, stunTime);
         MoveStateSetting(EMoveState.Stopping);
 
         // 이후 현재 판정에 따라서 애니메이션을 변화함
@@ -1690,7 +1803,7 @@ public abstract class Character : InteractionController
     public virtual void Stagger()
     {
         // 무력화 디버프 추가
-        AddBuff(EBuffType.Stagger, basicStat.staggerTime);
+        AddDeBuff(EBuffType.Stagger, basicStat.staggerTime);
         MoveStateSetting(EMoveState.Stopping);
 
         CancelMotion();

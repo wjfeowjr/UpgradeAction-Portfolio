@@ -154,7 +154,8 @@ public class Monster : Character
     {
         base.OnEnable();
         InitBasicStat();
-        InitAdditionalStat();
+        FirstState();
+        InitBonusStat();
         GravityChange(myGravity);
         startPos = transform.position;
         leftPatrol = transform.position.x - myStat.customPatrol;
@@ -341,9 +342,8 @@ public class Monster : Character
     }
 
     // 테이블의 값으로 스텟 초기화(기본 스텟)
-    public async void InitBasicStat()
+    private void InitBasicStat()
     {
-        //await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
         var myName = name.Split(' ')[0];
         var targetStat = TableManager.Instance.monsterTable.Monster.Find(x => x.id == myName);
         if (targetStat == null)
@@ -492,17 +492,8 @@ public class Monster : Character
             pattern.playerInAttackRange = false;
     }
 
-    private async void InitAdditionalStat()
+    private void FirstState()
     {
-        //await UniTask.WaitUntil(() => basicStat.hp > 0);
-        var finalHp = basicStat.hp;
-        basicStat.hp = finalHp;
-        basicStat.maxHp = finalHp;
-
-        var finalStagger = basicStat.stagger;
-        basicStat.maxStagger = finalStagger;
-        basicStat.stagger = finalStagger;
-
         curGlobalCoolTime = 0;
         isDie = false;
 
@@ -623,9 +614,9 @@ public class Monster : Character
 
     protected override void StateCheck()
     {
-        var stunOrStagger = buffList.FindAll(x => x.buffType is EBuffType.Stun or EBuffType.Stagger);
+        var armorBreakOrStagger = buffList.FindAll(x => x.buffId is ConstValues.ArmorBreak or ConstValues.Stagger);
 
-        if (stunOrStagger.Count == 0)
+        if (armorBreakOrStagger.Count == 0)
         {
             immuneStagger = false;
             basicStat.bodyType = originStat.bodyType;
@@ -637,7 +628,7 @@ public class Monster : Character
 
     protected override void StateRecovery()
     {
-        var stunOrStagger = buffList.FindAll(x => x.buffType is EBuffType.Stun or EBuffType.Stagger);
+        var stunOrStagger = buffList.FindAll(x => x.buffId is ConstValues.Stun or ConstValues.Stagger);
         if (stunOrStagger.Count == 0)
         {
             switch (landingState)
@@ -659,11 +650,11 @@ public class Monster : Character
         else
         {
             // 스턴에 걸려있는 경우
-            if (stunOrStagger.Find(x => x.buffType == EBuffType.Stun) != null)
+            if (stunOrStagger.Find(x => x.buffId == ConstValues.Stun) != null)
                 StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
 
             // 무력화에 걸려있는 경우
-            if (stunOrStagger.Find(x => x.buffType == EBuffType.Stagger) != null)
+            if (stunOrStagger.Find(x => x.buffId == ConstValues.Stagger) != null)
                 StateSetting(ENormalState.Stagger, ConstValues.Stagger, ConstValues.Stagger);
         }
 
@@ -1160,7 +1151,7 @@ public class Monster : Character
     public override void Stagger()
     {
         // 무력화 디버프 추가
-        AddBuff(EBuffType.Stagger, basicStat.staggerTime);
+        AddDeBuff(EBuffType.Stagger, basicStat.staggerTime);
         MoveStateSetting(EMoveState.Stopping);
 
         CancelMotion();

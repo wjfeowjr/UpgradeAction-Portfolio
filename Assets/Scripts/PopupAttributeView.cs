@@ -117,18 +117,23 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private string curAttributeId;
 
     // 단계/선택 인덱스
+    private bool isPointChange;
     private eStep curStep = eStep.SkillSelect;
     private int curSkillIndex;
     private int skillCount;
 
     private int curAttributeIndex;
     private int attributeSlotCount;
-    private int curCost;
 
     private eAdjust curAdjust = eAdjust.Buy;
 
     private const int AttributeCols = 4;
     private const int AttributeRows = 2;
+
+    private void OnEnable()
+    {
+        isPointChange = false;
+    }
 
     private void Update()
     {
@@ -486,7 +491,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private void CheckAdjust()
     {
         Skill skill = skillSetting.skillList.Find(x => x.skillId == curSkillId);
-        bool isHaveAttribute = skill.attributeList.Find(x => x.attributeId == curAttributeId) != null;
+        bool isHaveAttribute = skill.attributeList.Contains(curAttributeId);
         if(isHaveAttribute)
             curAdjust = eAdjust.Sell;
         else
@@ -528,12 +533,14 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             }
         }
         if (curAdjust == eAdjust.Buy)
-            skillInfo.AttributeLvUp(curSkillId, curAttributeId, effectVector);
+            skillInfo.BuyAttribute(curSkillId, curAttributeId, effectVector);
         else
-            skillInfo.AttributeLvDown(curSkillId, curAttributeId, effectVector);
+            skillInfo.SellAttribute(curSkillId, curAttributeId, effectVector);
 
         // async void 내부에서 저장/경고가 발생할 수 있으니, 다음 프레임에 UI를 한 번 더 갱신
         RefreshAfterAdjust();
+
+        isPointChange = true;
     }
 
     private void RefreshAfterAdjust()
@@ -674,7 +681,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         {
             attributeArray[i].gameObject.SetActive(true);
             string attrId = attributeIdList[i];
-            bool isActive = skill.attributeList.Find(x => x.attributeId == attrId) != null;
+            bool isActive = skill.attributeList.Contains(attrId);
             attributeArray[i].SetData(attrId, isActive);
         }
 
@@ -722,34 +729,29 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         if (attributeTableList == null)
             return;
 
-        // 이름/설명은 보통 레벨마다 동일하다고 가정하고, level==1 우선
-        SkillAttributeData baseRow = null;
-        for (int i = 0; i < attributeTableList.Count; i++)
-        {
-            var row = attributeTableList[i];
-            if (row == null)
-                continue;
-            if (row.id != id)
-                continue;
-            
-            if (row.level == 1)
-            {
-                baseRow = row;
-                break;
-            }
-            if (baseRow == null)
-                baseRow = row;
-        }
-
-        if (baseRow == null)
+        // 이름/설명
+        SkillAttributeData attributeData = attributeTableList.Find(x => x.id == id);
+        if (attributeData == null)
             return;
         
-        attributeNameText.text = GameManager.Instance.GetTalk(baseRow.talk);
-        attributeExplainText.text = GameManager.Instance.GetTalk(baseRow.explainTalk);
-        costText.text = baseRow.cost.ToString();
+        attributeNameText.text = GameManager.Instance.GetTalk(attributeData.talk);
 
-        curCost = baseRow.cost;
-
+        if (attributeData.cost < 100 && (attributeData.buffTime > 0 || attributeData.buffValue > 0))
+        {
+            List<object> timeAndValue = new List<object>();
+            if(attributeData.buffTime > 0)
+                timeAndValue.Add(attributeData.buffTime);
+            if(attributeData.buffValue > 0)
+                timeAndValue.Add(attributeData.buffValue);
+            
+            attributeExplainText.text = string.Format(GameManager.Instance.GetTalk(attributeData.explainTalk), timeAndValue.ToArray());
+        }
+        else
+        {
+            attributeExplainText.text = GameManager.Instance.GetTalk(attributeData.explainTalk);
+        }
+        
+        costText.text = attributeData.cost.ToString();
         explainObject.SetActive(true);
         CheckAdjust();
     }
@@ -771,6 +773,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         if (closeAction != null)
         {
             closeAction.Invoke();
+            if(isPointChange)
+                GameManager.Instance.SaveGame();
             return;
         }
 

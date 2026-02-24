@@ -145,13 +145,7 @@ public static class KeyBinding
 public class Skill
 {
     public string skillId;
-    public List<SkillAttribute> attributeList = new List<SkillAttribute>();
-}
-[Serializable]
-public class SkillAttribute
-{
-    public string attributeId;
-    public int level;
+    public List<string> attributeList = new List<string>();
 }
 [Serializable]
 public class SkillSetting
@@ -185,7 +179,7 @@ public class SkillCollection
 
         return false;
     }
-    public List<SkillAttribute> GetSkillAttribute(string id)
+    public List<string> GetSkillAttribute(string id)
     {
         var berserkerSkillList = berserkerSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
         if (berserkerSkillList != null)
@@ -195,60 +189,31 @@ public class SkillCollection
         if (gunnerSkillList != null)
             return gunnerSkillList;
 
-        Debug.Log("검색되는 특성 없음!");
+        Debug.Log("검색되는 특성 없음");
         return null;
     }
     public bool IsHaveAttribute(string skillId, string attributeId)
     {
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (berserkerSkill != null)
-            return berserkerSkill.attributeList.Find(x => x.attributeId == attributeId) != null;
+            return berserkerSkill.attributeList.Contains(attributeId);
         
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
-            return gunnerSkill.attributeList.Find(x => x.attributeId == attributeId) != null;
+            return gunnerSkill.attributeList.Contains(attributeId);
         
-        Debug.Log("해당 특성 자체가 없음!");
+        Debug.Log("해당 특성 자체가 없음");
         return false;
     }
-    public int AttributeLv(string skillId, string attributeId)
-    {
-        var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (berserkerSkill != null)
-        {
-            if (berserkerSkill.attributeList.Find(x => x.attributeId == attributeId) == null)
-            {
-                Debug.Log($"{attributeId}특성을 배우지 않았음");
-                return 0;
-            }
-            return berserkerSkill.attributeList.Find(x => x.attributeId == attributeId).level;
-        }
-            
-        
-        var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (gunnerSkill != null)
-        {
-            if (gunnerSkill.attributeList.Find(x => x.attributeId == attributeId) == null)
-            {
-                Debug.Log($"{attributeId}특성을 배우지 않았음");
-                return 0;
-            }
-            return gunnerSkill.attributeList.Find(x => x.attributeId == attributeId).level;
-        }
-        Debug.Log("이 특성을 활성화하는 스킬 자체를 배우지 않았음");
-        return 0;
-    }
-
-    public async void AttributeLvUp(string skillId, string attributeId, Vector3 effectPos)
+    public async void BuyAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
         var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == attributeId);
+        
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
-
         if (berserkerSkill != null)
         {
-            var targetAttribute = berserkerSkill.attributeList.Find(x => x.attributeId == attributeId);
-            
-            if (targetAttribute == null)
+            var targetAttribute = berserkerSkill.attributeList.Contains(attributeId);
+            if (!targetAttribute)
             {
                 if (berserkerSkillSetting.attributePoint < attributeData[0].cost)
                 {
@@ -257,39 +222,10 @@ public class SkillCollection
                 }
                 else
                 {
-                    var newAttribute = new SkillAttribute();
-                    newAttribute.attributeId = attributeId;
-                    newAttribute.level = 1;
-                    berserkerSkill.attributeList.Add(newAttribute);
+                    berserkerSkill.attributeList.Add(attributeId);
                     berserkerSkillSetting.attributePoint -= attributeData[0].cost;
-                    //GameManager.Instance.SaveGame();
                     // 올리는 연출 넣기
                     GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
-                }
-            }
-            else
-            {
-                if(targetAttribute.level < attributeData[^1].level)
-                {
-                    var attributeList = attributeData.FindAll(x => x.skill == skillId);
-                    var attribute = attributeList.Find(x => x.id == targetAttribute.attributeId);
-                    if (berserkerSkillSetting.attributePoint >= attribute.cost)
-                    {
-                        berserkerSkillSetting.attributePoint -= attribute.cost;
-                        targetAttribute.level += 1;
-                        //GameManager.Instance.SaveGame();
-                        // 올리는 연출 넣기
-                        GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
-                    }
-                    else
-                    {
-                        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                        await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
-                    }
-                }
-                else
-                {
-                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30203));
                 }
             }
         }
@@ -297,9 +233,9 @@ public class SkillCollection
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
         {
-            var targetAttribute = gunnerSkill.attributeList.Find(x => x.attributeId == attributeId);
+            var targetAttribute = gunnerSkill.attributeList.Contains(attributeId);
             
-            if (targetAttribute == null)
+            if (!targetAttribute)
             {
                 if (gunnerSkillSetting.attributePoint < attributeData[0].cost)
                 {
@@ -308,69 +244,30 @@ public class SkillCollection
                 }
                 else
                 {
-                    var newAttribute = new SkillAttribute();
-                    newAttribute.attributeId = attributeId;
-                    newAttribute.level = 1;
-                    gunnerSkill.attributeList.Add(newAttribute);
+                    gunnerSkill.attributeList.Add(attributeId);
                     gunnerSkillSetting.attributePoint -= attributeData[0].cost;
-                    //GameManager.Instance.SaveGame();
-                    
                     // 올리는 연출 넣기
                     GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
-                }
-            }
-            else
-            {
-                if(targetAttribute.level < attributeData[^1].level)
-                {
-                    var attributeList = attributeData.FindAll(x => x.id == skillId);
-                    var attribute = attributeList.Find(x => x.level == targetAttribute.level + 1);
-                    if (gunnerSkillSetting.attributePoint >= attribute.cost)
-                    {
-                        gunnerSkillSetting.attributePoint -= attribute.cost;
-                        targetAttribute.level += 1;
-                        //GameManager.Instance.SaveGame();
-                        
-                        // 올리는 연출 넣기
-                        GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
-                    }
-                    else
-                    {
-                        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                        await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
-                    }
-                }
-                else
-                {
-                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30203));
                 }
             }
         }
     }
     
-    public async void AttributeLvDown(string skillId, string attributeId, Vector3 effectPos)
+    public async void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
         var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == attributeId);
         
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (berserkerSkill != null)
         {
-            var targetAttribute = berserkerSkill.attributeList.Find(x => x.attributeId == attributeId);
+            var targetAttribute = berserkerSkill.attributeList.Contains(attributeId);
 
-            if (targetAttribute == null)
-            {
-                await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30204));
-            }
-            else
+            if (targetAttribute)
             {
                 var attributeList = attributeData.FindAll(x => x.skill == skillId);
-                var attribute = attributeList.Find(x => x.id == targetAttribute.attributeId);
+                var attribute = attributeList.Find(x => x.id == attributeId);
                 berserkerSkillSetting.attributePoint += attribute.cost;
-                targetAttribute.level -= 1;
-                if(targetAttribute.level == 0)
-                    berserkerSkill.attributeList.Remove(targetAttribute);
-                
-                //GameManager.Instance.SaveGame();
+                berserkerSkill.attributeList.Remove(attributeId);
                 // 내리는 연출 넣기
                 GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
             }
@@ -379,22 +276,14 @@ public class SkillCollection
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
         {
-            var targetAttribute = gunnerSkill.attributeList.Find(x => x.attributeId == attributeId);
-
-            if (targetAttribute == null)
-            {
-                await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30204));
-            }
-            else
+            var targetAttribute = gunnerSkill.attributeList.Contains(attributeId);
+            
+            if (targetAttribute)
             {
                 var attributeList = attributeData.FindAll(x => x.skill == skillId);
-                var attribute = attributeList.Find(x => x.id == targetAttribute.attributeId);
+                var attribute = attributeList.Find(x => x.id == attributeId);
                 gunnerSkillSetting.attributePoint += attribute.cost;
-                targetAttribute.level -= 1;
-                if(targetAttribute.level == 0)
-                    gunnerSkill.attributeList.Remove(targetAttribute);
-                
-                //GameManager.Instance.SaveGame();
+                gunnerSkill.attributeList.Remove(attributeId);
                 // 내리는 연출 넣기
                 GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
             }
@@ -1041,7 +930,7 @@ public class GameManager : Singleton<GameManager>
 
                 Skill newSkill = new Skill();
                 newSkill.skillId = id;
-                newSkill.attributeList = new List<SkillAttribute>();
+                newSkill.attributeList = new List<string>();
                 PlayerSkill.berserkerSkillSetting.skillList.Add(newSkill);
                 break;
             }
@@ -1055,7 +944,7 @@ public class GameManager : Singleton<GameManager>
                 
                 Skill newSkill = new Skill();
                 newSkill.skillId = id;
-                newSkill.attributeList = new List<SkillAttribute>();
+                newSkill.attributeList = new List<string>();
                 PlayerSkill.gunnerSkillSetting.skillList.Add(newSkill);
                 break;
             }
@@ -1201,7 +1090,7 @@ public class GameManager : Singleton<GameManager>
         foreach (var player in players)
         {
             player.InitBasicStat();
-            player.InitAdditionalStat();
+            player.InitBonusStat();
             player.InitSkill();
         }
     }
@@ -1243,13 +1132,6 @@ public class GameManager : Singleton<GameManager>
     {
         ActivePlayer(playerName);
     }
-    
-    public void SpawnPlayer(string playerName, Vector2 playerPos)
-    {
-        ActivePlayer(playerName);
-        curPlayer.transform.position = playerPos;
-        curPlayer.transform.localScale = Vector3.one;
-    }
     public Player GetPlayer(string playerName)
     {
         foreach (var player in players)
@@ -1265,7 +1147,6 @@ public class GameManager : Singleton<GameManager>
         foreach (var player in players)
         {
             player.gameObject.SetActive(player.name == playerName);
-            
             if (player.name == playerName)
                 player.Flip(1);
         }
@@ -1787,6 +1668,8 @@ public class GameManager : Singleton<GameManager>
         var nextPlayerId = SecondPlayer;
         if (curPlayer.BasicStat.id == SecondPlayer)
             nextPlayerId = FirstPlayer;
+
+        pastPlayer.AllBuffCancel();
         
         curPlayer = GetPlayer(nextPlayerId);
         // 교체 시 유지해야하는 데이터 받아오기

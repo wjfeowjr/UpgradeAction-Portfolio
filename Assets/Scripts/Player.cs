@@ -219,10 +219,10 @@ public abstract class Player : Character
         
         // 스킬 추가 테스트
         if(Input.GetKeyDown(KeyCode.P))
-            GameManager.Instance.AddNewSkill(ConstValues.BerserkerSwordCounter);
+            GameManager.Instance.AddNewSkill(ConstValues.BerserkerCrash);
         
         if(Input.GetKeyDown(KeyCode.O))
-            GameManager.Instance.RemoveSkill(ConstValues.BerserkerSwordCounter);
+            GameManager.Instance.RemoveSkill(ConstValues.BerserkerCrash);
     }
 
     protected override void FixedUpdate()
@@ -364,13 +364,9 @@ public abstract class Player : Character
                 staggerTime = targetStat.staggerTime,
             };
         }
-    }
-
-    public void InitAdditionalStat()
-    {
-        var finalHp = basicStat.hp;
-        basicStat.maxHp = finalHp;
-        basicStat.hp = finalHp;
+        
+        if(myAnimator)
+            myAnimator.SetFloat(ConstValues.IgnoreTime, Time.unscaledDeltaTime / Time.deltaTime);
     }
 
     public void ResetSkillCoolTime()
@@ -454,14 +450,14 @@ public abstract class Player : Character
     }
     protected override void StateCheck()
     {
-        var stun = buffList.Find(x => x.buffType is EBuffType.Stun);
+        var stun = buffList.Find(x => x.buffId is ConstValues.Stun);
 
         if (stun != null)
             basicStat.bodyType = originStat.bodyType;
     }
     protected override void StateRecovery()
     {
-        var stun = buffList.Find(x => x.buffType is EBuffType.Stun);
+        var stun = buffList.Find(x => x.buffId is ConstValues.Stun);
 
         // 스턴이 풀린 경우
         if (stun == null)
@@ -1108,6 +1104,17 @@ public abstract class Player : Character
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
         }
     }
+    // 시간값 무시 딜레이
+    protected async UniTask IgnoreTimeDelay(float timeDelay)
+    {
+        float delay = 0;
+        while (delay < timeDelay)
+        {
+            delay += Time.unscaledDeltaTime;
+            await UniTask.Yield(cancellationToken: stateCancellation.Token);
+        }
+    }
+    
     // 버퍼 딜레이
     protected async UniTask BufferDelay(float originDelay, float afterDelay)
     {

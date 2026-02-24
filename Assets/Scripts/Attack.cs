@@ -10,7 +10,6 @@ public enum EEffectType
 {
     Damaged,
     Airborne,
-    Stun
 }
 public enum EDirectionType
 {
@@ -24,6 +23,8 @@ public class AttackInfo
     public string id;
     public EEffectType effectType;
     public float effectTime;
+    public List<EBuffType> deBuff = new List<EBuffType>();
+    public List<float> deBuffTime = new List<float>();
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
     public bool continuous;
@@ -82,6 +83,26 @@ public class Attack : MonoBehaviour
         attackInfo.id = attackData.id;
         attackInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
         attackInfo.effectTime = attackData.effectTime;
+
+        var deBuffSplit = attackData.deBuff.Split(';');
+        foreach (var deBuff in deBuffSplit)
+        {
+            if (deBuff != ConstValues.None)
+            {
+                attackInfo.deBuff.Add((EBuffType)Enum.Parse(typeof(EBuffType), deBuff));
+            }
+        }
+        
+        var deBuffTimeSplit = attackData.deBuffTime.Split(';');
+        foreach (var deBuffTime in deBuffTimeSplit)
+        {
+            var time = float.Parse(deBuffTime);
+            if (time > 0)
+            {
+                attackInfo.deBuffTime.Add(time);
+            }
+        }
+        
         attackInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
         attackInfo.ignoreImmortal = attackData.ignoreImmortal;
         attackInfo.continuous = attackData.continuous;
@@ -379,18 +400,28 @@ public class Attack : MonoBehaviour
                 return;
             }
             
+            // 상태이상을 먼저 추가
+            for (var i = 0; i < attackInfo.deBuff.Count; i++)
+            {
+                switch (attackInfo.deBuff[i])
+                {
+                    // 기절
+                    case EBuffType.Stun:
+                        if (hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
+                            hitTarget.Stun(attackInfo.deBuffTime[i]);
+                        break;
+                    // 갑옷 파괴
+                    case EBuffType.ArmorBreak:
+                        if (hitTarget.OriginStat.bodyType is EBodyType.SuperArmor)
+                            hitTarget.AddDeBuff(EBuffType.ArmorBreak, attackInfo.deBuffTime[i]);
+                        break;
+                }
+            }
+            
             if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
             {
                 if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                     hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
-                
-                switch (attackInfo.effectType)
-                {
-                    case EEffectType.Stun:
-                        if(hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
-                            hitTarget.Stun(attackInfo.effectTime);
-                        break;
-                }
             }
             else
             {
@@ -400,12 +431,7 @@ public class Attack : MonoBehaviour
                         if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                             hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
                         break;
-            
-                    case EEffectType.Stun:
-                        if(hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
-                            hitTarget.Stun(attackInfo.effectTime);
-                        break;
-            
+
                     case EEffectType.Damaged:
                         if (hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
                         {

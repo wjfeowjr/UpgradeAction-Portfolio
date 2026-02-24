@@ -110,6 +110,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string PunchPose = "PunchPose";
     public const string LandingPose = "LandingPose";
     public const string JumpPose = "JumpPose";
+    public const string Buff = "Buff";
     
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
@@ -221,6 +222,15 @@ public class ConstValues : Singleton<ConstValues>
     public const string Die = "Die";
     public const string Stagger = "Stagger";
     public const string StaggerExplosionUI = "StaggerExplosionUI";
+
+    // 버프 Id
+    public const string SwordCounterBuff = "SwordCounterBuff";
+    
+    // 버프 타입
+    public const string PowerUpPercent = "PowerUpPercent";
+    
+    // 디버프 타입
+    public const string ArmorBreak = "ArmorBreak";
     
     public const string Landing = "Landing";
     public const string Jumping = "Jumping";
@@ -258,6 +268,7 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string MoveSpeed = "MoveSpeed";
     public const string AttackSpeed = "AttackSpeed";
+    public const string IgnoreTime = "IgnoreTime";
     
     public const string ChangeCharacter = "ChangeCharacter";
     public const string ChangeCharacterKey = "ChangeCharacterKey";

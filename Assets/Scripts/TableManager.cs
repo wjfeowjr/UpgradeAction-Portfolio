@@ -42,6 +42,8 @@ public class AttackData
     public string id;
     public string effectType;
     public float effectTime;
+    public string deBuff;
+    public string deBuffTime;
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
     public bool continuous;
@@ -62,6 +64,18 @@ public class AttackData
 public class AttackDataList
 {
     public List<AttackData> Attack;
+}
+
+[Serializable]
+public class BuffData
+{
+    public string id;
+    public string buffType;
+}
+[Serializable]
+public class BuffDataList
+{
+    public List<BuffData> Buff;
 }
 
 [Serializable]
@@ -295,8 +309,10 @@ public class SkillAttributeData
 {
     public string id;
     public string skill;
-    public int level;
     public int cost;
+    public string buffId;
+    public float buffTime;
+    public int buffValue;
     public int talk;
     public int explainTalk;
 }
@@ -348,6 +364,7 @@ public class TableManager : SingletonMono<TableManager>
     public AnimationsDataList animationsTable;
     public ArenaDataList arenaTable;
     public AttackDataList attackTable;
+    public BuffDataList buffTable;
     public DialogueDataList dialogueTable;
     public DialogueChoiceDataList dialogueChoiceTable;
     public GrenadeDataList grenadeTable;
@@ -368,6 +385,7 @@ public class TableManager : SingletonMono<TableManager>
         animationsTable = LoadDataFromJson<AnimationsDataList>(ConstValues.Animations);
         arenaTable = LoadDataFromJson<ArenaDataList>(ConstValues.Arena);
         attackTable = LoadDataFromJson<AttackDataList>(ConstValues.Attack);
+        buffTable = LoadDataFromJson<BuffDataList>(ConstValues.Buff);
         dialogueTable = LoadDataFromJson<DialogueDataList>(ConstValues.Dialogue);
         dialogueChoiceTable = LoadDataFromJson<DialogueChoiceDataList>(ConstValues.DialogueChoice);
         grenadeTable = LoadDataFromJson<GrenadeDataList>(ConstValues.Grenade);
