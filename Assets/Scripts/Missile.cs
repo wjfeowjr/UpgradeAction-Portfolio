@@ -10,6 +10,13 @@ public enum MissileType
     Vertical,
 }
 
+// 보스인지 확인하기
+public interface IProjectile
+{
+    public bool IsBoss();
+    public void Delete();
+}
+
 [Serializable]
 public class MissileInfo
 {
@@ -22,8 +29,10 @@ public class MissileInfo
     public bool hitSpawn;
     public bool afterImage;
     public Action<string, Transform, int, Vector2> explosionAction;
+    public Action<string, Vector2> blockAction;
+    public bool isBossProjectile;
 }
-public class Missile : MonoBehaviour
+public class Missile : MonoBehaviour, IProjectile
 {
     [SerializeField] private Vector2 dir;
     private float limitPosX;
@@ -62,13 +71,19 @@ public class Missile : MonoBehaviour
     {
         Move1();
     }
+    
+    // 인터페이스 함수
+    public bool IsBoss()
+    {
+        return missileInfo.isBossProjectile;
+    }
+    public void Delete()
+    {
+        gameObject.SetActive(false);
+        missileInfo.blockAction?.Invoke(ConstValues.ProjectileDestroyEffect, transform.position);
+    }
 
-    // private void FixedUpdate()
-    // {
-    //     Move2();
-    // }
-
-    public void SetupData(MissileData missileData, Vector2 missileDir, Action<string, Transform, int, Vector2> action)
+    public void SetupData(MissileData missileData, Vector2 missileDir, Action<string, Transform, int, Vector2> explosionAction, Action<string, Vector2> blockAction)
     {
         missileInfo = new MissileInfo();
         missileInfo.id = missileData.id;
@@ -90,7 +105,8 @@ public class Missile : MonoBehaviour
         missileInfo.hitSpawn = missileData.hitSpawn;
         missileInfo.afterImage = missileData.afterImage;
         
-        missileInfo.explosionAction = action;
+        missileInfo.explosionAction = explosionAction;
+        missileInfo.blockAction = blockAction;
         dir = missileDir;
 
         // 박스 캐스트
@@ -129,6 +145,25 @@ public class Missile : MonoBehaviour
         }
 
         SetLimit();
+    }
+    // 미사일 데이터를 변경하는 특성은 여기서 관리
+    public void AttributeCheck()
+    {
+        var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(missileInfo.id);
+        foreach (var passive in passiveList)
+        {
+            switch (passive)
+            {
+                // 투사체 파괴
+                case ConstValues.LimitExplosion:
+                    missileInfo.hitSpawn = false;
+                    break;
+            }
+        }
+    }
+    public void BossCheck(bool isBoss)
+    {
+        missileInfo.isBossProjectile = isBoss;
     }
 
     private void SetLimit()
@@ -199,7 +234,7 @@ public class Missile : MonoBehaviour
                     if (transform.position.x <= limitPosX)
                     {
                         transform.position = new Vector2(limitPosX, transform.position.y);
-                        Delete(false);
+                        Explosion(false);
                     }
                 }
                 else if (dir == Vector2.right)
@@ -207,7 +242,7 @@ public class Missile : MonoBehaviour
                     if (transform.position.x >= limitPosX)
                     {
                         transform.position = new Vector2(limitPosX, transform.position.y);
-                        Delete(false);
+                        Explosion(false);
                     }
                 }
                 break;
@@ -222,7 +257,7 @@ public class Missile : MonoBehaviour
                     if (transform.position.y >= limitPosY)
                     {
                         transform.position = new Vector2(transform.position.x, limitPosY);
-                        Delete(false);
+                        Explosion(false);
                     }
                 }
                 else
@@ -230,7 +265,7 @@ public class Missile : MonoBehaviour
                     if (transform.position.y <= limitPosY)
                     {
                         transform.position = new Vector2(transform.position.x, limitPosY);
-                        Delete(false);
+                        Explosion(false);
                     }
                 }
                 break;
@@ -241,44 +276,8 @@ public class Missile : MonoBehaviour
     {
         missileInfo.spawnObjectList.Add(id);
     }
-    
-    // 물리값 이동(FixedUpdate에서 사용)
-    private void Move2()
-    {
-        if (isDelete)
-            return;
-        
-        float targetSpeedX = missileInfo.speed * dir.x;
-        float targetSpeedY = myRigidbody.linearVelocity.y;
-    
-        if (limitPosX == 0)
-            return;
-        
-        if (dir == Vector2.left)
-        {
-            if (transform.position.x <= limitPosX)
-            {
-                Delete(false);
-            }
-            else
-            {
-                myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-            }
-        }
-        else if (dir == Vector2.right)
-        {
-            if (transform.position.x >= limitPosX)
-            {
-                Delete(false);
-            }
-            else
-            {
-                myRigidbody.linearVelocity = new Vector2(targetSpeedX, targetSpeedY);
-            }
-        }
-    }
 
-    private async void Delete(bool isCollision)
+    private async void Explosion(bool isCollision)
     {
         if (isDelete)
             return;
@@ -312,7 +311,7 @@ public class Missile : MonoBehaviour
             await UniTask.WaitForSeconds(1.0f);
         gameObject.SetActive(false);
     }
-    
+
     public void LookAtTarget(Vector2 target)
     {
         if(dir == Vector2.left)
@@ -324,6 +323,7 @@ public class Missile : MonoBehaviour
     // 미사일 소멸에만 관여(공격판정은 여기서 정하지 않는다)
     private void OnTriggerEnter2D(Collider2D col)
     {
+        // 충돌 처리
         foreach (var hitTag in missileInfo.hitTagList)
         {
             if (string.IsNullOrEmpty(hitTag) || !col.gameObject.CompareTag(hitTag))
@@ -336,7 +336,13 @@ public class Missile : MonoBehaviour
                 if (character != null)
                 {
                     if (character.Immortal || character.IsDie)
+                    {
+                        if (character.Immortal)
+                        {
+                            Explosion(true);
+                        }
                         return;
+                    }
                 }
                 
                 // 이 부분 기억 (플레이어의 물리 판정)
@@ -361,13 +367,7 @@ public class Missile : MonoBehaviour
                     return;
             }
             
-            // if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Platform)
-            // {
-            //     if(Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
-            //         return;
-            // }
-            
-            Delete(true);
+            Explosion(true);
             return;
         }
     }

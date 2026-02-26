@@ -130,11 +130,14 @@ public class RoomManager : Singleton<RoomManager>
         // if (Input.GetKeyDown(KeyCode.F1))
         //     Guide(40003);
 
-        if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.tabKey))
-            SpawnMinimap();
+        if (GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && !GameManager.Instance.TimeProduct)
+        {
+            if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.tabKey))
+                SpawnMinimap();
 
-        if (GameManager.Instance.FirstGetAttribute && (!popupAttribute || !popupAttribute.gameObject.activeSelf) && GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && Input.GetKeyDown(GameManager.Instance.attributeKey))
-            SpawnAttribute();
+            if ((!popupAttribute || !popupAttribute.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.attributeKey) && GameManager.Instance.FirstGetAttribute)
+                SpawnAttribute();
+        }
     }
 
     public Room TargetRoom(string id)
@@ -275,7 +278,7 @@ public class RoomManager : Singleton<RoomManager>
             playerId = GameManager.Instance.CurPlayer.BasicStat.id,
             berserkerSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Berserker && x.type != ConstValues.Dash),
             gunnerSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Gunner && x.type != ConstValues.Dash),
-            attributeList = TableManager.Instance.skillAttributeTable.SkillAttribute,
+            attributeList = GameManager.Instance.skillAttributeList,
             playerSkill = GameManager.Instance.PlayerSkill,
             playMoveSound = () =>
             {

@@ -27,6 +27,7 @@ public class AttackInfo
     public List<float> deBuffTime = new List<float>();
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
+    public bool destroyProjectile;
     public bool continuous;
     public float continuousDelay;
     public bool duplicate;
@@ -43,6 +44,7 @@ public class AttackInfo
 }
 public class Attack : MonoBehaviour
 {
+    private AttackInfo originInfo;
     [SerializeField] private AttackInfo attackInfo;
     private Character castChar;
     private Transform traceTransform;
@@ -51,8 +53,7 @@ public class Attack : MonoBehaviour
     
     [SerializeField] private int dir;
     private float leftColliderTime;
-
-    public AttackInfo AttackInfo => attackInfo;
+    
     public Character CastChar => castChar;
 
     private void Awake()
@@ -74,11 +75,67 @@ public class Attack : MonoBehaviour
     {
         castChar = character;
     }
+
     public void SetupData(AttackData attackData)
     {
-        if (attackInfo != null)
-            return;
-        
+        if (originInfo == null)
+        {
+            originInfo = new AttackInfo();
+            originInfo.id = attackData.id;
+            originInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
+            originInfo.effectTime = attackData.effectTime;
+            var deBuffSplit1 = attackData.deBuff.Split(';');
+            foreach (var deBuff in deBuffSplit1)
+            {
+                if (deBuff != ConstValues.None)
+                {
+                    originInfo.deBuff.Add((EBuffType)Enum.Parse(typeof(EBuffType), deBuff));
+                }
+            }
+            var deBuffTimeSplit1 = attackData.deBuffTime.Split(';');
+            foreach (var deBuffTime in deBuffTimeSplit1)
+            {
+                var time = float.Parse(deBuffTime);
+                if (time > 0)
+                {
+                    originInfo.deBuffTime.Add(time);
+                }
+            }
+            originInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
+            originInfo.ignoreImmortal = attackData.ignoreImmortal;
+            originInfo.destroyProjectile = attackData.destroyProjectile;
+            originInfo.continuous = attackData.continuous;
+            originInfo.continuousDelay = attackData.continuousDelay;
+            originInfo.duplicate = attackData.duplicate;
+            originInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
+            originInfo.coefficient = attackData.coefficient;
+            originInfo.stagger = attackData.stagger;
+            originInfo.knockBack = attackData.knockBack;
+            if (string.IsNullOrEmpty(attackData.upperPower))
+            {
+                originInfo.upperPower = Vector2.zero;
+            }
+            else
+            {
+                var upperPowerSplit1 = attackData.upperPower.Split(';');
+                originInfo.upperPower = new Vector2(float.Parse(upperPowerSplit1[0]), float.Parse(upperPowerSplit1[1]));
+            }
+            originInfo.customDir = attackData.customDir;
+            originInfo.colliderTime = attackData.colliderTime;
+            if (string.IsNullOrEmpty(attackData.hitShake))
+            {
+                originInfo.hitShake = Vector2.zero;
+            }
+            else
+            {
+                var hitShakeSplit1 = attackData.hitShake.Split(';');
+                originInfo.hitShake = new Vector2(float.Parse(hitShakeSplit1[0]), float.Parse(hitShakeSplit1[1]));
+            }
+            originInfo.shakeTime = attackData.shakeTime;
+            originInfo.hitEffectId = attackData.hitEffectId;
+        }
+
+        // 어택데이터는 항상 초기화
         attackInfo = new AttackInfo();
         attackInfo.id = attackData.id;
         attackInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
@@ -92,7 +149,7 @@ public class Attack : MonoBehaviour
                 attackInfo.deBuff.Add((EBuffType)Enum.Parse(typeof(EBuffType), deBuff));
             }
         }
-        
+
         var deBuffTimeSplit = attackData.deBuffTime.Split(';');
         foreach (var deBuffTime in deBuffTimeSplit)
         {
@@ -102,9 +159,10 @@ public class Attack : MonoBehaviour
                 attackInfo.deBuffTime.Add(time);
             }
         }
-        
+
         attackInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
         attackInfo.ignoreImmortal = attackData.ignoreImmortal;
+        attackInfo.destroyProjectile = attackData.destroyProjectile;
         attackInfo.continuous = attackData.continuous;
         attackInfo.continuousDelay = attackData.continuousDelay;
         attackInfo.duplicate = attackData.duplicate;
@@ -112,7 +170,7 @@ public class Attack : MonoBehaviour
         attackInfo.coefficient = attackData.coefficient;
         attackInfo.stagger = attackData.stagger;
         attackInfo.knockBack = attackData.knockBack;
-        
+
         if (string.IsNullOrEmpty(attackData.upperPower))
         {
             attackInfo.upperPower = Vector2.zero;
@@ -138,6 +196,36 @@ public class Attack : MonoBehaviour
 
         attackInfo.shakeTime = attackData.shakeTime;
         attackInfo.hitEffectId = attackData.hitEffectId;
+    }
+
+    // 공격데이터를 변경하는 특성은 여기서 관리
+    public void AttributeCheck()
+    {
+        var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(attackInfo.id);
+        foreach (var passive in passiveList)
+        {
+            switch (passive)
+            {
+                // 투사체 파괴
+                case ConstValues.DestroyProjectile:
+                    attackInfo.destroyProjectile = true;
+                    break;
+            }
+        }
+        
+        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(attackInfo.id);
+        foreach (var upgrade in upgradeList)
+        {
+            switch (upgrade.upgradeId)
+            {
+                // 피해 증가
+                case ConstValues.DamageUp:
+                    var result = originInfo.coefficient + originInfo.coefficient * upgrade.upgradeValue * 0.01f;
+                    int final = Mathf.RoundToInt(result);
+                    attackInfo.coefficient = final;
+                    break;
+            }
+        }
     }
 
     public void EnableSetting()
@@ -290,6 +378,43 @@ public class Attack : MonoBehaviour
     // hitTarget.LookAt(transform.position.x);
     private void OnTriggerEnter2D(Collider2D col)
     {
+        // 미사일 또는 수류탄 형식의 판정 파괴
+        if (attackInfo.destroyProjectile)
+        {
+            var projectile = col.GetComponent<IProjectile>();
+
+            if (projectile != null)
+            {
+                if (castChar)
+                {
+                    // 플레이어의 공격이 몬스터의 투사체 소멸
+                    if (castChar.GetComponent<Player>())
+                    {
+                        var monsterName = col.name.Split('_')[0];
+                        if (monsterName == ConstValues.Monster)
+                        {
+                            // (보스의 투사체는 제외)
+                            if (!projectile.IsBoss())
+                            {
+                                projectile.Delete();
+                                return;
+                            }
+                        }
+                    }
+                    // 몬스터의 공격이 플레이어의 투사체 소멸
+                    if (castChar.GetComponent<Monster>())
+                    {
+                        var characterName = col.name.Split('_')[0];
+                        if (characterName is ConstValues.Berserker or ConstValues.Gunner or ConstValues.Fighter)
+                        {
+                            projectile.Delete();
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
         var hitTarget = col.GetComponent<Character>();
         if (hitTarget != null)
         {
@@ -298,9 +423,9 @@ public class Attack : MonoBehaviour
 
             bool isTrapAttack = false;
             
-            // 플레이어의 공격
             if (castChar)
             {
+                // 플레이어의 공격
                 if (castChar.GetComponent<Player>())
                 {
                     if (col.GetComponent<Monster>() == null && col.GetComponent<Npc>() == null)

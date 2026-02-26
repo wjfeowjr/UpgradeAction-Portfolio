@@ -1,12 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
-using UnityEngine.Serialization;
-using static ENormalState;
-using Random = UnityEngine.Random;
 
 [Serializable]
 public class PlayerSkill
@@ -36,28 +34,33 @@ public class PlayerSkill
     public List<float> ReducingCooldown()
     {
         if (curCoolTime[0] < maxCoolTime[0])
-        {
             curCoolTime[0] += Time.deltaTime;
-            if (curCoolTime[0] >= maxCoolTime[0])
-                curCoolTime[0] = maxCoolTime[0];
-        }
+        
+        if (curCoolTime[0] > maxCoolTime[0])
+            curCoolTime[0] = maxCoolTime[0];
 
         // 스택형 스킬이라면
         if (curCoolTime.Count > 1)
         {
-            // 스택 쿨타임이 별개로 돌아간다
-            curCoolTime[1] += Time.deltaTime;
-            // 스택 쿨타임이 다 차게 되면
-            if (curCoolTime[1] >= maxCoolTime[1] && (int)curCoolTime[2] < maxCoolTime[2])
+            // 스택 개수가 적다면
+            if ((int)curCoolTime[2] < maxCoolTime[2])
             {
-                // 스킬 스택이 1 차오르고
-                curCoolTime[2] += 1;
-                // 스택이 찼는데도 최대 스택에 도달하지 못한다면
-                if ((int)curCoolTime[2] < maxCoolTime[2])
-                    // 스택 쿨타임을 0으로 바꾼다(다시 채워지도록)
-                    curCoolTime[1] = 0;
+                curCoolTime[1] += Time.deltaTime;
+                // 스택 쿨타임이 다 차게 되면
+                if (curCoolTime[1] >= maxCoolTime[1])
+                {
+                    // 스킬 스택이 1 차오르고
+                    curCoolTime[2] += 1;
+                    // 스택이 찼는데도 최대 스택에 도달하지 못한다면
+                    if ((int)curCoolTime[2] < maxCoolTime[2])
+                        // 스택 쿨타임을 0으로 바꾼다(다시 채워지도록)
+                        curCoolTime[1] = 0;
+                }
             }
+            if ((int)curCoolTime[2] > maxCoolTime[2])
+                curCoolTime[2] = maxCoolTime[2];
         }
+        
         return curCoolTime;
     }
 
@@ -148,6 +151,7 @@ public abstract class Player : Character
     private CancellationTokenSource attackDelayCancellation;
 
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
+    [SerializeField] protected List<PlayerSkill> originSkillList = new List<PlayerSkill>();
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
     [SerializeField] protected bool canAttack;
     [SerializeField] private bool canFlip;
@@ -218,11 +222,21 @@ public abstract class Player : Character
         UpdateBuff();
         
         // 스킬 추가 테스트
-        if(Input.GetKeyDown(KeyCode.P))
+        if (Input.GetKeyDown(KeyCode.P))
+        {
             GameManager.Instance.AddNewSkill(ConstValues.BerserkerCrash);
-        
-        if(Input.GetKeyDown(KeyCode.O))
+            GameManager.Instance.AddNewSkill(ConstValues.GunnerGrenade);
+            GameManager.Instance.AddNewSkill(ConstValues.GunnerKnockBackShot);
+            GameManager.Instance.AddNewSkill(ConstValues.GunnerCrazyShot);
+        }
+
+        if (Input.GetKeyDown(KeyCode.O))
+        {
             GameManager.Instance.RemoveSkill(ConstValues.BerserkerCrash);
+            GameManager.Instance.RemoveSkill(ConstValues.GunnerGrenade);
+            GameManager.Instance.RemoveSkill(ConstValues.GunnerKnockBackShot);
+            GameManager.Instance.RemoveSkill(ConstValues.GunnerCrazyShot);
+        }
     }
 
     protected override void FixedUpdate()
@@ -830,7 +844,7 @@ public abstract class Player : Character
         curChangeGlobalCoolTime = 0;
         isChanging = true;
         
-        bool immediateChange = normalState is Idle or ENormalState.Move || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime);
+        bool immediateChange = normalState is ENormalState.Idle or ENormalState.Move || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime);
         if (!immediateChange)
         {
             waitCharacterUI.SetActive(true);
@@ -838,7 +852,7 @@ public abstract class Player : Character
         }
         
         // 점프 도중에만 글로벌 쿨타임을 준다
-        await UniTask.WaitUntil(()=> normalState is Idle or ENormalState.Move || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime));
+        await UniTask.WaitUntil(()=> normalState is ENormalState.Idle or ENormalState.Move || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime));
         waitCharacterUI.SetActive(false);
         
         isChanging = false;
@@ -1046,7 +1060,7 @@ public abstract class Player : Character
     }
     public async UniTask EntranceDown()
     {
-        while (normalState != Idle)
+        while (normalState != ENormalState.Idle)
         {
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
@@ -1153,6 +1167,35 @@ public abstract class Player : Character
             }
         }
     }
+    
+    // 스킬 시전 시 적용되는 특성 체크
+    protected void SkillAttributeCheck(string skillId)
+    {
+        var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(skillId);
+        foreach (var passive in passiveList)
+        {
+            switch (passive)
+            {
+                // 슈퍼아머
+                case ConstValues.SuperArmor:
+                    BodyTypeSetting(EBodyType.SuperArmor);
+                    break;
+            }
+        }
+        
+        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skillId);
+        foreach (var upgrade in upgradeList)
+        {
+            switch (upgrade.upgradeId)
+            {
+                // 시전속도 증가
+                case ConstValues.SpeedUp:
+                    bonusStat.skillSpeed = upgrade.upgradeValue;
+                    SetAttackSpeed();
+                    break;
+            }
+        }
+    }
 
     public void InitSkill()
     {
@@ -1162,7 +1205,6 @@ public abstract class Player : Character
                 continue;
             
             PlayerSkill addedSkill = new PlayerSkill();
-            
             addedSkill.id = skill.id;
             var coolTimeArray = skill.coolTime.Split(',');
             foreach (var coolTime in coolTimeArray)
@@ -1172,7 +1214,68 @@ public abstract class Player : Character
             }
             addedSkill.talk = GameManager.Instance.GetTalk(skill.talk);;
             addedSkill.explainTalk = GameManager.Instance.GetTalk(skill.explainTalk);
+            
+            originSkillList.Add(addedSkill);
+        }
+
+        foreach (var originSkill in originSkillList)
+        {
+            PlayerSkill addedSkill = new PlayerSkill();
+            addedSkill.id = originSkill.id;
+            addedSkill.maxCoolTime = originSkill.maxCoolTime.ToList();
+            addedSkill.curCoolTime = originSkill.curCoolTime.ToList();
+            addedSkill.talk = originSkill.talk;
+            addedSkill.explainTalk = originSkill.explainTalk;
             skillList.Add(addedSkill);
+        }
+    }
+
+    // 스킬 특성 체크
+    public void SkillAttributeCheck()
+    {
+        // 쿨타임 보정
+        for (var i = 0; i < originSkillList.Count; i++)
+        {
+            bool isCoolTimeFill;
+            if (skillList[i].maxCoolTime.Count > 1)
+                isCoolTimeFill = (int)skillList[i].maxCoolTime[1] == (int)skillList[i].curCoolTime[1];
+            else
+                isCoolTimeFill = (int)skillList[i].maxCoolTime[0] == (int)skillList[i].curCoolTime[0];
+            
+            skillList[i].maxCoolTime = originSkillList[i].maxCoolTime.ToList();
+            
+            if (skillList[i].maxCoolTime.Count > 1)
+            {
+                if (isCoolTimeFill)
+                    skillList[i].curCoolTime[1] = skillList[i].maxCoolTime[1];
+            }
+            else
+            {
+                if (isCoolTimeFill)
+                    skillList[i].curCoolTime[0] = skillList[i].maxCoolTime[0];
+            }
+        }
+        
+        foreach (var skill in skillList)
+        {
+            var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skill.id);
+            foreach (var upgrade in upgradeList)
+            {
+                switch (upgrade.upgradeId)
+                {
+                    // 쿨타임 감소
+                    case ConstValues.CoolTimeReduce:
+                        if (skill.maxCoolTime.Count > 1)
+                        {
+                            skill.maxCoolTime[1] -= upgrade.upgradeValue;
+                        }
+                        else
+                        {
+                            skill.maxCoolTime[0] -= upgrade.upgradeValue;
+                        }
+                        break;
+                }
+            }
         }
     }
     

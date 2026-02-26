@@ -71,6 +71,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SpeechFrameStrong = "SpeechFrame_Strong";
     public const string SpeechFrameTitle = "SpeechFrame_Title";
 
+    public const string ProjectileDestroyEffect = "ProjectileDestroyEffect";
     public const string BangEffect = "BangEffect";
     public const string DropEffect = "DropEffect";
     public const string Effect = "Effect";
@@ -89,6 +90,7 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string Berserker = "Berserker";
     public const string Gunner = "Gunner";
+    public const string Fighter = "Fighter";
     
     public const string Idle = "Idle";
     public const string Move = "Move";
@@ -111,6 +113,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string LandingPose = "LandingPose";
     public const string JumpPose = "JumpPose";
     public const string Buff = "Buff";
+    public const string MonsterAttack = "MonsterAttack";
     
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
@@ -128,19 +131,27 @@ public class ConstValues : Singleton<ConstValues>
     public const string Appear = "Appear";
     public const string AppearEnd = "AppearEnd";
     
-    // 특성 관련 이름
-    public const string SuperArmor = "SuperArmor";
+    // 하드코딩으로 적용되는 특성 ID
     public const string SwordBeam = "SwordBeam";
-    public const string AfterBurn = "AfterBurn";
-    public const string ChargingFlame = "ChargingFlame";
-    
-    public const string IronWall = "IronWall";
+    public const string ComboSlash = "ComboSlash";
+    public const string Inferno = "Inferno";
+    public const string ChargingFire = "ChargingFire";
     public const string VibratingSteel = "VibratingSteel";
-    public const string BullPower = "BullPower";
     public const string BullCharge = "BullCharge";
     
-    public const string Big = "Big";
+    // 특성 패시브
+    public const string SuperArmor = "SuperArmor";
+    public const string DestroyProjectile = "DestroyProjectile";
+    public const string LimitExplosion = "LimitExplosion";
+
+    // 특성 수치조정
+    public const string DamageUp = "DamageUp";
+    public const string SizeUp = "SizeUp";
+    public const string SpeedUp = "SpeedUp";
+    public const string DurationUp = "DurationUp";
+    public const string CoolTimeReduce = "CoolTimeReduce";
     
+    public const string Big = "Big";
     public const string Missile = "Missile";
     public const string Grenade = "Grenade";
     public const string Item = "Item";
@@ -313,6 +324,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerCrashExplosion = "Berserker_Crash_Explosion";
     public const string BerserkerFireStrike = "Berserker_FireStrike";
     public const string BerserkerSwordCounter = "Berserker_SwordCounter";
+    public const string BerserkerSwordCounterJust = "Berserker_SwordCounter_Just";
     public const string BerserkerSwordCounterEffect = "Berserker_SwordCounterEffect";
     public const string BerserkerSwordCounterJustEffect = "Berserker_SwordCounterJustEffect";
     public const string BerserkerSwordCounterGuard = "Berserker_SwordCounter_Guard";

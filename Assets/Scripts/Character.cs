@@ -106,6 +106,7 @@ public class BonusStat
     public int defence;
     public float moveSpeed;
     public float attackSpeed;
+    public float skillSpeed;
     public float criticalChance;
     public float criticalDamage;
 }
@@ -669,23 +670,20 @@ public abstract class Character : InteractionController
     // 추가스텟, 장비 탈착, 버프 시작 또는 끝나는 시점에 사용
     public void InitBonusStat()
     {
-        bonusStat = new BonusStat()
-        {
-            hp = 0,
-            power = 0,
-            defence = 0,
-            moveSpeed = 0,
-            attackSpeed = 0, // 1이 기본값. %단위로 적을것
-            criticalChance = 0,
-            criticalDamage = 0,
-        };
+        bonusStat.hp = 0;
+        bonusStat.power = 0;
+        bonusStat.defence = 0;
+        bonusStat.moveSpeed = 0;
+        bonusStat.attackSpeed = 0; // 1이 기본값. %단위로 적을것
+        bonusStat.criticalChance = 0;
+        bonusStat.criticalDamage = 0;
 
         foreach (var buff in buffList)
         {
             switch (buff.buffType)
             {
                 case EBuffType.PowerUpPercent:
-                    bonusStat.power += (int)(originStat.power * buff.buffValue * 0.01f);
+                    bonusStat.power += Mathf.RoundToInt(originStat.power * (buff.buffValue * 0.01f));
                     break;
             }
         }
@@ -706,14 +704,23 @@ public abstract class Character : InteractionController
             myAnimator.SetFloat(ConstValues.MoveSpeed, moveAnimSpeed);
         
         // 공격속도
-        var finalAttackSpeed = originStat.attackSpeed + (originStat.attackSpeed * (bonusStat.moveSpeed * 0.01f));
+        SetAttackSpeed();
+        basicStat.criticalChance = originStat.criticalChance + bonusStat.criticalChance;
+        basicStat.criticalDamage = originStat.criticalDamage + bonusStat.criticalDamage;
+    }
+
+    protected void SetAttackSpeed()
+    {
+        var finalAttackSpeed = originStat.attackSpeed + (originStat.attackSpeed * (bonusStat.attackSpeed * 0.01f)) + (1 * (bonusStat.skillSpeed * 0.01f));
         var attackAnimSpeed = finalAttackSpeed / originStat.attackSpeed;
         basicStat.attackSpeed = finalAttackSpeed;
         if(myAnimator)
             myAnimator.SetFloat(ConstValues.AttackSpeed, attackAnimSpeed);
-        
-        basicStat.criticalChance = originStat.criticalChance + bonusStat.criticalChance;
-        basicStat.criticalDamage = originStat.criticalDamage + bonusStat.criticalDamage;
+    }
+    protected void ResetSkillSpeed()
+    {
+        bonusStat.skillSpeed = 0;
+        SetAttackSpeed();
     }
     
     public float ColFront()
@@ -1040,6 +1047,7 @@ public abstract class Character : InteractionController
 
             spawnedObject.SetupData(objectData, transform.localScale.x);
             spawnedObject.EnableSetting();
+            spawnedObject.AttributeCheck();
             if (zAngle != 0)
             {
                 var finalAngle = zAngle;
@@ -1090,6 +1098,7 @@ public abstract class Character : InteractionController
             
             attack.SetupCastChar(this);
             attack.SetupData(attackData);
+            attack.AttributeCheck();
             attack.EnableSetting();
         }
     }
@@ -1113,8 +1122,10 @@ public abstract class Character : InteractionController
             {
                 dir = new Vector2(missileDir, 0);
             }
-
-            missile.SetupData(missileData, dir, SpawnAttack);
+            
+            missile.SetupData(missileData, dir, SpawnAttack, SpawnObjectAction);
+            missile.AttributeCheck();
+            missile.BossCheck(GetComponent<Monster>() && GetComponent<Monster>().IsBoss);
         }
     }
     private void SetGrenadeData(string id, GameObject obj, Vector2 targetVector = default)
@@ -1129,12 +1140,14 @@ public abstract class Character : InteractionController
             var dir = Vector2.right;
             if (transform.localScale.x < 0)
                 dir = Vector2.left;
-            grenade.SetupData(grenadeData, dir, SpawnAttack);
+            grenade.SetupData(grenadeData, dir, SpawnAttack, SpawnObjectAction);
 
             if (targetVector == default)
                 grenade.Throw();
             else
                 grenade.TargetThrow(targetVector);
+            
+            grenade.BossCheck(GetComponent<Monster>() && GetComponent<Monster>().IsBoss);
         }
     }
     
@@ -1188,13 +1201,19 @@ public abstract class Character : InteractionController
         SetGrenadeData(id, obj, targetVector);
 
         return obj;
+    } 
+    // 공격판정이 없는 오브젝트 소환(액션 삽입용)
+    private void SpawnObjectAction(string id, Vector2 pos)
+    {
+        var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
+        SetSpawnedObjectData(id, obj, 0);
     }
-
+    
     protected GameObject SpawnUIObject(string id, Transform uiTransform)
     {
         var obj = GameManager.Instance.SpawnToUIObjectPool(id, uiTransform);
         SetSpawnedObjectData(id, obj, 0, uiTransform);
-
+        
         return obj;
     }
 
@@ -1678,14 +1697,13 @@ public abstract class Character : InteractionController
     }
     
     // 버프
-    protected void AddBuff(string buffId, float buffTime)
+    protected void AddBuff(string buffId, int buffValue, float buffTime)
     {
         var findDeBuff = TargetBuff(buffId);
         // 해당 버프가 적용되어있지 않음
         if (findDeBuff == null)
         {
             var buffData = TableManager.Instance.buffTable.Buff.Find(x => x.id == buffId);
-            var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.Find(x => x.buffId == buffId);
             if (buffData != null)
             {
                 var buffType = (EBuffType)Enum.Parse(typeof(EBuffType), buffData.buffType);
@@ -1693,7 +1711,7 @@ public abstract class Character : InteractionController
                 {
                     buffId = buffId,
                     buffType = buffType,
-                    buffValue = attributeData.buffValue,
+                    buffValue = buffValue,
                     buffTime = buffTime,
                     currentTime = 0,
                 };

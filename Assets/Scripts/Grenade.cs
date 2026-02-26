@@ -9,15 +9,16 @@ using Random = UnityEngine.Random;
 public class GrenadeInfo
 {
     public string id;
-    public bool isTarget;
     public Vector2 minForce;
     public Vector2 maxForce;
     public bool dirObject;
     public List<string> hitTagList;
     public string spawnObject;
     public Action<string, Transform, int, Vector2> explosionAction;
+    public Action<string, Vector2> blockAction;
+    public bool isBossProjectile;
 }
-public class Grenade : MonoBehaviour
+public class Grenade : MonoBehaviour, IProjectile
 {
     [SerializeField] private Vector2 throwForce;
     [SerializeField] private float angular;
@@ -75,12 +76,21 @@ public class Grenade : MonoBehaviour
             myRigidbody.angularVelocity = 0f;
     }
     
-    public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform, int, Vector2> action)
+    // 인터페이스 함수
+    public bool IsBoss()
+    {
+        return grenadeInfo.isBossProjectile;
+    }
+    public void Delete()
+    {
+        gameObject.SetActive(false);
+        grenadeInfo.blockAction?.Invoke(ConstValues.ProjectileDestroyEffect, transform.position);
+    }
+    
+    public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform, int, Vector2> action, Action<string, Vector2> blockAction = null)
     {
         grenadeInfo = new GrenadeInfo();
         grenadeInfo.id = grenadeData.id;
-
-        grenadeInfo.isTarget = grenadeData.isTarget;
 
         var minForceSplit = grenadeData.minForce.Split(';');
         grenadeInfo.minForce = new Vector2(float.Parse(minForceSplit[0]), float.Parse(minForceSplit[1]));
@@ -97,6 +107,7 @@ public class Grenade : MonoBehaviour
             
         grenadeInfo.spawnObject = grenadeData.spawnObject;
         grenadeInfo.explosionAction = action;
+        grenadeInfo.blockAction = blockAction;
 
         float xForce = Random.Range(grenadeInfo.minForce.x, grenadeInfo.maxForce.x);
         float yForce = Random.Range(grenadeInfo.minForce.y, grenadeInfo.maxForce.y);
@@ -109,7 +120,11 @@ public class Grenade : MonoBehaviour
         
         throwForce = new Vector2(xForce, yForce);
     }
-
+    public void BossCheck(bool isBoss)
+    {
+        grenadeInfo.isBossProjectile = isBoss;
+    }
+    
     public void Throw()
     {
         // 상태 초기화
@@ -151,7 +166,7 @@ public class Grenade : MonoBehaviour
         myRigidbody.angularVelocity = -myRigidbody.angularVelocity;
     }
     
-    private void Delete()
+    private void Explosion()
     {
         if (isDelete)
             return;
@@ -163,7 +178,7 @@ public class Grenade : MonoBehaviour
         myCollider.enabled = false;
         gameObject.SetActive(false);
     }
-    
+
     private Vector2 CalculateVelocity(Vector2 start, Vector2 target, float height)
     {
         // 중력 가속도 (Unity 프로젝트 설정에 따름, 보통 -9.81)
@@ -228,7 +243,7 @@ public class Grenade : MonoBehaviour
                     return;
             }
             
-            Delete();
+            Explosion();
             return;
         }
     }

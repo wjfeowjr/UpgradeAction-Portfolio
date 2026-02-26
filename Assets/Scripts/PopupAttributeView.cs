@@ -7,7 +7,7 @@ using UnityEngine;
 
 public interface IPopupAttributeView
 {
-    void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillAttributeData> attributeList, SkillCollection playerSkill);
+    void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillAttributeInfo> attributeList, SkillCollection playerSkill);
     void SetAction(Action playMoveSound, Action playSelectSound, Action playCancelSound, Action closeAction, Action<string, Sprite, int, Action, Action> popupAction);
 }
 
@@ -16,7 +16,7 @@ public class PopupAttributeModel
     public string playerId;
     public List<SkillData> berserkerSkillList = new List<SkillData>();
     public List<SkillData> gunnerSkillList = new List<SkillData>();
-    public List<SkillAttributeData> attributeList = new List<SkillAttributeData>(); 
+    public List<SkillAttributeInfo> attributeList = new List<SkillAttributeInfo>(); 
     public SkillCollection playerSkill;
     public Action playMoveSound;
     public Action playSelectSound;
@@ -105,8 +105,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private List<SkillData> berserkerSkillList = new List<SkillData>();
     private List<SkillData> gunnerSkillList = new List<SkillData>();
     
-    private List<SkillAttributeData> allAttributeList;
-    private List<SkillAttributeData> attributeTableList;
+    private List<SkillAttributeInfo> attributeList;
 
     // 현재 스킬에서 사용 가능한 "특성 id"(중복 레벨 행 제거)
     private readonly List<string> attributeIdList = new List<string>();
@@ -539,7 +538,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
         // async void 내부에서 저장/경고가 발생할 수 있으니, 다음 프레임에 UI를 한 번 더 갱신
         RefreshAfterAdjust();
-
         isPointChange = true;
     }
 
@@ -556,13 +554,11 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     #region Data/Refresh
 
-    public void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillAttributeData> attributeList, SkillCollection playerSkill)
+    public void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillAttributeInfo> attributeList, SkillCollection playerSkill)
     {
         skillInfo = playerSkill;
-        
         curPlayerId = playerId;
-        allAttributeList = attributeList;
-
+        
         berserkerSkillList = berserkerList;
         gunnerSkillList = gunnerList;
 
@@ -650,7 +646,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                 attributeArray[i].Reduction();
             }
 
-            attributeTableList = null;
+            attributeList = null;
             attributeIdList.Clear();
             attributeIdSet.Clear();
             attributeSlotCount = 0;
@@ -661,7 +657,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         }
 
         attributeText.gameObject.SetActive(true);
-        attributeTableList = allAttributeList.FindAll(x => x.skill == curSkillId);
+        attributeList = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == curSkillId);
         BuildAttributeIdList();
 
         var skill = skillSetting.skillList.Find(x => x.skillId == curSkillId);
@@ -707,12 +703,12 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         attributeIdList.Clear();
         attributeIdSet.Clear();
 
-        if (attributeTableList == null)
+        if (attributeList == null)
             return;
 
-        for (int i = 0; i < attributeTableList.Count; i++)
+        for (int i = 0; i < attributeList.Count; i++)
         {
-            var row = attributeTableList[i];
+            var row = attributeList[i];
             if (row == null) continue;
             if (attributeIdSet.Add(row.id))
             {
@@ -726,32 +722,39 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     // 특성 정보 확인
     private void GetAttributeInfo(string id)
     {
-        if (attributeTableList == null)
+        if (attributeList == null)
             return;
 
         // 이름/설명
-        SkillAttributeData attributeData = attributeTableList.Find(x => x.id == id);
-        if (attributeData == null)
+        SkillAttributeInfo skillAttributeInfo = attributeList.Find(x => x.id == id);
+        if (skillAttributeInfo == null)
             return;
         
-        attributeNameText.text = GameManager.Instance.GetTalk(attributeData.talk);
+        attributeNameText.text = GameManager.Instance.GetTalk(skillAttributeInfo.talk);
 
-        if (attributeData.cost < 100 && (attributeData.buffTime > 0 || attributeData.buffValue > 0))
+        if (skillAttributeInfo.upgradeValue.Count > 0 || skillAttributeInfo.buffTime > 0 || skillAttributeInfo.buffValue > 0)
         {
             List<object> timeAndValue = new List<object>();
-            if(attributeData.buffTime > 0)
-                timeAndValue.Add(attributeData.buffTime);
-            if(attributeData.buffValue > 0)
-                timeAndValue.Add(attributeData.buffValue);
+            if (skillAttributeInfo.upgradeValue.Count > 0)
+            {
+                foreach (var value in skillAttributeInfo.upgradeValue)
+                {
+                    timeAndValue.Add(value);
+                }
+            }
+            if(skillAttributeInfo.buffTime > 0)
+                timeAndValue.Add(skillAttributeInfo.buffTime);
+            if(skillAttributeInfo.buffValue > 0)
+                timeAndValue.Add(skillAttributeInfo.buffValue);
             
-            attributeExplainText.text = string.Format(GameManager.Instance.GetTalk(attributeData.explainTalk), timeAndValue.ToArray());
+            attributeExplainText.text = string.Format(GameManager.Instance.GetTalk(skillAttributeInfo.explainTalk), timeAndValue.ToArray());
         }
         else
         {
-            attributeExplainText.text = GameManager.Instance.GetTalk(attributeData.explainTalk);
+            attributeExplainText.text = GameManager.Instance.GetTalk(skillAttributeInfo.explainTalk);
         }
         
-        costText.text = attributeData.cost.ToString();
+        costText.text = skillAttributeInfo.cost.ToString();
         explainObject.SetActive(true);
         CheckAdjust();
     }
@@ -773,8 +776,11 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         if (closeAction != null)
         {
             closeAction.Invoke();
-            if(isPointChange)
+            if (isPointChange)
+            {
                 GameManager.Instance.SaveGame();
+                GameManager.Instance.SetPlayerAttribute();
+            }
             return;
         }
 

@@ -46,6 +46,7 @@ public class AttackData
     public string deBuffTime;
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
+    public bool destroyProjectile;
     public bool continuous;
     public float continuousDelay;
     public bool duplicate;
@@ -310,6 +311,9 @@ public class SkillAttributeData
     public string id;
     public string skill;
     public int cost;
+    public string passiveId;
+    public string upgradeId;
+    public string upgradeValue;
     public string buffId;
     public float buffTime;
     public int buffValue;
@@ -400,7 +404,6 @@ public class TableManager : SingletonMono<TableManager>
         skillAttributeTable = LoadDataFromJson<SkillAttributeDataList>(ConstValues.SkillAttribute);
         spawnedObjectTable = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject);
         talkTable = LoadDataFromJson<TalkDataList>(ConstValues.Talk);
-        
         Debug.Log($"{name} 초기화 완료");
     }
     

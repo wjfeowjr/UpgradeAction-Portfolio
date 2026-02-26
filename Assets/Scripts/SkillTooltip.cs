@@ -16,26 +16,34 @@ public class SkillTooltip : MonoBehaviour
         skillName.text = playerSkill.talk;
         
         skillCoolTime.text = string.Format(GameManager.Instance.GetTalk(30107), playerSkill.maxCoolTime[0]);
+        if(playerSkill.maxCoolTime.Count > 1)
+            skillCoolTime.text = string.Format(GameManager.Instance.GetTalk(30107), playerSkill.maxCoolTime[1]);
 
         skillStack.gameObject.SetActive(playerSkill.maxCoolTime.Count > 1);
         if (playerSkill.maxCoolTime.Count > 1)
             skillStack.text = string.Format(GameManager.Instance.GetTalk(30108), playerSkill.maxCoolTime[2]);
 
         var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == playerSkill.id);
-        if (attackData == null)
+        if (attackData != null)
         {
-            skillExplain.text = "Error!";
+            if (attackData.deBuffTime == ConstValues.None)
+            {
+                skillExplain.text = playerSkill.explainTalk;
+            }
+            else
+            {
+                var deBuffTimeSplit = attackData.deBuffTime.Split(';');
+                skillExplain.text = string.Format(playerSkill.explainTalk, deBuffTimeSplit[0]);
+            }
             return;
         }
-        
-        if (attackData.deBuffTime == ConstValues.None)
+        var skillData = TableManager.Instance.skillTable.Skill.Find(x => x.id == playerSkill.id);
+        if (skillData != null)
         {
             skillExplain.text = playerSkill.explainTalk;
+            return;
         }
-        else
-        {
-            var deBuffTimeSplit = attackData.deBuffTime.Split(';');
-            skillExplain.text = string.Format(playerSkill.explainTalk, deBuffTimeSplit[0]);
-        }
+
+        skillExplain.text = "Error!";
     }
 }

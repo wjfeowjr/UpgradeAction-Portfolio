@@ -156,6 +156,24 @@ public class SpawnedObject : MonoBehaviour
         if(spawnObjectInfo.cameraShake != Vector2.zero)
             GameManager.Instance.CameraShake(spawnObjectInfo.cameraShake.x, spawnObjectInfo.cameraShake.y, spawnObjectInfo.shakeTime);
     }
+    
+    // 크기를 변경하는 특성은 여기서 관리
+    public void AttributeCheck()
+    {
+        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(spawnObjectInfo.id);
+        foreach (var upgrade in upgradeList)
+        {
+            switch (upgrade.upgradeId)
+            {
+                // 피해 증가
+                case ConstValues.SizeUp:
+                    var percentage = 1 + upgrade.upgradeValue * 0.01f;
+                    var scale = transform.localScale;
+                    transform.localScale = scale * percentage;
+                    break;
+            }
+        }
+    }
      
     private void ObjectTimer()
     {

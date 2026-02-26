@@ -154,6 +154,35 @@ public class SkillSetting
     public List<Skill>skillList;
 }
 [Serializable]
+public class SkillAttributeInfo
+{
+    public string id;
+    public string skill;
+    public int cost;
+    public List<string> passiveId = new List<string>();
+    public List<string> upgradeId = new List<string>();
+    public List<int> upgradeValue = new List<int>();
+    public string buffId;
+    public float buffTime;
+    public int buffValue;
+    public int talk;
+    public int explainTalk;
+}
+[Serializable]
+public class SkillAttributeUpgradeInfo
+{
+    public string upgradeId;
+    public int upgradeValue;
+}
+[Serializable]
+public class SkillAttributeBuffInfo
+{
+    public string buffId;
+    public float buffTime;
+    public int buffValue;
+}
+
+[Serializable]
 public class SkillCollection
 {
     public int totalAttributePoint;
@@ -207,7 +236,7 @@ public class SkillCollection
     }
     public async void BuyAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
-        var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == attributeId);
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.id == attributeId);
         
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (berserkerSkill != null)
@@ -255,7 +284,7 @@ public class SkillCollection
     
     public async void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
-        var attributeData = TableManager.Instance.skillAttributeTable.SkillAttribute.FindAll(x => x.id == attributeId);
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.id == attributeId);
         
         var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (berserkerSkill != null)
@@ -309,6 +338,84 @@ public class SkillCollection
                 break;
         }
         await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30205));
+    }
+    
+    // 해당 스킬의 패시브 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<string> GetAttributePassive(string id)
+    {
+        List<string> passiveList = new List<string>();
+        string[] idSplit = id.Split('_');
+        if (idSplit.Length > 1)
+        {
+            // 파생기도 해당 효과를 적용받음
+            string skillId = $"{idSplit[0]}_{idSplit[1]}";
+            var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId);
+            foreach (var attribute in attributeData)
+            {
+                if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                foreach (var passive in attribute.passiveId)
+                {
+                    passiveList.Add(passive);
+                }
+            }
+        }
+        return passiveList;
+    }
+    // 해당 스킬의 수치 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<SkillAttributeUpgradeInfo> GetAttributeUpgrade(string id)
+    {
+        var upgradeList = new List<SkillAttributeUpgradeInfo>();
+        string[] idSplit = id.Split('_');
+        if (idSplit.Length > 1)
+        {
+            // 파생기도 해당 효과를 적용받음
+            string skillId = $"{idSplit[0]}_{idSplit[1]}";
+            var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId);
+            foreach (var attribute in attributeData)
+            {
+                if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                for (int i = 0; i < attribute.upgradeId.Count; i++)
+                {
+                    var upgradeInfo = new SkillAttributeUpgradeInfo
+                    {
+                        upgradeId = attribute.upgradeId[i],
+                        upgradeValue = attribute.upgradeValue[i]
+                    };
+                    upgradeList.Add(upgradeInfo);
+                }
+            }
+        }
+        return upgradeList;
+    }
+    // 해당 스킬의 버프 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<SkillAttributeBuffInfo> GetAttributeBuff(string id)
+    {
+        var buffList = new List<SkillAttributeBuffInfo>();
+        string[] idSplit = id.Split('_');
+        if (idSplit.Length > 1)
+        {
+            // 파생기도 해당 효과를 적용받음
+            string skillId = $"{idSplit[0]}_{idSplit[1]}";
+            var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId);
+            foreach (var attribute in attributeData)
+            {
+                if (string.IsNullOrWhiteSpace(attribute.buffId) || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                var buffInfo = new SkillAttributeBuffInfo
+                {
+                    buffId = attribute.buffId,
+                    buffTime = attribute.buffTime,
+                    buffValue = attribute.buffValue,
+                };
+                buffList.Add(buffInfo);
+            }
+        }
+        return buffList;
     }
 }
 
@@ -545,12 +652,16 @@ public class GameManager : Singleton<GameManager>
     
     [SerializeField] private bool controlStart;
     private bool bossProduct;
+    private bool timeProduct;
     private int comboCount;
 
     [SerializeField] private SaveData saveData;
     
     // 등록된 스킬 및 키 세팅 목록
     private SettingSkill changeSkill;
+    
+    // 복제체 데이터들
+    public List<SkillAttributeInfo> skillAttributeList = new List<SkillAttributeInfo>();
 
     // 매니저들
     public TableManager tableManager;
@@ -581,6 +692,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => bossProduct;
         set => bossProduct = value;
+    }
+
+    public bool TimeProduct
+    {
+        get => timeProduct;
+        set => timeProduct = value;
     }
 
     public int ComboCount
@@ -684,9 +801,8 @@ public class GameManager : Singleton<GameManager>
         
         Application.targetFrameRate = 60;
         InitManager();
-        
+        SetCopyData();
         GameStart();
-
         InitAtlas(uiAtlas);
         InitAtlas(bgAtlas);
         InitPlayer();
@@ -1079,9 +1195,45 @@ public class GameManager : Singleton<GameManager>
         tableManager.Init();
     }
 
-    private async void OpenUI()
+    // 복제체 데이터
+    private void SetCopyData()
     {
-        //await UIManager.Instance.OpenAsync(eUIType.UI_Skill, model);
+        foreach (var skillAttribute in tableManager.skillAttributeTable.SkillAttribute)
+        {
+            var data = new SkillAttributeInfo();
+            data.id = skillAttribute.id;
+            data.skill = skillAttribute.skill;
+            data.cost = skillAttribute.cost;
+            
+            if (!string.IsNullOrWhiteSpace(skillAttribute.passiveId))
+            {
+                var passiveIdSplit = skillAttribute.passiveId.Split(';');
+                foreach (var passiveId in passiveIdSplit)
+                    data.passiveId.Add((passiveId));
+            }
+            
+            if (!string.IsNullOrWhiteSpace(skillAttribute.upgradeId))
+            {
+                var upgradeIdSplit = skillAttribute.upgradeId.Split(';');
+                foreach (var upgradeId in upgradeIdSplit)
+                    data.upgradeId.Add(upgradeId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(skillAttribute.upgradeValue))
+            {
+                var upgradeValueSplit = skillAttribute.upgradeValue.Split(';');
+                foreach (var upgradeValue in upgradeValueSplit)
+                    data.upgradeValue.Add(int.Parse(upgradeValue));
+            }
+            
+            data.buffId = skillAttribute.buffId;
+            data.buffTime = skillAttribute.buffTime;
+            data.buffValue = skillAttribute.buffValue;
+            data.talk = skillAttribute.talk;
+            data.explainTalk = skillAttribute.explainTalk;
+            
+            skillAttributeList.Add(data);
+        }
     }
 
     // 플레이어
@@ -1092,6 +1244,7 @@ public class GameManager : Singleton<GameManager>
             player.InitBasicStat();
             player.InitBonusStat();
             player.InitSkill();
+            player.SkillAttributeCheck();
         }
     }
     
@@ -1126,6 +1279,12 @@ public class GameManager : Singleton<GameManager>
             player.InitBasicStat();
             player.ResetSkillCoolTime();
         }
+    }
+
+    public void SetPlayerAttribute()
+    {
+        foreach (var player in players)
+            player.SkillAttributeCheck();
     }
     
     public void SpawnPlayer(string playerName)
