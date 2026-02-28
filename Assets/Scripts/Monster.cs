@@ -101,9 +101,6 @@ public class Monster : Character
     private float currentAgroTime;
     private bool playerInAgroRange;
 
-    private float hpBarTime = 0.0f;
-    private float currentHpBarTime;
-    
     private float leapHeight;
     protected float arriveHeight;
 
@@ -185,7 +182,6 @@ public class Monster : Character
             {
                 case EAgroState.Normal:
                     Patrol();
-                    HpBarActive();
                     break;
                 case EAgroState.Agro:
                     Trace();
@@ -241,6 +237,7 @@ public class Monster : Character
         stateCancellation?.Cancel();
 
         ClearObjectList(attackObject);
+        ClearObjectList(controlAttackObject);
         ClearObjectList(normalObject);
         ClearObjectList(buffObject);
 
@@ -962,21 +959,17 @@ public class Monster : Character
                     {
                         agroState = EAgroState.Normal;
                         currentAgroTime = 0;
+                        TotalBarOff();
                     }
                     break;
             }
         }
     }
 
-    private void HpBarActive()
+    private void TotalBarOff()
     {
-        currentHpBarTime += Time.deltaTime;
-        if (currentHpBarTime > hpBarTime)
-        {
-            currentHpBarTime = hpBarTime;
-            if (totalBar && totalBar.gameObject.activeSelf)
-                totalBar.gameObject.SetActive(false);
-        }
+        if (totalBar)
+            totalBar.gameObject.SetActive(false);
     }
 
     private void Patrol()
@@ -1033,9 +1026,6 @@ public class Monster : Character
 
     public override void TakeDamage(int damage, bool isTrapAttack)
     {
-        if(!isBoss)
-            currentHpBarTime = 0;
-        
         SpawnHpBar();
         base.TakeDamage(damage, isTrapAttack);
 

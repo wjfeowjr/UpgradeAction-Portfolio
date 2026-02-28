@@ -240,5 +240,6 @@ public class Monster_Moon : Monster
     {
         base.CancelMotion(cancelJump, velocity0, zeroLandingAttack);
         faceSpin.StopAndReset();
+        faceReduction.StopAndReset();
     }
 }

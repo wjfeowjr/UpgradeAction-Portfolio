@@ -93,15 +93,23 @@ public class Missile : MonoBehaviour, IProjectile
             
         missileInfo.hitTagList = new List<string>();
         var hitTagSplit = missileData.hitTag.Split(',');
-        if (hitTagSplit.Length > 0)
+        foreach (var hitTag in hitTagSplit)
         {
-            foreach (var hitLayer in hitTagSplit)
-                missileInfo.hitTagList.Add(hitLayer);
+            if (!string.IsNullOrWhiteSpace(hitTag))
+            {
+                missileInfo.hitTagList.Add(hitTag);
+            }
+        }
+        missileInfo.spawnObjectList = new List<string>();
+        var spawnObjectSplit = missileData.spawnObject.Split(',');
+        foreach (var spawnObject in spawnObjectSplit)
+        {
+            if (!string.IsNullOrWhiteSpace(spawnObject))
+            {
+                missileInfo.spawnObjectList.Add(spawnObject);
+            }
         }
 
-        missileInfo.spawnObjectList = new List<string>();
-        missileInfo.spawnObjectList.Add(missileData.spawnObject);
-        
         missileInfo.hitSpawn = missileData.hitSpawn;
         missileInfo.afterImage = missileData.afterImage;
         
@@ -287,7 +295,7 @@ public class Missile : MonoBehaviour, IProjectile
 
         foreach (var spawnObject in missileInfo.spawnObjectList)
         {
-            if (spawnObject != ConstValues.None)
+            if (!string.IsNullOrWhiteSpace(spawnObject))
             {
                 if (isCollision)
                 {

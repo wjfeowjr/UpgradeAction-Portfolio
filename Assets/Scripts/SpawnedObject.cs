@@ -92,7 +92,12 @@ public class SpawnedObject : MonoBehaviour
 
         var soundArray = objectData.sound.Split(',');
         foreach (var sound in soundArray)
-            spawnObjectInfo.soundList.Add(sound);
+        {
+            if (!string.IsNullOrWhiteSpace(sound))
+            {
+                spawnObjectInfo.soundList.Add(sound);
+            }
+        }
 
         spawnObjectInfo.soundVolume = objectData.soundVolume;
         

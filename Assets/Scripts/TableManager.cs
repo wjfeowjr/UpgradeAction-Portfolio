@@ -10,7 +10,6 @@ public class AnimationsData
 {
     public string id;
     public string caster;
-    public string bodyType;
     public bool canFlip;
     public bool canMove;
     public float moveRatio;

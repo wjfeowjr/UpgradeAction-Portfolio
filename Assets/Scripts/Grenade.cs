@@ -13,7 +13,7 @@ public class GrenadeInfo
     public Vector2 maxForce;
     public bool dirObject;
     public List<string> hitTagList;
-    public string spawnObject;
+    public List<string> spawnObjectList;
     public Action<string, Transform, int, Vector2> explosionAction;
     public Action<string, Vector2> blockAction;
     public bool isBossProjectile;
@@ -100,12 +100,26 @@ public class Grenade : MonoBehaviour, IProjectile
 
         grenadeInfo.dirObject = grenadeData.dirObject;
 
-        var hitLayerSplit = grenadeData.hitTag.Split(',');
         grenadeInfo.hitTagList = new List<string>();
-        foreach (var hitLayer in hitLayerSplit)
-            grenadeInfo.hitTagList.Add(hitLayer);
-            
-        grenadeInfo.spawnObject = grenadeData.spawnObject;
+        var hitTagSplit = grenadeData.hitTag.Split(',');
+        foreach (var hitTag in hitTagSplit)
+        {
+            if (!string.IsNullOrWhiteSpace(hitTag))
+            {
+                grenadeInfo.hitTagList.Add(hitTag);
+            }
+        }
+        grenadeInfo.spawnObjectList = new List<string>();
+        var spawnObjectSplit = grenadeData.spawnObject.Split(',');
+        foreach (var spawnObject in spawnObjectSplit)
+        {
+            if (!string.IsNullOrWhiteSpace(spawnObject))
+            {
+                grenadeInfo.spawnObjectList.Add(spawnObject);
+            }
+        }
+        
+        
         grenadeInfo.explosionAction = action;
         grenadeInfo.blockAction = blockAction;
 
@@ -166,14 +180,21 @@ public class Grenade : MonoBehaviour, IProjectile
         myRigidbody.angularVelocity = -myRigidbody.angularVelocity;
     }
     
-    private void Explosion()
+    private async void Explosion()
     {
         if (isDelete)
             return;
         isDelete = true;
         
-        if (grenadeInfo.spawnObject != ConstValues.None)
-            grenadeInfo.explosionAction(grenadeInfo.spawnObject, transform, 0, default);
+        await UniTask.Yield();
+        
+        foreach (var spawnObject in grenadeInfo.spawnObjectList)
+        {
+            if (!string.IsNullOrWhiteSpace(spawnObject))
+            {
+                grenadeInfo.explosionAction(spawnObject, transform, 0, default);
+            }
+        }
 
         myCollider.enabled = false;
         gameObject.SetActive(false);

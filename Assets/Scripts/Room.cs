@@ -397,7 +397,7 @@ public class Room : MonoBehaviour
         var eventNpcArray = roomsData.npc.Split('ㅗ');
         if (roomInfo.eventNpc.Count < eventNpcArray.Length)
         {
-            if (eventNpcArray[0] != ConstValues.None)
+            if (!string.IsNullOrWhiteSpace(eventNpcArray[0]))
             {
                 for (int i = 0; i < eventNpcArray.Length; i++)
                 {
@@ -439,7 +439,7 @@ public class Room : MonoBehaviour
         var skillArray = roomsData.skill.Split(';');
         if (roomInfo.skillAndPassive.Count < skillArray.Length)
         {
-            if (skillArray[0] != ConstValues.None)
+            if (!string.IsNullOrWhiteSpace(skillArray[0]))
             {
                 roomInfo.skillAndPassive.Clear();
                 for (var i = 0; i < roomSkillAndPassive.Length; i++)
@@ -464,7 +464,7 @@ public class Room : MonoBehaviour
         var treasureBoxArray = roomsData.treasureBox.Split('ㅗ');
         if (roomInfo.treasureBox.Count < treasureBoxArray.Length)
         {
-            if (treasureBoxArray[0] != ConstValues.None)
+            if (!string.IsNullOrWhiteSpace(treasureBoxArray[0]))
             {
                 for (int i = 0; i < treasureBoxArray.Length; i++)
                 {
@@ -493,7 +493,7 @@ public class Room : MonoBehaviour
         var itemArray = roomsData.item.Split('ㅗ');
         if (roomInfo.item.Count < itemArray.Length)
         {
-            if (itemArray[0] != ConstValues.None)
+            if (!string.IsNullOrWhiteSpace(itemArray[0]))
             {
                 for (int i = 0; i < itemArray.Length; i++)
                 {

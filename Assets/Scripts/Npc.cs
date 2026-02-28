@@ -72,7 +72,7 @@ public class Npc : Character
         bool checkKeyValue = npcInfo.dialogKey.isUse;
         
         List<DialogueData> talkList = new List<DialogueData>();
-        if (checkKey == ConstValues.None)
+        if (string.IsNullOrWhiteSpace(checkKey))
         {
             talkList.AddRange(talkDataList);
         }
@@ -93,22 +93,22 @@ public class Npc : Character
 
             var speechVector = speechPos.position;
             var speechPose = ConstValues.Idle;
-            if (speechPose != ConstValues.None)
+            if (!string.IsNullOrWhiteSpace(speechPose))
                 speechPose = talk.speechPose;
             
             if (talk.isSpeaker)
             {
                 CustomAnimTrigger(ENormalState.Idle, speechPose);
                 // 포즈를 지었으면, 다시 원위치 시킴 다음컷에서
-                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
             }
             else
             {
-                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, speechPose);
+                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, speechPose, ConstValues.Idle);
                 speechVector = GameManager.Instance.CurPlayer.FontPos.position;
             }
 
-            if(talk.sound != ConstValues.None)
+            if(!string.IsNullOrWhiteSpace(talk.sound))
                 SoundManager.Instance.PlaySound(talk.sound);
             
             var cameraShakeArray = talk.cameraShake.Split(';');
@@ -123,7 +123,7 @@ public class Npc : Character
         }
         GameManager.Instance.ControlStart = true;
 
-        if (endEvent == ConstValues.None)
+        if (string.IsNullOrWhiteSpace(endEvent))
         {
             SpawnInteractionObject();
         }
@@ -219,9 +219,6 @@ public class Npc : Character
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
     {
         normalState = changeNormalState;
-        if (triggerName == ConstValues.None)
-            return;
-        
         SetTriggerAnimator(triggerName);
     }
     

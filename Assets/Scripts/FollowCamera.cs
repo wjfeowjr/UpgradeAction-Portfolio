@@ -67,7 +67,7 @@ public class FollowCamera : MonoBehaviour
 
     public void SetBg(string bgId)
     {
-        if (bgId == ConstValues.None)
+        if (string.IsNullOrWhiteSpace(bgId))
         {
             bgSprite.gameObject.SetActive(false);
             return;

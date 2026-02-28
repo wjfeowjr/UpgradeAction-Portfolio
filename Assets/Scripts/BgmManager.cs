@@ -32,7 +32,7 @@ public class BgmManager : Singleton<BgmManager>
 
     public async void PlayBgm(string uniqueId, bool immediately = false)
     {
-        if (uniqueId != ConstValues.None)
+        if (!string.IsNullOrWhiteSpace(uniqueId))
         {
             if (!myAudioSource)
                 return;
@@ -50,7 +50,7 @@ public class BgmManager : Singleton<BgmManager>
         
         myAudioSource.Stop();
 
-        if (uniqueId == ConstValues.None)
+        if (string.IsNullOrWhiteSpace(uniqueId))
             return;
         
         if(!immediately)

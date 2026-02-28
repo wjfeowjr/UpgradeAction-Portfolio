@@ -26,7 +26,7 @@ public class SkillTooltip : MonoBehaviour
         var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == playerSkill.id);
         if (attackData != null)
         {
-            if (attackData.deBuffTime == ConstValues.None)
+            if (string.IsNullOrWhiteSpace(attackData.deBuffTime))
             {
                 skillExplain.text = playerSkill.explainTalk;
             }

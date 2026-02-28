@@ -201,7 +201,7 @@ public abstract class Player : Character
     {
         base.OnEnable();
         // 최초 Idle상태로 전환
-        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        StateSetting(ENormalState.Normal, ConstValues.Idle, ConstValues.Idle);
         myGravity = myRigidbody.gravityScale;
         canAttack = true;
     }
@@ -232,7 +232,7 @@ public abstract class Player : Character
 
         if (Input.GetKeyDown(KeyCode.O))
         {
-            GameManager.Instance.RemoveSkill(ConstValues.BerserkerCrash);
+            GameManager.Instance.RemoveSkill(ConstValues.BerserkerChargeCrash);
             GameManager.Instance.RemoveSkill(ConstValues.GunnerGrenade);
             GameManager.Instance.RemoveSkill(ConstValues.GunnerKnockBackShot);
             GameManager.Instance.RemoveSkill(ConstValues.GunnerCrazyShot);
@@ -402,7 +402,7 @@ public abstract class Player : Character
         myAnimator.ResetTrigger(ConstValues.Airborne);
         myAnimator.ResetTrigger(ConstValues.Down);
         myAnimator.ResetTrigger(ConstValues.JumpDown);
-        
+
         if (changeNormalState == ENormalState.Normal)
         {
             switch (landingState)
@@ -449,7 +449,7 @@ public abstract class Player : Character
                     break;
             }
         }
-
+        
         var animationsData = TableManager.Instance.animationsTable.Animations.Find(x => x.id == animId && (x.caster == ConstValues.All || x.caster == basicStat.id));
         if (animationsData != null)
         {
@@ -457,9 +457,12 @@ public abstract class Player : Character
             canFlip = animationsData.canFlip;
             canMove = animationsData.canMove;
             moveRatio = animationsData.moveRatio;
-            
-            if(animationsData.bodyType != ConstValues.None && !SameBodyType(animationsData.bodyType))
-                BodyTypeSetting(animationsData.bodyType);
+        }
+        else
+        {
+            canFlip = false;
+            canMove = false;
+            moveRatio = 0;
         }
     }
     protected override void StateCheck()
@@ -477,15 +480,16 @@ public abstract class Player : Character
         if (stun == null)
         {
             DeleteDashFrameUI();
-            switch (landingState)
-            {
-                case ELandingState.Air:
-                    StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-                    break;
-                case ELandingState.Ground:
-                    StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-                    break;
-            }
+            StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+            // switch (landingState)
+            // {
+            //     case ELandingState.Air:
+            //         StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
+            //         break;
+            //     case ELandingState.Ground:
+            //         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+            //         break;
+            // }
         }
         // 스턴에 걸려있는 경우
         else
@@ -627,6 +631,8 @@ public abstract class Player : Character
         StandHitBox();
         DeleteDashFrameUI();
         ClearIgnorePlatform();
+        ClearObjectList(attackObject);
+        delayCancellation?.Cancel();
     }
 
     private void UpdateCameraLimit()
@@ -802,6 +808,7 @@ public abstract class Player : Character
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
         gameObject.SetActive(false);
         Controller.Instance.StopMove();
+        ClearIgnorePlatform();
     }
     
     public override async void Airborne(float xVelocity, float yVelocity)
@@ -1128,7 +1135,6 @@ public abstract class Player : Character
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
         }
     }
-    
     // 버퍼 딜레이
     protected async UniTask BufferDelay(float originDelay, float afterDelay)
     {
@@ -1144,6 +1150,7 @@ public abstract class Player : Character
             }
         }
     }
+
     // 공격 체커
     protected async void AttackChecker(float startDelay, float endDelay)
     {

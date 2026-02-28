@@ -87,7 +87,7 @@ public class Attack : MonoBehaviour
             var deBuffSplit1 = attackData.deBuff.Split(';');
             foreach (var deBuff in deBuffSplit1)
             {
-                if (deBuff != ConstValues.None)
+                if (!string.IsNullOrWhiteSpace(deBuff))
                 {
                     originInfo.deBuff.Add((EBuffType)Enum.Parse(typeof(EBuffType), deBuff));
                 }
@@ -144,7 +144,7 @@ public class Attack : MonoBehaviour
         var deBuffSplit = attackData.deBuff.Split(';');
         foreach (var deBuff in deBuffSplit)
         {
-            if (deBuff != ConstValues.None)
+            if (!string.IsNullOrWhiteSpace(deBuff))
             {
                 attackInfo.deBuff.Add((EBuffType)Enum.Parse(typeof(EBuffType), deBuff));
             }
@@ -467,7 +467,7 @@ public class Attack : MonoBehaviour
             }
 
             // 피격이팩트 생성
-            if(attackInfo.hitEffectId != ConstValues.None)
+            if(!string.IsNullOrWhiteSpace(attackInfo.hitEffectId))
                 hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
             
             // 대상이 피해를 입는다(치명타 피해인지 확인)
@@ -503,13 +503,19 @@ public class Attack : MonoBehaviour
                 case EDirectionType.Relative:
                     if (transform.position.x > hitTarget.transform.position.x)
                     {
-                        upperPowerX = -Math.Abs(upperPowerX);
                         knockBackX = -Math.Abs(knockBackX);
+                        if (upperPowerX > 0)
+                            upperPowerX = -Math.Abs(upperPowerX);
+                        else
+                            upperPowerX = Math.Abs(upperPowerX);
                     }
                     else
                     {
-                        upperPowerX = Math.Abs(upperPowerX);
                         knockBackX = Math.Abs(knockBackX);
+                        if (upperPowerX > 0)
+                            upperPowerX = Math.Abs(upperPowerX);
+                        else
+                            upperPowerX = -Math.Abs(upperPowerX);
                     }
                     break;
             }

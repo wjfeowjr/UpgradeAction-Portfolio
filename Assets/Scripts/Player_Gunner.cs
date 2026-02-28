@@ -26,19 +26,22 @@ public class Player_Gunner : Player
     
     public override async void ChangeAttack()
     {
-        Debug.Log("교체 공격 시작");
+        //Debug.Log("교체 공격 시작");
         CancelMotion();
         
+        BodyTypeSetting(EBodyType.SuperArmor);
         curGlobalCoolTime = 0;
         stateCancellation = new CancellationTokenSource();
         var finishSuccess = await GunnerChangeAttack();
+        
+        ResetBodyType();
         if (!finishSuccess)
         {
             Debug.Log($"교체 공격 캔슬");
             return;
         }
         
-        Debug.Log($"교체 공격 끝");
+        //Debug.Log($"교체 공격 끝");
         // 동작이 끝날때 반환하는 트리거
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
@@ -89,6 +92,7 @@ public class Player_Gunner : Player
         if (!finishSuccess)
         {
             Debug.Log($"{type}공격 캔슬");
+            ResetBodyType();
             return false;
         }
         
@@ -102,6 +106,7 @@ public class Player_Gunner : Player
             Debug.Log($"{type}공격 끝");
             landingAttackCount = 0;
         }
+        ResetBodyType();
         return true;
     }
 
@@ -371,6 +376,7 @@ public class Player_Gunner : Player
             finishSuccess = await Dash();
         }
         
+        SkillAttributeCheck(skillId);
         if (skillId == ConstValues.GunnerGrenade)
         {
             finishSuccess = await Grenade();
@@ -388,6 +394,10 @@ public class Player_Gunner : Player
             finishSuccess = await BigShot();
         }
 
+        // 스킬을 끝마치건 도중 캔슬되던, 스피드는 원상태로 복구됨
+        ResetSkillSpeed();
+        // 성공여부와 상관없이 바디타입 원상복구
+        ResetBodyType();
         if (!finishSuccess)
         {
             Debug.Log($"{skillKey} 스킬 캔슬");

@@ -102,6 +102,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string Attack2 = "Attack2";
     public const string Attack3 = "Attack3";
     public const string Attack3Ready = "Attack3_Ready";
+    public const string JumpAttack = "JumpAttack";
+    public const string JumpAttackEnd = "JumpAttack_End";
     public const string JumpAttack1 = "JumpAttack1";
     public const string JumpAttack2 = "JumpAttack2";
     public const string JumpAttack3 = "JumpAttack3";
@@ -124,8 +126,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Arrive = "Arrive";
     public const string Thumbs = "Thumbs";
     public const string Point = "Point";
-
-    public const string None = "None";
+    
     public const string Normal = "Normal";
     public const string Pattern = "Pattern";
     public const string Appear = "Appear";
@@ -136,8 +137,12 @@ public class ConstValues : Singleton<ConstValues>
     public const string ComboSlash = "ComboSlash";
     public const string Inferno = "Inferno";
     public const string ChargingFire = "ChargingFire";
+    public const string IronWall = "IronWall";
     public const string VibratingSteel = "VibratingSteel";
     public const string BullCharge = "BullCharge";
+    public const string EarthQuake = "EarthQuake";
+    public const string MagmaEruption = "MagmaEruption";
+    public const string SecondaryExplosion = "SecondaryExplosion";
     
     // 특성 패시브
     public const string SuperArmor = "SuperArmor";
@@ -309,21 +314,32 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerAttack1 = "Berserker_Attack1";
     public const string BerserkerAttack2 = "Berserker_Attack2";
     public const string BerserkerAttack3 = "Berserker_Attack3";
-    public const string BerserkerJumpAttack1 = "Berserker_JumpAttack1";
-    public const string BerserkerJumpAttack2 = "Berserker_JumpAttack2";
-    public const string BerserkerJumpAttack2Effect = "Berserker_JumpAttack2_Effect";
+    
+    public const string BerserkerJumpAttack = "Berserker_JumpAttack";
+
+    // 옛날 점프공격 데이터
+    public const string BerserkerJumpAttack1Old = "Berserker_JumpAttack1_Old";
+    public const string BerserkerJumpAttack2Old = "Berserker_JumpAttack2_Old";
+    public const string BerserkerJumpAttack2EffectOld = "Berserker_JumpAttack2_Effect_Old";
+    
     public const string BerserkerAttackHitCrit = "Berserker_Attack_Hit_Crit";
     public const string BerserkerCrashHitEffect = "Berserker_Crash_HitEffect";
 
     public const string BerserkerDash = "Berserker_Dash";
     public const string BerserkerUpperSlash = "Berserker_UpperSlash";
     public const string BerserkerUpperSlashComboAttack = "Berserker_UpperSlash_ComboAttack";
-    public const string BerserkerSwordBeam = "Berserker_SwordBeam";
+    public const string BerserkerUpperSlashSwordBeam = "Berserker_UpperSlash_SwordBeam";
     public const string BerserkerCrash = "Berserker_Crash";
+    public const string BerserkerCrashSpinAttack = "Berserker_Crash_SpinAttack";
+    public const string BerserkerCrashEarthQuake = "Berserker_Crash_EarthQuake";
+    public const string BerserkerCrashMagmaEruption = "Berserker_Crash_MagmaEruption";
+    public const string BerserkerCrashSecondaryExplosion = "Berserker_Crash_SecondaryExplosion";
+    public const string BerserkerCrashSecondaryExplosionEffect = "Berserker_Crash_SecondaryExplosion_Effect";
     public const string BerserkerCrashSmash = "Berserker_Crash_Smash";
     public const string BerserkerCrashExplosion = "Berserker_Crash_Explosion";
     public const string BerserkerFireStrike = "Berserker_FireStrike";
     public const string BerserkerSwordCounter = "Berserker_SwordCounter";
+    public const string BerserkerSwordCounter2 = "Berserker_SwordCounter2";
     public const string BerserkerSwordCounterJust = "Berserker_SwordCounter_Just";
     public const string BerserkerSwordCounterEffect = "Berserker_SwordCounterEffect";
     public const string BerserkerSwordCounterJustEffect = "Berserker_SwordCounterJustEffect";

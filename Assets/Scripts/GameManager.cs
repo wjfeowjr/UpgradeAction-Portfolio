@@ -1829,7 +1829,7 @@ public class GameManager : Singleton<GameManager>
             nextPlayerId = FirstPlayer;
 
         pastPlayer.AllBuffCancel();
-        
+
         curPlayer = GetPlayer(nextPlayerId);
         // 교체 시 유지해야하는 데이터 받아오기
         curPlayer.ReceiveChangeData(pastPlayer);

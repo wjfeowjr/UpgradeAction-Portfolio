@@ -30,7 +30,7 @@ public class SoundManager : Singleton<SoundManager>
 
     public void PlaySound(string uniqueId, bool ignoreSoundCondition = false, float volumeScale = 0.8f)
     {
-        if (!myAudioSource || uniqueId == ConstValues.None || !soundDic.ContainsKey(uniqueId))
+        if (!myAudioSource || string.IsNullOrWhiteSpace(uniqueId) || !soundDic.ContainsKey(uniqueId))
             return;
         
         float now = Time.time;

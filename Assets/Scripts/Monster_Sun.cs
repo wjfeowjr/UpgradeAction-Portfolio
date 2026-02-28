@@ -230,5 +230,6 @@ public class Monster_Sun : Monster
     {
         base.CancelMotion(cancelJump, velocity0, zeroLandingAttack);
         faceSpin.StopAndReset();
+        faceReduction.StopAndReset();
     }
 }
