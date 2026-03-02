@@ -914,8 +914,11 @@ public abstract class Player : Character
 
     protected void UseSkill(string id)
     {
+        if (id == ConstValues.GunnerGrenade && GameManager.Instance.PlayerSkill.IsHaveAttribute(id, ConstValues.MadBomber))
+            return;
+        
         var targetSkill = GetSkill(id);
-        Debug.Log($"{targetSkill.id} 사용!");
+        Debug.Log($"{targetSkill.id} 사용!"); 
         targetSkill.SetCoolTime();
     }
 
@@ -1244,10 +1247,15 @@ public abstract class Player : Character
         for (var i = 0; i < originSkillList.Count; i++)
         {
             bool isCoolTimeFill;
+
             if (skillList[i].maxCoolTime.Count > 1)
+            {
                 isCoolTimeFill = (int)skillList[i].maxCoolTime[1] == (int)skillList[i].curCoolTime[1];
+            }
             else
+            {
                 isCoolTimeFill = (int)skillList[i].maxCoolTime[0] == (int)skillList[i].curCoolTime[0];
+            }
             
             skillList[i].maxCoolTime = originSkillList[i].maxCoolTime.ToList();
             
@@ -1255,6 +1263,9 @@ public abstract class Player : Character
             {
                 if (isCoolTimeFill)
                     skillList[i].curCoolTime[1] = skillList[i].maxCoolTime[1];
+                
+                if ((int)skillList[i].maxCoolTime[2] <= (int)skillList[i].curCoolTime[2])
+                    skillList[i].curCoolTime[1] = (int)skillList[i].maxCoolTime[1];
             }
             else
             {
@@ -1273,13 +1284,31 @@ public abstract class Player : Character
                     // 쿨타임 감소
                     case ConstValues.CoolTimeReduce:
                         if (skill.maxCoolTime.Count > 1)
-                        {
                             skill.maxCoolTime[1] -= upgrade.upgradeValue;
+                        else
+                            skill.maxCoolTime[0] -= upgrade.upgradeValue;
+                        break;
+                    // 쿨타임 증가
+                    case ConstValues.CoolTimeIncrease:
+                        if (skill.maxCoolTime.Count > 1)
+                            skill.maxCoolTime[1] += upgrade.upgradeValue;
+                        else
+                            skill.maxCoolTime[0] += upgrade.upgradeValue;
+                        break;
+                    // 스택 증가
+                    case ConstValues.StackUp:
+                        if (skill.maxCoolTime.Count > 2)
+                        {
+                            var stackFill = (int)skill.curCoolTime[2] >= (int)skill.maxCoolTime[2];
+                            skill.maxCoolTime[2] += upgrade.upgradeValue;
+                            if (stackFill)
+                            {
+                                skill.curCoolTime[1] = skill.maxCoolTime[1];
+                                skill.curCoolTime[2] = skill.maxCoolTime[2];
+                            }
                         }
                         else
-                        {
-                            skill.maxCoolTime[0] -= upgrade.upgradeValue;
-                        }
+                            Debug.Log("해당 스킬은 스택형 스킬이 아님");
                         break;
                 }
             }

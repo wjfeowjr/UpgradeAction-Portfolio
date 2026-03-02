@@ -367,6 +367,7 @@ public class Player_Berserker : Player
         ResetSkillSpeed();
         // 성공여부와 상관없이 바디타입 원상복구
         ResetBodyType();
+        
         if (!finishSuccess)
         {
             Debug.Log($"{skillKey} 스킬 캔슬");
@@ -456,7 +457,6 @@ public class Player_Berserker : Player
         var skillId = ConstValues.BerserkerFireStrike;
         var objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Object}";
         
-        bool inferno = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.Inferno);
         bool chargingFlame = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.ChargingFire);
 
         StateSetting(ENormalState.Skill, ConstValues.BerserkerFireStrike, ConstValues.BerserkerFireStrike);
@@ -518,7 +518,7 @@ public class Player_Berserker : Player
         }
         ResetSpritePos();
         if (isCharge)
-            objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Big}_{ConstValues.Object}";
+            objectId = $"{objectId}_{ConstValues.Big}";
         
         if(chargeEffect != null)
             chargeEffect.SetActive(false);
@@ -528,16 +528,23 @@ public class Player_Berserker : Player
             return false;
 
         var missileObject = SpawnAttackObject(objectId, fireStrikePos).GetComponent<Missile>();
-        // 후속화염 추가
-        if (inferno)
+        var addObjectList = GameManager.Instance.PlayerSkill.GetAttributeAddObject(objectId);
+        foreach (var addObject in addObjectList)
         {
-            string burnId = ConstValues.BerserkerFireStrikeAfterBurn;
-            if (isCharge)
-                burnId = $"{ConstValues.BerserkerFireStrikeAfterBurn}_{ConstValues.Big}";
-            
-            missileObject.AddSpawnObject(burnId);
+            switch (addObject.addObjectId)
+            {
+                // 폭발 시 오브젝트 생성
+                case ConstValues.ExplosionObject:
+                    string burnId = addObject.objectId;
+                    var objectIdSplit = objectId.Split('_');
+                    if (objectIdSplit.Length > 3)
+                        burnId = $"{burnId}_{objectIdSplit[3]}";
+                    
+                    missileObject.AddSpawnObject(burnId);
+                    break;
+            }
         }
-        
+
         if (await AttackDelay(delay3).SuppressCancellationThrow())
             return false;
 

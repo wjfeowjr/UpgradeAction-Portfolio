@@ -723,6 +723,7 @@ public abstract class Character : InteractionController
         
         // 공격속도
         SetAttackSpeed();
+        
         basicStat.criticalChance = originStat.criticalChance + bonusStat.criticalChance;
         basicStat.criticalDamage = originStat.criticalDamage + bonusStat.criticalDamage;
     }
@@ -740,7 +741,7 @@ public abstract class Character : InteractionController
         bonusStat.skillSpeed = 0;
         SetAttackSpeed();
     }
-    
+
     protected void ResetBodyType()
     {
         if(basicStat.bodyType != originStat.bodyType)

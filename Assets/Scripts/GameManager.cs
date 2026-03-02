@@ -158,8 +158,14 @@ public class SkillAttributeInfo
 {
     public string id;
     public string skill;
+    public string targetObject;
     public int cost;
     public List<string> passiveId = new List<string>();
+    
+    public string addObjectId;
+    public string objectId;
+    public int objectCount;
+    
     public List<string> upgradeId = new List<string>();
     public List<int> upgradeValue = new List<int>();
     public string buffId;
@@ -168,6 +174,15 @@ public class SkillAttributeInfo
     public int talk;
     public int explainTalk;
 }
+
+[Serializable]
+public class SkillAttributeAddObjectInfo
+{
+    public string addObjectId;
+    public string objectId;
+    public int objectCount;
+}
+
 [Serializable]
 public class SkillAttributeUpgradeInfo
 {
@@ -345,11 +360,16 @@ public class SkillCollection
     {
         List<string> passiveList = new List<string>();
         string[] idSplit = id.Split('_');
+        string skillId = id;
         if (idSplit.Length > 1)
+            skillId = $"{idSplit[0]}_{idSplit[1]}";
+        
+        // 정확히 일치하는 타겟 데이터가 있는지 확인
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == id);
+        
+        // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
+        if (attributeData.Count > 0)
         {
-            // 파생기도 해당 효과를 적용받음
-            string skillId = $"{idSplit[0]}_{idSplit[1]}";
-            var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId);
             foreach (var attribute in attributeData)
             {
                 if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
@@ -361,18 +381,81 @@ public class SkillCollection
                 }
             }
         }
+        // 파생기도 효과를 적용받음
+        attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        foreach (var attribute in attributeData)
+        {
+            if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                continue;
+                
+            foreach (var passive in attribute.passiveId)
+            {
+                passiveList.Add(passive);
+            }
+        }
         return passiveList;
+    }
+    // 해당 스킬의 추가 생성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<SkillAttributeAddObjectInfo> GetAttributeAddObject(string id)
+    {
+        var addObjectList = new List<SkillAttributeAddObjectInfo>();
+        string[] idSplit = id.Split('_');
+        string skillId = id;
+        if (idSplit.Length > 1)
+            skillId = $"{idSplit[0]}_{idSplit[1]}";
+        
+        // 정확히 일치하는 타겟 데이터가 있는지 확인
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == id);
+        
+        // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
+        if (attributeData.Count > 0)
+        {
+            foreach (var attribute in attributeData)
+            {
+                if (string.IsNullOrWhiteSpace(attribute.addObjectId) || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                var addObjectInfo = new SkillAttributeAddObjectInfo
+                {
+                    addObjectId = attribute.addObjectId,
+                    objectId = attribute.objectId,
+                    objectCount = attribute.objectCount,
+                };
+                addObjectList.Add(addObjectInfo);
+            }
+        }
+        // 파생기도 효과를 적용받음
+        attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        foreach (var attribute in attributeData)
+        {
+            if (string.IsNullOrWhiteSpace(attribute.addObjectId) || !IsHaveAttribute(skillId, attribute.id))
+                continue;
+                
+            var addObjectInfo = new SkillAttributeAddObjectInfo
+            {
+                addObjectId = attribute.addObjectId,
+                objectId = attribute.objectId,
+                objectCount = attribute.objectCount,
+            };
+            addObjectList.Add(addObjectInfo);
+        }
+        return addObjectList;
     }
     // 해당 스킬의 수치 특성 리스트(내가 해당 특성을 가지고 있어야 함)
     public List<SkillAttributeUpgradeInfo> GetAttributeUpgrade(string id)
     {
         var upgradeList = new List<SkillAttributeUpgradeInfo>();
         string[] idSplit = id.Split('_');
+        string skillId = id;
         if (idSplit.Length > 1)
+            skillId = $"{idSplit[0]}_{idSplit[1]}";
+        
+        // 정확히 일치하는 타겟 데이터가 있는지 확인
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == id);
+        
+        // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
+        if (attributeData.Count > 0)
         {
-            // 파생기도 해당 효과를 적용받음
-            string skillId = $"{idSplit[0]}_{idSplit[1]}";
-            var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId);
             foreach (var attribute in attributeData)
             {
                 if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
@@ -387,6 +470,23 @@ public class SkillCollection
                     };
                     upgradeList.Add(upgradeInfo);
                 }
+            }
+        }
+        // 파생기도 해당 효과를 적용받음
+        attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        foreach (var attribute in attributeData)
+        {
+            if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                continue;
+                
+            for (int i = 0; i < attribute.upgradeId.Count; i++)
+            {
+                var upgradeInfo = new SkillAttributeUpgradeInfo
+                {
+                    upgradeId = attribute.upgradeId[i],
+                    upgradeValue = attribute.upgradeValue[i]
+                };
+                upgradeList.Add(upgradeInfo);
             }
         }
         return upgradeList;
@@ -1203,14 +1303,19 @@ public class GameManager : Singleton<GameManager>
             var data = new SkillAttributeInfo();
             data.id = skillAttribute.id;
             data.skill = skillAttribute.skill;
+            data.targetObject = skillAttribute.targetObject;
             data.cost = skillAttribute.cost;
             
             if (!string.IsNullOrWhiteSpace(skillAttribute.passiveId))
             {
                 var passiveIdSplit = skillAttribute.passiveId.Split(';');
                 foreach (var passiveId in passiveIdSplit)
-                    data.passiveId.Add((passiveId));
+                    data.passiveId.Add(passiveId);
             }
+
+            data.addObjectId = skillAttribute.addObjectId;
+            data.objectId = skillAttribute.objectId;
+            data.objectCount = skillAttribute.objectCount;
             
             if (!string.IsNullOrWhiteSpace(skillAttribute.upgradeId))
             {

@@ -32,6 +32,7 @@ public class MissileInfo
     public Action<string, Vector2> blockAction;
     public bool isBossProjectile;
 }
+
 public class Missile : MonoBehaviour, IProjectile
 {
     [SerializeField] private Vector2 dir;
@@ -55,7 +56,7 @@ public class Missile : MonoBehaviour, IProjectile
         myCollider = GetComponent<BoxCollider2D>();
         missileSprite = GetComponentInChildren<SpriteRenderer>();
         mySpin = GetComponentInChildren<Spin>();
-        
+
         missileLayerMask |= 1 << LayerMask.NameToLayer(ConstValues.Ground);
     }
 
@@ -71,26 +72,28 @@ public class Missile : MonoBehaviour, IProjectile
     {
         Move1();
     }
-    
+
     // 인터페이스 함수
     public bool IsBoss()
     {
         return missileInfo.isBossProjectile;
     }
+
     public void Delete()
     {
         gameObject.SetActive(false);
         missileInfo.blockAction?.Invoke(ConstValues.ProjectileDestroyEffect, transform.position);
     }
 
-    public void SetupData(MissileData missileData, Vector2 missileDir, Action<string, Transform, int, Vector2> explosionAction, Action<string, Vector2> blockAction)
+    public void SetupData(MissileData missileData, Vector2 missileDir,
+        Action<string, Transform, int, Vector2> explosionAction, Action<string, Vector2> blockAction)
     {
         missileInfo = new MissileInfo();
         missileInfo.id = missileData.id;
         missileInfo.type = (MissileType)Enum.Parse(typeof(MissileType), missileData.type);
         missileInfo.speed = missileData.speed;
         defaultLimit = missileData.limitLength;
-            
+
         missileInfo.hitTagList = new List<string>();
         var hitTagSplit = missileData.hitTag.Split(',');
         foreach (var hitTag in hitTagSplit)
@@ -100,6 +103,7 @@ public class Missile : MonoBehaviour, IProjectile
                 missileInfo.hitTagList.Add(hitTag);
             }
         }
+
         missileInfo.spawnObjectList = new List<string>();
         var spawnObjectSplit = missileData.spawnObject.Split(',');
         foreach (var spawnObject in spawnObjectSplit)
@@ -112,7 +116,7 @@ public class Missile : MonoBehaviour, IProjectile
 
         missileInfo.hitSpawn = missileData.hitSpawn;
         missileInfo.afterImage = missileData.afterImage;
-        
+
         missileInfo.explosionAction = explosionAction;
         missileInfo.blockAction = blockAction;
         dir = missileDir;
@@ -135,8 +139,10 @@ public class Missile : MonoBehaviour, IProjectile
                 if (ray.collider == null)
                     missileInfo.limitLength = defaultLimit;
                 else
-                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
+                    missileInfo.limitLength =
+                        Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
             }
+
             if (dir == Vector2.right)
             {
                 var rayDir = transform.right;
@@ -144,16 +150,18 @@ public class Missile : MonoBehaviour, IProjectile
                 var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
                 Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
                 //var ray = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, defaultLimit, missileLayerMask);
-                
+
                 if (ray.collider == null)
                     missileInfo.limitLength = defaultLimit;
                 else
-                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
+                    missileInfo.limitLength =
+                        Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
             }
         }
 
         SetLimit();
     }
+
     // 미사일 데이터를 변경하는 특성은 여기서 관리
     public void AttributeCheck()
     {
@@ -162,13 +170,14 @@ public class Missile : MonoBehaviour, IProjectile
         {
             switch (passive)
             {
-                // 투사체 파괴
+                // 사거리 끝에서 자동 폭발
                 case ConstValues.LimitExplosion:
                     missileInfo.hitSpawn = false;
                     break;
             }
         }
     }
+
     public void BossCheck(bool isBoss)
     {
         missileInfo.isBossProjectile = isBoss;
@@ -219,6 +228,7 @@ public class Missile : MonoBehaviour, IProjectile
                     if (mySpin)
                         mySpin.SetSpinSpeed(false);
                 }
+
                 break;
         }
     }
@@ -228,15 +238,15 @@ public class Missile : MonoBehaviour, IProjectile
     {
         if (isDelete)
             return;
-        
+
         switch (missileInfo.type)
         {
             case MissileType.Horizontal:
                 transform.Translate(dir * (missileInfo.speed * Time.deltaTime));
-                
+
                 if (limitPosX == 0)
                     return;
-                
+
                 if (dir == Vector2.left)
                 {
                     if (transform.position.x <= limitPosX)
@@ -253,13 +263,14 @@ public class Missile : MonoBehaviour, IProjectile
                         Explosion(false);
                     }
                 }
+
                 break;
             case MissileType.Vertical:
                 transform.Translate(Vector2.up * (missileInfo.speed * Time.deltaTime));
-                
+
                 if (limitPosY == 0)
                     return;
-                
+
                 if (missileInfo.speed > 0)
                 {
                     if (transform.position.y >= limitPosY)
@@ -276,6 +287,7 @@ public class Missile : MonoBehaviour, IProjectile
                         Explosion(false);
                     }
                 }
+
                 break;
         }
     }
@@ -311,20 +323,20 @@ public class Missile : MonoBehaviour, IProjectile
 
         //myRigidbody.linearVelocity = Vector2.zero;
         myCollider.enabled = false;
-        if(missileSprite)
+        if (missileSprite)
             missileSprite.enabled = false;
-        
+
         // 잔상 남기기 용도
-        if(missileInfo.afterImage)
+        if (missileInfo.afterImage)
             await UniTask.WaitForSeconds(1.0f);
         gameObject.SetActive(false);
     }
 
     public void LookAtTarget(Vector2 target)
     {
-        if(dir == Vector2.left)
+        if (dir == Vector2.left)
             transform.LookAt2D(target, -180);
-        else if(dir == Vector2.right)
+        else if (dir == Vector2.right)
             transform.LookAt2D(target);
     }
 
@@ -349,32 +361,33 @@ public class Missile : MonoBehaviour, IProjectile
                         {
                             Explosion(true);
                         }
+
                         return;
                     }
                 }
-                
+
                 // 이 부분 기억 (플레이어의 물리 판정)
                 if (!col.isTrigger)
                     return;
             }
-            
+
             // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
             Vector2 myPoint = transform.position;
             Vector2 contactPoint = col.ClosestPoint(myPoint);
-            
+
             if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Ground)
             {
                 if (dir == Vector2.right && myPoint.x > contactPoint.x)
                     return;
-                
+
                 if (dir == Vector2.left && myPoint.x < contactPoint.x)
                     return;
-                
+
                 // 수정될 수 있음. 벽 위에서 투사체를 날린 경우
-                if(Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
+                if (Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
                     return;
             }
-            
+
             Explosion(true);
             return;
         }

@@ -398,6 +398,7 @@ public class Player_Gunner : Player
         ResetSkillSpeed();
         // 성공여부와 상관없이 바디타입 원상복구
         ResetBodyType();
+        
         if (!finishSuccess)
         {
             Debug.Log($"{skillKey} 스킬 캔슬");
@@ -413,17 +414,65 @@ public class Player_Gunner : Player
     // 수류탄
     private async UniTask<bool> Grenade()
     {
+        // 특성 체크
+        var skillId = ConstValues.GunnerGrenade;
+        var objectId = ConstValues.GunnerGrenadeObject;
+        var skill = GetSkill(skillId);
+        
+        bool madBomber = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.MadBomber);
+        
+        StateSetting(ENormalState.Skill, ConstValues.GunnerGrenade, ConstValues.GunnerGrenade);
+        
         var delay1 = 0.1f;
         var delay2 = 0.15f;
         
         myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
-        
-        StateSetting(ENormalState.Skill, ConstValues.GunnerGrenade, ConstValues.GunnerGrenade);
 
+        int count = 1;
+        if (madBomber)
+        {
+            Debug.Log($"정신나간 폭탄광 발동!");
+            count = (int)skill.curCoolTime[2];
+            if (count == (int)skill.maxCoolTime[2])
+            {
+                Scream();
+                SpawnObject(ConstValues.GunnerFlash, centerPos);
+            }
+            for (int i = 0; i < count - 1; i++)
+                delay1 += 0.1f;
+        }
+        
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        SpawnObject(ConstValues.GunnerGrenadeObject, grenadePos);
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerGrenade);
+        for (int i = 0; i < count; i++)
+        {
+            var grenadeObject = SpawnAttackObject(objectId, grenadePos).GetComponent<Grenade>();
+            var addObjectList = GameManager.Instance.PlayerSkill.GetAttributeAddObject(objectId);
+            foreach (var addObject in addObjectList)
+            {
+                switch (addObject.addObjectId)
+                {
+                    // 폭발 시 오브젝트 생성
+                    case ConstValues.ExplosionObject:
+                        string fragmentsId = addObject.objectId;
+                        for (int j = 0; j < addObject.objectCount; j++)
+                            grenadeObject.AddSpawnObject(fragmentsId);
+                        break;
+                }
+            }
+            
+            if (madBomber && count > 1)
+                grenadeObject.RandomForceThrow(4.0f, 2.0f);
+        }
+        if (madBomber)
+        {
+            skill.curCoolTime[1] = 0;
+            skill.curCoolTime[2] = 0;
+        }
+        
+
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
 
@@ -433,18 +482,77 @@ public class Player_Gunner : Player
     // 넉백샷
     public async UniTask<bool> KnockBackShot()
     {
-        var delay1 = 0.1f;
-        var delay2 = 0.2f;
+        // 특성 체크
+        var skillId = ConstValues.GunnerKnockBackShot;
+        var objectId = ConstValues.GunnerKnockBackShot;
+        bool powerfulGunpowder = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.PowerfulGunpowder);
         
         StateSetting(ENormalState.Skill, ConstValues.GunnerKnockBackShot, ConstValues.GunnerKnockBackShotReady);
         
+        var delay1 = 0.1f;
+        var delay2 = 0.2f;
+        
+        if(landingState == ELandingState.Ground)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
-
-        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
-        SpawnAttack(ConstValues.GunnerKnockBackShot, knockBackShotPos);
-        Rebound(4.0f);
         
+        bool isCharge = false;
+        GameObject chargeEffect = null;
+        if (powerfulGunpowder)
+        {
+            float addTime = 0;
+            float chargeTime = 1.0f;
+            float reduceTime = chargeTime * bonusStat.skillSpeed * 0.01f;
+            float finalTime = chargeTime - reduceTime;
+            
+            bool isSpawnedEffect = false;
+            while (addTime < finalTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+            {
+                if (!isSpawnedEffect)
+                {
+                    chargeEffect = SpawnObject(ConstValues.BerserkerFireStrikeChargeEffect, centerPos);
+                    isSpawnedEffect = true;
+                }
+            
+                addTime += Time.deltaTime * basicStat.attackSpeed;
+                if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                    return false;
+            
+                ShakeSpritePos(0.05f);
+            }
+
+            if (addTime >= finalTime)
+                isCharge = true;
+            
+            if(isCharge)
+                SpawnObject(ConstValues.GunnerFlash, centerPos);
+            
+            // 충전 완료 뒤에도 잠시 모을시간 주기
+            if (isCharge)
+            {
+                float addTime2 = 0;
+                float extraChargeTime = 0.5f;
+                while (addTime2 < extraChargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+                {
+                    addTime2 += Time.deltaTime * basicStat.attackSpeed;
+                    if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                        return false;
+                    ShakeSpritePos(0.05f);
+                }
+            }
+        }
+        ResetSpritePos();
+        if (isCharge)
+            objectId = $"{objectId}_{ConstValues.Big}";
+        
+        if(chargeEffect != null)
+            chargeEffect.SetActive(false);
+        
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
+        SpawnAttackObject(objectId, knockBackShotPos);
+
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
 

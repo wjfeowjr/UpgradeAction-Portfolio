@@ -732,7 +732,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         
         attributeNameText.text = GameManager.Instance.GetTalk(skillAttributeInfo.talk);
 
-        if (skillAttributeInfo.upgradeValue.Count > 0 || skillAttributeInfo.buffTime > 0 || skillAttributeInfo.buffValue > 0)
+        if (skillAttributeInfo.upgradeValue.Count > 0 || skillAttributeInfo.buffTime > 0 || skillAttributeInfo.buffValue > 0 || skillAttributeInfo.objectCount > 1)
         {
             List<object> timeAndValue = new List<object>();
             if (skillAttributeInfo.upgradeValue.Count > 0)
@@ -746,6 +746,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                 timeAndValue.Add(skillAttributeInfo.buffTime);
             if(skillAttributeInfo.buffValue > 0)
                 timeAndValue.Add(skillAttributeInfo.buffValue);
+            if(skillAttributeInfo.objectCount > 1)
+                timeAndValue.Add(skillAttributeInfo.objectCount);
             
             attributeExplainText.text = string.Format(GameManager.Instance.GetTalk(skillAttributeInfo.explainTalk), timeAndValue.ToArray());
         }

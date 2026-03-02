@@ -33,6 +33,7 @@ public class AttackInfo
     public bool duplicate;
     public EDirectionType directionType;
     public int coefficient;
+    public int criticalChance;
     public int stagger;
     public float knockBack;
     public Vector2 upperPower;
@@ -55,7 +56,8 @@ public class Attack : MonoBehaviour
     private float leftColliderTime;
     
     public Character CastChar => castChar;
-
+    public AttackInfo AttackInfo => attackInfo;
+    
     private void Awake()
     {
         myCollider = GetComponent<Collider2D>();
@@ -109,6 +111,7 @@ public class Attack : MonoBehaviour
             originInfo.duplicate = attackData.duplicate;
             originInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
             originInfo.coefficient = attackData.coefficient;
+            originInfo.criticalChance = attackData.criticalChance;
             originInfo.stagger = attackData.stagger;
             originInfo.knockBack = attackData.knockBack;
             if (string.IsNullOrEmpty(attackData.upperPower))
@@ -168,6 +171,7 @@ public class Attack : MonoBehaviour
         attackInfo.duplicate = attackData.duplicate;
         attackInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
         attackInfo.coefficient = attackData.coefficient;
+        attackInfo.criticalChance = attackData.criticalChance;
         attackInfo.stagger = attackData.stagger;
         attackInfo.knockBack = attackData.knockBack;
 
@@ -210,6 +214,10 @@ public class Attack : MonoBehaviour
                 case ConstValues.DestroyProjectile:
                     attackInfo.destroyProjectile = true;
                     break;
+                // 슈퍼아머 무시
+                case ConstValues.IgnoreSuperArmor:
+                    attackInfo.ignoreSuperArmor = true;
+                    break;
             }
         }
         
@@ -223,6 +231,21 @@ public class Attack : MonoBehaviour
                     var result = originInfo.coefficient + originInfo.coefficient * upgrade.upgradeValue * 0.01f;
                     int final = Mathf.RoundToInt(result);
                     attackInfo.coefficient = final;
+                    break;
+                // 치명타 확률 증가
+                case ConstValues.CriticalChanceUp:
+                    attackInfo.criticalChance += upgrade.upgradeValue;
+                    break;
+            }
+        }
+        // 피해 증폭은 가장 뒤에 계산된다
+        foreach (var upgrade in upgradeList)
+        {
+            switch (upgrade.upgradeId)
+            {
+                // 피해 증폭
+                case ConstValues.DamageMultiplier:
+                    attackInfo.coefficient *= upgrade.upgradeValue;
                     break;
             }
         }
@@ -299,7 +322,7 @@ public class Attack : MonoBehaviour
     {
         var critPercent = Random.Range(0, 100);
         if(castChar)
-            return critPercent < castChar.BasicStat.criticalChance;
+            return critPercent < castChar.BasicStat.criticalChance + attackInfo.criticalChance;
         
         return false;
     }

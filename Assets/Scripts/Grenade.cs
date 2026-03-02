@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -21,6 +22,7 @@ public class GrenadeInfo
 public class Grenade : MonoBehaviour, IProjectile
 {
     [SerializeField] private Vector2 throwForce;
+    [SerializeField] private Vector2 dir;
     [SerializeField] private float angular;
 
     // 땅에 닿았을 때 적용할 선형 Drag
@@ -36,6 +38,7 @@ public class Grenade : MonoBehaviour, IProjectile
     private Collider2D myCollider;
     private bool isDelete;
     private bool isGrounded;
+    private float timer;
 
     private void Awake()
     {
@@ -53,10 +56,12 @@ public class Grenade : MonoBehaviour, IProjectile
     {
         myCollider.enabled = true;
         isDelete = false;
+        timer = 0;
     }
 
     private void Update()
     {
+        Timer();
         VelocityControl();
     }
 
@@ -87,7 +92,7 @@ public class Grenade : MonoBehaviour, IProjectile
         grenadeInfo.blockAction?.Invoke(ConstValues.ProjectileDestroyEffect, transform.position);
     }
     
-    public void SetupData(GrenadeData grenadeData, Vector2 dir, Action<string, Transform, int, Vector2> action, Action<string, Vector2> blockAction = null)
+    public void SetupData(GrenadeData grenadeData, Vector2 grenadeDir, Action<string, Transform, int, Vector2> action, Action<string, Vector2> blockAction = null)
     {
         grenadeInfo = new GrenadeInfo();
         grenadeInfo.id = grenadeData.id;
@@ -123,6 +128,16 @@ public class Grenade : MonoBehaviour, IProjectile
         grenadeInfo.explosionAction = action;
         grenadeInfo.blockAction = blockAction;
 
+        dir = grenadeDir;
+        SetThrowPos();
+    }
+    public void BossCheck(bool isBoss)
+    {
+        grenadeInfo.isBossProjectile = isBoss;
+    }
+
+    private void SetThrowPos()
+    {
         float xForce = Random.Range(grenadeInfo.minForce.x, grenadeInfo.maxForce.x);
         float yForce = Random.Range(grenadeInfo.minForce.y, grenadeInfo.maxForce.y);
 
@@ -133,10 +148,6 @@ public class Grenade : MonoBehaviour, IProjectile
         }
         
         throwForce = new Vector2(xForce, yForce);
-    }
-    public void BossCheck(bool isBoss)
-    {
-        grenadeInfo.isBossProjectile = isBoss;
     }
     
     public void Throw()
@@ -162,6 +173,20 @@ public class Grenade : MonoBehaviour, IProjectile
         myRigidbody.linearVelocity = CalculateVelocity(transform.position, target, throwForce.y);
     }
     
+    public void RandomForceThrow(float valueX, float valueY)
+    {
+        var pastMaxPos = grenadeInfo.maxForce;
+        var pastMinPos = grenadeInfo.minForce;
+        grenadeInfo.maxForce = new Vector2(pastMaxPos.x + valueX, pastMaxPos.y + valueY);
+        grenadeInfo.minForce = new Vector2(pastMinPos.x - valueX, pastMinPos.y - valueY);
+        SetThrowPos();
+        Throw();
+    }
+
+    private void Timer()
+    {
+        timer += Time.deltaTime;
+    }
     // 최대 중력가속도 조정
     private void VelocityControl()
     {
@@ -180,6 +205,11 @@ public class Grenade : MonoBehaviour, IProjectile
         myRigidbody.angularVelocity = -myRigidbody.angularVelocity;
     }
     
+    public void AddSpawnObject(string id)
+    {
+        grenadeInfo.spawnObjectList.Add(id);
+    }
+
     private async void Explosion()
     {
         if (isDelete)
@@ -247,6 +277,9 @@ public class Grenade : MonoBehaviour, IProjectile
         foreach (var hitTag in grenadeInfo.hitTagList)
         {
             if (!col.gameObject.CompareTag(hitTag))
+                continue;
+            
+            if(hitTag is ConstValues.Ground or ConstValues.Platform && timer < 0.1f)
                 continue;
 
             // 캐릭터들이 무적상태라면 무시한다

@@ -51,6 +51,7 @@ public class AttackData
     public bool duplicate;
     public string directionType;
     public int coefficient;
+    public int criticalChance;
     public int stagger;
     public float knockBack;
     public string upperPower;
@@ -309,8 +310,12 @@ public class SkillAttributeData
 {
     public string id;
     public string skill;
+    public string targetObject;
     public int cost;
     public string passiveId;
+    public string addObjectId;
+    public string objectId;
+    public int objectCount;
     public string upgradeId;
     public string upgradeValue;
     public string buffId;

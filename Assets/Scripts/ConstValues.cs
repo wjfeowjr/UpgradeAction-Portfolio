@@ -135,7 +135,6 @@ public class ConstValues : Singleton<ConstValues>
     // 하드코딩으로 적용되는 특성 ID
     public const string SwordBeam = "SwordBeam";
     public const string ComboSlash = "ComboSlash";
-    public const string Inferno = "Inferno";
     public const string ChargingFire = "ChargingFire";
     public const string IronWall = "IronWall";
     public const string VibratingSteel = "VibratingSteel";
@@ -143,19 +142,27 @@ public class ConstValues : Singleton<ConstValues>
     public const string EarthQuake = "EarthQuake";
     public const string MagmaEruption = "MagmaEruption";
     public const string SecondaryExplosion = "SecondaryExplosion";
-    
-    // 특성 패시브
+    public const string MadBomber = "MadBomber";
+    public const string PowerfulGunpowder = "PowerfulGunpowder";
+
+    // 스킬 특성 패시브
     public const string SuperArmor = "SuperArmor";
     public const string DestroyProjectile = "DestroyProjectile";
+    public const string ExplosionObject =  "ExplosionObject";
     public const string LimitExplosion = "LimitExplosion";
+    public const string IgnoreSuperArmor = "IgnoreSuperArmor";
 
-    // 특성 수치조정
+    // 스킬 특성 수치조정
     public const string DamageUp = "DamageUp";
     public const string SizeUp = "SizeUp";
     public const string SpeedUp = "SpeedUp";
+    public const string StackUp = "StackUp";
     public const string DurationUp = "DurationUp";
     public const string CoolTimeReduce = "CoolTimeReduce";
-    
+    public const string CoolTimeIncrease = "CoolTimeIncrease";
+    public const string DamageMultiplier = "DamageMultiplier";
+    public const string CriticalChanceUp = "CriticalChanceUp";
+
     public const string Big = "Big";
     public const string Missile = "Missile";
     public const string Grenade = "Grenade";
