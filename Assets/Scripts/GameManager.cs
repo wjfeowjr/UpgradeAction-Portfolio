@@ -147,6 +147,7 @@ public class Skill
     public string skillId;
     public List<string> attributeList = new List<string>();
 }
+
 [Serializable]
 public class SkillSetting
 {
@@ -1131,7 +1132,7 @@ public class GameManager : Singleton<GameManager>
     public void AddNewSkill(string id)
     {
         // 키 저장
-        var skillKeyData = TableManager.Instance.skillTable.Skill.Find(x => x.id == id);
+        var skillKeyData = tableManager.skillTable.Skill.Find(x => x.id == id);
         
         // 이미 가지고 있는 스킬이라면 무시해버린다
         switch (skillKeyData.caster)
@@ -1174,7 +1175,7 @@ public class GameManager : Singleton<GameManager>
     public void RemoveSkill(string id)
     {
         // 키 저장
-        var skillKeyData = TableManager.Instance.skillTable.Skill.Find(x => x.id == id);
+        var skillKeyData = tableManager.skillTable.Skill.Find(x => x.id == id);
         
         // 가지고 있지 않은 스킬이라면 무시한다
         switch (skillKeyData.caster)
@@ -1883,7 +1884,7 @@ public class GameManager : Singleton<GameManager>
             keyCode = changeCharacterKey,
         };
         
-        foreach (var skill in TableManager.Instance.skillTable.Skill)
+        foreach (var skill in tableManager.skillTable.Skill)
         {
             if (skill.id != ConstValues.ChangeCharacter)
                 continue;
@@ -1913,7 +1914,7 @@ public class GameManager : Singleton<GameManager>
     public string GetSkillName(string id)
     {
         string skillName = default;
-        foreach (var skill in TableManager.Instance.skillTable.Skill)
+        foreach (var skill in tableManager.skillTable.Skill)
         {
             if (skill.id != id)
                 continue;

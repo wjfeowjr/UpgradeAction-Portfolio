@@ -335,7 +335,7 @@ public class Player_Berserker : Player
             finishSuccess = await Dash();
         }
 
-        SkillAttributeCheck(skillId);
+        SkillSpeedAndArmorCheck(skillId);
         if (skillId == ConstValues.BerserkerUpperSlash)
         {
             finishSuccess = await UpperSlash();
@@ -401,6 +401,7 @@ public class Player_Berserker : Player
 
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
+        
         //Leap(6, 20, 1.6f);
         //Leap(0, 20, 0.8f);
         
@@ -456,7 +457,6 @@ public class Player_Berserker : Player
         // 특성 체크
         var skillId = ConstValues.BerserkerFireStrike;
         var objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Object}";
-        
         bool chargingFlame = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.ChargingFire);
 
         StateSetting(ENormalState.Skill, ConstValues.BerserkerFireStrike, ConstValues.BerserkerFireStrike);
@@ -476,12 +476,10 @@ public class Player_Berserker : Player
         if (chargingFlame)
         {
             float addTime = 0;
-            float chargeTime = 1.0f;
-            float reduceTime = chargeTime * bonusStat.skillSpeed * 0.01f;
-            float finalTime = chargeTime - reduceTime;
-            
+            float chargeTime = 1.0f - Mathf.Abs(1.0f - basicStat.attackSpeed);
+
             bool isSpawnedEffect = false;
-            while (addTime < finalTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+            while (addTime < chargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
             {
                 if (!isSpawnedEffect)
                 {
@@ -489,18 +487,21 @@ public class Player_Berserker : Player
                     isSpawnedEffect = true;
                 }
             
-                addTime += Time.deltaTime * basicStat.attackSpeed;
+                addTime += Time.deltaTime;
                 if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                     return false;
             
                 ShakeSpritePos(0.05f);
             }
 
-            if (addTime >= finalTime)
+            if (addTime >= chargeTime)
                 isCharge = true;
-            
-            if(isCharge)
+
+            if (isCharge)
+            {
+                Debug.Log(addTime);
                 SpawnObject(ConstValues.BerserkerFlash, centerPos);
+            }
             
             // 충전 완료 뒤에도 잠시 모을시간 주기
             if (isCharge)
@@ -716,26 +717,35 @@ public class Player_Berserker : Player
         var skillId = ConstValues.BerserkerCrash;
         bool earthQuake = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.EarthQuake);
         bool magmaEruption = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.MagmaEruption);
+        bool furiousStrike = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.FuriousStrike);
         bool secondaryExplosion = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SecondaryExplosion);
         
         float delay1 = 0.15f;
         float delay2 = 0.5f;
         float delay3 = 0.5f;
+
+        float leapHeight = 8.0f;
         
         StateSetting(ENormalState.Skill, ConstValues.BerserkerCrash, ConstValues.BerserkerCrash);
-        BodyTypeSetting(EBodyType.SuperArmor);
-        
+
         // 회전공격
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocityX, 8.0f);
-        for (int i = 0; i < 3; i++)
+        if (furiousStrike)
         {
-            SpawnAttack(ConstValues.BerserkerCrashSpinAttack, jumpAttack1Pos);
-            if (await AttackDelay(delay1).SuppressCancellationThrow())
-                return false;
+            leapHeight = 10.0f;
+        }
+        else
+        {
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocityX, leapHeight);
+            for (int i = 0; i < 3; i++)
+            {
+                SpawnAttack(ConstValues.BerserkerCrashSpinAttack, jumpAttack1Pos);
+                if (await AttackDelay(delay1).SuppressCancellationThrow())
+                    return false;
+            }
         }
         
         // 도움닫기
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocityX, 8.0f);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocityX, leapHeight);
         SpawnObject(ConstValues.BerserkerFlash, centerPos);
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.BerserkerCrash);
         if (await AttackDelay(delay2).SuppressCancellationThrow())
@@ -763,9 +773,9 @@ public class Player_Berserker : Player
             float height = startPosY - endPos;
             Debug.Log(height);
             int count = 1;
-            if (height > 4)
+            if (height >= 2.5f)
                 count += 1;
-            if (height > 6)
+            if (height >= 4.5f)
                 count += 1;
             
             MagmaEruption(count);
@@ -816,7 +826,7 @@ public class Player_Berserker : Player
     private async void MagmaEruption(int count)
     {
         delayCancellation = new CancellationTokenSource();
-        float delay = 0.2f;
+        float delay = 0.3f;
         var objectPos = crashExplosionPos.position;
         for (int i = 0; i < count; i++)
         {

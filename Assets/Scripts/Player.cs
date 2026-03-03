@@ -14,6 +14,8 @@ public class PlayerSkill
     public List<float> curCoolTime = new List<float>();
     public string talk;
     public string explainTalk;
+    public float skillSpeed;
+    public string skillArmor;
 
     public bool IsOnCooldown
     {
@@ -1112,11 +1114,14 @@ public abstract class Player : Character
     protected async UniTask AttackDelay(float attackDelay)
     {
         float delay = 0;
+        //float real = 0;
         while (delay < attackDelay)
         {
             delay += Time.deltaTime * basicStat.attackSpeed;
+            //real += Time.deltaTime;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
         }
+        //Debug.Log(real);
     }
     // 공격 딜레이(공속의 영향을 받지 않음)
     protected async UniTask AttackDelayNonAttackSpeed(float attackDelay)
@@ -1178,33 +1183,12 @@ public abstract class Player : Character
         }
     }
     
-    // 스킬 시전 시 적용되는 특성 체크
-    protected void SkillAttributeCheck(string skillId)
+    // 스킬 시전 시 적용되는 스킬 시전속도와 바디타입 체크
+    protected void SkillSpeedAndArmorCheck(string skillId)
     {
-        var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(skillId);
-        foreach (var passive in passiveList)
-        {
-            switch (passive)
-            {
-                // 슈퍼아머
-                case ConstValues.SuperArmor:
-                    BodyTypeSetting(EBodyType.SuperArmor);
-                    break;
-            }
-        }
-        
-        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skillId);
-        foreach (var upgrade in upgradeList)
-        {
-            switch (upgrade.upgradeId)
-            {
-                // 시전속도 증가
-                case ConstValues.SpeedUp:
-                    bonusStat.skillSpeed = upgrade.upgradeValue;
-                    SetAttackSpeed();
-                    break;
-            }
-        }
+        var skillData = skillList.Find(x => x.id == skillId);
+        SetAttackSpeed(skillData.skillSpeed);
+        BodyTypeSetting((EBodyType)Enum.Parse(typeof(EBodyType), skillData.skillArmor));
     }
 
     public void InitSkill()
@@ -1224,7 +1208,9 @@ public abstract class Player : Character
             }
             addedSkill.talk = GameManager.Instance.GetTalk(skill.talk);;
             addedSkill.explainTalk = GameManager.Instance.GetTalk(skill.explainTalk);
-            
+            var skillTableData = TableManager.Instance.skillTable.Skill.Find(x => x.id == skill.id);
+            addedSkill.skillSpeed = skillTableData.skillSpeed;
+            addedSkill.skillArmor = skillTableData.skillArmor;
             originSkillList.Add(addedSkill);
         }
 
@@ -1236,6 +1222,8 @@ public abstract class Player : Character
             addedSkill.curCoolTime = originSkill.curCoolTime.ToList();
             addedSkill.talk = originSkill.talk;
             addedSkill.explainTalk = originSkill.explainTalk;
+            addedSkill.skillSpeed = originSkill.skillSpeed;
+            addedSkill.skillArmor = originSkill.skillArmor;
             skillList.Add(addedSkill);
         }
     }
@@ -1243,11 +1231,10 @@ public abstract class Player : Character
     // 스킬 특성 체크
     public void SkillAttributeCheck()
     {
-        // 쿨타임 보정
         for (var i = 0; i < originSkillList.Count; i++)
         {
+            // 쿨타임 보정
             bool isCoolTimeFill;
-
             if (skillList[i].maxCoolTime.Count > 1)
             {
                 isCoolTimeFill = (int)skillList[i].maxCoolTime[1] == (int)skillList[i].curCoolTime[1];
@@ -1272,10 +1259,26 @@ public abstract class Player : Character
                 if (isCoolTimeFill)
                     skillList[i].curCoolTime[0] = skillList[i].maxCoolTime[0];
             }
+            
+            // 바디타입 및 스킬속도 보정
+            skillList[i].skillSpeed = originSkillList[i].skillSpeed;
+            skillList[i].skillArmor = originSkillList[i].skillArmor;
         }
         
         foreach (var skill in skillList)
         {
+            var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(skill.id);
+            foreach (var passive in passiveList)
+            {
+                switch (passive)
+                {
+                    // 슈퍼아머
+                    case ConstValues.SuperArmor:
+                        skill.skillArmor = ConstValues.SuperArmor;
+                        break;
+                }
+            }
+
             var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skill.id);
             foreach (var upgrade in upgradeList)
             {
@@ -1307,8 +1310,12 @@ public abstract class Player : Character
                                 skill.curCoolTime[2] = skill.maxCoolTime[2];
                             }
                         }
-                        else
-                            Debug.Log("해당 스킬은 스택형 스킬이 아님");
+                        Debug.Log("해당 스킬은 스택형 스킬이 아님");
+                        break;
+                    
+                    // 시전속도 증가
+                    case ConstValues.SpeedUp:
+                        skill.skillSpeed += skill.skillSpeed * (upgrade.upgradeValue * 0.01f);
                         break;
                 }
             }

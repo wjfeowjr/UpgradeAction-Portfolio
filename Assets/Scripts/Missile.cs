@@ -85,8 +85,7 @@ public class Missile : MonoBehaviour, IProjectile
         missileInfo.blockAction?.Invoke(ConstValues.ProjectileDestroyEffect, transform.position);
     }
 
-    public void SetupData(MissileData missileData, Vector2 missileDir,
-        Action<string, Transform, int, Vector2> explosionAction, Action<string, Vector2> blockAction)
+    public void SetupData(MissileData missileData, Vector2 missileDir, Action<string, Transform, int, Vector2> explosionAction, Action<string, Vector2> blockAction)
     {
         missileInfo = new MissileInfo();
         missileInfo.id = missileData.id;
@@ -158,8 +157,6 @@ public class Missile : MonoBehaviour, IProjectile
                         Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
             }
         }
-
-        SetLimit();
     }
 
     // 미사일 데이터를 변경하는 특성은 여기서 관리
@@ -174,16 +171,27 @@ public class Missile : MonoBehaviour, IProjectile
                 case ConstValues.LimitExplosion:
                     missileInfo.hitSpawn = false;
                     break;
+                // 적 관통
+                case ConstValues.PiercingMissile:
+                    if (missileInfo.hitTagList.Contains(ConstValues.Monster))
+                        missileInfo.hitTagList.Remove(ConstValues.Monster);
+                    break;
+            }
+        }
+        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(missileInfo.id);
+        foreach (var upgrade in upgradeList)
+        {
+            switch (upgrade.upgradeId)
+            {
+                // 사거리 증가
+                case ConstValues.ReachUp:
+                    missileInfo.limitLength *= (1 + (upgrade.upgradeValue * 0.01f));
+                    break;
             }
         }
     }
-
-    public void BossCheck(bool isBoss)
-    {
-        missileInfo.isBossProjectile = isBoss;
-    }
-
-    private void SetLimit()
+    
+    public void SetLimit()
     {
         if (missileInfo.limitLength == 0)
             return;
@@ -231,6 +239,11 @@ public class Missile : MonoBehaviour, IProjectile
 
                 break;
         }
+    }
+
+    public void BossCheck(bool isBoss)
+    {
+        missileInfo.isBossProjectile = isBoss;
     }
 
     // 좌표값 이동(Update에서 사용)

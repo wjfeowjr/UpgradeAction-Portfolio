@@ -296,6 +296,8 @@ public class SkillData
     public string type;
     public string caster;
     public string coolTime;
+    public float skillSpeed;
+    public string skillArmor;
     public int talk;
     public int explainTalk;
 }

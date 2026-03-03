@@ -8,6 +8,7 @@ public class SkillTooltip : MonoBehaviour
     [SerializeField] private TMP_Text skillName;
     [SerializeField] private TMP_Text skillCoolTime;
     [SerializeField] private TMP_Text skillStack;
+    [SerializeField] private TMP_Text skillArmor;
     [SerializeField] private TMP_Text skillExplain;
 
     public void SetTooltip(PlayerSkill playerSkill)
@@ -23,6 +24,11 @@ public class SkillTooltip : MonoBehaviour
         if (playerSkill.maxCoolTime.Count > 1)
             skillStack.text = string.Format(GameManager.Instance.GetTalk(30108), playerSkill.maxCoolTime[2]);
 
+        if (playerSkill.skillArmor == ConstValues.SuperArmor)
+            skillArmor.text = GameManager.Instance.GetTalk(30109);
+        else
+            skillArmor.gameObject.SetActive(false);
+        
         var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == playerSkill.id);
         if (attackData != null)
         {

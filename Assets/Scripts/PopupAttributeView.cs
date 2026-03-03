@@ -101,7 +101,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private SkillCollection skillInfo;
     private SkillSetting skillSetting;
-    private readonly List<SkillData> skillTableList = new List<SkillData>();
+    private readonly List<SkillData> skillInfoList = new List<SkillData>();
     private List<SkillData> berserkerSkillList = new List<SkillData>();
     private List<SkillData> gunnerSkillList = new List<SkillData>();
     
@@ -179,10 +179,10 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void SetSkillList()
     {
-        var showCount = Mathf.Min(skillTableList.Count, skillArray.Length);
+        var showCount = Mathf.Min(skillInfoList.Count, skillArray.Length);
 
         List<SkillData> playerSkillList = new List<SkillData>();
-        foreach (var skillTable in skillTableList)
+        foreach (var skillTable in skillInfoList)
         {
             if (skillTable.caster == curPlayerId)
             {
@@ -206,7 +206,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void SetupSkillNavigation()
     {
-        skillCount = Mathf.Min(skillTableList.Count, skillArray.Length);
+        skillCount = Mathf.Min(skillInfoList.Count, skillArray.Length);
         if (skillCount <= 0)
         {
             curSkillIndex = 0;
@@ -247,7 +247,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         }
 
         // 스킬이 바뀌면 특성 리스트 갱신 + 선택 리셋
-        BuildAttributeListForSkill(skillTableList[curSkillIndex].id, resetSelection: true);
+        BuildAttributeListForSkill(skillInfoList[curSkillIndex].id, resetSelection: true);
         playMoveSound();
     }
 
@@ -592,20 +592,20 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void SetPlayerInfo()
     {
-        skillTableList.Clear();
+        skillInfoList.Clear();
         
         switch (curPlayerId)
         {
             case ConstValues.Berserker:
                 skillSetting = skillInfo.berserkerSkillSetting;
-                skillTableList.AddRange(berserkerSkillList);
+                skillInfoList.AddRange(berserkerSkillList);
                 berserkerObject.SetActive(true);
                 gunnerObject.SetActive(false);
                 break;
 
             case ConstValues.Gunner:
                 skillSetting = skillInfo.gunnerSkillSetting;
-                skillTableList.AddRange(gunnerSkillList);
+                skillInfoList.AddRange(gunnerSkillList);
                 berserkerObject.SetActive(false);
                 gunnerObject.SetActive(true);
                 break;

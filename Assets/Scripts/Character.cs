@@ -106,7 +106,6 @@ public class BonusStat
     public int defence;
     public float moveSpeed;
     public float attackSpeed;
-    public float skillSpeed;
     public float criticalChance;
     public float criticalDamage;
 }
@@ -304,6 +303,7 @@ public abstract class Character : InteractionController
     {
         isDie = false;
         StandHitBox();
+        SetIgnorePlatform();
     }
 
     protected virtual void Update()
@@ -383,7 +383,8 @@ public abstract class Character : InteractionController
     // 위쪽 플랫폼 체크
     private void UpPlatformCheck()
     {
-        upPlatformBoxPos = new Vector2(transform.position.x, physicCenterPos.position.y + upPlatformBoxSize.y * 0.5f);
+        // physicCenterPos.position.y + upPlatformBoxSize.y * 0.5f
+        upPlatformBoxPos = new Vector2(transform.position.x, transform.position.y + upPlatformBoxSize.y * 0.5f + 0.1f);
         upPlatformHit = Physics2D.OverlapBoxAll(upPlatformBoxPos, upPlatformBoxSize, 0, platformLayerMask);
         foreach (var upPlatform in upPlatformHit)
             IgnorePlatformCheck(upPlatform);
@@ -722,15 +723,15 @@ public abstract class Character : InteractionController
             myAnimator.SetFloat(ConstValues.MoveSpeed, moveAnimSpeed);
         
         // 공격속도
-        SetAttackSpeed();
+        SetAttackSpeed(1);
         
         basicStat.criticalChance = originStat.criticalChance + bonusStat.criticalChance;
         basicStat.criticalDamage = originStat.criticalDamage + bonusStat.criticalDamage;
     }
 
-    protected void SetAttackSpeed()
+    protected void SetAttackSpeed(float skillSpeed)
     {
-        var finalAttackSpeed = originStat.attackSpeed + (originStat.attackSpeed * (bonusStat.attackSpeed * 0.01f)) + (1 * (bonusStat.skillSpeed * 0.01f));
+        var finalAttackSpeed = (originStat.attackSpeed + originStat.attackSpeed * (bonusStat.attackSpeed * 0.01f)) * skillSpeed;
         var attackAnimSpeed = finalAttackSpeed / originStat.attackSpeed;
         basicStat.attackSpeed = finalAttackSpeed;
         if(myAnimator)
@@ -738,8 +739,7 @@ public abstract class Character : InteractionController
     }
     protected void ResetSkillSpeed()
     {
-        bonusStat.skillSpeed = 0;
-        SetAttackSpeed();
+        SetAttackSpeed(1);
     }
 
     protected void ResetBodyType()
@@ -825,8 +825,14 @@ public abstract class Character : InteractionController
         if (myRigidbody.bodyType == RigidbodyType2D.Dynamic && myRigidbody.linearVelocity.y < -30)
             myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -30);
     }
-
+    
     // 플랫폼 무시
+    private void SetIgnorePlatform()
+    {
+        foreach (var ignorePlatform in ignorePlatformList)
+            Physics2D.IgnoreCollision(physicsCollider, ignorePlatform.collider, true);
+    }
+    
     private void IgnorePlatformCheck(Collider2D col, bool force = false)
     {
         var height = ColliderHeight(col);
@@ -1162,6 +1168,7 @@ public abstract class Character : InteractionController
             
             missile.SetupData(missileData, dir, SpawnAttack, SpawnObjectAction);
             missile.AttributeCheck();
+            missile.SetLimit();
             missile.BossCheck(GetComponent<Monster>() && GetComponent<Monster>().IsBoss);
         }
     }
@@ -1193,6 +1200,16 @@ public abstract class Character : InteractionController
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, attackTransform);
         SetSpawnedObjectData(id, obj, zAngle, attackTransform);
+        SetAttackData(id, obj);
+        SetMissileData(id, obj, missileDir);
+        SetGrenadeData(id, obj, targetVector);
+        
+        return obj;
+    }
+    protected GameObject SpawnAttackObject(string id, Vector2 attackVector, int zAngle = 0, int missileDir = 0, Vector2 targetVector = default)
+    {
+        var obj = GameManager.Instance.SpawnToObjectPool(id, attackVector);
+        SetSpawnedObjectData(id, obj, zAngle);
         SetAttackData(id, obj);
         SetMissileData(id, obj, missileDir);
         SetGrenadeData(id, obj, targetVector);

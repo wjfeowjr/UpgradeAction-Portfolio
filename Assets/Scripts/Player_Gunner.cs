@@ -376,7 +376,8 @@ public class Player_Gunner : Player
             finishSuccess = await Dash();
         }
         
-        SkillAttributeCheck(skillId);
+        
+        SkillSpeedAndArmorCheck(skillId);
         if (skillId == ConstValues.GunnerGrenade)
         {
             finishSuccess = await Grenade();
@@ -503,12 +504,10 @@ public class Player_Gunner : Player
         if (powerfulGunpowder)
         {
             float addTime = 0;
-            float chargeTime = 1.0f;
-            float reduceTime = chargeTime * bonusStat.skillSpeed * 0.01f;
-            float finalTime = chargeTime - reduceTime;
-            
+            float chargeTime = 1.0f - Mathf.Abs(1.0f - basicStat.attackSpeed);
+
             bool isSpawnedEffect = false;
-            while (addTime < finalTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+            while (addTime < chargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
             {
                 if (!isSpawnedEffect)
                 {
@@ -516,14 +515,14 @@ public class Player_Gunner : Player
                     isSpawnedEffect = true;
                 }
             
-                addTime += Time.deltaTime * basicStat.attackSpeed;
+                addTime += Time.deltaTime;
                 if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                     return false;
             
                 ShakeSpritePos(0.05f);
             }
 
-            if (addTime >= finalTime)
+            if (addTime >= chargeTime)
                 isCharge = true;
             
             if(isCharge)
@@ -564,6 +563,9 @@ public class Player_Gunner : Player
         var delay1 = 0.1f;
         var delay2 = 0.2f;
         
+        if(landingState == ELandingState.Ground)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
         StateSetting(ENormalState.Skill, ConstValues.GunnerKnockBackShot, ConstValues.GunnerKnockBackShotReady);
         
         if (await AttackDelay(delay1).SuppressCancellationThrow())
@@ -578,30 +580,92 @@ public class Player_Gunner : Player
         return true;
     }
     
-    // 개난사
+    // 정신나간 난사
     private async UniTask<bool> CrazyShot()
     {
-        int bulletCount = 14;
-        float delay1 = 0.1f;
+        // 특성 체크
+        var skillId = ConstValues.GunnerCrazyShot;
+        
+        bool longShot = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.LongShot);
+        bool piercingStreak = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.PiercingStreak);
+        bool finishShot = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.FinishShot);
 
-        StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot, ConstValues.GunnerCrazyShot);
-
-        Scream();
+        var delay1 = 0.5f;
+        var delay2 = 0.5f;
+        
+        if(landingState == ELandingState.Ground)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
         SpawnObject(ConstValues.GunnerFlash, centerPos);
 
+        if (longShot)
+        {
+            StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot2, ConstValues.GunnerCrazyShot);
+        }
+        else
+        {
+            StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot, ConstValues.GunnerCrazyShot);
+            // 딜레이가 만약 있다면 여기다가
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return false;
+            StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerCrazyShot);
+        }
+        Scream();
+
+        // 난사 시작
+        float shotTime = 0.1f;
+
+        int bulletCount = 14;
+        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skillId);
+        foreach (var upgrade in upgradeList)
+        {
+            switch (upgrade.upgradeId)
+            {
+                // 지속시간 증가
+                case ConstValues.CountUp:
+                    bulletCount += upgrade.upgradeValue;
+                    break;
+            }
+        }
         for (int i = 0; i < bulletCount; i++)
         {
             // 총알
-            float randPos = Random.Range(-0.5f, 0.5f);
-            Vector2 randVector = new Vector2(crazyShotPos.position.x + randPos, crazyShotPos.position.y + randPos);
-            SpawnAttack(ConstValues.GunnerCrazyShot, randVector);
-
+            Vector2 effectPos = crazyShotPos.position;
+            float randPos = Random.Range(-0.3f, 0.3f);
+            int randAngleZ = Random.Range(-5, 5);
+            Vector2 randVector = new Vector2(effectPos.x + randPos, effectPos.y + randPos);
+            var shotObject = SpawnAttackObject(skillId, randVector);
+            shotObject.transform.eulerAngles = new Vector3(0, 0, randAngleZ);
+            
             // 이팩트
             SpawnObject(ConstValues.GunnerCrazyShotEffect, randVector);
-            Rebound(2.0f);
-            if (await AttackDelay(delay1).SuppressCancellationThrow())
+            if (await AttackDelay(shotTime).SuppressCancellationThrow())
                 return false;
         }
+
+        if (finishShot)
+        {
+            var delay3 = 0.5f;
+            var delay4 = 0.2f;
+            
+            StateSetting(ENormalState.Skill, ConstValues.ComboAttack2, ConstValues.GunnerCrazyShot);
+            SpawnObject(ConstValues.GunnerFlash, centerPos);
+            if (await AttackDelay(delay3).SuppressCancellationThrow())
+                return false;
+            
+            Scream();
+            StateSetting(ENormalState.Skill, ConstValues.ComboAttack2, ConstValues.GunnerCrazyShot);
+            SpawnAttack(piercingStreak ? ConstValues.GunnerCrazyShotFinishPierce : ConstValues.GunnerCrazyShotFinishObject, bigShotPos);
+            if (await AttackDelay(delay4).SuppressCancellationThrow())
+                return false;
+        }
+        else
+        {
+            StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerCrazyShot);
+            if (await AttackDelay(delay2).SuppressCancellationThrow())
+                return false;
+        }
+
         return true;
     }
     

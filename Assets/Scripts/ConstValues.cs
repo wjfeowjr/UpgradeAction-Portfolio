@@ -141,15 +141,20 @@ public class ConstValues : Singleton<ConstValues>
     public const string BullCharge = "BullCharge";
     public const string EarthQuake = "EarthQuake";
     public const string MagmaEruption = "MagmaEruption";
+    public const string FuriousStrike = "FuriousStrike";
     public const string SecondaryExplosion = "SecondaryExplosion";
     public const string MadBomber = "MadBomber";
     public const string PowerfulGunpowder = "PowerfulGunpowder";
+    public const string LongShot = "LongShot";
+    public const string PiercingStreak = "PiercingStreak";
+    public const string FinishShot = "FinishShot";
 
     // 스킬 특성 패시브
     public const string SuperArmor = "SuperArmor";
     public const string DestroyProjectile = "DestroyProjectile";
     public const string ExplosionObject =  "ExplosionObject";
     public const string LimitExplosion = "LimitExplosion";
+    public const string PiercingMissile = "PiercingMissile";
     public const string IgnoreSuperArmor = "IgnoreSuperArmor";
 
     // 스킬 특성 수치조정
@@ -162,6 +167,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string CoolTimeIncrease = "CoolTimeIncrease";
     public const string DamageMultiplier = "DamageMultiplier";
     public const string CriticalChanceUp = "CriticalChanceUp";
+    public const string ReachUp = "ReachUp";
+    public const string CountUp = "CountUp";
 
     public const string Big = "Big";
     public const string Missile = "Missile";
@@ -375,7 +382,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string GunnerKnockBackShot = "Gunner_KnockBackShot";
     public const string GunnerKnockBackShotReady = "Gunner_KnockBackShot_Ready";
     public const string GunnerCrazyShot = "Gunner_CrazyShot";
+    public const string GunnerCrazyShot2 = "Gunner_CrazyShot2";
     public const string GunnerCrazyShotEffect = "Gunner_CrazyShot_Effect";
+    public const string GunnerCrazyShotFinishObject = "Gunner_CrazyShot_Finish_Object";
+    public const string GunnerCrazyShotFinishPierce = "Gunner_CrazyShot_Finish_Pierce";
     public const string GunnerBigShot = "Gunner_BigShot";
     public const string GunnerBigShotReady = "Gunner_BigShot_Ready";
     
