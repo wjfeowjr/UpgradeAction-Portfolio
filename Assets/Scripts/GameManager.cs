@@ -361,14 +361,17 @@ public class SkillCollection
     {
         List<string> passiveList = new List<string>();
         string[] idSplit = id.Split('_');
+        
         string skillId = id;
         if (idSplit.Length > 1)
             skillId = $"{idSplit[0]}_{idSplit[1]}";
         
-        // 정확히 일치하는 타겟 데이터가 있는지 확인
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == id);
+        string targetId = id;
+        if (idSplit.Length > 2)
+            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
-        // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
+        // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == targetId);
         if (attributeData.Count > 0)
         {
             foreach (var attribute in attributeData)
@@ -382,6 +385,7 @@ public class SkillCollection
                 }
             }
         }
+        
         // 파생기도 효과를 적용받음
         attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
         foreach (var attribute in attributeData)
@@ -401,14 +405,17 @@ public class SkillCollection
     {
         var addObjectList = new List<SkillAttributeAddObjectInfo>();
         string[] idSplit = id.Split('_');
+        
         string skillId = id;
         if (idSplit.Length > 1)
             skillId = $"{idSplit[0]}_{idSplit[1]}";
         
-        // 정확히 일치하는 타겟 데이터가 있는지 확인
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == id);
+        string targetId = id;
+        if (idSplit.Length > 2)
+            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
-        // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
+        // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == targetId);
         if (attributeData.Count > 0)
         {
             foreach (var attribute in attributeData)
@@ -447,12 +454,17 @@ public class SkillCollection
     {
         var upgradeList = new List<SkillAttributeUpgradeInfo>();
         string[] idSplit = id.Split('_');
+        
         string skillId = id;
         if (idSplit.Length > 1)
             skillId = $"{idSplit[0]}_{idSplit[1]}";
         
+        string targetId = id;
+        if (idSplit.Length > 2)
+            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
+        
         // 정확히 일치하는 타겟 데이터가 있는지 확인
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == id);
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == targetId);
         
         // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
         if (attributeData.Count > 0)

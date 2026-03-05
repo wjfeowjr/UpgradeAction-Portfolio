@@ -112,6 +112,16 @@ public class Player_Gunner : Player
 
     private async UniTask<bool> GunnerLandingAttack()
     {
+        string effectId = ConstValues.GunnerAttack1Effect;
+        string objectId = ConstValues.GunnerAttack1Object;
+        string finalEffectId = ConstValues.GunnerAttack2Effect;
+        string finalObjectId = ConstValues.GunnerAttack2Object;
+
+        effectId = $"{effectId}_{ConstValues.Ice}";
+        objectId = $"{objectId}_{ConstValues.Ice}";
+        finalEffectId = $"{finalEffectId}_{ConstValues.Ice}";
+        finalObjectId = $"{finalObjectId}_{ConstValues.Ice}";
+        
         if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
 
@@ -144,8 +154,8 @@ public class Player_Gunner : Player
                     if (await AttackDelay(delay1).SuppressCancellationThrow())
                         return false;
             
-                    SpawnObject(ConstValues.GunnerAttackEffect1, landingEffectPos);
-                    SpawnObject(ConstValues.GunnerAttack1Object, landingAttackPos);
+                    SpawnObject(effectId, landingEffectPos);
+                    SpawnObject(objectId, landingAttackPos);
                     
                     if (await AttackDelay(delay2).SuppressCancellationThrow())
                         return false;
@@ -170,8 +180,8 @@ public class Player_Gunner : Player
                     if (await AttackDelay(delay1).SuppressCancellationThrow())
                         return false;
             
-                    SpawnObject(ConstValues.GunnerAttackEffect1, landingEffectPos);
-                    SpawnObject(ConstValues.GunnerAttack1Object, landingAttackPos);
+                    SpawnObject(effectId, landingEffectPos);
+                    SpawnObject(objectId, landingAttackPos);
                     
                     if (await AttackDelay(delay2).SuppressCancellationThrow())
                         return false;
@@ -193,8 +203,8 @@ public class Player_Gunner : Player
                 if (await AttackDelay(delay3).SuppressCancellationThrow())
                     return false;
         
-                SpawnObject(ConstValues.GunnerAttackEffect2, landingEffectPos);
-                SpawnObject(ConstValues.GunnerAttack2Object, landingAttackPos);
+                SpawnObject(finalEffectId, landingEffectPos);
+                SpawnObject(finalObjectId, landingAttackPos);
                 Rebound(2.0f);
             
                 if (await AttackDelay(delay4).SuppressCancellationThrow())
@@ -208,6 +218,12 @@ public class Player_Gunner : Player
     
     private async UniTask<bool> GunnerJumpAttack()
     {
+        string effectId = ConstValues.GunnerAttack1Effect;
+        string objectId = ConstValues.GunnerAttack1Object;
+
+        effectId = $"{effectId}_{ConstValues.Ice}";
+        objectId = $"{objectId}_{ConstValues.Ice}";
+
         ResetTriggerAnimator(ConstValues.JumpDown);
         attackBuffer = false;
 
@@ -233,8 +249,8 @@ public class Player_Gunner : Player
             if (await AttackDelay(delay1).SuppressCancellationThrow())
                 return false;
             
-            SpawnObject(ConstValues.GunnerAttackEffect1, landingEffectPos);
-            SpawnObject(ConstValues.GunnerAttack1Object, landingAttackPos);
+            SpawnObject(effectId, landingEffectPos);
+            SpawnObject(objectId, landingAttackPos);
             bullet++;
             
             if (!GetJumpState())
@@ -446,6 +462,7 @@ public class Player_Gunner : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
+        objectId = $"{objectId}_{ConstValues.Ice}";
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerGrenade);
         for (int i = 0; i < count; i++)
         {
@@ -458,13 +475,14 @@ public class Player_Gunner : Player
                     // 폭발 시 오브젝트 생성
                     case ConstValues.ExplosionObject:
                         string fragmentsId = addObject.objectId;
+                        fragmentsId = $"{fragmentsId}_{ConstValues.Ice}";
                         for (int j = 0; j < addObject.objectCount; j++)
                             grenadeObject.AddSpawnObject(fragmentsId);
                         break;
                 }
             }
             
-            if (madBomber && count > 1)
+            if (madBomber && count > 1 && i > 1)
                 grenadeObject.RandomForceThrow(4.0f, 2.0f);
         }
         if (madBomber)
@@ -485,7 +503,8 @@ public class Player_Gunner : Player
     {
         // 특성 체크
         var skillId = ConstValues.GunnerKnockBackShot;
-        var objectId = ConstValues.GunnerKnockBackShot;
+        var attackId = ConstValues.GunnerKnockBackShot;
+        var objectId = $"{ConstValues.GunnerKnockBackShot}_{ConstValues.Object}";
         bool powerfulGunpowder = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.PowerfulGunpowder);
         
         StateSetting(ENormalState.Skill, ConstValues.GunnerKnockBackShot, ConstValues.GunnerKnockBackShotReady);
@@ -544,13 +563,22 @@ public class Player_Gunner : Player
         }
         ResetSpritePos();
         if (isCharge)
-            objectId = $"{objectId}_{ConstValues.Big}";
+            attackId = $"{attackId}_{ConstValues.Big}";
         
         if(chargeEffect != null)
             chargeEffect.SetActive(false);
         
+        attackId = $"{attackId}_{ConstValues.Ice}";
+        objectId = $"{objectId}_{ConstValues.Ice}";
+        
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
-        SpawnAttackObject(objectId, knockBackShotPos);
+        SpawnAttackObject(attackId, knockBackShotPos);
+        int angleZ = 10;
+        for (int i = 0; i < 5; i++)
+        {
+            SpawnObject(objectId, knockBackShotPos, angleZ);
+            angleZ -= 5;
+        }
 
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return false;
@@ -585,7 +613,9 @@ public class Player_Gunner : Player
     {
         // 특성 체크
         var skillId = ConstValues.GunnerCrazyShot;
-        
+        var objectId = ConstValues.GunnerCrazyShot;
+        var effectId = ConstValues.GunnerCrazyShotEffect;
+
         bool longShot = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.LongShot);
         bool piercingStreak = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.PiercingStreak);
         bool finishShot = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.FinishShot);
@@ -627,18 +657,21 @@ public class Player_Gunner : Player
                     break;
             }
         }
+
+        objectId = $"{objectId}_{ConstValues.Ice}";
+        effectId = $"{effectId}_{ConstValues.Ice}";
         for (int i = 0; i < bulletCount; i++)
         {
             // 총알
             Vector2 effectPos = crazyShotPos.position;
             float randPos = Random.Range(-0.3f, 0.3f);
-            int randAngleZ = Random.Range(-5, 5);
+            int randAngleZ = Random.Range(-3, 3);
             Vector2 randVector = new Vector2(effectPos.x + randPos, effectPos.y + randPos);
-            var shotObject = SpawnAttackObject(skillId, randVector);
+            var shotObject = SpawnAttackObject(objectId, randVector);
             shotObject.transform.eulerAngles = new Vector3(0, 0, randAngleZ);
             
             // 이팩트
-            SpawnObject(ConstValues.GunnerCrazyShotEffect, randVector);
+            SpawnObject(effectId, randVector);
             if (await AttackDelay(shotTime).SuppressCancellationThrow())
                 return false;
         }
@@ -647,6 +680,8 @@ public class Player_Gunner : Player
         {
             var delay3 = 0.5f;
             var delay4 = 0.2f;
+            string finishId = piercingStreak ? ConstValues.GunnerCrazyShotFinishPierce : ConstValues.GunnerCrazyShotFinishObject;
+            finishId = $"{finishId}_{ConstValues.Ice}";
             
             StateSetting(ENormalState.Skill, ConstValues.ComboAttack2, ConstValues.GunnerCrazyShot);
             SpawnObject(ConstValues.GunnerFlash, centerPos);
@@ -655,7 +690,7 @@ public class Player_Gunner : Player
             
             Scream();
             StateSetting(ENormalState.Skill, ConstValues.ComboAttack2, ConstValues.GunnerCrazyShot);
-            SpawnAttack(piercingStreak ? ConstValues.GunnerCrazyShotFinishPierce : ConstValues.GunnerCrazyShotFinishObject, bigShotPos);
+            SpawnAttack(finishId, bigShotPos);
             if (await AttackDelay(delay4).SuppressCancellationThrow())
                 return false;
         }

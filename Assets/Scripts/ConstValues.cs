@@ -369,10 +369,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerChargeCrashSmashEffect = "Berserker_ChargeCrash_SmashEffect";
     
     public const string GunnerFlash = "Gunner_Flash";
-    public const string GunnerAttack1Object = "Gunner_Attack1Object";
-    public const string GunnerAttackEffect1 = "Gunner_AttackEffect1";
-    public const string GunnerAttack2Object = "Gunner_Attack2Object";
-    public const string GunnerAttackEffect2 = "Gunner_AttackEffect2";
+    public const string GunnerAttack1Object = "Gunner_Attack1_Object";
+    public const string GunnerAttack1Effect = "Gunner_Attack1_Effect";
+    public const string GunnerAttack2Object = "Gunner_Attack2_Object";
+    public const string GunnerAttack2Effect = "Gunner_Attack2_Effect";
     public const string GunnerAttackHitCrit = "Gunner_Attack_Hit_Crit";
 
     public const string GunnerDash = "Gunner_Dash";
@@ -388,6 +388,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string GunnerCrazyShotFinishPierce = "Gunner_CrazyShot_Finish_Pierce";
     public const string GunnerBigShot = "Gunner_BigShot";
     public const string GunnerBigShotReady = "Gunner_BigShot_Ready";
+    public const string Fire = "Fire";
+    public const string Lightning = "Lightning";
+    public const string Ice = "Fire";
     
     public const string FighterStrongPunch = "Fighter_StrongPunch";
 

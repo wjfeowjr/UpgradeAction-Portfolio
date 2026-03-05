@@ -63,7 +63,8 @@ public class Missile : MonoBehaviour, IProjectile
     private void OnEnable()
     {
         isDelete = false;
-        myCollider.enabled = true;
+        if(myCollider)
+            myCollider.enabled = true;
         if (missileSprite)
             missileSprite.enabled = true;
     }
@@ -135,11 +136,10 @@ public class Missile : MonoBehaviour, IProjectile
                 Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
                 //var ray = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, defaultLimit, missileLayerMask);
 
-                if (ray.collider == null)
+                if (ray.collider == null || !myCollider)
                     missileInfo.limitLength = defaultLimit;
                 else
-                    missileInfo.limitLength =
-                        Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
+                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
             }
 
             if (dir == Vector2.right)
@@ -150,11 +150,10 @@ public class Missile : MonoBehaviour, IProjectile
                 Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
                 //var ray = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, defaultLimit, missileLayerMask);
 
-                if (ray.collider == null)
+                if (ray.collider == null || !myCollider)
                     missileInfo.limitLength = defaultLimit;
                 else
-                    missileInfo.limitLength =
-                        Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
+                    missileInfo.limitLength = Vector2.Distance(transform.position, ray.point) - (myCollider.size.x * 0.5f);
             }
         }
     }
@@ -335,7 +334,8 @@ public class Missile : MonoBehaviour, IProjectile
         }
 
         //myRigidbody.linearVelocity = Vector2.zero;
-        myCollider.enabled = false;
+        if(myCollider)
+            myCollider.enabled = false;
         if (missileSprite)
             missileSprite.enabled = false;
 
