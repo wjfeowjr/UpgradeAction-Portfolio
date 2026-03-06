@@ -390,7 +390,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string GunnerBigShotReady = "Gunner_BigShot_Ready";
     public const string Fire = "Fire";
     public const string Lightning = "Lightning";
-    public const string Ice = "Fire";
+    public const string Ice = "Lightning";
     
     public const string FighterStrongPunch = "Fighter_StrongPunch";
 
