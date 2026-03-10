@@ -29,6 +29,8 @@ public class ConstValues : Singleton<ConstValues>
     public const float DialogDelay2 = 1.0f;
 
     public const string User = "user";
+    public const string Foot = "foot";
+    public const string Center = "center";
     
     public const string PrefabFolder = "Assets/Prefab";
     public const string SoundFolder = "Assets/Sound";
@@ -48,6 +50,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string RightMoveKey = "RightMoveKey";
     public const string AttackKey = "AttackKey";
     public const string JumpKey = "JumpKey";
+    public const string UpKey = "UpKey";
     public const string DownKey = "DownKey";
     public const string DashKey = "DashKey";
     public const string SkillKey1 = "SkillKey1";
@@ -244,6 +247,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Stopping = "Stopping";
     public const string Moving = "Moving";
     public const string Grabbed = "Grabbed";
+    public const string Frozen = "Frozen";
     public const string Airborne = "Airborne";
     public const string AirborneDown = "AirborneDown";
     public const string Stun = "Stun";
@@ -252,9 +256,15 @@ public class ConstValues : Singleton<ConstValues>
     public const string Die = "Die";
     public const string Stagger = "Stagger";
     public const string StaggerExplosionUI = "StaggerExplosionUI";
-
+    public const string FrozenEndEffect = "FrozenEndEffect";
+    public const string BurnHitEffect = "BurnHitEffect";
+    public const string ShockHitEffect = "ShockHitEffect";
+    
     // 버프 Id
     public const string SwordCounterBuff = "SwordCounterBuff";
+    public const string ElementalInfusionIceBuff = "ElementalInfusionIceBuff";
+    public const string ElementalInfusionLightningBuff = "ElementalInfusionLightningBuff";
+    public const string ElementalInfusionFireBuff = "ElementalInfusionFireBuff";
     
     // 버프 타입
     public const string PowerUpPercent = "PowerUpPercent";
@@ -387,10 +397,12 @@ public class ConstValues : Singleton<ConstValues>
     public const string GunnerCrazyShotFinishObject = "Gunner_CrazyShot_Finish_Object";
     public const string GunnerCrazyShotFinishPierce = "Gunner_CrazyShot_Finish_Pierce";
     public const string GunnerBigShot = "Gunner_BigShot";
+    public const string GunnerElementalInfusion = "Gunner_ElementalInfusion";
+    public const string GunnerElementalInfusionSelect = "Gunner_ElementalInfusion_Select";
     public const string GunnerBigShotReady = "Gunner_BigShot_Ready";
     public const string Fire = "Fire";
     public const string Lightning = "Lightning";
-    public const string Ice = "Lightning";
+    public const string Ice = "Ice";
     
     public const string FighterStrongPunch = "Fighter_StrongPunch";
 

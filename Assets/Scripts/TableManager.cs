@@ -42,6 +42,7 @@ public class AttackData
     public string effectType;
     public float effectTime;
     public string deBuff;
+    public string deBuffPercent;
     public string deBuffTime;
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
@@ -72,6 +73,7 @@ public class BuffData
 {
     public string id;
     public string buffType;
+    public string buffPos;
 }
 [Serializable]
 public class BuffDataList
@@ -296,6 +298,10 @@ public class SkillData
     public string type;
     public string caster;
     public string coolTime;
+    public string buffName;
+    public string buffValue;
+    public float buffTime;
+    public int buffCount;
     public float skillSpeed;
     public string skillArmor;
     public int talk;

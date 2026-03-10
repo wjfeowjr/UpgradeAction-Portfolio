@@ -617,7 +617,7 @@ public class Player_Berserker : Player
             // 황소의 힘
             var attributeBuffList = GameManager.Instance.PlayerSkill.GetAttributeBuff(skillId);
             foreach (var buff in attributeBuffList)
-                AddBuff(buff.buffId, buff.buffValue, buff.buffTime);
+                AddBuff(buff.buffId, buff.buffValue, buff.buffTime, 0);
 
             bool isJustGuard = addTime < justTime;
             

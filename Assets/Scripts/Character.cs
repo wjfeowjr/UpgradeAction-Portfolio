@@ -17,6 +17,14 @@ public class Buff
     public int buffValue;
     public float buffTime;
     public float currentTime;
+    public int buffCount;
+    public int currentCount;
+
+    public float tickInterval; // 틱 간격
+    public float nextTickTime; // 틱 대기시간
+    
+    public Action endAction;
+    public Action tickAction; // 틱 당 보여주는 액션
 }
 
 // 기본 상태 모션
@@ -41,6 +49,7 @@ public enum ENormalState
     AppearEnd,
     Die,
     Stagger,
+    Frozen
 }
 
 // 실제 이동 관련
@@ -75,7 +84,14 @@ public enum EBuffType
     Stun,
     Stagger,
     ArmorBreak,
+    Frozen,
+    Shock,
+    Burn,
+    
     PowerUpPercent,
+    ElementalIce,
+    ElementalLightning,
+    ElementalFire,
 }
 
 [Serializable]
@@ -195,6 +211,7 @@ public abstract class Character : InteractionController
     public BoxCollider2D MyBoxCollider => myBoxCollider;
     public Transform CenterPos => centerPos;
     public Transform FontPos => fontPos;
+    public List<Buff> BuffList => buffList;
     
     // 물리판정 변수들
     [SerializeField] private float castDistance;
@@ -779,16 +796,41 @@ public abstract class Character : InteractionController
         int expiredCount = 0;
         foreach (var deBuff in buffList)
         {
-            if (deBuff.currentTime < deBuff.buffTime)
-                deBuff.currentTime += Time.deltaTime;
+            if (deBuff.buffTime > 0)
+            {
+                if (deBuff.currentTime > 0)
+                {
+                    deBuff.currentTime -= Time.deltaTime;
+
+                    // --- 도트 데미지(Tick) 처리 추가 ---
+                    if (deBuff.tickInterval > 0) 
+                    {
+                        deBuff.nextTickTime -= Time.deltaTime;
+                        if (deBuff.nextTickTime <= 0)
+                        {
+                            deBuff.tickAction?.Invoke(); // 데미지 실행
+                            deBuff.nextTickTime = deBuff.tickInterval; // 시간 초기화
+                        }
+                    }
+                }
+                else
+                {
+                    deBuff.currentTime = 0;
+                    expiredCount += 1;
+                }
+            }
             else
-                expiredCount += 1;
+            {
+                if (deBuff.currentCount == 0)
+                    expiredCount += 1;
+            }
         }
 
+        // 버프 만료
         if (expiredCount == 0)
             return;
 
-        var expiredDeBuffList = buffList.FindAll(x => x.currentTime >= x.buffTime);
+        var expiredDeBuffList = buffList.FindAll(x => (x.buffTime > 0 && x.currentTime <= 0) || (x.buffTime == 0 && x.currentCount == 0));
         foreach (var expiredDeBuff in expiredDeBuffList)
         {
             buffList.Remove(expiredDeBuff);
@@ -796,17 +838,26 @@ public abstract class Character : InteractionController
             if (removeEffect != null)
                 RemoveObjectList(buffObject, removeEffect);
 
-            // 스턴, 무력화 상태 회복
-            if (expiredDeBuff.buffId is ConstValues.Stun or ConstValues.Stagger)
+            // 스턴, 무력화, 빙결 상태 회복
+            if (expiredDeBuff.buffId is ConstValues.Stun or ConstValues.Stagger or ConstValues.Frozen)
             {
                 StateCheck();
-                if (normalState is ENormalState.Stun or ENormalState.Stagger)
+                if (normalState is ENormalState.Stun or ENormalState.Stagger or ENormalState.Frozen)
                 {
                     StateRecovery();
                 }
             }
+            // 버프가 끝날때 존재하는 액션이 있다면 실행
+            expiredDeBuff.endAction?.Invoke();
             InitBonusStat();
         }
+    }
+
+    protected void BuffCountDown(string buffId)
+    {
+        var targetBuff = buffList.Find(x => x.buffId == buffId);
+        if (targetBuff != null)
+            targetBuff.currentCount -= 1;
     }
 
     public void AllBuffCancel()
@@ -997,6 +1048,16 @@ public abstract class Character : InteractionController
     {
         myRigidbody.linearVelocity = new Vector2(0, 0);
     }
+    
+    public virtual void TakeStagger(int stagger)
+    {
+        if (immuneStagger)
+            return;
+
+        basicStat.stagger -= stagger;
+        if (basicStat.stagger <= 0)
+            basicStat.stagger = 0;
+    }
 
     public virtual void TakeDamage(int damage, bool isTrapAttack)
     {
@@ -1008,45 +1069,48 @@ public abstract class Character : InteractionController
         if (basicStat.hp < 0)
             basicStat.hp = 0;
     }
-
-    public virtual void TakeStagger(int stagger)
-    {
-        if (immuneStagger)
-            return;
-
-        basicStat.stagger -= stagger;
-        if (basicStat.stagger <= 0)
-            basicStat.stagger = 0;
-    }
-
-    public void SpawnDamageFont(int damage, bool critical)
+    public void SpawnDamageFont(int damage, bool critical, bool additional, bool dot)
     {
         if (damage == 0)
             return;
+
+        int fontSize = 55;
 
         Vector3 randomPos = fontPos.position + new Vector3(Random.Range(-0.5f, 0.5f), Random.Range(0, 1.0f));
         var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, randomPos).GetComponent<TextFont>();
         StringBuilder damageText = new StringBuilder();
         damageText.Append(damage);
 
-        if (critical)
+        if (additional)
         {
-            if (GetComponent<Player>())
-                textFont.ColorSetting(EFontType.EnemyCritical);
-            else if (GetComponent<Monster>())
-                textFont.ColorSetting(EFontType.MyCritical);
-
-            damageText.Append("!");
+            fontSize = 35;
+            textFont.ColorSetting(EFontType.AdditionalDamage);
+        }
+        else if (dot)
+        {
+            fontSize = 35;
+            textFont.ColorSetting(EFontType.Dot);
         }
         else
         {
-            if (GetComponent<Player>())
-                textFont.ColorSetting(EFontType.EnemyDamage);
-            else if (GetComponent<Monster>())
-                textFont.ColorSetting(EFontType.MyDamage);
-        }
+            if (critical)
+            {
+                if (GetComponent<Player>())
+                    textFont.ColorSetting(EFontType.EnemyCritical);
+                else if (GetComponent<Monster>())
+                    textFont.ColorSetting(EFontType.MyCritical);
 
-        textFont.DisplayFont(55, damageText.ToString());
+                damageText.Append("!");
+            }
+            else
+            {
+                if (GetComponent<Player>())
+                    textFont.ColorSetting(EFontType.EnemyDamage);
+                else if (GetComponent<Monster>())
+                    textFont.ColorSetting(EFontType.MyDamage);
+            }
+        }
+        textFont.DisplayFont(fontSize, damageText.ToString());
     }
 
     public void SpawnHitEffect(string id, float minScale = 1.0f, float maxScale = 1.0f)
@@ -1438,7 +1502,7 @@ public abstract class Character : InteractionController
     // 피해를 입고있는 모션인가?
     protected bool IsDamaged()
     {
-        return normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun or ENormalState.Damaged;
+        return normalState is ENormalState.Grabbed or ENormalState.Frozen or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun or ENormalState.Damaged;
     }
 
     // 움직이는 플랫폼 위에서 따라가는 조건
@@ -1450,7 +1514,7 @@ public abstract class Character : InteractionController
     // 군중제어에 걸렸는가?
     protected bool IsCc()
     {
-        bool normalCondition = normalState is ENormalState.Grabbed or ENormalState.Stun;
+        bool normalCondition = normalState is ENormalState.Grabbed or ENormalState.Frozen or ENormalState.Stun;
         bool buffCondition = FindBuff(ConstValues.Stun);
         return normalCondition || buffCondition;
     }
@@ -1687,6 +1751,12 @@ public abstract class Character : InteractionController
 
     public virtual void Airborne(float xVelocity, float yVelocity)
     {
+        if (normalState is ENormalState.Grabbed or ENormalState.Frozen)
+        {
+            Debug.Log($"상위 판정이 존재함: {normalState}");
+            return;
+        }
+        
         Vector2 airborneVector = new Vector2(xVelocity, yVelocity);
         if (airborneVector == Vector2.zero)
             return;
@@ -1747,7 +1817,7 @@ public abstract class Character : InteractionController
     }
     
     // 버프
-    protected void AddBuff(string buffId, int buffValue, float buffTime)
+    protected void AddBuff(string buffId, int buffValue, float buffTime, int buffCount, Action endAction = null, float tickInterval = 0, float nextTickTime = 0, Action tickAction = null)
     {
         var findDeBuff = TargetBuff(buffId);
         // 해당 버프가 적용되어있지 않음
@@ -1763,16 +1833,25 @@ public abstract class Character : InteractionController
                     buffType = buffType,
                     buffValue = buffValue,
                     buffTime = buffTime,
-                    currentTime = 0,
+                    currentTime = buffTime,
+                    buffCount = buffCount,
+                    currentCount = buffCount,
+                    endAction = endAction,
+                    
+                    tickInterval = tickInterval,
+                    nextTickTime = nextTickTime,
+                    tickAction = tickAction,
                 };
                 buffList.Add(newDeBuff);
 
-                switch (buffType)
+                Transform posTransform = transform;
+                switch (buffData.buffPos)
                 {
-                    case EBuffType.PowerUpPercent:
-                        SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", transform, 0, true);
+                    case ConstValues.Center:
+                        posTransform = centerPos;
                         break;
                 }
+                SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", posTransform, 0, true);
             }
             else
             {
@@ -1782,21 +1861,23 @@ public abstract class Character : InteractionController
         // 해당 디버프가 적용되어 있음
         else
         {
-            var leftTime = findDeBuff.buffTime - findDeBuff.currentTime;
+            var leftTime = findDeBuff.currentTime;
 
             if (leftTime < buffTime)
             {
                 findDeBuff.buffTime = buffTime;
-                findDeBuff.currentTime = 0;
+                findDeBuff.currentTime = buffTime;
+                findDeBuff.buffCount = buffCount;
+                findDeBuff.currentCount = buffCount;
             }
         }
         InitBonusStat();
     }
     
-    public void AddDeBuff(EBuffType buffType, float buffTime)
+    public void AddDeBuff(EBuffType buffType, float buffTime, int buffCount, Action endAction = null, float tickInterval = 0, float nextTickTime = 0, Action tickAction = null)
     {
         var findDeBuff = TargetBuff(buffType.ToString());
-        // 해당 버프가 적용되어있지 않음
+        // 해당 디버프가 적용되어있지 않음
         if (findDeBuff == null)
         {
             var newDeBuff = new Buff()
@@ -1805,7 +1886,14 @@ public abstract class Character : InteractionController
                 buffType = buffType,
                 buffValue = 0,
                 buffTime = buffTime,
-                currentTime = 0,
+                currentTime = buffTime,
+                buffCount = buffCount,
+                currentCount = buffCount,
+                endAction = endAction,
+                    
+                tickInterval = tickInterval,
+                nextTickTime = nextTickTime,
+                tickAction = tickAction,
             };
             buffList.Add(newDeBuff);
             switch (buffType)
@@ -1827,36 +1915,57 @@ public abstract class Character : InteractionController
                         SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
                     }
                     break;
+                case EBuffType.Frozen:
+                    var frozenEffect = SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
+                    frozenEffect.transform.localScale = new Vector3(myBoxCollider.size.x, myBoxCollider.size.y, 1);
+                    break;
+                case EBuffType.Shock:
+                    var shockEffect = SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
+                    var shockSize = myBoxCollider.size.x;
+                    shockEffect.transform.localScale = new Vector3(shockSize, shockSize, shockSize);
+                    break;
+                case EBuffType.Burn:
+                    var burnEffect = SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
+                    var burnSize = myBoxCollider.size.x;
+                    burnEffect.transform.localScale = new Vector3(burnSize, burnSize, burnSize);
+                    break;
             }
         }
         // 해당 디버프가 적용되어 있음
         else
         {
-            var leftTime = findDeBuff.buffTime - findDeBuff.currentTime;
+            var leftTime = findDeBuff.currentTime;
 
             if (leftTime < buffTime)
             {
                 findDeBuff.buffTime = buffTime;
-                findDeBuff.currentTime = 0;
+                findDeBuff.currentTime = buffTime;
+                findDeBuff.buffCount = buffCount;
+                findDeBuff.currentCount = buffCount;
             }
         }
     }
-    // 버프를 가지고 있는가
+    // 버프를 가지고 있는가(id로 찾기)
     private Buff TargetBuff(string buffId)
     {
         return buffList.Find(x => x.buffId == buffId);
     }
-
+    // 버프를 가지고 있는가(타입으로 찾기)
+    public Buff TargetBuff(EBuffType buffType)
+    {
+        return buffList.Find(x => x.buffType == buffType);
+    }
+    
     // 상태이상
     // 스턴
     public void Stun(float stunTime)
     {
         // 스턴 디버프 추가
-        AddDeBuff(EBuffType.Stun, stunTime);
+        AddDeBuff(EBuffType.Stun, stunTime, 0);
         MoveStateSetting(EMoveState.Stopping);
 
         // 이후 현재 판정에 따라서 애니메이션을 변화함
-        if (normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
+        if (normalState is ENormalState.Grabbed or ENormalState.Frozen or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
         {
             Debug.Log($"상위 판정이 존재함: {normalState}");
             return;
@@ -1871,7 +1980,7 @@ public abstract class Character : InteractionController
     public virtual void Stagger()
     {
         // 무력화 디버프 추가
-        AddDeBuff(EBuffType.Stagger, basicStat.staggerTime);
+        AddDeBuff(EBuffType.Stagger, basicStat.staggerTime, 0);
         MoveStateSetting(EMoveState.Stopping);
 
         CancelMotion();
@@ -1883,13 +1992,42 @@ public abstract class Character : InteractionController
         foreach (var spriteRenderer in mySpriteRenderers)
             spriteRenderer.color = ConstValues.WhiteColor;
     }
+    
+    // 빙결
+    public void Frozen(float frozenTime)
+    {
+        // 스턴 디버프 추가
+        AddDeBuff(EBuffType.Frozen, frozenTime, 0, FrozenEnd);
+        MoveStateSetting(EMoveState.Stopping);
+
+        // 이후 현재 판정에 따라서 애니메이션을 변화함
+        if (normalState is ENormalState.Grabbed or ENormalState.Frozen)
+        {
+            Debug.Log($"상위 판정이 존재함: {normalState}");
+            return;
+        }
+        
+        CancelMotion();
+        stateCancellation = new CancellationTokenSource();
+        
+        // 강제로 세움 + 얼음꽝꽝 이팩트
+        StandHitBox();
+        StateSetting(ENormalState.Frozen, ConstValues.Stun, ConstValues.Stun);
+    }
+
+    private void FrozenEnd()
+    {
+        var endObject = SpawnObject(ConstValues.FrozenEndEffect, centerPos);
+        float size = myBoxCollider.size.x;
+        endObject.transform.localScale = new Vector3(size, size, size);
+    }
 
     public virtual async void Damaged(float damagedTime)
     {
         if (damagedTime == 0)
             return;
         
-        if (normalState is ENormalState.Grabbed or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
+        if (normalState is ENormalState.Grabbed or ENormalState.Frozen or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
         {
             Debug.Log($"상위 판정이 존재함: {normalState}");
             return;
@@ -1911,8 +2049,8 @@ public abstract class Character : InteractionController
         if (knockBackLength == 0)
             return;
         
-        // 넉백 중 다운 상태라면 무시
-        if (normalState == ENormalState.Down)
+        // 넉백 중 다운, 빙결 상태라면 무시
+        if (normalState is ENormalState.Down or ENormalState.Frozen)
             return;
 
         // 방향 결정 (knockBackLength 양수→오른쪽, 음수→왼쪽)

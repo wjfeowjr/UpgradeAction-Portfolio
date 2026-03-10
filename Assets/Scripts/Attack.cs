@@ -18,13 +18,20 @@ public enum EDirectionType
 }
 
 [Serializable]
+public class DeBuffInfo
+{
+    public EBuffType deBuff;
+    public int deBuffPercent;
+    public float deBuffTime;
+}
+
+[Serializable]
 public class AttackInfo
 {
     public string id;
     public EEffectType effectType;
     public float effectTime;
-    public List<EBuffType> deBuff = new List<EBuffType>();
-    public List<float> deBuffTime = new List<float>();
+    public List<DeBuffInfo> deBuffInfoList = new List<DeBuffInfo>();
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
     public bool destroyProjectile;
@@ -86,21 +93,20 @@ public class Attack : MonoBehaviour
             originInfo.id = attackData.id;
             originInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
             originInfo.effectTime = attackData.effectTime;
+            
             var deBuffSplit1 = attackData.deBuff.Split(';');
-            foreach (var deBuff in deBuffSplit1)
-            {
-                if (!string.IsNullOrWhiteSpace(deBuff))
-                {
-                    originInfo.deBuff.Add((EBuffType)Enum.Parse(typeof(EBuffType), deBuff));
-                }
-            }
+            var deBuffTimePercent1 = attackData.deBuffPercent.Split(';');
             var deBuffTimeSplit1 = attackData.deBuffTime.Split(';');
-            foreach (var deBuffTime in deBuffTimeSplit1)
+
+            if (!string.IsNullOrWhiteSpace(deBuffSplit1[0]))
             {
-                var time = float.Parse(deBuffTime);
-                if (time > 0)
+                for (var i = 0; i < deBuffSplit1.Length; i++)
                 {
-                    originInfo.deBuffTime.Add(time);
+                    DeBuffInfo deBuffInfo = new DeBuffInfo();
+                    deBuffInfo.deBuff = (EBuffType)Enum.Parse(typeof(EBuffType), deBuffSplit1[i]);
+                    deBuffInfo.deBuffPercent = int.Parse(deBuffTimePercent1[i]);
+                    deBuffInfo.deBuffTime = float.Parse(deBuffTimeSplit1[i]);
+                    originInfo.deBuffInfoList.Add(deBuffInfo);
                 }
             }
             originInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
@@ -143,23 +149,19 @@ public class Attack : MonoBehaviour
         attackInfo.id = attackData.id;
         attackInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
         attackInfo.effectTime = attackData.effectTime;
-
+        
         var deBuffSplit = attackData.deBuff.Split(';');
-        foreach (var deBuff in deBuffSplit)
-        {
-            if (!string.IsNullOrWhiteSpace(deBuff))
-            {
-                attackInfo.deBuff.Add((EBuffType)Enum.Parse(typeof(EBuffType), deBuff));
-            }
-        }
-
+        var deBuffTimePercent = attackData.deBuffPercent.Split(';');
         var deBuffTimeSplit = attackData.deBuffTime.Split(';');
-        foreach (var deBuffTime in deBuffTimeSplit)
+        if (!string.IsNullOrWhiteSpace(deBuffSplit[0]))
         {
-            var time = float.Parse(deBuffTime);
-            if (time > 0)
+            for (var i = 0; i < deBuffSplit.Length; i++)
             {
-                attackInfo.deBuffTime.Add(time);
+                DeBuffInfo deBuffInfo = new DeBuffInfo();
+                deBuffInfo.deBuff = (EBuffType)Enum.Parse(typeof(EBuffType), deBuffSplit[i]);
+                deBuffInfo.deBuffPercent = int.Parse(deBuffTimePercent[i]);
+                deBuffInfo.deBuffTime = float.Parse(deBuffTimeSplit[i]);
+                attackInfo.deBuffInfoList.Add(deBuffInfo);
             }
         }
 
@@ -202,7 +204,6 @@ public class Attack : MonoBehaviour
         attackInfo.hitEffectId = attackData.hitEffectId;
     }
 
-    // 공격데이터를 변경하는 특성은 여기서 관리
     public void AttributeCheck()
     {
         var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(attackInfo.id);
@@ -228,9 +229,9 @@ public class Attack : MonoBehaviour
             {
                 // 피해 증가
                 case ConstValues.DamageUp:
-                    var result = originInfo.coefficient + originInfo.coefficient * upgrade.upgradeValue * 0.01f;
+                    var result = originInfo.coefficient * upgrade.upgradeValue * 0.01f;
                     int final = Mathf.RoundToInt(result);
-                    attackInfo.coefficient = final;
+                    attackInfo.coefficient += final;
                     break;
                 // 치명타 확률 증가
                 case ConstValues.CriticalChanceUp:
@@ -502,8 +503,22 @@ public class Attack : MonoBehaviour
             // 피해입기
             hitTarget.TakeDamage(damage, isTrapAttack);
             // 폰트소환
-            hitTarget.SpawnDamageFont(damage, critical);
-            
+            hitTarget.SpawnDamageFont(damage, critical, false, false);
+
+            // 감전 추가피해
+            var shockDeBuff = hitTarget.TargetBuff(EBuffType.Shock);
+            if (!isTrapAttack && shockDeBuff != null)
+            {
+                var additionalDamage = (int)(damage * 0.1f);
+                if (additionalDamage < 1)
+                    additionalDamage = 1;
+                
+                hitTarget.TakeDamage(additionalDamage, false);
+                hitTarget.SpawnDamageFont(additionalDamage, critical, true, false);
+                // 여기 감전 추가피해 이팩트 넣기
+                hitTarget.SpawnHitEffect(ConstValues.ShockHitEffect);
+            }
+
             // 피해를 입고, 체력이 0으로 떨어지면 죽는다
             if (hitTarget.BasicStat.hp <= 0)
             {
@@ -555,20 +570,51 @@ public class Attack : MonoBehaviour
             }
             
             // 상태이상을 먼저 추가
-            for (var i = 0; i < attackInfo.deBuff.Count; i++)
+            foreach (var debuffInfo in attackInfo.deBuffInfoList)
             {
-                switch (attackInfo.deBuff[i])
+                // 확률계산
+                int rand = Random.Range(0, 100);
+                if (rand < debuffInfo.deBuffPercent)
                 {
-                    // 기절
-                    case EBuffType.Stun:
-                        if (hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
-                            hitTarget.Stun(attackInfo.deBuffTime[i]);
-                        break;
-                    // 갑옷 파괴
-                    case EBuffType.ArmorBreak:
-                        if (hitTarget.OriginStat.bodyType is EBodyType.SuperArmor)
-                            hitTarget.AddDeBuff(EBuffType.ArmorBreak, attackInfo.deBuffTime[i]);
-                        break;
+                    switch (debuffInfo.deBuff)
+                    {
+                        // 기절
+                        case EBuffType.Stun:
+                            if (hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
+                                hitTarget.Stun(debuffInfo.deBuffTime);
+                            break;
+                        // 갑옷 파괴
+                        case EBuffType.ArmorBreak:
+                            if (hitTarget.OriginStat.bodyType is EBodyType.SuperArmor)
+                                hitTarget.AddDeBuff(EBuffType.ArmorBreak, debuffInfo.deBuffTime, 0);
+                            break;
+                        // 빙결
+                        case EBuffType.Frozen:
+                            if (hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
+                                hitTarget.Frozen(debuffInfo.deBuffTime);
+                            break;
+                        // 감전
+                        case EBuffType.Shock:
+                            hitTarget.AddDeBuff(EBuffType.Shock, debuffInfo.deBuffTime, 0);
+                            break;
+                        // 화상
+                        case EBuffType.Burn:
+                            Action burnAction = () =>
+                            {
+                                int burnDamage = (int)(castChar.BasicStat.power * 0.2f);
+                                hitTarget.TakeDamage(burnDamage, false);
+                                hitTarget.SpawnDamageFont(burnDamage, critical, false, true);
+                                // 여기에 화상 이팩트 추가
+                                hitTarget.SpawnHitEffect(ConstValues.BurnHitEffect);
+                                
+                                // 피해를 입고, 체력이 0으로 떨어지면 죽는다
+                                if (hitTarget.BasicStat.hp <= 0)
+                                    hitTarget.Die();
+                                
+                            };
+                            hitTarget.AddDeBuff(EBuffType.Burn, debuffInfo.deBuffTime, 0, null, 0.5f, 0.5f, burnAction);
+                            break;
+                    }
                 }
             }
             

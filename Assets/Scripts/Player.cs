@@ -12,10 +12,14 @@ public class PlayerSkill
     public string id;
     public List<float> maxCoolTime = new List<float>();
     public List<float> curCoolTime = new List<float>();
-    public string talk;
-    public string explainTalk;
+    public List<string> buffName = new List<string>();
+    public List<int> buffValue = new List<int>();
+    public float buffTime;
+    public int buffCount;
     public float skillSpeed;
     public string skillArmor;
+    public string talk;
+    public string explainTalk;
 
     public bool IsOnCooldown
     {
@@ -230,6 +234,7 @@ public abstract class Player : Character
             GameManager.Instance.AddNewSkill(ConstValues.GunnerGrenade);
             GameManager.Instance.AddNewSkill(ConstValues.GunnerKnockBackShot);
             GameManager.Instance.AddNewSkill(ConstValues.GunnerCrazyShot);
+            GameManager.Instance.AddNewSkill(ConstValues.GunnerElementalInfusion);
         }
 
         if (Input.GetKeyDown(KeyCode.O))
@@ -238,6 +243,7 @@ public abstract class Player : Character
             GameManager.Instance.RemoveSkill(ConstValues.GunnerGrenade);
             GameManager.Instance.RemoveSkill(ConstValues.GunnerKnockBackShot);
             GameManager.Instance.RemoveSkill(ConstValues.GunnerCrazyShot);
+            GameManager.Instance.RemoveSkill(ConstValues.GunnerElementalInfusion);
         }
     }
 
@@ -476,28 +482,24 @@ public abstract class Player : Character
     }
     protected override void StateRecovery()
     {
-        var stun = buffList.Find(x => x.buffId is ConstValues.Stun);
+        var isCcState = buffList.FindAll(x => x.buffId is ConstValues.Stun or ConstValues.Stagger or ConstValues.Frozen);
 
-        // 스턴이 풀린 경우
-        if (stun == null)
+        if (isCcState.Count == 0)
         {
             DeleteDashFrameUI();
             StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
-            // switch (landingState)
-            // {
-            //     case ELandingState.Air:
-            //         StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
-            //         break;
-            //     case ELandingState.Ground:
-            //         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-            //         break;
-            // }
         }
-        // 스턴에 걸려있는 경우
         else
         {
-            StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
+            // 스턴에 걸려있는 경우
+            if (isCcState.Find(x => x.buffId == ConstValues.Stun) != null)
+                StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
+
+            // 빙결에 걸려있는 경우
+            if (isCcState.Find(x => x.buffId == ConstValues.Frozen) != null)
+                StateSetting(ENormalState.Frozen, ConstValues.Stun, ConstValues.Stun);
         }
+
         StandHitBox();
     }
 
@@ -795,10 +797,6 @@ public abstract class Player : Character
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
         uiInterface.HpPresenter.SetHpText();
         uiInterface.HpPresenter.HpReduce();
-        
-        // 즉사는 엌 소리 안냄
-        if(basicStat.hp > 0)
-            PlaySound(ConstValues.PlayerDamaged1);
     }
 
     public override void Die()
@@ -815,9 +813,18 @@ public abstract class Player : Character
     
     public override async void Airborne(float xVelocity, float yVelocity)
     {
-        base.Airborne(xVelocity, yVelocity);
-        curDashDelay = 0f;
+        // 가드절
+        if (normalState is ENormalState.Grabbed or ENormalState.Frozen)
+        {
+            Debug.Log($"상위 판정이 존재함: {normalState}");
+            return;
+        }
+        if(basicStat.hp > 0)
+            PlaySound(ConstValues.PlayerDamaged1);
         
+        base.Airborne(xVelocity, yVelocity);
+        
+        curDashDelay = 0f;
         dashDelayCancellation = new CancellationTokenSource();
         if(await NormalDelay(dashDelay, dashDelayCancellation).SuppressCancellationThrow())
             return;
@@ -829,6 +836,9 @@ public abstract class Player : Character
     public override void Damaged(float damagedTime)
     {
         base.Damaged(damagedTime);
+        if(basicStat.hp > 0)
+            PlaySound(ConstValues.PlayerDamaged1);
+        
         if(GameManager.Instance.ControlStart && IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
             ActiveDashEffectUI();
     }
@@ -1200,17 +1210,33 @@ public abstract class Player : Character
             
             PlayerSkill addedSkill = new PlayerSkill();
             addedSkill.id = skill.id;
-            var coolTimeArray = skill.coolTime.Split(',');
+            var coolTimeArray = skill.coolTime.Split(';');
             foreach (var coolTime in coolTimeArray)
             {
                 addedSkill.maxCoolTime.Add(float.Parse(coolTime));
                 addedSkill.curCoolTime.Add(float.Parse(coolTime));
             }
-            addedSkill.talk = GameManager.Instance.GetTalk(skill.talk);;
-            addedSkill.explainTalk = GameManager.Instance.GetTalk(skill.explainTalk);
+
+            if (!string.IsNullOrWhiteSpace(skill.buffName))
+            {
+                var buffNameArray = skill.buffName.Split(';');
+                foreach (var buff in buffNameArray)
+                    addedSkill.buffName.Add(buff);
+            }
+
+            addedSkill.buffTime = skill.buffTime;
+            addedSkill.buffCount = skill.buffCount;
+            
+            var buffValueArray = skill.buffValue.Split(';');
+            foreach (var buffValue in buffValueArray)
+                addedSkill.buffValue.Add(int.Parse(buffValue));
+            
             var skillTableData = TableManager.Instance.skillTable.Skill.Find(x => x.id == skill.id);
             addedSkill.skillSpeed = skillTableData.skillSpeed;
             addedSkill.skillArmor = skillTableData.skillArmor;
+
+            addedSkill.talk = GameManager.Instance.GetTalk(skill.talk);;
+            addedSkill.explainTalk = GameManager.Instance.GetTalk(skill.explainTalk);
             originSkillList.Add(addedSkill);
         }
 
@@ -1220,6 +1246,10 @@ public abstract class Player : Character
             addedSkill.id = originSkill.id;
             addedSkill.maxCoolTime = originSkill.maxCoolTime.ToList();
             addedSkill.curCoolTime = originSkill.curCoolTime.ToList();
+            addedSkill.buffName = originSkill.buffName.ToList();
+            addedSkill.buffTime = originSkill.buffTime;
+            addedSkill.buffCount = originSkill.buffCount;
+            addedSkill.buffValue = originSkill.buffValue.ToList();
             addedSkill.talk = originSkill.talk;
             addedSkill.explainTalk = originSkill.explainTalk;
             addedSkill.skillSpeed = originSkill.skillSpeed;

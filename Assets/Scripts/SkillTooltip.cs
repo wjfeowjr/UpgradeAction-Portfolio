@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+using System.Globalization;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -46,7 +48,22 @@ public class SkillTooltip : MonoBehaviour
         var skillData = TableManager.Instance.skillTable.Skill.Find(x => x.id == playerSkill.id);
         if (skillData != null)
         {
-            skillExplain.text = playerSkill.explainTalk;
+            if (string.IsNullOrWhiteSpace(skillData.buffName))
+            {
+                skillExplain.text = playerSkill.explainTalk;
+            }
+            else
+            {
+                List<string> valueList = new List<string>();
+                valueList.Add(skillData.buffTime.ToString(CultureInfo.InvariantCulture));
+                valueList.Add(skillData.buffCount.ToString(CultureInfo.InvariantCulture));
+                var buffValueSplit = skillData.buffValue.Split(';');
+                foreach (var buffValue in buffValueSplit)
+                    valueList.Add(buffValue);
+
+                object[] finalValue = valueList.ToArray();
+                skillExplain.text = string.Format(playerSkill.explainTalk, finalValue);
+            }
             return;
         }
 

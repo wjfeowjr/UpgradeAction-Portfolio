@@ -1,9 +1,10 @@
+using System;
 using UnityEngine;
 
 public class Monster_Spinach : Monster
 {
     [SerializeField] private Transform attackPos;
-    
+
     protected override void MonsterPattern(int idx)
     {
         base.MonsterPattern(idx);

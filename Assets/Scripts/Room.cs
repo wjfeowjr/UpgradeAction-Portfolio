@@ -1026,6 +1026,7 @@ public class Room : MonoBehaviour
                 monsters[i].SetGoldAction(PlusGold);
                 monsters[i].gameObject.SetActive(true);
                 monsters[i].ForceIdle();
+                monsters[i].AllBuffCancel();
             }
         }
         

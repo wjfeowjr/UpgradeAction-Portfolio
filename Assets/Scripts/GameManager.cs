@@ -723,6 +723,7 @@ public class GameManager : Singleton<GameManager>
 
     public KeyCode attackKey;
     public KeyCode jumpKey;
+    public KeyCode upKey;
     public KeyCode downKey;
 
     public KeyCode changeCharacterKey;
@@ -1056,6 +1057,7 @@ public class GameManager : Singleton<GameManager>
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
         jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
         downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
+        upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
         
         changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
         dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);

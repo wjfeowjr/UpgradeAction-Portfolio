@@ -1,7 +1,9 @@
+using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
+using Random = UnityEngine.Random;
 
 public class Player_Gunner : Player
 {
@@ -15,6 +17,7 @@ public class Player_Gunner : Player
     [SerializeField] private Transform grenadePos;
     [SerializeField] private Transform knockBackShotPos;
     [SerializeField] private Transform crazyShotPos;
+    [SerializeField] private Transform elementalInfusionPos;
     [SerializeField] private Transform bigShotPos;
     
     private int maxBullet = 3;
@@ -116,12 +119,16 @@ public class Player_Gunner : Player
         string objectId = ConstValues.GunnerAttack1Object;
         string finalEffectId = ConstValues.GunnerAttack2Effect;
         string finalObjectId = ConstValues.GunnerAttack2Object;
+        string elemental = BuffElemental(false);
 
-        effectId = $"{effectId}_{ConstValues.Ice}";
-        objectId = $"{objectId}_{ConstValues.Ice}";
-        finalEffectId = $"{finalEffectId}_{ConstValues.Ice}";
-        finalObjectId = $"{finalObjectId}_{ConstValues.Ice}";
-        
+        if (!string.IsNullOrWhiteSpace(elemental))
+        {
+            effectId = $"{effectId}_{elemental}";
+            objectId = $"{objectId}_{elemental}";
+            finalEffectId = $"{finalEffectId}_{elemental}";
+            finalObjectId = $"{finalObjectId}_{elemental}";
+        }
+
         if (moveState == EMoveState.Moving)
             MoveStateSetting(EMoveState.Stopping);
 
@@ -220,9 +227,13 @@ public class Player_Gunner : Player
     {
         string effectId = ConstValues.GunnerAttack1Effect;
         string objectId = ConstValues.GunnerAttack1Object;
-
-        effectId = $"{effectId}_{ConstValues.Ice}";
-        objectId = $"{objectId}_{ConstValues.Ice}";
+        string elemental = BuffElemental(false);
+        
+        if (!string.IsNullOrWhiteSpace(elemental))
+        {
+            effectId = $"{effectId}_{elemental}";
+            objectId = $"{objectId}_{elemental}";
+        }
 
         ResetTriggerAnimator(ConstValues.JumpDown);
         attackBuffer = false;
@@ -391,8 +402,7 @@ public class Player_Gunner : Player
             SpawnAttack(ConstValues.GunnerDashShot, dashShotPos);
             finishSuccess = await Dash();
         }
-        
-        
+
         SkillSpeedAndArmorCheck(skillId);
         if (skillId == ConstValues.GunnerGrenade)
         {
@@ -405,6 +415,10 @@ public class Player_Gunner : Player
         else if (skillId == ConstValues.GunnerCrazyShot)
         {
             finishSuccess = await CrazyShot();
+        }
+        else if (skillId == ConstValues.GunnerElementalInfusion)
+        {
+            finishSuccess = await ElementalInfusion();
         }
         else if (skillId == ConstValues.GunnerBigShot)
         {
@@ -462,7 +476,10 @@ public class Player_Gunner : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        objectId = $"{objectId}_{ConstValues.Ice}";
+        string elemental = BuffElemental();
+        if (!string.IsNullOrWhiteSpace(elemental))
+            objectId = $"{objectId}_{elemental}";
+        
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerGrenade);
         for (int i = 0; i < count; i++)
         {
@@ -475,7 +492,8 @@ public class Player_Gunner : Player
                     // 폭발 시 오브젝트 생성
                     case ConstValues.ExplosionObject:
                         string fragmentsId = addObject.objectId;
-                        fragmentsId = $"{fragmentsId}_{ConstValues.Ice}";
+                        if (!string.IsNullOrWhiteSpace(elemental))
+                            fragmentsId = $"{fragmentsId}_{elemental}";
                         for (int j = 0; j < addObject.objectCount; j++)
                             grenadeObject.AddSpawnObject(fragmentsId);
                         break;
@@ -568,9 +586,13 @@ public class Player_Gunner : Player
         if(chargeEffect != null)
             chargeEffect.SetActive(false);
         
-        attackId = $"{attackId}_{ConstValues.Ice}";
-        objectId = $"{objectId}_{ConstValues.Ice}";
-        
+        string elemental = BuffElemental();
+        if (!string.IsNullOrWhiteSpace(elemental))
+        {
+            attackId = $"{attackId}_{elemental}";
+            objectId = $"{objectId}_{elemental}";
+        }
+
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
         SpawnAttackObject(attackId, knockBackShotPos);
         int angleZ = 10;
@@ -658,8 +680,13 @@ public class Player_Gunner : Player
             }
         }
 
-        objectId = $"{objectId}_{ConstValues.Ice}";
-        effectId = $"{effectId}_{ConstValues.Ice}";
+        string elemental = BuffElemental();
+        if (!string.IsNullOrWhiteSpace(elemental))
+        {
+            objectId = $"{objectId}_{elemental}";
+            effectId = $"{effectId}_{elemental}";
+        }
+        
         for (int i = 0; i < bulletCount; i++)
         {
             // 총알
@@ -681,7 +708,8 @@ public class Player_Gunner : Player
             var delay3 = 0.5f;
             var delay4 = 0.2f;
             string finishId = piercingStreak ? ConstValues.GunnerCrazyShotFinishPierce : ConstValues.GunnerCrazyShotFinishObject;
-            finishId = $"{finishId}_{ConstValues.Ice}";
+            if (!string.IsNullOrWhiteSpace(elemental))
+                finishId = $"{finishId}_{elemental}";
             
             StateSetting(ENormalState.Skill, ConstValues.ComboAttack2, ConstValues.GunnerCrazyShot);
             SpawnObject(ConstValues.GunnerFlash, centerPos);
@@ -702,6 +730,125 @@ public class Player_Gunner : Player
         }
 
         return true;
+    }
+    
+    // 거너 속성 주입
+    private async UniTask<bool> ElementalInfusion()
+    {
+        var skillData = skillList.Find(x => x.id == ConstValues.GunnerElementalInfusion);
+        if (skillData != null)
+        {
+            if(landingState == ELandingState.Ground)
+                myRigidbody.linearVelocity = Vector2.zero;
+            
+            var delay1 = 0.3f;
+            
+            StateSetting(ENormalState.Skill, ConstValues.GunnerElementalInfusion, ConstValues.GunnerElementalInfusion);
+            Scream();
+            var selectObject = SpawnObject(ConstValues.GunnerElementalInfusionSelect, elementalInfusionPos).GetComponent<Gunner_ElementalInfusionSelect>();
+            selectObject.SetText(GameManager.Instance.GetKeyCode(GameManager.Instance.leftMoveKey), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey), GameManager.Instance.GetKeyCode(GameManager.Instance.rightMoveKey));
+            
+            bool isChoice = false;
+            string elemental = default;
+            
+            while (!isChoice)
+            {
+                if (Input.GetKeyDown(GameManager.Instance.leftMoveKey))
+                {
+                    isChoice = true;
+                    elemental = ConstValues.Ice;
+                }
+                if (Input.GetKeyDown(GameManager.Instance.upKey))
+                {
+                    isChoice = true;
+                    elemental = ConstValues.Lightning;
+                }
+                if (Input.GetKeyDown(GameManager.Instance.rightMoveKey))
+                {
+                    isChoice = true;
+                    elemental = ConstValues.Fire;
+                }
+                if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+                    return false;
+            }
+
+            Action endAction = ()=> SpawnAttack($"{ConstValues.GunnerElementalInfusion}_{elemental}", centerPos);
+            switch (elemental)
+            {
+                case ConstValues.Ice:
+                    AddBuff(skillData.buffName[0], skillData.buffValue[0], skillData.buffTime, skillData.buffCount, endAction);
+                    break;
+                case ConstValues.Lightning:
+                    AddBuff(skillData.buffName[1], skillData.buffValue[1], skillData.buffTime, skillData.buffCount, endAction);
+                    break;
+                case ConstValues.Fire:
+                    AddBuff(skillData.buffName[2], skillData.buffValue[2], skillData.buffTime, skillData.buffCount, endAction);
+                    break;
+            }
+
+            selectObject.gameObject.SetActive(false);
+            endAction.Invoke();
+            StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerElementalInfusion);
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return false;
+        }
+        return true;
+    }
+
+    private string BuffElemental(bool isSkill = true)
+    {
+        string elemental = default;
+        var iceBuff = TargetBuff(EBuffType.ElementalIce);
+        var lightningBuff = TargetBuff(EBuffType.ElementalLightning);
+        var fireBuff = TargetBuff(EBuffType.ElementalFire);
+        
+        if (iceBuff != null)
+        {
+            if (isSkill)
+            {
+                if (iceBuff.currentCount > 0)
+                {
+                    iceBuff.currentCount -= 1;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            elemental = ConstValues.Ice;
+        }
+        else if (lightningBuff != null)
+        {
+            if (isSkill)
+            { 
+                if (lightningBuff.currentCount > 0)
+                {
+                    lightningBuff.currentCount -= 1;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            elemental = ConstValues.Lightning;
+        }
+        else if (fireBuff != null)
+        {
+            if (isSkill)
+            { 
+                if (fireBuff.currentCount > 0)
+                {
+                    fireBuff.currentCount -= 1;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            elemental = ConstValues.Fire;
+        }
+
+        return elemental;
     }
     
     // 거너 빅샷

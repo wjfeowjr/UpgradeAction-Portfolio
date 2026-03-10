@@ -625,8 +625,8 @@ public class Monster : Character
 
     protected override void StateRecovery()
     {
-        var stunOrStagger = buffList.FindAll(x => x.buffId is ConstValues.Stun or ConstValues.Stagger);
-        if (stunOrStagger.Count == 0)
+        var isCcState = buffList.FindAll(x => x.buffId is ConstValues.Stun or ConstValues.Stagger or ConstValues.Frozen);
+        if (isCcState.Count == 0)
         {
             switch (landingState)
             {
@@ -647,12 +647,16 @@ public class Monster : Character
         else
         {
             // 스턴에 걸려있는 경우
-            if (stunOrStagger.Find(x => x.buffId == ConstValues.Stun) != null)
+            if (isCcState.Find(x => x.buffId == ConstValues.Stun) != null)
                 StateSetting(ENormalState.Stun, ConstValues.Stun, ConstValues.Stun);
 
             // 무력화에 걸려있는 경우
-            if (stunOrStagger.Find(x => x.buffId == ConstValues.Stagger) != null)
+            if (isCcState.Find(x => x.buffId == ConstValues.Stagger) != null)
                 StateSetting(ENormalState.Stagger, ConstValues.Stagger, ConstValues.Stagger);
+            
+            // 빙결에 걸려있는 경우
+            if (isCcState.Find(x => x.buffId == ConstValues.Frozen) != null)
+                StateSetting(ENormalState.Frozen, ConstValues.Stun, ConstValues.Stun);
         }
 
         StandHitBox();
@@ -1141,7 +1145,7 @@ public class Monster : Character
     public override void Stagger()
     {
         // 무력화 디버프 추가
-        AddDeBuff(EBuffType.Stagger, basicStat.staggerTime);
+        AddDeBuff(EBuffType.Stagger, basicStat.staggerTime, 0);
         MoveStateSetting(EMoveState.Stopping);
 
         CancelMotion();

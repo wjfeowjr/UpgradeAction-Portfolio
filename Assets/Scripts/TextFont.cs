@@ -17,6 +17,7 @@ public enum EFontType
     EnemyDamage,
     MyCritical,
     EnemyCritical,
+    AdditionalDamage,
     Heal,
     Dot,
 }
@@ -85,6 +86,12 @@ public class TextFont : MonoBehaviour
                 myText.color = ConstValues.YellowColor;
                 break;
             case EFontType.EnemyCritical:
+                myText.color = ConstValues.OrangeColor;
+                break;
+            case EFontType.AdditionalDamage:
+                myText.color = ConstValues.CyanColor;
+                break;
+            case EFontType.Dot:
                 myText.color = ConstValues.OrangeColor;
                 break;
         }
