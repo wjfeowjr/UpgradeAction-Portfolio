@@ -410,7 +410,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string FireChargeEffect = "FireChargeEffect";
     public const string LightningChargeEffect = "LightningChargeEffect";
     public const string IceChargeEffect = "IceChargeEffect";
-    
+
+    public const string FighterLightningKick = "Fighter_LightningKick";
+    public const string FighterLightningGrab = "Fighter_LightningGrab";
+    public const string FighterLightningPunch = "Fighter_LightningPunch";
     public const string FighterStrongPunch = "Fighter_StrongPunch";
 
     public const string UIPool = "UIPool";
