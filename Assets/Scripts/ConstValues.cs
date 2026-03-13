@@ -151,6 +151,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string LongShot = "LongShot";
     public const string PiercingStreak = "PiercingStreak";
     public const string FinishShot = "FinishShot";
+    public const string FinishingExplosion = "FinishingExplosion";
 
     // 스킬 특성 패시브
     public const string SuperArmor = "SuperArmor";
@@ -172,6 +173,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string CriticalChanceUp = "CriticalChanceUp";
     public const string ReachUp = "ReachUp";
     public const string CountUp = "CountUp";
+    public const string BuffCountUp = "BuffCountUp";
 
     public const string Big = "Big";
     public const string Missile = "Missile";
@@ -327,6 +329,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string Face = "Face";
     public const string DownDust = "DownDust";
     public const string FireFlash = "FireFlash";
+    public const string LightningFlash = "LightningFlash";
+    public const string IceFlash = "IceFlash";
     public const string GreenFlash = "GreenFlash";
     public const string Warning = "Warning";
     public const string WarningArea = "WarningArea";
@@ -363,7 +367,6 @@ public class ConstValues : Singleton<ConstValues>
     public const string BerserkerCrashExplosion = "Berserker_Crash_Explosion";
     public const string BerserkerFireStrike = "Berserker_FireStrike";
     public const string BerserkerSwordCounter = "Berserker_SwordCounter";
-    public const string BerserkerSwordCounter2 = "Berserker_SwordCounter2";
     public const string BerserkerSwordCounterJust = "Berserker_SwordCounter_Just";
     public const string BerserkerSwordCounterEffect = "Berserker_SwordCounterEffect";
     public const string BerserkerSwordCounterJustEffect = "Berserker_SwordCounterJustEffect";
@@ -403,6 +406,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string Fire = "Fire";
     public const string Lightning = "Lightning";
     public const string Ice = "Ice";
+    public const string GunnerChargeEffect = "GunnerChargeEffect";
+    public const string FireChargeEffect = "FireChargeEffect";
+    public const string LightningChargeEffect = "LightningChargeEffect";
+    public const string IceChargeEffect = "IceChargeEffect";
     
     public const string FighterStrongPunch = "Fighter_StrongPunch";
 

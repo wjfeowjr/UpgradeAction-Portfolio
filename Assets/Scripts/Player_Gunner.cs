@@ -458,6 +458,21 @@ public class Player_Gunner : Player
         var delay2 = 0.15f;
         
         myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocityY);
+        
+        string elemental = BuffElemental();
+        string flashId = ConstValues.GunnerFlash;
+        switch (elemental)
+        {
+            case ConstValues.Fire:
+                flashId = ConstValues.FireFlash;
+                break;
+            case ConstValues.Lightning:
+                flashId = ConstValues.LightningFlash;
+                break;
+            case ConstValues.Ice:
+                flashId = ConstValues.IceFlash;
+                break;
+        }
 
         int count = 1;
         if (madBomber)
@@ -467,7 +482,7 @@ public class Player_Gunner : Player
             if (count == (int)skill.maxCoolTime[2])
             {
                 Scream();
-                SpawnObject(ConstValues.GunnerFlash, centerPos);
+                SpawnObject(flashId, centerPos);
             }
             for (int i = 0; i < count - 1; i++)
                 delay1 += 0.1f;
@@ -476,7 +491,6 @@ public class Player_Gunner : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        string elemental = BuffElemental();
         if (!string.IsNullOrWhiteSpace(elemental))
             objectId = $"{objectId}_{elemental}";
         
@@ -537,6 +551,7 @@ public class Player_Gunner : Player
             return false;
         
         bool isCharge = false;
+        string elemental = BuffElemental();
         GameObject chargeEffect = null;
         if (powerfulGunpowder)
         {
@@ -548,7 +563,20 @@ public class Player_Gunner : Player
             {
                 if (!isSpawnedEffect)
                 {
-                    chargeEffect = SpawnObject(ConstValues.BerserkerFireStrikeChargeEffect, centerPos);
+                    string effectId = ConstValues.GunnerChargeEffect;
+                    switch (elemental)
+                    {
+                        case ConstValues.Fire:
+                            effectId = ConstValues.FireChargeEffect;
+                            break;
+                        case ConstValues.Lightning:
+                            effectId = ConstValues.LightningChargeEffect;
+                            break;
+                        case ConstValues.Ice:
+                            effectId = ConstValues.IceChargeEffect;
+                            break;
+                    }
+                    chargeEffect = SpawnObject(effectId, centerPos);
                     isSpawnedEffect = true;
                 }
             
@@ -561,9 +589,24 @@ public class Player_Gunner : Player
 
             if (addTime >= chargeTime)
                 isCharge = true;
-            
-            if(isCharge)
-                SpawnObject(ConstValues.GunnerFlash, centerPos);
+
+            if (isCharge)
+            {
+                string flashId = ConstValues.GunnerFlash;
+                switch (elemental)
+                {
+                    case ConstValues.Fire:
+                        flashId = ConstValues.FireFlash;
+                        break;
+                    case ConstValues.Lightning:
+                        flashId = ConstValues.LightningFlash;
+                        break;
+                    case ConstValues.Ice:
+                        flashId = ConstValues.IceFlash;
+                        break;
+                }
+                SpawnObject(flashId, centerPos);
+            }
             
             // 충전 완료 뒤에도 잠시 모을시간 주기
             if (isCharge)
@@ -586,7 +629,6 @@ public class Player_Gunner : Player
         if(chargeEffect != null)
             chargeEffect.SetActive(false);
         
-        string elemental = BuffElemental();
         if (!string.IsNullOrWhiteSpace(elemental))
         {
             attackId = $"{attackId}_{elemental}";
@@ -648,7 +690,21 @@ public class Player_Gunner : Player
         if(landingState == ELandingState.Ground)
             myRigidbody.linearVelocity = Vector2.zero;
         
-        SpawnObject(ConstValues.GunnerFlash, centerPos);
+        string elemental = BuffElemental();
+        string flashId = ConstValues.GunnerFlash;
+        switch (elemental)
+        {
+            case ConstValues.Fire:
+                flashId = ConstValues.FireFlash;
+                break;
+            case ConstValues.Lightning:
+                flashId = ConstValues.LightningFlash;
+                break;
+            case ConstValues.Ice:
+                flashId = ConstValues.IceFlash;
+                break;
+        }
+        SpawnObject(flashId, centerPos);
 
         if (longShot)
         {
@@ -679,8 +735,7 @@ public class Player_Gunner : Player
                     break;
             }
         }
-
-        string elemental = BuffElemental();
+        
         if (!string.IsNullOrWhiteSpace(elemental))
         {
             objectId = $"{objectId}_{elemental}";
@@ -712,7 +767,7 @@ public class Player_Gunner : Player
                 finishId = $"{finishId}_{elemental}";
             
             StateSetting(ENormalState.Skill, ConstValues.ComboAttack2, ConstValues.GunnerCrazyShot);
-            SpawnObject(ConstValues.GunnerFlash, centerPos);
+            SpawnObject(flashId, centerPos);
             if (await AttackDelay(delay3).SuppressCancellationThrow())
                 return false;
             
@@ -738,20 +793,25 @@ public class Player_Gunner : Player
         var skillData = skillList.Find(x => x.id == ConstValues.GunnerElementalInfusion);
         if (skillData != null)
         {
+            string skillId = ConstValues.GunnerElementalInfusion;
+            bool finishingExplosion = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.FinishingExplosion);
+            
             if(landingState == ELandingState.Ground)
                 myRigidbody.linearVelocity = Vector2.zero;
             
             var delay1 = 0.3f;
             
             StateSetting(ENormalState.Skill, ConstValues.GunnerElementalInfusion, ConstValues.GunnerElementalInfusion);
+            SpawnObject(ConstValues.GunnerFlash, centerPos);
             Scream();
             var selectObject = SpawnObject(ConstValues.GunnerElementalInfusionSelect, elementalInfusionPos).GetComponent<Gunner_ElementalInfusionSelect>();
             selectObject.SetText(GameManager.Instance.GetKeyCode(GameManager.Instance.leftMoveKey), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey), GameManager.Instance.GetKeyCode(GameManager.Instance.rightMoveKey));
             
             bool isChoice = false;
             string elemental = default;
-            
-            while (!isChoice)
+            float limitTime = 3.0f;
+            float timer = 0;
+            while (!isChoice && timer < limitTime)
             {
                 if (Input.GetKeyDown(GameManager.Instance.leftMoveKey))
                 {
@@ -770,9 +830,33 @@ public class Player_Gunner : Player
                 }
                 if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                     return false;
+
+                timer += Time.deltaTime;
+                if (timer >= limitTime)
+                {
+                    isChoice = true;
+                    int rand = Random.Range(0, 3);
+                    switch (rand)
+                    {
+                        case 0:
+                            elemental = ConstValues.Ice;
+                            break;
+                        
+                        case 1:
+                            elemental = ConstValues.Lightning;
+                            break;
+                        
+                        case 2:
+                            elemental = ConstValues.Fire;
+                            break;
+                    }
+                }
             }
 
-            Action endAction = ()=> SpawnAttack($"{ConstValues.GunnerElementalInfusion}_{elemental}", centerPos);
+            Action endAction = null;
+            if (finishingExplosion)
+                endAction = () => SpawnAttack($"{ConstValues.GunnerElementalInfusion}_{elemental}", centerPos);
+            
             switch (elemental)
             {
                 case ConstValues.Ice:
@@ -785,10 +869,15 @@ public class Player_Gunner : Player
                     AddBuff(skillData.buffName[2], skillData.buffValue[2], skillData.buffTime, skillData.buffCount, endAction);
                     break;
             }
-
             selectObject.gameObject.SetActive(false);
-            endAction.Invoke();
+            SpawnAttack($"{ConstValues.GunnerElementalInfusion}_{elemental}", centerPos);
             StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerElementalInfusion);
+            
+            // 강한 원소
+            var attributeBuffList = GameManager.Instance.PlayerSkill.GetAttributeBuff(skillId);
+            foreach (var buff in attributeBuffList)
+                AddBuff(buff.buffId, buff.buffValue, buff.buffTime, 0);
+            
             if (await AttackDelay(delay1).SuppressCancellationThrow())
                 return false;
         }

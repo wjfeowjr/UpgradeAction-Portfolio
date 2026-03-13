@@ -1290,6 +1290,10 @@ public abstract class Player : Character
                     skillList[i].curCoolTime[0] = skillList[i].maxCoolTime[0];
             }
             
+            // 버프 시간 및 횟수 보정
+            skillList[i].buffTime = originSkillList[i].buffTime;
+            skillList[i].buffCount = originSkillList[i].buffCount;
+            
             // 바디타입 및 스킬속도 보정
             skillList[i].skillSpeed = originSkillList[i].skillSpeed;
             skillList[i].skillArmor = originSkillList[i].skillArmor;
@@ -1346,6 +1350,11 @@ public abstract class Player : Character
                     // 시전속도 증가
                     case ConstValues.SpeedUp:
                         skill.skillSpeed += skill.skillSpeed * (upgrade.upgradeValue * 0.01f);
+                        break;
+                    
+                    // 버프 횟수 증가
+                    case ConstValues.BuffCountUp:
+                        skill.buffCount += upgrade.upgradeValue;
                         break;
                 }
             }

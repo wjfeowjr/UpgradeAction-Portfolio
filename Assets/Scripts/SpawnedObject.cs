@@ -90,7 +90,7 @@ public class SpawnedObject : MonoBehaviour
         
         spawnObjectInfo.objectTime = objectData.objectTime;
 
-        var soundArray = objectData.sound.Split(',');
+        var soundArray = objectData.sound.Split(';');
         foreach (var sound in soundArray)
         {
             if (!string.IsNullOrWhiteSpace(sound))
