@@ -26,7 +26,7 @@ public class StageManager : Singleton<StageManager>
         //currentStage = Instantiate(stageArray[1]).GetComponent<Stage>();
         BgmManager.Instance.Stop();
         
-        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default); // default
+        //GameManager.Instance.AddPlayer(ConstValues.Berserker); // default
 
         //GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
         //GameManager.Instance.SetGroundVector();

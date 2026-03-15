@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -8,8 +9,7 @@ public interface ICharacterFace
 
 public class UICharacterFaceModel
 {
-    public string firstCharacter;
-    public string secondCharacter;
+    public List<string> playerList = new List<string>();
 }
 
 public class UICharacterFacePresenter
@@ -23,14 +23,9 @@ public class UICharacterFacePresenter
         _model = model;
     }
 
-    public void SetFirstFace()
+    public void SetChangeFace()
     {
-        _characterFace.SetFace(_model.firstCharacter);
-    }
-    
-    public void SetSecondFace()
-    {
-        _characterFace.SetFace(_model.secondCharacter);
+        _characterFace.SetFace(_model.playerList[0]);
     }
 }
 

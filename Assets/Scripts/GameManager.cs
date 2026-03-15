@@ -204,12 +204,14 @@ public class SkillCollection
     public int totalAttributePoint;
     public SkillSetting berserkerSkillSetting;
     public SkillSetting gunnerSkillSetting;
-
+    public SkillSetting fighterSkillSetting;
+    
     public void PlusAttributePoint(int point)
     {
         totalAttributePoint += point;
         berserkerSkillSetting.attributePoint += point;
         gunnerSkillSetting.attributePoint += point;
+        fighterSkillSetting.attributePoint += point;
     }
     
     public bool IsHaveSkill(string skillId)
@@ -220,6 +222,10 @@ public class SkillCollection
 
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
+            return true;
+        
+        var fighterSkill = fighterSkillSetting.skillList.Find(x => x.skillId == skillId);
+        if (fighterSkill != null)
             return true;
 
         return false;
@@ -233,6 +239,10 @@ public class SkillCollection
         var gunnerSkillList = gunnerSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
         if (gunnerSkillList != null)
             return gunnerSkillList;
+        
+        var fighterSkillList = fighterSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
+        if (fighterSkillList != null)
+            return fighterSkillList;
 
         Debug.Log("검색되는 특성 없음");
         return null;
@@ -246,6 +256,10 @@ public class SkillCollection
         var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
         if (gunnerSkill != null)
             return gunnerSkill.attributeList.Contains(attributeId);
+        
+        var fighterSkill = fighterSkillSetting.skillList.Find(x => x.skillId == skillId);
+        if (fighterSkill != null)
+            return fighterSkill.attributeList.Contains(attributeId);
         
         Debug.Log("해당 특성 자체가 없음");
         return false;
@@ -296,6 +310,28 @@ public class SkillCollection
                 }
             }
         }
+        
+        var fighterSkill = fighterSkillSetting.skillList.Find(x => x.skillId == skillId);
+        if (fighterSkill != null)
+        {
+            var targetAttribute = fighterSkill.attributeList.Contains(attributeId);
+            
+            if (!targetAttribute)
+            {
+                if (fighterSkillSetting.attributePoint < attributeData[0].cost)
+                {
+                    SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
+                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
+                }
+                else
+                {
+                    fighterSkill.attributeList.Add(attributeId);
+                    fighterSkillSetting.attributePoint -= attributeData[0].cost;
+                    // 올리는 연출 넣기
+                    GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
+                }
+            }
+        }
     }
     
     public async void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
@@ -333,6 +369,22 @@ public class SkillCollection
                 GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
             }
         }
+        
+        var fighterSkill = fighterSkillSetting.skillList.Find(x => x.skillId == skillId);
+        if (fighterSkill != null)
+        {
+            var targetAttribute = fighterSkill.attributeList.Contains(attributeId);
+            
+            if (targetAttribute)
+            {
+                var attributeList = attributeData.FindAll(x => x.skill == skillId);
+                var attribute = attributeList.Find(x => x.id == attributeId);
+                fighterSkillSetting.attributePoint += attribute.cost;
+                fighterSkill.attributeList.Remove(attributeId);
+                // 내리는 연출 넣기
+                GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
+            }
+        }
     }
 
     public async void ResetAttribute(string character)
@@ -342,15 +394,19 @@ public class SkillCollection
             case ConstValues.Berserker:
                 foreach (var skillList in berserkerSkillSetting.skillList)
                     skillList.attributeList.Clear();
-                
                 berserkerSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
                 break;
             
             case ConstValues.Gunner:
                 foreach (var skillList in gunnerSkillSetting.skillList)
                     skillList.attributeList.Clear();
-                
                 gunnerSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
+                break;
+            
+            case ConstValues.Fighter:
+                foreach (var skillList in fighterSkillSetting.skillList)
+                    skillList.attributeList.Clear();
+                fighterSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
                 break;
         }
         await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30205));
@@ -543,6 +599,7 @@ public class SkillKeyCollection
 {
     public List<SkillKey> berserkerSkillKeyList;
     public List<SkillKey> gunnerSkillKeyList;
+    public List<SkillKey> fighterSkillKeyList;
 }
 [Serializable]
 public class SettingSkill
@@ -693,8 +750,7 @@ public class SaveData
     public bool firstGetSkill;
     public bool firstGetAttribute;
     
-    public string firstPlayer;
-    public string secondPlayer;
+    public List<string> playerList = new List<string>();
 
     public int npcSunGetSkill;
 
@@ -844,22 +900,10 @@ public class GameManager : Singleton<GameManager>
         set => saveData.firstGetAttribute = value;
     }
     
-    public string FirstPlayer
+    public List<string> PlayerList
     {
-        get => saveData.firstPlayer;
-        set => saveData.firstPlayer = value;
-    }
-    
-    public string SecondPlayer
-    {
-        get => saveData.secondPlayer;
-        set => saveData.secondPlayer = value;
-    }
-    
-    public int NpcSunGetSkill
-    {
-        get => saveData.npcSunGetSkill;
-        set => saveData.npcSunGetSkill = value;
+        get => saveData.playerList;
+        set => saveData.playerList = value;
     }
 
     public List<Vector2> MiniMapCheckers
@@ -956,7 +1000,7 @@ public class GameManager : Singleton<GameManager>
         DefaultSkillSetting();
         DefaultMapSetting();
         DefaultNpcSetting();
-        SetPlayerOrder(ConstValues.Berserker, default);
+        AddPlayer(ConstValues.Berserker);
         SaveGame();
     }
 
@@ -972,6 +1016,10 @@ public class GameManager : Singleton<GameManager>
         {
             FirstStart(); 
         }
+        curPlayer = GetPlayer(saveData.playerList[0]);
+        
+        if(!saveData.playerList.Contains(ConstValues.Fighter))
+            AddPlayer(ConstValues.Fighter);
     }
 
     private void SetPrefabActive(bool active)
@@ -1020,6 +1068,7 @@ public class GameManager : Singleton<GameManager>
 
     private void DefaultDataSetting()
     {
+        saveData.playerList.Clear();
         saveData.gold = 0;
         saveData.itemList.Clear();
     }
@@ -1028,7 +1077,6 @@ public class GameManager : Singleton<GameManager>
     {
         FirstGetSkill = false;
         FirstGetAttribute = false;
-        
         PlayerSkill.totalAttributePoint = 0;
 
         SkillSetting berserkerSkillSetting = new SkillSetting();
@@ -1039,8 +1087,13 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillSetting.attributePoint = 0;
         gunnerSkillSetting.skillList = new List<Skill>();
         
+        SkillSetting fighterSkillSetting = new SkillSetting();
+        fighterSkillSetting.attributePoint = 0;
+        fighterSkillSetting.skillList = new List<Skill>();
+        
         PlayerSkill.berserkerSkillSetting = berserkerSkillSetting;
         PlayerSkill.gunnerSkillSetting = gunnerSkillSetting;
+        PlayerSkill.fighterSkillSetting = fighterSkillSetting;
     }
     
     public void DefaultSkillKeySetting()
@@ -1067,11 +1120,7 @@ public class GameManager : Singleton<GameManager>
         skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
         skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
-        //skillKey5 = KeyBinding.LoadKey(ConstValues.SkillKey5, KeyCode.Q);
-        //skillKey6 = KeyBinding.LoadKey(ConstValues.SkillKey6, KeyCode.W);
-        //skillKey7 = KeyBinding.LoadKey(ConstValues.SkillKey7, KeyCode.E);
-        //skillKey8 = KeyBinding.LoadKey(ConstValues.SkillKey8, KeyCode.R);
-        
+
         interactionKey = KeyBinding.LoadKey(ConstValues.InteractionKey, KeyCode.UpArrow);
 
         // 각 플레이어들의 스킬 키 세팅 초기화
@@ -1081,15 +1130,6 @@ public class GameManager : Singleton<GameManager>
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey2));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey3));
         berserkerSkillKeyList.Add(SetSkillKey(default, skillKey4));
-        //berserkerSkillKeyList.Add(SetSkillKey(default, skillKey5));
-        //berserkerSkillKeyList.Add(SetSkillKey(default, skillKey6));
-        //berserkerSkillKeyList.Add(SetSkillKey(default, skillKey7));
-        //berserkerSkillKeyList.Add(SetSkillKey(default, skillKey8));
-        
-        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerUpperSlash, skillKey6));
-        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerFireStrike, skillKey7));
-        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerChargeCrash, skillKey4));
-        //berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerCrash, skillKey8));
         PlayerSkillKey.berserkerSkillKeyList = berserkerSkillKeyList;
         
         List<SkillKey> gunnerSkillKeyList = new List<SkillKey>();
@@ -1098,16 +1138,15 @@ public class GameManager : Singleton<GameManager>
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey2));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey3));
         gunnerSkillKeyList.Add(SetSkillKey(default, skillKey4));
-        //gunnerSkillKeyList.Add(SetSkillKey(default, skillKey5));
-        //gunnerSkillKeyList.Add(SetSkillKey(default, skillKey6));
-        //gunnerSkillKeyList.Add(SetSkillKey(default, skillKey7));
-        //gunnerSkillKeyList.Add(SetSkillKey(default, skillKey8));
-        
-        //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey6));
-        //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerKnockBackShot, skillKey7));
-        //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerBigShot, skillKey4));
-        //gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerCrazyShot, skillKey8));
         PlayerSkillKey.gunnerSkillKeyList = gunnerSkillKeyList;
+        
+        List<SkillKey> fighterSkillKeyList = new List<SkillKey>();
+        fighterSkillKeyList.Add(SetSkillKey(ConstValues.Fighter, dashKey));
+        fighterSkillKeyList.Add(SetSkillKey(default, skillKey1));
+        fighterSkillKeyList.Add(SetSkillKey(default, skillKey2));
+        fighterSkillKeyList.Add(SetSkillKey(default, skillKey3));
+        fighterSkillKeyList.Add(SetSkillKey(default, skillKey4));
+        PlayerSkillKey.fighterSkillKeyList = fighterSkillKeyList;
     }
 
     private void DefaultMapSetting()
@@ -1179,6 +1218,20 @@ public class GameManager : Singleton<GameManager>
                 PlayerSkill.gunnerSkillSetting.skillList.Add(newSkill);
                 break;
             }
+            case ConstValues.Fighter:
+            {
+                if (PlayerSkill.fighterSkillSetting.skillList.Exists(x => x.skillId == id))
+                    return;
+                
+                int idx = EmptySkillIdx(PlayerSkillKey.fighterSkillKeyList);
+                PlayerSkillKey.fighterSkillKeyList[idx].skillId = id;
+                
+                Skill newSkill = new Skill();
+                newSkill.skillId = id;
+                newSkill.attributeList = new List<string>();
+                PlayerSkill.fighterSkillSetting.skillList.Add(newSkill);
+                break;
+            }
         }
         RefreshSkill();
         
@@ -1216,6 +1269,17 @@ public class GameManager : Singleton<GameManager>
                     PlayerSkill.gunnerSkillSetting.skillList.Remove(targetSkill);
                 break;
             }
+            case ConstValues.Fighter:
+            {
+                var targetKey = PlayerSkillKey.fighterSkillKeyList.Find(x => x.skillId == id);
+                if (targetKey != null)
+                    targetKey.skillId = default;
+                
+                var targetSkill = PlayerSkill.fighterSkillSetting.skillList.Find(x => x.skillId == id);
+                if (targetSkill != null)
+                    PlayerSkill.fighterSkillSetting.skillList.Remove(targetSkill);
+                break;
+            }
         }
         RefreshSkill();
         // 게임 저장
@@ -1250,6 +1314,12 @@ public class GameManager : Singleton<GameManager>
             if (gunnerSkillKey != null)
                 gunnerSkillKey.skillId = skillId;
         }
+        else if (curPlayer.BasicStat.id == ConstValues.Fighter)
+        {
+            var gunnerSkillKey = PlayerSkillKey.fighterSkillKeyList.Find(x => x.keyCode == keyCode);
+            if (gunnerSkillKey != null)
+                gunnerSkillKey.skillId = skillId;
+        }
         
         // 저장
         //SaveGame();
@@ -1262,6 +1332,8 @@ public class GameManager : Singleton<GameManager>
             keyList = PlayerSkillKey.berserkerSkillKeyList;
         else if(curPlayer.BasicStat.id == ConstValues.Gunner)
             keyList = PlayerSkillKey.gunnerSkillKeyList;
+        else if(curPlayer.BasicStat.id == ConstValues.Fighter)
+            keyList = PlayerSkillKey.fighterSkillKeyList;
         
         List<SettingSkill> settingSkillList = new List<SettingSkill>();
         foreach (var key in keyList)
@@ -1385,11 +1457,25 @@ public class GameManager : Singleton<GameManager>
             player.BasicStat.hp = hp;
     }
     
-    public void SetPlayerOrder(string first, string second)
+    public void AddPlayer(string player)
     {
-        FirstPlayer = first;
-        SecondPlayer = second;
-        curPlayer = GetPlayer(FirstPlayer);
+        saveData.playerList.Add(player);
+    }
+    // 어떤 타입이든 받을 수 있는 회전 메서드
+    private void RotatePlayerList()
+    {
+        // 1. 요소가 없거나 1개뿐이면 회전할 필요가 없음
+        if (saveData.playerList.Count <= 1)
+            return;
+
+        // 2. 맨 앞의 아이템(0번 인덱스)을 임시 저장
+        string firstIdx = saveData.playerList[0];
+
+        // 3. 맨 앞의 아이템을 리스트에서 삭제 (남은 요소들이 앞으로 한 칸씩 당겨짐)
+        saveData.playerList.RemoveAt(0);
+
+        // 4. 저장해둔 아이템을 리스트의 맨 마지막에 추가
+        saveData.playerList.Add(firstIdx);
     }
 
     public void InitPlayerStat()
@@ -1816,16 +1902,12 @@ public class GameManager : Singleton<GameManager>
         var faceInterface = uiInterface.CharacterFaceView.ConvertTo<ICharacterFace>();
         var faceModel = new UICharacterFaceModel()
         {
-            firstCharacter = FirstPlayer,
-            secondCharacter = SecondPlayer,
+            playerList = PlayerList,
         };
         var facePresenter = new UICharacterFacePresenter(faceInterface, faceModel);
         uiInterface.SetCharacterFacePresenter(facePresenter);
         
-        if(curPlayer.BasicStat.id == FirstPlayer)
-            facePresenter.SetFirstFace();
-        else if(curPlayer.BasicStat.id == SecondPlayer)
-            facePresenter.SetSecondFace();
+        facePresenter.SetChangeFace();
     }
     
     public void RefreshPlayerHp()
@@ -1944,10 +2026,7 @@ public class GameManager : Singleton<GameManager>
     {
         var pastPlayer = curPlayer;
         var changePos = curPlayer.transform.position;
-        var nextPlayerId = SecondPlayer;
-        if (curPlayer.BasicStat.id == SecondPlayer)
-            nextPlayerId = FirstPlayer;
-
+        var nextPlayerId = saveData.playerList[1];
         pastPlayer.AllBuffCancel();
 
         curPlayer = GetPlayer(nextPlayerId);
@@ -1959,8 +2038,9 @@ public class GameManager : Singleton<GameManager>
         curPlayer.transform.localScale = pastPlayer.transform.localScale;
         curPlayer.JumpAttackCount = 0;
         
+        RotatePlayerList();
         RefreshFace();
-
+        
         if (changeAttack)
             curPlayer.ChangeAttack();
 
@@ -1968,13 +2048,12 @@ public class GameManager : Singleton<GameManager>
         SetCameraTarget(curPlayer.transform);
     }
     
-    public void SetCharacterOrder(string first, string second)
+    public void SetCharacterOrder()
     {
         var pastPlayer = curPlayer;
         var changePos = curPlayer.transform.position;
         
-        SetPlayerOrder(first, second);
-        ActivePlayer(FirstPlayer);
+        ActivePlayer(PlayerList[0]);
         curPlayer.transform.position = changePos;
         curPlayer.transform.localScale = pastPlayer.transform.localScale;
         

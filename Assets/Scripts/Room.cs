@@ -972,25 +972,6 @@ public class Room : MonoBehaviour
         //GameManager.Instance.SaveGame();
         //Debug.Log($"저장된 {ConstValues.AttributePoint} = {GameManager.Instance.PlayerSkill.totalAttributePoint}");
     }
-    private void ReducePassivePoint(string character, int passivePoint)
-    {
-        int currentPoint = 0;
-        switch (character)
-        {
-            case ConstValues.Berserker:
-                GameManager.Instance.PlayerSkill.berserkerSkillSetting.attributePoint -= passivePoint;
-                currentPoint = GameManager.Instance.PlayerSkill.berserkerSkillSetting.attributePoint;
-                break;
-            
-            case ConstValues.Gunner:
-                GameManager.Instance.PlayerSkill.gunnerSkillSetting.attributePoint -= passivePoint;
-                currentPoint = GameManager.Instance.PlayerSkill.gunnerSkillSetting.attributePoint;
-                break;
-        }
-        
-        
-        Debug.Log($"남은 {character}의 포인트: {currentPoint}");
-    }
 
     // 숏컷정보 저장
     public void ShortcutOpen(string id)
@@ -2087,7 +2068,8 @@ public class Room : MonoBehaviour
         npc[0].gameObject.SetActive(false);
         
         // 2인 캐릭터 설정 및 저장
-        GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
+        GameManager.Instance.AddPlayer(ConstValues.Gunner);
+        GameManager.Instance.SetCharacterOrder();
         RoomManager.Instance.Guide(40004);
         
         UIOn();

@@ -232,10 +232,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string DialogueChoice = "DialogueChoice";
     public const string ProductDialogue = "ProductDialogue";
     public const string Talk = "Talk";
-    
-    public const string FirstCharacter = "FirstCharacter";
-    public const string SecondCharacter = "SecondCharacter";
-    
+
     public const string Episode1Title = "Episode1_Title";
     public const string Episode2Title = "Episode2_Title";
     public const string FirstGetSkill = "FirstGetSkill";
@@ -410,6 +407,12 @@ public class ConstValues : Singleton<ConstValues>
     public const string FireChargeEffect = "FireChargeEffect";
     public const string LightningChargeEffect = "LightningChargeEffect";
     public const string IceChargeEffect = "IceChargeEffect";
+
+    public const string FighterFlash = "Fighter_Flash";
+    public const string FighterAttack1 = "Fighter_Attack1";
+    public const string FighterAttack2 = "Fighter_Attack2";
+    public const string FighterAttack3 = "Fighter_Attack3";
+    public const string FighterJumpAttack = "Fighter_JumpAttack";
 
     public const string FighterLightningKick = "Fighter_LightningKick";
     public const string FighterLightningGrab = "Fighter_LightningGrab";

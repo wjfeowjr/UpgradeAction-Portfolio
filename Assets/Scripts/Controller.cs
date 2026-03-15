@@ -143,7 +143,7 @@ public class Controller : Singleton<Controller>
 
         if (Input.GetKeyDown(GameManager.Instance.changeCharacterKey))
         {
-            if(!string.IsNullOrEmpty(GameManager.Instance.SecondPlayer))
+            if(GameManager.Instance.PlayerList.Count > 1)
                 GameManager.Instance.CurPlayer.ChangeCharacter();
         }
         

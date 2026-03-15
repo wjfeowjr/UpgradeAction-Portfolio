@@ -715,7 +715,7 @@ public class Stage2 : Stage
             //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(82f, GameManager.Instance.MainCamera.MinXAndY.y);
             GameManager.Instance.SetCameraTarget(curPlayer.transform);
             // 이곳에서 광전사와 거너의 주도권이 바낌
-            GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
+            //GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
             curPlayer = GameManager.Instance.CurPlayer;
             
             var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
@@ -1246,10 +1246,10 @@ public class Stage2 : Stage
     {
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            if(GameManager.Instance.FirstPlayer == ConstValues.Berserker)
-                GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
-            else if(GameManager.Instance.FirstPlayer == ConstValues.Gunner)
-                GameManager.Instance.SetCharacterOrder(ConstValues.Gunner, ConstValues.Berserker);
+            // if(GameManager.Instance.PlayerList == ConstValues.Berserker)
+            //     GameManager.Instance.SetCharacterOrder(ConstValues.Berserker, ConstValues.Gunner);
+            // else if(GameManager.Instance.PlayerList == ConstValues.Gunner)
+            //     GameManager.Instance.SetCharacterOrder(ConstValues.Gunner, ConstValues.Berserker);
             
             //GameManager.Instance.CharacterChange(false);
         }
@@ -1260,12 +1260,12 @@ public class Stage2 : Stage
         switch (episodeStep.eventStep)
         {
             case 0:
-                GameManager.Instance.SetPlayerOrder(ConstValues.Gunner, default);
+                //GameManager.Instance.AddPlayer(ConstValues.Gunner, default);
                 break;
         }
         
-        if(episodeStep.eventStep >= 2)
-            GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, ConstValues.Gunner);
+        //if(episodeStep.eventStep >= 2)
+            //GameManager.Instance.AddPlayer(ConstValues.Berserker, ConstValues.Gunner);
         
         curPlayer = GameManager.Instance.CurPlayer;
     }

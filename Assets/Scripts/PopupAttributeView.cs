@@ -7,7 +7,7 @@ using UnityEngine;
 
 public interface IPopupAttributeView
 {
-    void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillAttributeInfo> attributeList, SkillCollection playerSkill);
+    void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillData> fighterList, SkillCollection playerSkill);
     void SetAction(Action playMoveSound, Action playSelectSound, Action playCancelSound, Action closeAction, Action<string, Sprite, int, Action, Action> popupAction);
 }
 
@@ -16,7 +16,7 @@ public class PopupAttributeModel
     public string playerId;
     public List<SkillData> berserkerSkillList = new List<SkillData>();
     public List<SkillData> gunnerSkillList = new List<SkillData>();
-    public List<SkillAttributeInfo> attributeList = new List<SkillAttributeInfo>(); 
+    public List<SkillData> fighterSkillList = new List<SkillData>();
     public SkillCollection playerSkill;
     public Action playMoveSound;
     public Action playSelectSound;
@@ -38,7 +38,7 @@ public class PopupAttributePresenter
 
     public void SetModel()
     {
-        _attributeView.SetModel(_model.playerId, _model.berserkerSkillList, _model.gunnerSkillList, _model.attributeList, _model.playerSkill);
+        _attributeView.SetModel(_model.playerId, _model.berserkerSkillList, _model.gunnerSkillList, _model.fighterSkillList, _model.playerSkill);
     }
 
     public void SetAction()
@@ -88,6 +88,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     
     [SerializeField] private GameObject berserkerObject;
     [SerializeField] private GameObject gunnerObject;
+    [SerializeField] private GameObject fighterObject;
     
     [Header("Frames")]
     [SerializeField] private AttributeFrame_Skill[] skillArray;
@@ -104,6 +105,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private readonly List<SkillData> skillInfoList = new List<SkillData>();
     private List<SkillData> berserkerSkillList = new List<SkillData>();
     private List<SkillData> gunnerSkillList = new List<SkillData>();
+    private List<SkillData> fighterSkillList = new List<SkillData>();
     
     private List<SkillAttributeInfo> attributeList;
 
@@ -554,13 +556,14 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     #region Data/Refresh
 
-    public void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillAttributeInfo> attributeList, SkillCollection playerSkill)
+    public void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillData> fighterList, SkillCollection playerSkill)
     {
         skillInfo = playerSkill;
         curPlayerId = playerId;
         
         berserkerSkillList = berserkerList;
         gunnerSkillList = gunnerList;
+        fighterSkillList = fighterList;
 
         SetPlayerInfo();
 
@@ -582,10 +585,10 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void ChangeModel()
     {
-        if (curPlayerId == GameManager.Instance.FirstPlayer)
-            curPlayerId = GameManager.Instance.SecondPlayer;
-        else if (curPlayerId == GameManager.Instance.SecondPlayer)
-            curPlayerId = GameManager.Instance.FirstPlayer;
+        if (curPlayerId == GameManager.Instance.PlayerList[0])
+            curPlayerId = GameManager.Instance.PlayerList[1];
+        else if (curPlayerId == GameManager.Instance.PlayerList[1])
+            curPlayerId = GameManager.Instance.PlayerList[0];
 
         SetPlayerInfo();
     }
@@ -601,6 +604,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                 skillInfoList.AddRange(berserkerSkillList);
                 berserkerObject.SetActive(true);
                 gunnerObject.SetActive(false);
+                fighterObject.SetActive(false);
                 break;
 
             case ConstValues.Gunner:
@@ -608,6 +612,15 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
                 skillInfoList.AddRange(gunnerSkillList);
                 berserkerObject.SetActive(false);
                 gunnerObject.SetActive(true);
+                fighterObject.SetActive(false);
+                break;
+            
+            case ConstValues.Fighter:
+                skillSetting = skillInfo.fighterSkillSetting;
+                skillInfoList.AddRange(fighterSkillList);
+                berserkerObject.SetActive(false);
+                gunnerObject.SetActive(false);
+                fighterObject.SetActive(true);
                 break;
         }
 

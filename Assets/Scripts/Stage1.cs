@@ -868,7 +868,7 @@ public class Stage1 : Stage
 
     private void StepCharacterSetting()
     {
-        GameManager.Instance.SetPlayerOrder(ConstValues.Berserker, default); // default
+        //GameManager.Instance.AddPlayer(ConstValues.Berserker, default); // default
         curPlayer = GameManager.Instance.CurPlayer;
     }
 

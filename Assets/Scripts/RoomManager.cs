@@ -68,12 +68,10 @@ public class RoomManager : Singleton<RoomManager>
     public void Start()
     {
         BgmManager.Instance.Play();
-        // 최초 캐릭터 세팅
-        GameManager.Instance.SetPlayerOrder(GameManager.Instance.FirstPlayer, GameManager.Instance.SecondPlayer);
-
+        //GameManager.Instance.AddPlayer(ConstValues.Berserker);
         GameManager.Instance.SpawnGameInterface();
         GameManager.Instance.InitPlayerStat();
-        GameManager.Instance.SpawnPlayer(GameManager.Instance.FirstPlayer);
+        GameManager.Instance.SpawnPlayer(GameManager.Instance.PlayerList[0]);
         GameManager.Instance.RefreshPlayerHp();
         GameManager.Instance.RefreshGoods();
 
@@ -278,7 +276,7 @@ public class RoomManager : Singleton<RoomManager>
             playerId = GameManager.Instance.CurPlayer.BasicStat.id,
             berserkerSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Berserker && x.type != ConstValues.Dash),
             gunnerSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Gunner && x.type != ConstValues.Dash),
-            attributeList = GameManager.Instance.skillAttributeList,
+            fighterSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Fighter && x.type != ConstValues.Dash),
             playerSkill = GameManager.Instance.PlayerSkill,
             playMoveSound = () =>
             {

@@ -14,9 +14,7 @@ public class Player_Fighter : Player
     [SerializeField] private Transform attack3Pos;
     [SerializeField] private Transform jumpAttackPos;
     [SerializeField] private Transform changeAttackPos;
-    
-    [SerializeField] private Transform upperSlashPos;
-    
+
     private int maxPunch = 3;
 
     public override async void ChangeAttack()
@@ -26,7 +24,7 @@ public class Player_Fighter : Player
         
         curGlobalCoolTime = 0;
         stateCancellation = new CancellationTokenSource();
-        var finishSuccess = await BerserkerChangeAttack();
+        var finishSuccess = await FighterChangeAttack();
         
         // 성공여부와 상관없이 바디타입 원상복구
         ResetBodyType();
@@ -40,17 +38,17 @@ public class Player_Fighter : Player
         // 동작이 끝날때 반환하는 트리거
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
-    private async UniTask<bool> BerserkerChangeAttack()
+    private async UniTask<bool> FighterChangeAttack()
     {
-        var delay1 = 0.14f;
-        StateSetting(ENormalState.Attack, ConstValues.ChangeAttack, ConstValues.ChangeAttack);
-
-        for (int i = 0; i < 3; i++)
-        {
-            SpawnAttack($"{ConstValues.Berserker}_{ConstValues.ChangeAttack}", changeAttackPos);
-            if (await AttackDelay(delay1).SuppressCancellationThrow())
-                return false;
-        }
+        // var delay1 = 0.14f;
+        // StateSetting(ENormalState.Attack, ConstValues.ChangeAttack, ConstValues.ChangeAttack);
+        //
+        // for (int i = 0; i < 3; i++)
+        // {
+        //     SpawnAttack($"{ConstValues.Berserker}_{ConstValues.ChangeAttack}", changeAttackPos);
+        //     if (await AttackDelay(delay1).SuppressCancellationThrow())
+        //         return false;
+        // }
         return true;
     }
     
@@ -126,7 +124,7 @@ public class Player_Fighter : Player
                 if (await AttackDelay(delay1).SuppressCancellationThrow())
                     return false;
 
-                GameObject obj = SpawnAttackObject(ConstValues.BerserkerAttack1, attack1Pos);
+                GameObject obj = SpawnAttackObject(ConstValues.FighterAttack1, attack1Pos);
 
                 if (await BufferDelay(delay2, afterDelay).SuppressCancellationThrow())
                 {
@@ -136,7 +134,7 @@ public class Player_Fighter : Player
                 break;
             
             case 2:
-                var delay3 = 0.12f;
+                var delay3 = 0.2f;
                 var delay4 = 0.2f;
                 var checkDelay2 = delay3 + delay4 + afterDelay;
                 
@@ -148,7 +146,7 @@ public class Player_Fighter : Player
                 if (await AttackDelay(delay3).SuppressCancellationThrow())
                     return false;
 
-                GameObject obj2 = SpawnAttackObject(ConstValues.BerserkerAttack2, attack2Pos);
+                GameObject obj2 = SpawnAttackObject(ConstValues.FighterAttack2, attack2Pos);
                 if (await BufferDelay(delay4, afterDelay).SuppressCancellationThrow())
                 {
                     obj2.SetActive(false);
@@ -157,7 +155,7 @@ public class Player_Fighter : Player
                 break;
             
             case 3:
-                var delay5 = 0.16f;
+                var delay5 = 0.22f;
                 var delay6 = 0.5f;
                 
                 MotionFlip();
@@ -167,7 +165,7 @@ public class Player_Fighter : Player
                 if (await AttackDelay(delay5).SuppressCancellationThrow())
                     return false;
 
-                GameObject obj3 = SpawnAttackObject(ConstValues.BerserkerAttack3, attack3Pos);
+                GameObject obj3 = SpawnAttackObject(ConstValues.FighterAttack3, attack3Pos);
                 if (await AttackDelay(delay6).SuppressCancellationThrow())
                 {
                     obj3.SetActive(false);
@@ -185,30 +183,42 @@ public class Player_Fighter : Player
     {
         ResetTriggerAnimator(ConstValues.JumpDown);
         
-        float jumpAttackDelay1 = 0.16f;
-        float jumpAttackDelay2 = 0.25f;
+        float jumpAttackDelay1 = 0.2f;
+        float jumpAttackDelay2 = 0.2f;
+        float jumpAttackDelay3 = 0.3f;
         
         MotionFlip();
         StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack, ConstValues.JumpAttack);
+        
         if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow()) 
             return false;
-
-        SpawnAttackObject(ConstValues.BerserkerJumpAttack, jumpAttackPos);
-
-        float timer = 0.0f;
-        while (GetJumpState() && timer < jumpAttackDelay2 && !isGrounded)
-        {
-            timer += Time.deltaTime;
-            if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-                return false;
-        }
         
-        if (timer < jumpAttackDelay2)
+        //float dropForceX = 10;
+        //float dropForceY = 5;
+        //myRigidbody.linearVelocity = new Vector2(transform.localScale.x * dropForceX, -dropForceY);
+        SpawnAttackObject(ConstValues.FighterJumpAttack, jumpAttackPos).GetComponent<Trace>();
+        StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack);
+
+        // float timer = 0;
+        // while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f && !isGrounded && timer < jumpAttackDelay2)
+        // {
+        //     if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+        //         return false;
+        //     timer += Time.deltaTime;
+        // }
+        //
+        // while (GetJumpState())
+        // {
+        //     if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+        //         return false;
+        // }
+        // myRigidbody.linearVelocity = Vector2.zero;
+        //
+        // if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow()) 
+        //     return false;
+        while (GetJumpState())
         {
-            myRigidbody.linearVelocityX = 0;
-            StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttackEnd);
-            float finalTime = jumpAttackDelay2 - timer;
-            if (await AttackDelay(finalTime).SuppressCancellationThrow()) 
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
         }
         
@@ -221,7 +231,7 @@ public class Player_Fighter : Player
         if (Time.timeScale == 0)
             return;
 
-        var skillId = GameManager.Instance.PlayerSkillKey.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
+        var skillId = GameManager.Instance.PlayerSkillKey.fighterSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
         

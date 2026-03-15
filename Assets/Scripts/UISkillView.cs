@@ -164,7 +164,7 @@ public class UISkillView : MonoBehaviour, IUISkillView
 
         if (skillId == ConstValues.ChangeCharacter)
         {
-            if (string.IsNullOrEmpty(GameManager.Instance.SecondPlayer))
+            if (GameManager.Instance.PlayerList.Count <= 1)
             {
                 gameObject.SetActive(false);
             }
@@ -172,10 +172,10 @@ public class UISkillView : MonoBehaviour, IUISkillView
             {
                 gameObject.SetActive(true);
                 
-                if(GameManager.Instance.CurPlayer.BasicStat.id == GameManager.Instance.FirstPlayer)
-                    skillImage.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.SecondPlayer}_{ConstValues.Face}");
-                else if(GameManager.Instance.CurPlayer.BasicStat.id == GameManager.Instance.SecondPlayer)
-                    skillImage.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.FirstPlayer}_{ConstValues.Face}");
+                if(GameManager.Instance.CurPlayer.BasicStat.id == GameManager.Instance.PlayerList[0])
+                    skillImage.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[1]}_{ConstValues.Face}");
+                else if(GameManager.Instance.CurPlayer.BasicStat.id == GameManager.Instance.PlayerList[1])
+                    skillImage.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}");
             }
         }
         else
