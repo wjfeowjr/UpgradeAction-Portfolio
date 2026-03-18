@@ -8,7 +8,8 @@ using UnityEngine.Serialization;
 public class LaserBeam : MonoBehaviour
 {
     private LineRenderer myLineRenderer;
-    private BoxCollider2D myBoxCollider;
+    [SerializeField] private bool autoBoxCollider;
+    [SerializeField] private BoxCollider2D myBoxCollider;
 
     [Header("Prefabs")]
     [SerializeField] private GameObject beamLineRendererPrefab; //Put a prefab with a line renderer onto here.
@@ -17,49 +18,34 @@ public class LaserBeam : MonoBehaviour
     
     [Header("Beam Options")]
     [SerializeField] private Vector3 endVector;
-
-    //public bool alwaysOn = true; //Enable this to spawn the beam when script is loaded.
-    //public bool beamCollides = true; //Beam stops at colliders
+    
     [SerializeField] private float beamLength = 0;            // 레이져 길이
-    [SerializeField] private float firstBeamLength = 0;
     [SerializeField] private float beamEndOffset = 0f;        // 레이캐스트 히트 포인트에서 엔드 이펙트가 위치하는 거리
     [SerializeField] private float textureScrollSpeed = 0f;   // 텍스처가 빔을 따라 스크롤하는 속도는 음수 또는 양수일 수 있습니다.
     [SerializeField] private float textureLengthScale = 0f;   // 수직을 기준으로 텍스처의 수평 길이로 설정합니다.
-                                            // 예: 텍스처의 높이가 200픽셀이고 길이가 600픽셀인 경우 이 값을 3으로 설정합니다.
-    [SerializeField] private bool expansion;
-    [SerializeField] private float laserScale;
-    [SerializeField] private float limitScale;
 
-    [SerializeField] private float prefabScale;
-    [SerializeField] private float limitPrefabScale;
-
-    [SerializeField] private float second;
     private int layerMask;
 
     private void Awake()
     {
         myLineRenderer = beamLineRendererPrefab.GetComponent<LineRenderer>();
-        myBoxCollider = GetComponent<BoxCollider2D>();
         layerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground) | 1 << LayerMask.NameToLayer(ConstValues.Platform);
     }
 
     private void OnEnable()
     {
-        expansion = true;
-        laserScale = 0;
-        prefabScale = 0;
-        beamStartPrefab.transform.localScale = Vector3.zero;
-        beamEndPrefab.transform.localScale = Vector3.zero;
-
         SpawnBeam();
-        ScaleControl();
         LaserShot();
     }
     
     private void Start()
     {
-        firstBeamLength = beamLength;
-        BeamShot(firstBeamLength);
+        //BeamShot(beamLength);
+    }
+
+    private void Update()
+    {
+        BeamShot(beamLength);
     }
 
     private void FixedUpdate()
@@ -76,70 +62,18 @@ public class LaserBeam : MonoBehaviour
             targetBeamLength = Vector2.Distance(transform.position, hit.point);
         
         // 콜라이더 체크
-        if (hit.collider != null &&
-            (transform.eulerAngles.z is >= 0 and < 180 && hit.point.x < transform.position.x || // 왼쪽
-             transform.eulerAngles.z is >= 180 and < 360 && hit.point.x > transform.position.x)) // 오른쪽
+        if (hit.collider != null)
         {
             endVector = new Vector3(hit.point.x, hit.point.y, 0) - (quaternion * Vector3.up * beamEndOffset);
-            if (myBoxCollider)
+            if (myBoxCollider && autoBoxCollider)
                 myBoxCollider.size = new Vector2(myBoxCollider.size.x, Vector2.Distance(transform.position, endVector));
         }
         else
         {
             endVector = transform.position + (quaternion * Vector3.up * targetBeamLength);
-            if (myBoxCollider)
+            if (myBoxCollider && autoBoxCollider)
                 myBoxCollider.size = new Vector2(myBoxCollider.size.x, targetBeamLength);
         }
-    }
-
-    private async void ScaleControl()
-    {
-        while(true)
-        {
-            if (expansion)
-            {
-                if (laserScale < limitScale)
-                    laserScale += 0.2f * Time.timeScale;
-                else
-                    laserScale = limitScale;
-
-                if (prefabScale < limitPrefabScale)
-                {
-                    prefabScale += 0.2f * Time.timeScale;
-                    beamStartPrefab.transform.localScale = new Vector3(prefabScale, prefabScale, prefabScale);
-                    beamEndPrefab.transform.localScale = new Vector3(prefabScale, prefabScale, prefabScale);
-                }
-                else
-                {
-                    prefabScale = limitPrefabScale;
-                }
-            }
-            else
-            {
-                laserScale -= 0.1f * Time.timeScale;
-                if (laserScale <= 0)
-                {
-                    laserScale = 0;
-                    gameObject.SetActive(false);
-                }
-
-                prefabScale -= 0.05f * Time.timeScale;
-                beamStartPrefab.transform.localScale = new Vector3(prefabScale, prefabScale, prefabScale);
-                beamEndPrefab.transform.localScale = new Vector3(prefabScale, prefabScale, prefabScale);
-                if (prefabScale <= 0)
-                {
-                    prefabScale = 0;
-                    gameObject.SetActive(false);
-                }
-            }
-
-            if (myLineRenderer)
-            {
-                myLineRenderer.startWidth = laserScale;
-                myLineRenderer.endWidth = laserScale;
-            }
-            await UniTask.Yield();
-        }        
     }
 
     public void LaserShot()
@@ -152,7 +86,7 @@ public class LaserBeam : MonoBehaviour
             BeamShot(beamLength);
 
             // 박스 콜라이더 위치
-            if (myBoxCollider)
+            if (myBoxCollider && autoBoxCollider)
                 myBoxCollider.offset = new Vector2(0, myBoxCollider.size.y * 0.5f);
 
             if (myLineRenderer)
@@ -181,7 +115,7 @@ public class LaserBeam : MonoBehaviour
         if (beamLineRendererPrefab)
         {
             beamLineRendererPrefab.transform.position = transform.position;
-            beamLineRendererPrefab.transform.parent = transform;
+            //beamLineRendererPrefab.transform.parent = transform;
             beamLineRendererPrefab.transform.rotation = transform.rotation;
 
             myLineRenderer.useWorldSpace = true;

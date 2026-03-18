@@ -414,11 +414,19 @@ public class ConstValues : Singleton<ConstValues>
     public const string FighterAttack3 = "Fighter_Attack3";
     public const string FighterJumpAttack = "Fighter_JumpAttack";
 
+    public const string FighterDash = "Fighter_Dash";
+    public const string FighterLightningEffect = "Fighter_LightningEffect";
+    public const string FighterLightningTrail = "Fighter_LightningTrail";
     public const string FighterLightningKick = "Fighter_LightningKick";
-    public const string FighterLightningGrab = "Fighter_LightningGrab";
     public const string FighterLightningPunch = "Fighter_LightningPunch";
+    public const string FighterLightningPunchFinish = "Fighter_LightningPunch_Finish";
+    public const string FighterLightningPunchEffect = "Fighter_LightningPunch_Effect";
+    public const string FighterLightningSmash = "Fighter_LightningSmash";
+    public const string FighterLightningSmashWave = "Fighter_LightningSmash_Wave";
     public const string FighterStrongPunch = "Fighter_StrongPunch";
-
+    public const string FighterStrongPunchReady = "Fighter_StrongPunch_Ready";
+    public const string FighterStrongPunchWave = "Fighter_StrongPunch_Wave";
+    
     public const string UIPool = "UIPool";
     public const string PopupPool = "PopupPool";
     public const string Prefab = ".prefab";

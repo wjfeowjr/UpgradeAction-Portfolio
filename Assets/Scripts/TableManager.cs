@@ -351,6 +351,8 @@ public class SpawnedObjectData
     public string flipPosition;
     public string basicAngle;
     public string flipAngle;
+    public string laserAngle;
+    public string flipLaserAngle;
     public float objectTime;
     public string sound;
     public float soundVolume;

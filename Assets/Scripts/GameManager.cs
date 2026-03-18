@@ -1141,7 +1141,7 @@ public class GameManager : Singleton<GameManager>
         PlayerSkillKey.gunnerSkillKeyList = gunnerSkillKeyList;
         
         List<SkillKey> fighterSkillKeyList = new List<SkillKey>();
-        fighterSkillKeyList.Add(SetSkillKey(ConstValues.Fighter, dashKey));
+        fighterSkillKeyList.Add(SetSkillKey(ConstValues.FighterDash, dashKey));
         fighterSkillKeyList.Add(SetSkillKey(default, skillKey1));
         fighterSkillKeyList.Add(SetSkillKey(default, skillKey2));
         fighterSkillKeyList.Add(SetSkillKey(default, skillKey3));

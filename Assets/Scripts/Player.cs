@@ -235,6 +235,10 @@ public abstract class Player : Character
             GameManager.Instance.AddNewSkill(ConstValues.GunnerKnockBackShot);
             GameManager.Instance.AddNewSkill(ConstValues.GunnerCrazyShot);
             GameManager.Instance.AddNewSkill(ConstValues.GunnerElementalInfusion);
+            GameManager.Instance.AddNewSkill(ConstValues.FighterLightningKick);
+            GameManager.Instance.AddNewSkill(ConstValues.FighterLightningPunch);
+            GameManager.Instance.AddNewSkill(ConstValues.FighterLightningSmash);
+            GameManager.Instance.AddNewSkill(ConstValues.FighterStrongPunch);
         }
 
         if (Input.GetKeyDown(KeyCode.O))
@@ -244,6 +248,10 @@ public abstract class Player : Character
             GameManager.Instance.RemoveSkill(ConstValues.GunnerKnockBackShot);
             GameManager.Instance.RemoveSkill(ConstValues.GunnerCrazyShot);
             GameManager.Instance.RemoveSkill(ConstValues.GunnerElementalInfusion);
+            GameManager.Instance.RemoveSkill(ConstValues.FighterLightningKick);
+            GameManager.Instance.RemoveSkill(ConstValues.FighterLightningPunch);
+            GameManager.Instance.RemoveSkill(ConstValues.FighterLightningSmash);
+            GameManager.Instance.RemoveSkill(ConstValues.FighterStrongPunch);
         }
     }
 
@@ -1198,7 +1206,11 @@ public abstract class Player : Character
     {
         var skillData = skillList.Find(x => x.id == skillId);
         SetAttackSpeed(skillData.skillSpeed);
-        BodyTypeSetting((EBodyType)Enum.Parse(typeof(EBodyType), skillData.skillArmor));
+        var armor = skillData.skillArmor;
+        if (originStat.bodyType == EBodyType.SuperArmor && armor == ConstValues.Normal)
+            armor = ConstValues.SuperArmor;
+        
+        BodyTypeSetting((EBodyType)Enum.Parse(typeof(EBodyType), armor));
     }
 
     public void InitSkill()

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -16,6 +18,8 @@ public class SpawnObjectInfo
     public Vector3 flipPosition;
     public Vector3 basicAngle;
     public Vector3 flipAngle;
+    public Vector3 laserAngle;
+    public Vector3 flipLaserAngle;
     public float objectTime;
     public List<string> soundList = new List<string>();
     public float soundVolume;
@@ -40,6 +44,8 @@ public class SpawnedObject : MonoBehaviour
     
     private float dir;
     private float leftObjectTime;
+    
+    private CancellationTokenSource delayCancellation;
 
     private void Awake()
     {
@@ -87,6 +93,12 @@ public class SpawnedObject : MonoBehaviour
         
         var flipAngle = objectData.flipAngle.Split(',');
         spawnObjectInfo.flipAngle = new Vector3(float.Parse(flipAngle[0]), float.Parse(flipAngle[1]), float.Parse(flipAngle[2]));
+        
+        var laserAngle = objectData.laserAngle.Split(',');
+        spawnObjectInfo.laserAngle = new Vector3(float.Parse(laserAngle[0]), float.Parse(laserAngle[1]), float.Parse(laserAngle[2]));
+        
+        var flipLaserAngle = objectData.flipLaserAngle.Split(',');
+        spawnObjectInfo.flipLaserAngle = new Vector3(float.Parse(flipLaserAngle[0]), float.Parse(flipLaserAngle[1]), float.Parse(flipLaserAngle[2]));
         
         spawnObjectInfo.objectTime = objectData.objectTime;
 
@@ -151,10 +163,18 @@ public class SpawnedObject : MonoBehaviour
                     firstChildTransform.localPosition = spawnObjectInfo.flipPosition;
             }
         }
-
-        transform.localScale = new Vector3(xScale, yScale, zScale);
+        
         transform.eulerAngles = defaultAngle;
-
+        
+        if (spawnObjectInfo.flipLaserAngle != Vector3.zero)
+        {
+            if (dir > 0)
+                transform.eulerAngles = spawnObjectInfo.laserAngle;
+            else
+                transform.eulerAngles = spawnObjectInfo.flipLaserAngle;
+        }
+        transform.localScale = new Vector3(xScale, yScale, zScale);
+        
         foreach (var sound  in spawnObjectInfo.soundList)
             SoundManager.Instance.PlaySound(sound, ignoreSoundCondition);
         
@@ -208,5 +228,20 @@ public class SpawnedObject : MonoBehaviour
     public bool GetTrace()
     {
         return spawnObjectInfo.tracePos;
+    }
+
+    public async void DelayDelete(float second)
+    {
+        delayCancellation = new CancellationTokenSource();
+        if(await NormalDelay(second, delayCancellation).SuppressCancellationThrow())
+            return;
+        
+        gameObject.SetActive(false);
+    }
+    
+    // 일반 딜레이
+    protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
 }

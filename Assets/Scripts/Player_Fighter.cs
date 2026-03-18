@@ -13,8 +13,12 @@ public class Player_Fighter : Player
     [SerializeField] private Transform attack2Pos;
     [SerializeField] private Transform attack3Pos;
     [SerializeField] private Transform jumpAttackPos;
-    [SerializeField] private Transform changeAttackPos;
-
+    [SerializeField] private Transform lightningKickPos;
+    [SerializeField] private Transform lightningPunchPos;
+    [SerializeField] private Transform lightningPunchFinishPos;
+    [SerializeField] private Transform lightningGrabPos;
+    [SerializeField] private Transform strongPunchPos;
+    
     private int maxPunch = 3;
 
     public override async void ChangeAttack()
@@ -185,7 +189,7 @@ public class Player_Fighter : Player
         
         float jumpAttackDelay1 = 0.2f;
         float jumpAttackDelay2 = 0.2f;
-        float jumpAttackDelay3 = 0.3f;
+        float jumpAttackDelay3 = 0.2f;
         
         MotionFlip();
         StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack, ConstValues.JumpAttack);
@@ -193,10 +197,11 @@ public class Player_Fighter : Player
         if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow()) 
             return false;
         
-        //float dropForceX = 10;
-        //float dropForceY = 5;
-        //myRigidbody.linearVelocity = new Vector2(transform.localScale.x * dropForceX, -dropForceY);
-        SpawnAttackObject(ConstValues.FighterJumpAttack, jumpAttackPos).GetComponent<Trace>();
+        float dropForceX = 10;
+        float dropForceY = 5;
+        myRigidbody.linearVelocity = new Vector2(transform.localScale.x * dropForceX, -dropForceY);
+        var jumpAttackObject = SpawnAttackObject(ConstValues.FighterJumpAttack, jumpAttackPos).GetComponent<Trace>();
+        //var trailObject = SpawnObject(ConstValues.FighterLightningTrail, jumpAttackPos).GetComponent<Trace>();
         StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack);
 
         // float timer = 0;
@@ -207,21 +212,19 @@ public class Player_Fighter : Player
         //     timer += Time.deltaTime;
         // }
         //
-        // while (GetJumpState())
-        // {
-        //     if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-        //         return false;
-        // }
-        // myRigidbody.linearVelocity = Vector2.zero;
-        //
-        // if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow()) 
-        //     return false;
         while (GetJumpState())
         {
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
         }
+        myRigidbody.linearVelocity = Vector2.zero;
+        jumpAttackObject.GetComponent<Attack>().DisActiveCollider();
+        //trailObject.SetTarget(null);
+        if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow()) 
+            return false;
         
+        jumpAttackObject.gameObject.SetActive(false);
+        //trailObject.gameObject.SetActive(false);
         canAttack = true;
         return true;
     }
@@ -267,7 +270,14 @@ public class Player_Fighter : Player
         bool finishSuccess = true;
         if (skillKey == GameManager.Instance.dashKey)
         {
+            var trace = SpawnObject(ConstValues.FighterLightningTrail, centerPos).GetComponent<Trace>();
+            if (transform.localScale.x > 0)
+                trace.transform.position = new Vector3(trace.transform.position.x - 1.5f, trace.transform.position.y, trace.transform.position.z);
+            else
+                trace.transform.position = new Vector3(trace.transform.position.x + 1.5f, trace.transform.position.y, trace.transform.position.z);
+            
             finishSuccess = await Dash();
+            trace.SetTarget(null);
         }
 
         SkillSpeedAndArmorCheck(skillId);
@@ -275,9 +285,9 @@ public class Player_Fighter : Player
         {
             finishSuccess = await LightningKick();
         }
-        else if (skillId == ConstValues.FighterLightningGrab)
+        else if (skillId == ConstValues.FighterLightningSmash)
         {
-            finishSuccess = await LightningGrab();
+            finishSuccess = await LightningSmash();
         }
         else if (skillId == ConstValues.FighterLightningPunch)
         {
@@ -306,31 +316,153 @@ public class Player_Fighter : Player
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
 
-    // 올려베기
+    // 공중제비 차기
     private async UniTask<bool> LightningKick()
     {
+        // 특성 체크
+        var skillId = ConstValues.FighterLightningKick;
+        
+        StateSetting(ENormalState.Skill, skillId, skillId);
+        
+        float delay1 = 0.2f;
+        float delay2 = 0.3f;
+        
+        if(landingState == ELandingState.Ground)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
+        float leapX = transform.localScale.x * 3;
+        Leap(leapX, 6, 2.0f);
 
-        return true;
-    }
-    
-    // 불덩이 날리기
-    private async UniTask<bool> LightningGrab()
-    {
-
-        return true;
-    }
-    
-    // 반격
-    private async UniTask<bool> LightningPunch()
-    {
+        if (await AttackDelay(delay1).SuppressCancellationThrow()) 
+            return false;
+        
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, skillId);
+        SpawnAttack(skillId, lightningKickPos);
+        if (await AttackDelay(delay2).SuppressCancellationThrow()) 
+            return false;
         
         return true;
     }
     
-    // 박살내기
+    // 연타주먹
+    private async UniTask<bool> LightningPunch()
+    {
+        // 특성 체크
+        var skillId = ConstValues.FighterLightningPunch;
+        
+        StateSetting(ENormalState.Skill, skillId, skillId);
+        
+        float delay1 = 0.1f;
+        float delay2 = 0.2f;
+        float delay3 = 0.3f;
+        
+        if(landingState == ELandingState.Ground)
+            myRigidbody.linearVelocity = Vector2.zero;
+
+        int defaultCount = 10;
+        for (int i = 0; i < defaultCount; i++)
+        {
+            //SpawnFromPool("Fighter_LightningPunch", Fighter_AttackPos[5]);
+            float randPos1 = Random.Range(0.0f, 0.75f);
+            float randPos2 = Random.Range(-0.75f, 0.75f);
+            
+            SpawnAttack(skillId, lightningPunchPos);
+            var effectVector = new Vector2(lightningPunchPos.position.x + randPos1, lightningPunchPos.position.y + randPos2);
+            SpawnObject(ConstValues.FighterLightningPunchEffect, effectVector);
+            SpawnObject(ConstValues.FighterLightningEffect, effectVector);
+            if (await AttackDelay(delay1).SuppressCancellationThrow()) 
+                return false;
+        }
+        
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.FighterLightningPunchFinish);
+        if (await AttackDelay(delay2).SuppressCancellationThrow()) 
+            return false;
+        
+        SpawnAttack(ConstValues.FighterLightningPunchFinish, lightningPunchFinishPos);
+        if (await AttackDelay(delay3).SuppressCancellationThrow()) 
+            return false;
+        
+        return true;
+    }
+    
+    // 
+    private async UniTask<bool> LightningSmash()
+    {
+        // 특성 체크
+        var skillId = ConstValues.FighterLightningSmash;
+        
+        StateSetting(ENormalState.Skill, skillId, skillId);
+        
+        float delay1 = 0.3f;
+        float delay2 = 0.4f;
+        
+        if(landingState == ELandingState.Ground)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
+        SpawnObject(ConstValues.FighterFlash, centerPos);
+        if (await AttackDelay(delay1).SuppressCancellationThrow()) 
+            return false;
+        
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, skillId);
+        
+        // 도움닫기
+        var leapHeight = 12.0f;
+        myRigidbody.linearVelocity = new Vector2( transform.localScale.x * leapHeight, leapHeight);
+        var trailObject = SpawnObject(ConstValues.FighterLightningTrail, centerPos);
+        SpawnObject(ConstValues.FighterLightningSmashWave, transform);
+        if (await AttackDelay(delay2).SuppressCancellationThrow())
+            return false;
+        
+        float dropForce = 15.0f;
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
+        while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f && !isGrounded)
+        {
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return false;
+        }
+        
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, skillId);
+        SpawnAttack(ConstValues.FighterLightningSmash, transform);
+        if (await AttackDelay(delay2).SuppressCancellationThrow()) 
+            return false;
+        
+        trailObject.SetActive(false);
+        return true;
+    }
+
+    // 메가톤 강철주먹
     private async UniTask<bool> StrongPunch()
     {
+        // 특성 체크
+        var skillId = ConstValues.FighterStrongPunch;
+        StateSetting(ENormalState.Skill, skillId, skillId);
+        
+        float delay1 = 0.15f;
+        float delay2 = 0.5f;
+        float delay3 = 0.05f;
+        float delay4 = 0.5f;
+        
+        if(landingState == ELandingState.Ground)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
+        if (await AttackDelay(delay1).SuppressCancellationThrow()) 
+            return false;
 
+        SpawnObject(ConstValues.FighterFlash, centerPos);
+        SpawnObject(ConstValues.FighterStrongPunchReady, transform);
+
+        if (await AttackDelay(delay2).SuppressCancellationThrow()) 
+            return false;
+        
+        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, skillId);
+        SpawnObject(ConstValues.FighterStrongPunchWave, transform);
+        if (await AttackDelay(delay3).SuppressCancellationThrow()) 
+            return false;
+        
+        SpawnAttack(ConstValues.FighterStrongPunch, strongPunchPos);
+        if (await AttackDelay(delay4).SuppressCancellationThrow()) 
+            return false;
+        
         return true;
     }
 }
