@@ -250,6 +250,19 @@ public class Attack : MonoBehaviour
                     break;
             }
         }
+        
+        // 디버프추가
+        var deBuffList = GameManager.Instance.PlayerSkill.GetAttributeDeBuff(attackInfo.id);
+        foreach (var deBuff in deBuffList)
+        {
+            DeBuffInfo deBuffInfo = new DeBuffInfo
+            {
+                deBuff = (EBuffType)Enum.Parse(typeof(EBuffType), deBuff.buffId),
+                deBuffTime = deBuff.buffTime,
+                deBuffPercent = 100
+            };
+            attackInfo.deBuffInfoList.Add(deBuffInfo);
+        }
     }
 
     public void EnableSetting()

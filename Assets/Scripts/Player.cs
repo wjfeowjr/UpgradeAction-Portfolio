@@ -7,6 +7,16 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 [Serializable]
+public class PlayerAnimations
+{
+    public string id;
+    public string caster;
+    public bool canFlip;
+    public bool canMove;
+    public float moveRatio;
+}
+
+[Serializable]
 public class PlayerSkill
 {
     public string id;
@@ -159,6 +169,9 @@ public abstract class Player : Character
     [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected List<PlayerSkill> originSkillList = new List<PlayerSkill>();
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
+    [SerializeField] protected List<PlayerAnimations> originAnimationList = new List<PlayerAnimations>();
+    [SerializeField] protected List<PlayerAnimations> animationList = new List<PlayerAnimations>();
+    
     [SerializeField] protected bool canAttack;
     [SerializeField] private bool canFlip;
     [SerializeField] private bool canMove;
@@ -466,13 +479,13 @@ public abstract class Player : Character
             }
         }
         
-        var animationsData = TableManager.Instance.animationsTable.Animations.Find(x => x.id == animId && (x.caster == ConstValues.All || x.caster == basicStat.id));
-        if (animationsData != null)
+        var animationsInfo = animationList.Find(x => x.id == animId && (x.caster == ConstValues.All || x.caster == basicStat.id));
+        if (animationsInfo != null)
         {
             // 애니메이션 테이블을 체크하여, 해당 애니메이션 도중 전환, 이동이 가능한지 판단
-            canFlip = animationsData.canFlip;
-            canMove = animationsData.canMove;
-            moveRatio = animationsData.moveRatio;
+            canFlip = animationsInfo.canFlip;
+            canMove = animationsInfo.canMove;
+            moveRatio = animationsInfo.moveRatio;
         }
         else
         {
@@ -1268,13 +1281,65 @@ public abstract class Player : Character
             addedSkill.skillArmor = originSkill.skillArmor;
             skillList.Add(addedSkill);
         }
+
     }
 
-    // 스킬 특성 체크
+    public void InitAnimation()
+    {
+        foreach (var animations in TableManager.Instance.animationsTable.Animations)
+        {
+            var data = new PlayerAnimations();
+            data.id = animations.id;
+            data.caster = animations.caster;
+            data.canFlip = animations.canFlip;
+            data.canMove = animations.canMove;
+            data.moveRatio = animations.moveRatio;
+            originAnimationList.Add(data);
+        }
+        
+        foreach (var originAnimations in originAnimationList)
+        {
+            var data = new PlayerAnimations();
+            data.id = originAnimations.id;
+            data.caster = originAnimations.caster;
+            data.canFlip = originAnimations.canFlip;
+            data.canMove = originAnimations.canMove;
+            data.moveRatio = originAnimations.moveRatio;
+            animationList.Add(data);
+        }
+    }
+
+    // 스킬 특성 체크 및 초기화
     public void SkillAttributeCheck()
     {
+        // 애니메이션 데이터 초기화
+        for (var i = 0; i < originAnimationList.Count; i++)
+        {
+            animationList[i].canFlip = originAnimationList[i].canFlip;
+            animationList[i].canMove = originAnimationList[i].canMove;
+            animationList[i].moveRatio = originAnimationList[i].moveRatio;
+        }
+
         for (var i = 0; i < originSkillList.Count; i++)
         {
+            // 스택에서 일반으로 바꼈을 경우
+            if (skillList[i].maxCoolTime.Count > originSkillList[i].maxCoolTime.Count)
+            {
+                var curCoolTime = skillList[i].curCoolTime[1];
+                bool isStack = skillList[i].curCoolTime[2] > 0;
+
+                skillList[i].curCoolTime[1] = skillList[i].maxCoolTime[1];
+                skillList[i].curCoolTime[2] = skillList[i].maxCoolTime[2];
+                
+                skillList[i].maxCoolTime = originSkillList[i].maxCoolTime.ToList();
+                skillList[i].curCoolTime = originSkillList[i].curCoolTime.ToList();
+                
+                if(isStack)
+                    skillList[i].curCoolTime[0] = skillList[i].maxCoolTime[0];
+                else
+                    skillList[i].curCoolTime[0] = curCoolTime;
+            }
+
             // 쿨타임 보정
             bool isCoolTimeFill;
             if (skillList[i].maxCoolTime.Count > 1)
@@ -1356,7 +1421,25 @@ public abstract class Player : Character
                                 skill.curCoolTime[2] = skill.maxCoolTime[2];
                             }
                         }
-                        Debug.Log("해당 스킬은 스택형 스킬이 아님");
+                        else
+                        {
+                            var sameCoolTime = (int)skill.curCoolTime[0] >= (int)skill.maxCoolTime[0];
+                            
+                            float maxCoolTime = skill.maxCoolTime[0];
+                            skill.maxCoolTime.Add(maxCoolTime);
+                            skill.maxCoolTime.Add(1);
+                            skill.maxCoolTime[0] = 0.1f;
+                            skill.maxCoolTime[2] += upgrade.upgradeValue;
+                            
+                            float curCoolTime = skill.curCoolTime[0];
+                            skill.curCoolTime.Add(curCoolTime);
+                            if(sameCoolTime)
+                                skill.curCoolTime.Add(skill.maxCoolTime[2]);
+                            else
+                                skill.curCoolTime.Add(0);
+                            
+                            skill.curCoolTime[0] = skill.maxCoolTime[0];
+                        }
                         break;
                     
                     // 시전속도 증가
@@ -1367,6 +1450,22 @@ public abstract class Player : Character
                     // 버프 횟수 증가
                     case ConstValues.BuffCountUp:
                         skill.buffCount += upgrade.upgradeValue;
+                        break;
+                }
+            }
+        }
+
+        foreach (var animations in animationList)
+        {
+            var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(animations.id);
+            foreach (var upgrade in upgradeList)
+            {
+                switch (upgrade.upgradeId)
+                {
+                    // 이동 가능
+                    case ConstValues.CanMove:
+                        animations.canMove = true;
+                        animations.moveRatio = upgrade.upgradeValue;
                         break;
                 }
             }

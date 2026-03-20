@@ -170,6 +170,7 @@ public class SkillAttributeInfo
     public List<string> upgradeId = new List<string>();
     public List<int> upgradeValue = new List<int>();
     public string buffId;
+    public string deBuffId;
     public float buffTime;
     public int buffValue;
     public int talk;
@@ -427,7 +428,7 @@ public class SkillCollection
             targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
         // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == targetId);
+        var attributeData = GameManager.Instance. skillAttributeList.FindAll(x => x.targetObject == targetId);
         if (attributeData.Count > 0)
         {
             foreach (var attribute in attributeData)
@@ -578,6 +579,33 @@ public class SkillCollection
                 var buffInfo = new SkillAttributeBuffInfo
                 {
                     buffId = attribute.buffId,
+                    buffTime = attribute.buffTime,
+                    buffValue = attribute.buffValue,
+                };
+                buffList.Add(buffInfo);
+            }
+        }
+        return buffList;
+    }
+    
+    // 해당 스킬의 버프 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<SkillAttributeBuffInfo> GetAttributeDeBuff(string id)
+    {
+        var buffList = new List<SkillAttributeBuffInfo>();
+        string[] idSplit = id.Split('_');
+        if (idSplit.Length > 1)
+        {
+            // 파생기도 해당 효과를 적용받음
+            string skillId = $"{idSplit[0]}_{idSplit[1]}";
+            var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId);
+            foreach (var attribute in attributeData)
+            {
+                if (string.IsNullOrWhiteSpace(attribute.deBuffId) || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                var buffInfo = new SkillAttributeBuffInfo
+                {
+                    buffId = attribute.deBuffId,
                     buffTime = attribute.buffTime,
                     buffValue = attribute.buffValue,
                 };
@@ -1419,6 +1447,7 @@ public class GameManager : Singleton<GameManager>
             }
             
             data.buffId = skillAttribute.buffId;
+            data.deBuffId = skillAttribute.deBuffId;
             data.buffTime = skillAttribute.buffTime;
             data.buffValue = skillAttribute.buffValue;
             data.talk = skillAttribute.talk;
@@ -1436,10 +1465,11 @@ public class GameManager : Singleton<GameManager>
             player.InitBasicStat();
             player.InitBonusStat();
             player.InitSkill();
+            player.InitAnimation();
             player.SkillAttributeCheck();
         }
     }
-    
+
     public void MovePlayer()
     {
         ControlStart = true;

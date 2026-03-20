@@ -1159,7 +1159,7 @@ public abstract class Character : InteractionController
             }
 
             // 몬스터 체력바는 제외된다
-            if (obj.GetComponent<TotalBar>() == null)
+            if (obj.GetComponent<TotalBar>() == null && obj.GetComponent<Attack>() == null)
             {
                 if (spawnedObject.GetObjectTime() == 0)
                 {
@@ -1191,11 +1191,10 @@ public abstract class Character : InteractionController
         {
             if (obj.GetComponent<SpawnedObject>())
             {
-                AddObjectList(attackObject, obj);
                 if (obj.GetComponent<SpawnedObject>().GetObjectTime() == 0)
-                {
                     AddObjectList(controlAttackObject, obj);
-                }
+                else
+                    AddObjectList(attackObject, obj);
             }
 
             var attack = obj.GetComponent<Attack>();

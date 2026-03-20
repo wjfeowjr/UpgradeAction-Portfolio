@@ -152,6 +152,12 @@ public class ConstValues : Singleton<ConstValues>
     public const string PiercingStreak = "PiercingStreak";
     public const string FinishShot = "FinishShot";
     public const string FinishingExplosion = "FinishingExplosion";
+    public const string KickWave = "KickWave";
+    public const string MovingPunch = "MovingPunch";
+    public const string LightningStrike = "LightningStrike";
+    public const string ShockSmash = "ShockSmash";
+    public const string LightningIron = "LightningIron";
+    public const string CounterPunch = "CounterPunch";
 
     // 스킬 특성 패시브
     public const string SuperArmor = "SuperArmor";
@@ -174,6 +180,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string ReachUp = "ReachUp";
     public const string CountUp = "CountUp";
     public const string BuffCountUp = "BuffCountUp";
+    public const string CanMove = "CanMove";
 
     public const string Big = "Big";
     public const string Missile = "Missile";
@@ -418,14 +425,21 @@ public class ConstValues : Singleton<ConstValues>
     public const string FighterLightningEffect = "Fighter_LightningEffect";
     public const string FighterLightningTrail = "Fighter_LightningTrail";
     public const string FighterLightningKick = "Fighter_LightningKick";
+    public const string FighterLightningKickWave = "Fighter_LightningKick_Wave";
     public const string FighterLightningPunch = "Fighter_LightningPunch";
+    public const string FighterLightningPunchMissile = "Fighter_LightningPunch_Missile";
     public const string FighterLightningPunchFinish = "Fighter_LightningPunch_Finish";
+    public const string FighterLightningPunchFinishMissile = "Fighter_LightningPunch_Finish_Missile";
     public const string FighterLightningPunchEffect = "Fighter_LightningPunch_Effect";
     public const string FighterLightningSmash = "Fighter_LightningSmash";
     public const string FighterLightningSmashWave = "Fighter_LightningSmash_Wave";
+    public const string FighterLightningSmashLightning = "Fighter_LightningSmash_Lightning";
+    public const string FighterLightningSmashLightningField = "Fighter_LightningSmash_LightningField";
     public const string FighterStrongPunch = "Fighter_StrongPunch";
     public const string FighterStrongPunchReady = "Fighter_StrongPunch_Ready";
     public const string FighterStrongPunchWave = "Fighter_StrongPunch_Wave";
+    public const string FighterStrongPunchLightning = "Fighter_StrongPunch_Lightning";
+    public const string FighterStrongPunchJust = "Fighter_StrongPunch_Just";
     
     public const string UIPool = "UIPool";
     public const string PopupPool = "PopupPool";

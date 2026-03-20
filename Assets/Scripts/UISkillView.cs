@@ -227,6 +227,9 @@ public class UISkillView : MonoBehaviour, IUISkillView
             coolTimeObject.SetActive(finalCoolTime > 0);
             coolTimeText.text = finalCoolTime.ToString("F1");
             coolTimeImage.fillAmount = finalCoolTime / maxCoolTime[0];
+            
+            stackText.gameObject.SetActive(false);
+            stackCoolTimeImage.gameObject.SetActive(false);
         }
     }
 

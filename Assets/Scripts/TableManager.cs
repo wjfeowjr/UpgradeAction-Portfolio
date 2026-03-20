@@ -327,6 +327,7 @@ public class SkillAttributeData
     public string upgradeId;
     public string upgradeValue;
     public string buffId;
+    public string deBuffId;
     public float buffTime;
     public int buffValue;
     public int talk;
