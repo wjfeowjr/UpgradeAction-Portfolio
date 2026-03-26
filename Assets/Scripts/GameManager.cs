@@ -779,9 +779,6 @@ public class SaveData
     public bool firstGetAttribute;
     
     public List<string> playerList = new List<string>();
-
-    public int npcSunGetSkill;
-
     public List<ItemInfo> itemList = new List<ItemInfo>();
     public SkillCollection playerSkill;
     public SkillKeyCollection playerSkillKey;
@@ -1046,8 +1043,10 @@ public class GameManager : Singleton<GameManager>
         }
         curPlayer = GetPlayer(saveData.playerList[0]);
         
-        if(!saveData.playerList.Contains(ConstValues.Fighter))
-            AddPlayer(ConstValues.Fighter);
+#if UNITY_EDITOR
+        // if(!saveData.playerList.Contains(ConstValues.Fighter))
+        //     AddPlayer(ConstValues.Fighter);
+#endif
     }
 
     private void SetPrefabActive(bool active)

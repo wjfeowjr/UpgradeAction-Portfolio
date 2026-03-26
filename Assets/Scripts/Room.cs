@@ -59,6 +59,7 @@ public class Room : MonoBehaviour
     [SerializeField] protected Elevator[] elevators;
     [SerializeField] protected LockDoor[] lockDoors;
     [SerializeField] protected Arena[] arenas;
+    [SerializeField] protected GoldObject[] goldObjects;
     
     [SerializeField] private Transform minCameraLimitX;
     [SerializeField] private Transform maxCameraLimitX;
@@ -264,7 +265,9 @@ public class Room : MonoBehaviour
         // 여기서 트랩 데이터 넣기
         SetTrap();
         // 여기서 세이브포인트 데이터 넣기
-         SetSavePoint();
+        SetSavePoint();
+        // 여기서 골드오브젝트 액션 넣기
+        SetActionGoldObject();
 
         await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         GameManager.Instance.ControlStart = true;
@@ -838,6 +841,8 @@ public class Room : MonoBehaviour
         SetSavePoint();
         // 여기서 포탈 데이터 넣기
         SetPortal();
+        // 여기서 골드오브젝트 액션 넣기
+        SetActionGoldObject();
 
         GameManager.Instance.InitFadeCancellation();
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
@@ -1099,6 +1104,12 @@ public class Room : MonoBehaviour
             GameManager.Instance.SaveGame();
         });
     }
+    
+    private void SetActionGoldObject()
+    {
+        foreach (var goldObject in goldObjects)
+            goldObject.SetAction(PlusGold);
+    }
 
     private void SetPortal()
     {
@@ -1345,13 +1356,13 @@ public class Room : MonoBehaviour
     {
         Vector3 camPos = gameCamera.transform.position;
         float halfH = gameCamera.orthographicSize;
-        
         float halfW = halfH * gameCamera.aspect;
+        
         Rect viewRect = new Rect(camPos.x - halfW, camPos.y - halfH, halfW * 2, halfH * 2);
         
         // 미니맵 테두리
-        float extraFrameVertical = minimapFrameTilemap.cellSize.y;
-        viewRect.yMin += extraFrameVertical * -1; //
+        float extraFrameVertical = minimapFrameTilemap.cellSize.y * 0.5f; // 0.5f
+        viewRect.yMin += extraFrameVertical; //
         viewRect.yMax += extraFrameVertical * 3; //
 
         Vector2 halfFrameCell = minimapFrameTilemap.cellSize; // minimapTilemap.cellSize
@@ -2233,6 +2244,10 @@ public class Room : MonoBehaviour
             elevators = interactionArray.GetComponentsInChildren<Elevator>();
             arenas = interactionArray.GetComponentsInChildren<Arena>();
         }
+        
+        Transform goldObjectArray = roomGameObject.transform.Find(ConstValues.GoldObjectArray);
+        if(goldObjectArray != null)
+            goldObjects = goldObjectArray.GetComponentsInChildren<GoldObject>();
         
         Transform groundGrid = roomGameObject.transform.Find(ConstValues.GroundGrid);
         if (groundGrid != null)

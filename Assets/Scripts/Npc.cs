@@ -92,9 +92,9 @@ public class Npc : Character
             }
 
             var speechVector = speechPos.position;
-            var speechPose = ConstValues.Idle;
-            if (!string.IsNullOrWhiteSpace(speechPose))
-                speechPose = talk.speechPose;
+            var speechPose = talk.speechPose;
+            if (string.IsNullOrWhiteSpace(speechPose))
+                speechPose = ConstValues.Idle;
             
             if (talk.isSpeaker)
             {

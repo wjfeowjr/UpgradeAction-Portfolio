@@ -197,6 +197,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string NpcArray = "NpcArray";
     public const string TrapArray = "TrapArray";
     public const string InteractionArray = "InteractionArray";
+    public const string GoldObjectArray = "GoldObjectArray";
     public const string PlayerPosArray = "PlayerPosArray";
     public const string EntranceArray = "EntranceArray";
     public const string BossGateArray = "BossGateArray";
@@ -328,6 +329,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string Open = "Open";
     public const string Close = "Close";
     public const string SwitchOpen = "SwitchOpen";
+    
+    public const string Hit = "Hit";
+    public const string Break = "Break";
+    public const string BreakImmediate = "BreakImmediate";
     
     // 직업 공용
     public const string Face = "Face";
@@ -541,4 +546,5 @@ public class ConstValues : Singleton<ConstValues>
     public const string Lever = "Lever";
     public const string ElevatorHiss = "ElevatorHiss";
     public const string Pickup = "Pickup";
+    public const string DestroyDoor = "DestroyDoor";
 }

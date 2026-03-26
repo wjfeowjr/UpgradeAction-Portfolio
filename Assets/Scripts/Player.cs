@@ -771,7 +771,7 @@ public abstract class Player : Character
         
         if (inputSpeedX > 0 && (isWallRight || isWallBodyRight))
             inputSpeedX = 0;
-        
+
         myRigidbody.linearVelocity = new Vector2(inputSpeedX + platformSpeedX, targetSpeedY);
     }
     

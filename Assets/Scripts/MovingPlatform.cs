@@ -23,13 +23,14 @@ public class MovingPlatform : MonoBehaviour
     private Vector2 segmentStartPos;
     private Vector2 platformVelocity;
     private List<Vector2> movePos = new List<Vector2>();
-    private PlatformObject platformObject;
+    [SerializeField] private PlatformObject platformObject;
 
     private Action arriveAction;
     public Transform[] Points => points;
 
     public PlatformObject PlatformObject
     {
+        get => platformObject;
         set => platformObject = value;
     }
 
@@ -69,6 +70,8 @@ public class MovingPlatform : MonoBehaviour
         
         foreach (var point in points)
             movePos.Add(point.position);
+
+        SetPlatformObject();
     }
 
     private void Update()
@@ -131,6 +134,16 @@ public class MovingPlatform : MonoBehaviour
             curDelay = delay;
             isMoving = true;
         }
+    }
+
+    private void SetPlatformObject()
+    {
+        var platform = new PlatformObject
+        {
+            collider = myBoxCollider,
+            height = transform.position.y + myBoxCollider.size.y * 0.5f + myBoxCollider.offset.y - 0.2f,
+        };
+        platformObject = platform;
     }
 
     private void SetHeight()

@@ -212,9 +212,6 @@ public abstract class Character : InteractionController
     public Transform CenterPos => centerPos;
     public Transform FontPos => fontPos;
     public List<Buff> BuffList => buffList;
-    
-    // 물리판정 변수들
-    [SerializeField] private float castDistance;
 
     [Header("Box Sizes")]
     [SerializeField] private Vector2 horizontalBoxSize; // 좌우 (세로로 긴 박스)
@@ -298,17 +295,16 @@ public abstract class Character : InteractionController
     protected virtual void Awake()
     {
         DataCaching();
-
-        castDistance = 0.0f;
-        var hitBoxColSize = myBoxCollider.size;
+        
         var physicsColSize = physicsCollider.size;
         
-        horizontalBoxSize = new Vector2(0.1f, physicsColSize.y * 0.8f); // 좌우 (세로로 긴 박스)
-        verticalBoxSize = new Vector2(physicsColSize.x * 0.9f, 0.1f); // 상하 (가로로 긴 박스)
-        horizontalOffset = hitBoxColSize.x * 0.5f; // 중심에서 좌우로 얼마나 떨어질지
+        horizontalBoxSize = new Vector2(0.1f, physicsColSize.y); // 좌우 (세로로 긴 박스)  * 0.8f
+        verticalBoxSize = new Vector2(physicsColSize.x, 0.1f); // 상하 (가로로 긴 박스) * 0.9f
+        horizontalOffset = physicsColSize.x * 0.5f; // 중심에서 좌우로 얼마나 떨어질지
         verticalOffset = physicsColSize.y * 0.5f; // 중심에서 위아래로 얼마나 떨어질지
+
         footOffset = physicsColSize.x * 0.5f;
-        addGroundDistance = 0.05f;
+        addGroundDistance = 0.1f;
         addAirborneDistance = 0.05f;
         groundRayDistance = physicsColSize.y * 0.5f + addGroundDistance;
         airborneRayDistance = physicsColSize.y * 0.5f + addAirborneDistance; // 수정을 해야하나?
@@ -350,10 +346,10 @@ public abstract class Character : InteractionController
     private void WallCheck()
     {
         // 왼쪽 벽 체크
-        hitLeft = Physics2D.BoxCast((Vector2)centerPos.position + Vector2.left * horizontalOffset, horizontalBoxSize, 0f, Vector2.left, castDistance, groundLayerMask);
+        hitLeft = Physics2D.BoxCast((Vector2)physicCenterPos.position + Vector2.left * horizontalOffset, horizontalBoxSize, 0f, Vector2.left, 0, groundLayerMask);
 
         // 오른쪽 벽 체크
-        hitRight = Physics2D.BoxCast((Vector2)centerPos.position + Vector2.right * horizontalOffset, horizontalBoxSize, 0f, Vector2.right, castDistance, groundLayerMask);
+        hitRight = Physics2D.BoxCast((Vector2)physicCenterPos.position + Vector2.right * horizontalOffset, horizontalBoxSize, 0f, Vector2.right, 0, groundLayerMask);
 
         isWallLeft = hitLeft.collider != null;
         isWallRight = hitRight.collider != null;
@@ -363,7 +359,7 @@ public abstract class Character : InteractionController
     protected virtual async void CeilingCheck()
     {
         // 천장 체크 (위)
-        hitUp = Physics2D.BoxCast((Vector2)centerPos.position + Vector2.up * verticalOffset, verticalBoxSize, 0f, Vector2.up, castDistance, groundLayerMask);
+        hitUp = Physics2D.BoxCast((Vector2)physicCenterPos.position + Vector2.up * verticalOffset, verticalBoxSize, 0f, Vector2.up, 0, groundLayerMask);
         isCeilingHit = hitUp.collider != null;
 
         if (landingState == ELandingState.Air)
@@ -506,7 +502,8 @@ public abstract class Character : InteractionController
                 if (downLeftHit.collider.GetComponent<MovingPlatform>())
                 {
                     currentMovingPlatform = downLeftHit.collider.GetComponent<MovingPlatform>();
-                    currentMovingPlatform.PlatformObject = lastStandPlatform;
+                    //lastStandPlatform = currentMovingPlatform.PlatformObject;
+                    //currentMovingPlatform.PlatformObject = lastStandPlatform;
                 }
             }
             if (rightPlatform)
@@ -519,7 +516,8 @@ public abstract class Character : InteractionController
                 if (downRightHit.collider.GetComponent<MovingPlatform>())
                 {
                     currentMovingPlatform = downRightHit.collider.GetComponent<MovingPlatform>();
-                    currentMovingPlatform.PlatformObject = lastStandPlatform;
+                    //lastStandPlatform = currentMovingPlatform.PlatformObject;
+                    //currentMovingPlatform.PlatformObject = lastStandPlatform;
                 }
             }
         }
@@ -608,15 +606,15 @@ public abstract class Character : InteractionController
     {
         // 왼쪽 벽 박스
         Gizmos.color = isWallLeft ? ConstValues.BlueColor : ConstValues.RedColor;
-        DrawBox((Vector2)physicCenterPos.position + Vector2.left * (horizontalOffset + castDistance), horizontalBoxSize);
+        DrawBox((Vector2)physicCenterPos.position + Vector2.left * horizontalOffset, horizontalBoxSize);
 
         // 오른쪽 벽 박스
         Gizmos.color = isWallRight ? ConstValues.BlueColor : ConstValues.RedColor;
-        DrawBox((Vector2)physicCenterPos.position + Vector2.right * (horizontalOffset + castDistance), horizontalBoxSize);
+        DrawBox((Vector2)physicCenterPos.position + Vector2.right * horizontalOffset, horizontalBoxSize);
 
         // 천장 박스
         Gizmos.color = isCeilingHit ? ConstValues.BlueColor : ConstValues.RedColor;
-        DrawBox((Vector2)physicCenterPos.position + Vector2.up * (verticalOffset + castDistance), verticalBoxSize);
+        DrawBox((Vector2)physicCenterPos.position + Vector2.up * verticalOffset, verticalBoxSize);
         
         Gizmos.color = Color.cyan; // 하늘색으로 표시
         // 현재 위치에 설정한 size만큼의 와이어 박스를 그림
@@ -892,20 +890,29 @@ public abstract class Character : InteractionController
         {
             if (!ignorePlatformList.Exists(x => x.collider == col))
             {
-                if (col == lastStandPlatform.collider)
+                var movingPlatform = col.GetComponent<MovingPlatform>();
+                if (movingPlatform)
                 {
-                    ignorePlatformList.Add(lastStandPlatform);
+                    ignorePlatformList.Add(movingPlatform.PlatformObject);
                     Physics2D.IgnoreCollision(physicsCollider, col, true);
                 }
                 else
                 {
-                    var platformObject = new PlatformObject()
+                    if (col == lastStandPlatform.collider)
                     {
-                        collider = col,
-                        height = height,
-                    };
-                    ignorePlatformList.Add(platformObject);
-                    Physics2D.IgnoreCollision(physicsCollider, col, true);
+                        ignorePlatformList.Add(lastStandPlatform);
+                        Physics2D.IgnoreCollision(physicsCollider, col, true);
+                    }
+                    else
+                    {
+                        var platformObject = new PlatformObject()
+                        {
+                            collider = col,
+                            height = height,
+                        };
+                        ignorePlatformList.Add(platformObject);
+                        Physics2D.IgnoreCollision(physicsCollider, col, true);
+                    }
                 }
             }
         }
