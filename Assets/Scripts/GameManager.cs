@@ -200,6 +200,13 @@ public class SkillAttributeBuffInfo
 }
 
 [Serializable]
+public class PlayerInfo
+{
+    public SkillCollection skillCollection;
+    public SkillKeyCollection skillKeyCollection;
+}
+
+[Serializable]
 public class SkillCollection
 {
     public int totalAttributePoint;
@@ -780,8 +787,13 @@ public class SaveData
     
     public List<string> playerList = new List<string>();
     public List<ItemInfo> itemList = new List<ItemInfo>();
+    
+    // 플레이어 개별로 만들기(스킬, 스킬 키, 유물)
+    public List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
+    
     public SkillCollection playerSkill;
     public SkillKeyCollection playerSkillKey;
+    
     public List<Vector2> miniMapCheckers = new List<Vector2>();
     public List<NpcInfo> npcInfoList = new List<NpcInfo>();
     public List<RoomInfo> roomInfoList = new List<RoomInfo>();
@@ -2197,6 +2209,12 @@ public class GameManager : Singleton<GameManager>
     public void GetAttributeProduct(int count, Action<int> customAction)
     {
         CurPlayer.SpawnObject(ConstValues.GetSkillExplosion, CurPlayer.CenterPos.position);
+        customAction.Invoke(count);
+    }
+
+    public void GetGoldProduct(int count, Vector2 boxPos, Action<int> customAction)
+    {
+        CurPlayer.SpawnObject(ConstValues.BangEffect, boxPos);
         customAction.Invoke(count);
     }
 

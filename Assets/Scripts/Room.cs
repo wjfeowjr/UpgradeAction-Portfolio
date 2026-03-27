@@ -243,6 +243,7 @@ public class Room : MonoBehaviour
         
         SetTrap();
         SetSavePoint();
+        SetActionGoldObject();
         await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
         
         if(!firstStart)
@@ -642,7 +643,17 @@ public class Room : MonoBehaviour
                     roomTreasureBox[idx].ReduceInteractionObject();
                     roomInfo.treasureBox[idx].alreadyGet = true;
                     GetTreasureBoxItem(roomInfo.treasureBox[idx].id, roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position);
-                    GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
+                    
+                    switch (roomInfo.treasureBox[idx].id)
+                    {
+                        case ConstValues.AttributePoint:
+                            GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
+                            break;
+                        case ConstValues.Gold:
+                            GameManager.Instance.GetGoldProduct(roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position, GetGoldEvent);
+                            break;
+                    }
+
                     GameManager.Instance.SaveGame();
                 });
             }
@@ -933,20 +944,6 @@ public class Room : MonoBehaviour
         await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
     }
 
-    private void PlusGold(int gold, Vector2 goldPos)
-    {
-        if (gold == 0)
-            return;
-        
-        GameManager.Instance.Gold += gold;
-        // 골드가 날아가는 연출
-        var followGold = GameManager.Instance.SpawnToObjectPool(ConstValues.FollowGold, goldPos).GetComponent<FollowGold>();
-        followGold.SetAction(() =>
-        {
-            GameManager.Instance.GetGold(gold, GameManager.Instance.Gold);
-        });
-    }
-    
     private void GetItem(string id, int count)
     {
         var itemInfo = new ItemInfo()
@@ -969,13 +966,24 @@ public class Room : MonoBehaviour
                 break;
         }
     }
-
+    
+    private void PlusGold(int gold, Vector2 goldPos)
+    {
+        if (gold == 0)
+            return;
+        
+        GameManager.Instance.Gold += gold;
+        // 골드가 날아가는 연출
+        var followGold = GameManager.Instance.SpawnToObjectPool(ConstValues.FollowGold, goldPos).GetComponent<FollowGold>();
+        followGold.SetAction(() =>
+        {
+            GameManager.Instance.GetGold(gold, GameManager.Instance.Gold);
+        });
+    }
+    
     private void PlusAttributePoint(int attributePoint)
     {
         GameManager.Instance.PlayerSkill.PlusAttributePoint(attributePoint);
-
-        //GameManager.Instance.SaveGame();
-        //Debug.Log($"저장된 {ConstValues.AttributePoint} = {GameManager.Instance.PlayerSkill.totalAttributePoint}");
     }
 
     // 숏컷정보 저장
@@ -2218,6 +2226,13 @@ public class Room : MonoBehaviour
             UIOn();
             GameManager.Instance.MovePlayer();
         }
+    }
+    
+    // 골드 획득 후 이벤트
+    private async void GetGoldEvent(int goldCount)
+    {
+        string getMessage = string.Format(GameManager.Instance.GetTalk(30210), goldCount.ToString());
+        await GameManager.Instance.SpawnWarningPopup(getMessage);
     }
 
     // 캐싱
