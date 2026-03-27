@@ -161,7 +161,7 @@ public class Missile : MonoBehaviour, IProjectile
     // 미사일 데이터를 변경하는 특성은 여기서 관리
     public void AttributeCheck()
     {
-        var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(missileInfo.id);
+        var passiveList = GameManager.Instance.GetAttributePassive(missileInfo.id);
         foreach (var passive in passiveList)
         {
             switch (passive)
@@ -177,7 +177,7 @@ public class Missile : MonoBehaviour, IProjectile
                     break;
             }
         }
-        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(missileInfo.id);
+        var upgradeList = GameManager.Instance.GetAttributeUpgrade(missileInfo.id);
         foreach (var upgrade in upgradeList)
         {
             switch (upgrade.upgradeId)

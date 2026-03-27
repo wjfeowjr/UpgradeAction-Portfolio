@@ -983,7 +983,7 @@ public class Room : MonoBehaviour
     
     private void PlusAttributePoint(int attributePoint)
     {
-        GameManager.Instance.PlayerSkill.PlusAttributePoint(attributePoint);
+        GameManager.Instance.PlusAttributePoint(attributePoint);
     }
 
     // 숏컷정보 저장

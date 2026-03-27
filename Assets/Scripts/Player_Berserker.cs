@@ -296,7 +296,8 @@ public class Player_Berserker : Player
         if (Time.timeScale == 0)
             return;
 
-        var skillId = GameManager.Instance.PlayerSkillKey.berserkerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
+        var playerInfo = GameManager.Instance.PlayerInfoList.Find(x => x.playerId == basicStat.id);
+        var skillId = playerInfo.skillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
         
@@ -386,8 +387,8 @@ public class Player_Berserker : Player
     {
         // 특성 체크
         var skillId = ConstValues.BerserkerUpperSlash;
-        bool swordBeam = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SwordBeam);
-        bool comboSlash = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.ComboSlash);
+        bool swordBeam = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.SwordBeam);
+        bool comboSlash = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.ComboSlash);
 
         StateSetting(ENormalState.Skill, ConstValues.BerserkerUpperSlash, ConstValues.BerserkerUpperSlash);
 
@@ -414,7 +415,7 @@ public class Player_Berserker : Player
         while (addTime < delay3)
         {
             addTime += Time.deltaTime * basicStat.attackSpeed;
-            if (Input.GetKeyDown(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerUpperSlash)))
+            if (Input.GetKeyDown(GameManager.Instance.GetSkillKey(ConstValues.BerserkerUpperSlash)))
                 inputCombo = true;
             
             if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
@@ -457,7 +458,7 @@ public class Player_Berserker : Player
         // 특성 체크
         var skillId = ConstValues.BerserkerFireStrike;
         var objectId = $"{ConstValues.BerserkerFireStrike}_{ConstValues.Object}";
-        bool chargingFlame = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.ChargingFire);
+        bool chargingFlame = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.ChargingFire);
 
         StateSetting(ENormalState.Skill, ConstValues.BerserkerFireStrike, ConstValues.BerserkerFireStrike);
 
@@ -479,7 +480,7 @@ public class Player_Berserker : Player
             float chargeTime = 1.0f - Mathf.Abs(1.0f - basicStat.attackSpeed);
 
             bool isSpawnedEffect = false;
-            while (addTime < chargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+            while (addTime < chargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))
             {
                 if (!isSpawnedEffect)
                 {
@@ -508,7 +509,7 @@ public class Player_Berserker : Player
             {
                 float addTime2 = 0;
                 float extraChargeTime = 0.5f;
-                while (addTime2 < extraChargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+                while (addTime2 < extraChargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))
                 {
                     addTime2 += Time.deltaTime * basicStat.attackSpeed;
                     if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
@@ -529,7 +530,7 @@ public class Player_Berserker : Player
             return false;
 
         var missileObject = SpawnAttackObject(objectId, fireStrikePos).GetComponent<Missile>();
-        var addObjectList = GameManager.Instance.PlayerSkill.GetAttributeAddObject(objectId);
+        var addObjectList = GameManager.Instance.GetAttributeAddObject(objectId);
         foreach (var addObject in addObjectList)
         {
             switch (addObject.addObjectId)
@@ -557,8 +558,8 @@ public class Player_Berserker : Player
     {
         // 특성 체크
         var skillId = ConstValues.BerserkerSwordCounter;
-        bool vibratingSteel = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.VibratingSteel);
-        bool bullCharge = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.BullCharge);
+        bool vibratingSteel = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.VibratingSteel);
+        bool bullCharge = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.BullCharge);
         
         float delay1 = 0.2f;
         float delay2 = 0.5f;
@@ -576,7 +577,7 @@ public class Player_Berserker : Player
         float counterTime = 0.5f;
         float originTime = counterTime;
         float durationTime = 0;
-        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skillId);
+        var upgradeList = GameManager.Instance.GetAttributeUpgrade(skillId);
         foreach (var upgrade in upgradeList)
         {
             switch (upgrade.upgradeId)
@@ -602,7 +603,7 @@ public class Player_Berserker : Player
         if (isCounterAttack)
         {
             // 황소의 힘
-            var attributeBuffList = GameManager.Instance.PlayerSkill.GetAttributeBuff(skillId);
+            var attributeBuffList = GameManager.Instance.GetAttributeBuff(skillId);
             foreach (var buff in attributeBuffList)
                 AddBuff(buff.buffId, buff.buffValue, buff.buffTime, 0);
 
@@ -702,10 +703,10 @@ public class Player_Berserker : Player
     {
         // 특성 체크
         var skillId = ConstValues.BerserkerCrash;
-        bool earthQuake = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.EarthQuake);
-        bool magmaEruption = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.MagmaEruption);
-        bool furiousStrike = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.FuriousStrike);
-        bool secondaryExplosion = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.SecondaryExplosion);
+        bool earthQuake = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.EarthQuake);
+        bool magmaEruption = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.MagmaEruption);
+        bool furiousStrike = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.FuriousStrike);
+        bool secondaryExplosion = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.SecondaryExplosion);
         
         float delay1 = 0.15f;
         float delay2 = 0.5f;

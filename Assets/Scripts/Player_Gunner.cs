@@ -363,7 +363,8 @@ public class Player_Gunner : Player
         if (Time.timeScale == 0)
             return;
 
-        var skillId = GameManager.Instance.PlayerSkillKey.gunnerSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
+        var playerInfo = GameManager.Instance.PlayerInfoList.Find(x => x.playerId == basicStat.id);
+        var skillId = playerInfo.skillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
         
@@ -450,7 +451,7 @@ public class Player_Gunner : Player
         var objectId = ConstValues.GunnerGrenadeObject;
         var skill = GetSkill(skillId);
         
-        bool madBomber = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.MadBomber);
+        bool madBomber = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.MadBomber);
         
         StateSetting(ENormalState.Skill, ConstValues.GunnerGrenade, ConstValues.GunnerGrenade);
         
@@ -498,7 +499,7 @@ public class Player_Gunner : Player
         for (int i = 0; i < count; i++)
         {
             var grenadeObject = SpawnAttackObject(objectId, grenadePos).GetComponent<Grenade>();
-            var addObjectList = GameManager.Instance.PlayerSkill.GetAttributeAddObject(objectId);
+            var addObjectList = GameManager.Instance.GetAttributeAddObject(objectId);
             foreach (var addObject in addObjectList)
             {
                 switch (addObject.addObjectId)
@@ -537,7 +538,7 @@ public class Player_Gunner : Player
         var skillId = ConstValues.GunnerKnockBackShot;
         var attackId = ConstValues.GunnerKnockBackShot;
         var objectId = $"{ConstValues.GunnerKnockBackShot}_{ConstValues.Object}";
-        bool powerfulGunpowder = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.PowerfulGunpowder);
+        bool powerfulGunpowder = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.PowerfulGunpowder);
         
         StateSetting(ENormalState.Skill, ConstValues.GunnerKnockBackShot, ConstValues.GunnerKnockBackShotReady);
         
@@ -559,7 +560,7 @@ public class Player_Gunner : Player
             float chargeTime = 1.0f - Mathf.Abs(1.0f - basicStat.attackSpeed);
 
             bool isSpawnedEffect = false;
-            while (addTime < chargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+            while (addTime < chargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))
             {
                 if (!isSpawnedEffect)
                 {
@@ -613,7 +614,7 @@ public class Player_Gunner : Player
             {
                 float addTime2 = 0;
                 float extraChargeTime = 0.5f;
-                while (addTime2 < extraChargeTime && Input.GetKey(GameManager.Instance.BerserkerSkillKey(ConstValues.BerserkerFireStrike)))
+                while (addTime2 < extraChargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))
                 {
                     addTime2 += Time.deltaTime * basicStat.attackSpeed;
                     if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
@@ -680,9 +681,9 @@ public class Player_Gunner : Player
         var objectId = ConstValues.GunnerCrazyShot;
         var effectId = ConstValues.GunnerCrazyShotEffect;
 
-        bool longShot = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.LongShot);
-        bool piercingStreak = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.PiercingStreak);
-        bool finishShot = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.FinishShot);
+        bool longShot = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.LongShot);
+        bool piercingStreak = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.PiercingStreak);
+        bool finishShot = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.FinishShot);
 
         var delay1 = 0.5f;
         var delay2 = 0.5f;
@@ -724,7 +725,7 @@ public class Player_Gunner : Player
         float shotTime = 0.1f;
 
         int bulletCount = 14;
-        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skillId);
+        var upgradeList = GameManager.Instance.GetAttributeUpgrade(skillId);
         foreach (var upgrade in upgradeList)
         {
             switch (upgrade.upgradeId)
@@ -794,7 +795,7 @@ public class Player_Gunner : Player
         if (skillData != null)
         {
             string skillId = ConstValues.GunnerElementalInfusion;
-            bool finishingExplosion = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.FinishingExplosion);
+            bool finishingExplosion = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.FinishingExplosion);
             
             if(landingState == ELandingState.Ground)
                 myRigidbody.linearVelocity = Vector2.zero;
@@ -874,7 +875,7 @@ public class Player_Gunner : Player
             StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerElementalInfusion);
             
             // 강한 원소
-            var attributeBuffList = GameManager.Instance.PlayerSkill.GetAttributeBuff(skillId);
+            var attributeBuffList = GameManager.Instance.GetAttributeBuff(skillId);
             foreach (var buff in attributeBuffList)
                 AddBuff(buff.buffId, buff.buffValue, buff.buffTime, 0);
             

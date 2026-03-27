@@ -274,10 +274,8 @@ public class RoomManager : Singleton<RoomManager>
         var attributeModel = new PopupAttributeModel()
         {
             playerId = GameManager.Instance.CurPlayer.BasicStat.id,
-            berserkerSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Berserker && x.type != ConstValues.Dash),
-            gunnerSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Gunner && x.type != ConstValues.Dash),
-            fighterSkillList = TableManager.Instance.skillTable.Skill.FindAll(x => x.caster == ConstValues.Fighter && x.type != ConstValues.Dash),
-            playerSkill = GameManager.Instance.PlayerSkill,
+            skillDataList = TableManager.Instance.skillTable.Skill,
+            playerInfoList = GameManager.Instance.PlayerInfoList,
             playMoveSound = () =>
             {
                 SoundManager.Instance.PlaySound(ConstValues.Jump1, true);

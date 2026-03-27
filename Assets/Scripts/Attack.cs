@@ -206,7 +206,7 @@ public class Attack : MonoBehaviour
 
     public void AttributeCheck()
     {
-        var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(attackInfo.id);
+        var passiveList = GameManager.Instance.GetAttributePassive(attackInfo.id);
         foreach (var passive in passiveList)
         {
             switch (passive)
@@ -222,7 +222,7 @@ public class Attack : MonoBehaviour
             }
         }
         
-        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(attackInfo.id);
+        var upgradeList = GameManager.Instance.GetAttributeUpgrade(attackInfo.id);
         foreach (var upgrade in upgradeList)
         {
             switch (upgrade.upgradeId)
@@ -252,7 +252,7 @@ public class Attack : MonoBehaviour
         }
         
         // 디버프추가
-        var deBuffList = GameManager.Instance.PlayerSkill.GetAttributeDeBuff(attackInfo.id);
+        var deBuffList = GameManager.Instance.GetAttributeDeBuff(attackInfo.id);
         foreach (var deBuff in deBuffList)
         {
             DeBuffInfo deBuffInfo = new DeBuffInfo

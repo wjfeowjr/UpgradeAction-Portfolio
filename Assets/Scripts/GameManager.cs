@@ -149,12 +149,6 @@ public class Skill
 }
 
 [Serializable]
-public class SkillSetting
-{
-    public int attributePoint;
-    public List<Skill>skillList;
-}
-[Serializable]
 public class SkillAttributeInfo
 {
     public string id;
@@ -202,425 +196,10 @@ public class SkillAttributeBuffInfo
 [Serializable]
 public class PlayerInfo
 {
-    public SkillCollection skillCollection;
-    public SkillKeyCollection skillKeyCollection;
-}
-
-[Serializable]
-public class SkillCollection
-{
-    public int totalAttributePoint;
-    public SkillSetting berserkerSkillSetting;
-    public SkillSetting gunnerSkillSetting;
-    public SkillSetting fighterSkillSetting;
-    
-    public void PlusAttributePoint(int point)
-    {
-        totalAttributePoint += point;
-        berserkerSkillSetting.attributePoint += point;
-        gunnerSkillSetting.attributePoint += point;
-        fighterSkillSetting.attributePoint += point;
-    }
-    
-    public bool IsHaveSkill(string skillId)
-    {
-        var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (berserkerSkill != null)
-            return true;
-
-        var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (gunnerSkill != null)
-            return true;
-        
-        var fighterSkill = fighterSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (fighterSkill != null)
-            return true;
-
-        return false;
-    }
-    public List<string> GetSkillAttribute(string id)
-    {
-        var berserkerSkillList = berserkerSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
-        if (berserkerSkillList != null)
-            return berserkerSkillList;
-        
-        var gunnerSkillList = gunnerSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
-        if (gunnerSkillList != null)
-            return gunnerSkillList;
-        
-        var fighterSkillList = fighterSkillSetting.skillList.Find(x => x.skillId == id).attributeList;
-        if (fighterSkillList != null)
-            return fighterSkillList;
-
-        Debug.Log("검색되는 특성 없음");
-        return null;
-    }
-    public bool IsHaveAttribute(string skillId, string attributeId)
-    {
-        var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (berserkerSkill != null)
-            return berserkerSkill.attributeList.Contains(attributeId);
-        
-        var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (gunnerSkill != null)
-            return gunnerSkill.attributeList.Contains(attributeId);
-        
-        var fighterSkill = fighterSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (fighterSkill != null)
-            return fighterSkill.attributeList.Contains(attributeId);
-        
-        Debug.Log("해당 특성 자체가 없음");
-        return false;
-    }
-    public async void BuyAttribute(string skillId, string attributeId, Vector3 effectPos)
-    {
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.id == attributeId);
-        
-        var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (berserkerSkill != null)
-        {
-            var targetAttribute = berserkerSkill.attributeList.Contains(attributeId);
-            if (!targetAttribute)
-            {
-                if (berserkerSkillSetting.attributePoint < attributeData[0].cost)
-                {
-                    SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
-                }
-                else
-                {
-                    berserkerSkill.attributeList.Add(attributeId);
-                    berserkerSkillSetting.attributePoint -= attributeData[0].cost;
-                    // 올리는 연출 넣기
-                    GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
-                }
-            }
-        }
-        
-        var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (gunnerSkill != null)
-        {
-            var targetAttribute = gunnerSkill.attributeList.Contains(attributeId);
-            
-            if (!targetAttribute)
-            {
-                if (gunnerSkillSetting.attributePoint < attributeData[0].cost)
-                {
-                    SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
-                }
-                else
-                {
-                    gunnerSkill.attributeList.Add(attributeId);
-                    gunnerSkillSetting.attributePoint -= attributeData[0].cost;
-                    // 올리는 연출 넣기
-                    GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
-                }
-            }
-        }
-        
-        var fighterSkill = fighterSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (fighterSkill != null)
-        {
-            var targetAttribute = fighterSkill.attributeList.Contains(attributeId);
-            
-            if (!targetAttribute)
-            {
-                if (fighterSkillSetting.attributePoint < attributeData[0].cost)
-                {
-                    SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                    await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
-                }
-                else
-                {
-                    fighterSkill.attributeList.Add(attributeId);
-                    fighterSkillSetting.attributePoint -= attributeData[0].cost;
-                    // 올리는 연출 넣기
-                    GameManager.Instance.SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
-                }
-            }
-        }
-    }
-    
-    public async void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
-    {
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.id == attributeId);
-        
-        var berserkerSkill = berserkerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (berserkerSkill != null)
-        {
-            var targetAttribute = berserkerSkill.attributeList.Contains(attributeId);
-
-            if (targetAttribute)
-            {
-                var attributeList = attributeData.FindAll(x => x.skill == skillId);
-                var attribute = attributeList.Find(x => x.id == attributeId);
-                berserkerSkillSetting.attributePoint += attribute.cost;
-                berserkerSkill.attributeList.Remove(attributeId);
-                // 내리는 연출 넣기
-                GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
-            }
-        }
-        
-        var gunnerSkill = gunnerSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (gunnerSkill != null)
-        {
-            var targetAttribute = gunnerSkill.attributeList.Contains(attributeId);
-            
-            if (targetAttribute)
-            {
-                var attributeList = attributeData.FindAll(x => x.skill == skillId);
-                var attribute = attributeList.Find(x => x.id == attributeId);
-                gunnerSkillSetting.attributePoint += attribute.cost;
-                gunnerSkill.attributeList.Remove(attributeId);
-                // 내리는 연출 넣기
-                GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
-            }
-        }
-        
-        var fighterSkill = fighterSkillSetting.skillList.Find(x => x.skillId == skillId);
-        if (fighterSkill != null)
-        {
-            var targetAttribute = fighterSkill.attributeList.Contains(attributeId);
-            
-            if (targetAttribute)
-            {
-                var attributeList = attributeData.FindAll(x => x.skill == skillId);
-                var attribute = attributeList.Find(x => x.id == attributeId);
-                fighterSkillSetting.attributePoint += attribute.cost;
-                fighterSkill.attributeList.Remove(attributeId);
-                // 내리는 연출 넣기
-                GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
-            }
-        }
-    }
-
-    public async void ResetAttribute(string character)
-    {
-        switch (character)
-        {
-            case ConstValues.Berserker:
-                foreach (var skillList in berserkerSkillSetting.skillList)
-                    skillList.attributeList.Clear();
-                berserkerSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
-                break;
-            
-            case ConstValues.Gunner:
-                foreach (var skillList in gunnerSkillSetting.skillList)
-                    skillList.attributeList.Clear();
-                gunnerSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
-                break;
-            
-            case ConstValues.Fighter:
-                foreach (var skillList in fighterSkillSetting.skillList)
-                    skillList.attributeList.Clear();
-                fighterSkillSetting.attributePoint = GameManager.Instance.PlayerSkill.totalAttributePoint;
-                break;
-        }
-        await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30205));
-    }
-    
-    // 해당 스킬의 패시브 특성 리스트(내가 해당 특성을 가지고 있어야 함)
-    public List<string> GetAttributePassive(string id)
-    {
-        List<string> passiveList = new List<string>();
-        string[] idSplit = id.Split('_');
-        
-        string skillId = id;
-        if (idSplit.Length > 1)
-            skillId = $"{idSplit[0]}_{idSplit[1]}";
-        
-        string targetId = id;
-        if (idSplit.Length > 2)
-            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
-        
-        // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
-        var attributeData = GameManager.Instance. skillAttributeList.FindAll(x => x.targetObject == targetId);
-        if (attributeData.Count > 0)
-        {
-            foreach (var attribute in attributeData)
-            {
-                if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
-                    continue;
-                
-                foreach (var passive in attribute.passiveId)
-                {
-                    passiveList.Add(passive);
-                }
-            }
-        }
-        
-        // 파생기도 효과를 적용받음
-        attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
-        foreach (var attribute in attributeData)
-        {
-            if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
-                continue;
-                
-            foreach (var passive in attribute.passiveId)
-            {
-                passiveList.Add(passive);
-            }
-        }
-        return passiveList;
-    }
-    // 해당 스킬의 추가 생성 리스트(내가 해당 특성을 가지고 있어야 함)
-    public List<SkillAttributeAddObjectInfo> GetAttributeAddObject(string id)
-    {
-        var addObjectList = new List<SkillAttributeAddObjectInfo>();
-        string[] idSplit = id.Split('_');
-        
-        string skillId = id;
-        if (idSplit.Length > 1)
-            skillId = $"{idSplit[0]}_{idSplit[1]}";
-        
-        string targetId = id;
-        if (idSplit.Length > 2)
-            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
-        
-        // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == targetId);
-        if (attributeData.Count > 0)
-        {
-            foreach (var attribute in attributeData)
-            {
-                if (string.IsNullOrWhiteSpace(attribute.addObjectId) || !IsHaveAttribute(skillId, attribute.id))
-                    continue;
-                
-                var addObjectInfo = new SkillAttributeAddObjectInfo
-                {
-                    addObjectId = attribute.addObjectId,
-                    objectId = attribute.objectId,
-                    objectCount = attribute.objectCount,
-                };
-                addObjectList.Add(addObjectInfo);
-            }
-        }
-        // 파생기도 효과를 적용받음
-        attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
-        foreach (var attribute in attributeData)
-        {
-            if (string.IsNullOrWhiteSpace(attribute.addObjectId) || !IsHaveAttribute(skillId, attribute.id))
-                continue;
-                
-            var addObjectInfo = new SkillAttributeAddObjectInfo
-            {
-                addObjectId = attribute.addObjectId,
-                objectId = attribute.objectId,
-                objectCount = attribute.objectCount,
-            };
-            addObjectList.Add(addObjectInfo);
-        }
-        return addObjectList;
-    }
-    // 해당 스킬의 수치 특성 리스트(내가 해당 특성을 가지고 있어야 함)
-    public List<SkillAttributeUpgradeInfo> GetAttributeUpgrade(string id)
-    {
-        var upgradeList = new List<SkillAttributeUpgradeInfo>();
-        string[] idSplit = id.Split('_');
-        
-        string skillId = id;
-        if (idSplit.Length > 1)
-            skillId = $"{idSplit[0]}_{idSplit[1]}";
-        
-        string targetId = id;
-        if (idSplit.Length > 2)
-            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
-        
-        // 정확히 일치하는 타겟 데이터가 있는지 확인
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.targetObject == targetId);
-        
-        // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
-        if (attributeData.Count > 0)
-        {
-            foreach (var attribute in attributeData)
-            {
-                if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
-                    continue;
-                
-                for (int i = 0; i < attribute.upgradeId.Count; i++)
-                {
-                    var upgradeInfo = new SkillAttributeUpgradeInfo
-                    {
-                        upgradeId = attribute.upgradeId[i],
-                        upgradeValue = attribute.upgradeValue[i]
-                    };
-                    upgradeList.Add(upgradeInfo);
-                }
-            }
-        }
-        // 파생기도 해당 효과를 적용받음
-        attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
-        foreach (var attribute in attributeData)
-        {
-            if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
-                continue;
-                
-            for (int i = 0; i < attribute.upgradeId.Count; i++)
-            {
-                var upgradeInfo = new SkillAttributeUpgradeInfo
-                {
-                    upgradeId = attribute.upgradeId[i],
-                    upgradeValue = attribute.upgradeValue[i]
-                };
-                upgradeList.Add(upgradeInfo);
-            }
-        }
-        return upgradeList;
-    }
-    // 해당 스킬의 버프 특성 리스트(내가 해당 특성을 가지고 있어야 함)
-    public List<SkillAttributeBuffInfo> GetAttributeBuff(string id)
-    {
-        var buffList = new List<SkillAttributeBuffInfo>();
-        string[] idSplit = id.Split('_');
-        if (idSplit.Length > 1)
-        {
-            // 파생기도 해당 효과를 적용받음
-            string skillId = $"{idSplit[0]}_{idSplit[1]}";
-            var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId);
-            foreach (var attribute in attributeData)
-            {
-                if (string.IsNullOrWhiteSpace(attribute.buffId) || !IsHaveAttribute(skillId, attribute.id))
-                    continue;
-                
-                var buffInfo = new SkillAttributeBuffInfo
-                {
-                    buffId = attribute.buffId,
-                    buffTime = attribute.buffTime,
-                    buffValue = attribute.buffValue,
-                };
-                buffList.Add(buffInfo);
-            }
-        }
-        return buffList;
-    }
-    
-    // 해당 스킬의 버프 특성 리스트(내가 해당 특성을 가지고 있어야 함)
-    public List<SkillAttributeBuffInfo> GetAttributeDeBuff(string id)
-    {
-        var buffList = new List<SkillAttributeBuffInfo>();
-        string[] idSplit = id.Split('_');
-        if (idSplit.Length > 1)
-        {
-            // 파생기도 해당 효과를 적용받음
-            string skillId = $"{idSplit[0]}_{idSplit[1]}";
-            var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == skillId);
-            foreach (var attribute in attributeData)
-            {
-                if (string.IsNullOrWhiteSpace(attribute.deBuffId) || !IsHaveAttribute(skillId, attribute.id))
-                    continue;
-                
-                var buffInfo = new SkillAttributeBuffInfo
-                {
-                    buffId = attribute.deBuffId,
-                    buffTime = attribute.buffTime,
-                    buffValue = attribute.buffValue,
-                };
-                buffList.Add(buffInfo);
-            }
-        }
-        return buffList;
-    }
+    public string playerId;
+    public int attributePoint;
+    public List<Skill> skillList = new List<Skill>();
+    public List<SkillKey> skillKeyList = new List<SkillKey>();
 }
 
 [Serializable]
@@ -628,13 +207,6 @@ public class SkillKey
 {
     public string skillId;
     public KeyCode keyCode;
-}
-[Serializable]
-public class SkillKeyCollection
-{
-    public List<SkillKey> berserkerSkillKeyList;
-    public List<SkillKey> gunnerSkillKeyList;
-    public List<SkillKey> fighterSkillKeyList;
 }
 [Serializable]
 public class SettingSkill
@@ -789,10 +361,8 @@ public class SaveData
     public List<ItemInfo> itemList = new List<ItemInfo>();
     
     // 플레이어 개별로 만들기(스킬, 스킬 키, 유물)
+    public int totalAttributePoint;
     public List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
-    
-    public SkillCollection playerSkill;
-    public SkillKeyCollection playerSkillKey;
     
     public List<Vector2> miniMapCheckers = new List<Vector2>();
     public List<NpcInfo> npcInfoList = new List<NpcInfo>();
@@ -951,9 +521,7 @@ public class GameManager : Singleton<GameManager>
 
     public List<ItemInfo> ItemList => saveData.itemList;
 
-    public SkillCollection PlayerSkill => saveData.playerSkill;
-
-    public SkillKeyCollection PlayerSkillKey => saveData.playerSkillKey;
+    public List<PlayerInfo> PlayerInfoList => saveData.playerInfoList;
 
     public List<RoomInfo> RoomInfoList => saveData.roomInfoList;
     public List<NpcInfo> NpcInfoInfoList => saveData.npcInfoList;
@@ -1116,23 +684,38 @@ public class GameManager : Singleton<GameManager>
     {
         FirstGetSkill = false;
         FirstGetAttribute = false;
-        PlayerSkill.totalAttributePoint = 0;
 
-        SkillSetting berserkerSkillSetting = new SkillSetting();
-        berserkerSkillSetting.attributePoint = 0;
-        berserkerSkillSetting.skillList = new List<Skill>();
-        
-        SkillSetting gunnerSkillSetting = new SkillSetting();
-        gunnerSkillSetting.attributePoint = 0;
-        gunnerSkillSetting.skillList = new List<Skill>();
-        
-        SkillSetting fighterSkillSetting = new SkillSetting();
-        fighterSkillSetting.attributePoint = 0;
-        fighterSkillSetting.skillList = new List<Skill>();
-        
-        PlayerSkill.berserkerSkillSetting = berserkerSkillSetting;
-        PlayerSkill.gunnerSkillSetting = gunnerSkillSetting;
-        PlayerSkill.fighterSkillSetting = fighterSkillSetting;
+        // 캐릭터가 3마리니까 이것도 3개
+        for (int i = 0; i < 3; i++)
+        {
+            PlayerInfo playerInfo = new PlayerInfo();
+            playerInfo.attributePoint = 0;
+            playerInfo.skillList = new List<Skill>();
+            playerInfo.skillKeyList = new List<SkillKey>();
+            
+            switch (i)
+            {
+                case 0:
+                    playerInfo.playerId = ConstValues.Berserker;
+                    playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
+                    break;
+                
+                case 1:
+                    playerInfo.playerId = ConstValues.Gunner;
+                    playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.GunnerDash, dashKey));
+                    break;
+                
+                case 2:
+                    playerInfo.playerId = ConstValues.Fighter;
+                    playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterDash, dashKey));
+                    break;
+            }
+            playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey1));
+            playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey2));
+            playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey3));
+            playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey4));
+            saveData.playerInfoList.Add(playerInfo);
+        }
     }
     
     public void DefaultSkillKeySetting()
@@ -1161,31 +744,6 @@ public class GameManager : Singleton<GameManager>
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
 
         interactionKey = KeyBinding.LoadKey(ConstValues.InteractionKey, KeyCode.UpArrow);
-
-        // 각 플레이어들의 스킬 키 세팅 초기화
-        List<SkillKey> berserkerSkillKeyList = new List<SkillKey>();
-        berserkerSkillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey1));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey2));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey3));
-        berserkerSkillKeyList.Add(SetSkillKey(default, skillKey4));
-        PlayerSkillKey.berserkerSkillKeyList = berserkerSkillKeyList;
-        
-        List<SkillKey> gunnerSkillKeyList = new List<SkillKey>();
-        gunnerSkillKeyList.Add(SetSkillKey(ConstValues.GunnerDash, dashKey));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey1));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey2));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey3));
-        gunnerSkillKeyList.Add(SetSkillKey(default, skillKey4));
-        PlayerSkillKey.gunnerSkillKeyList = gunnerSkillKeyList;
-        
-        List<SkillKey> fighterSkillKeyList = new List<SkillKey>();
-        fighterSkillKeyList.Add(SetSkillKey(ConstValues.FighterDash, dashKey));
-        fighterSkillKeyList.Add(SetSkillKey(default, skillKey1));
-        fighterSkillKeyList.Add(SetSkillKey(default, skillKey2));
-        fighterSkillKeyList.Add(SetSkillKey(default, skillKey3));
-        fighterSkillKeyList.Add(SetSkillKey(default, skillKey4));
-        PlayerSkillKey.fighterSkillKeyList = fighterSkillKeyList;
     }
 
     private void DefaultMapSetting()
@@ -1210,13 +768,20 @@ public class GameManager : Singleton<GameManager>
         return skillKey;
     }
 
-    public KeyCode BerserkerSkillKey(string skillId)
+    public KeyCode GetSkillKey(string skillId)
     {
         KeyCode keyCode = default;
-        var targetSkill = saveData.playerSkillKey.berserkerSkillKeyList.Find(x => x.skillId == skillId);
-        if (targetSkill != null)
-            keyCode = targetSkill.keyCode;
-
+        
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            var targetSkill = playerInfo.skillKeyList.Find(x => x.skillId == skillId);
+            if (targetSkill != null)
+            {
+                keyCode = targetSkill.keyCode;
+                break;
+            }
+        }
+        
         return keyCode;
     }
    
@@ -1225,101 +790,40 @@ public class GameManager : Singleton<GameManager>
     {
         // 키 저장
         var skillKeyData = tableManager.skillTable.Skill.Find(x => x.id == id);
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == skillKeyData.caster);
         
         // 이미 가지고 있는 스킬이라면 무시해버린다
-        switch (skillKeyData.caster)
-        {
-            case ConstValues.Berserker:
-            {
-                if (PlayerSkill.berserkerSkillSetting.skillList.Exists(x => x.skillId == id))
-                    return;
+        if (playerInfo.skillList.Exists(x => x.skillId == id))
+            return;
                 
-                int idx = EmptySkillIdx(PlayerSkillKey.berserkerSkillKeyList);
-                PlayerSkillKey.berserkerSkillKeyList[idx].skillId = id;
+        int idx = EmptySkillIdx(playerInfo.skillKeyList);
+        playerInfo.skillKeyList[idx].skillId = id;
 
-                Skill newSkill = new Skill();
-                newSkill.skillId = id;
-                newSkill.attributeList = new List<string>();
-                PlayerSkill.berserkerSkillSetting.skillList.Add(newSkill);
-                break;
-            }
-            case ConstValues.Gunner:
-            {
-                if (PlayerSkill.gunnerSkillSetting.skillList.Exists(x => x.skillId == id))
-                    return;
-                
-                int idx = EmptySkillIdx(PlayerSkillKey.gunnerSkillKeyList);
-                PlayerSkillKey.gunnerSkillKeyList[idx].skillId = id;
-                
-                Skill newSkill = new Skill();
-                newSkill.skillId = id;
-                newSkill.attributeList = new List<string>();
-                PlayerSkill.gunnerSkillSetting.skillList.Add(newSkill);
-                break;
-            }
-            case ConstValues.Fighter:
-            {
-                if (PlayerSkill.fighterSkillSetting.skillList.Exists(x => x.skillId == id))
-                    return;
-                
-                int idx = EmptySkillIdx(PlayerSkillKey.fighterSkillKeyList);
-                PlayerSkillKey.fighterSkillKeyList[idx].skillId = id;
-                
-                Skill newSkill = new Skill();
-                newSkill.skillId = id;
-                newSkill.attributeList = new List<string>();
-                PlayerSkill.fighterSkillSetting.skillList.Add(newSkill);
-                break;
-            }
-        }
+        Skill newSkill = new Skill();
+        newSkill.skillId = id;
+        newSkill.attributeList = new List<string>();
+        playerInfo.skillList.Add(newSkill);
+        
         RefreshSkill();
         
         // 게임 저장
         SaveGame();
     }
 
+    // 스킬 제거(테스트용)
     public void RemoveSkill(string id)
     {
-        // 키 저장
-        var skillKeyData = tableManager.skillTable.Skill.Find(x => x.id == id);
-        
-        // 가지고 있지 않은 스킬이라면 무시한다
-        switch (skillKeyData.caster)
+        foreach (var playerInfo in saveData.playerInfoList)
         {
-            case ConstValues.Berserker:
-            {
-                var targetKey = PlayerSkillKey.berserkerSkillKeyList.Find(x => x.skillId == id);
-                if (targetKey != null)
-                    targetKey.skillId = default;
+            var targetKey = playerInfo.skillKeyList.Find(x => x.skillId == id);
+            if (targetKey != null)
+                targetKey.skillId = default;
 
-                var targetSkill = PlayerSkill.berserkerSkillSetting.skillList.Find(x => x.skillId == id);
-                if (targetSkill != null)
-                    PlayerSkill.berserkerSkillSetting.skillList.Remove(targetSkill);
-                break;
-            }
-            case ConstValues.Gunner:
-            {
-                var targetKey = PlayerSkillKey.gunnerSkillKeyList.Find(x => x.skillId == id);
-                if (targetKey != null)
-                    targetKey.skillId = default;
-                
-                var targetSkill = PlayerSkill.gunnerSkillSetting.skillList.Find(x => x.skillId == id);
-                if (targetSkill != null)
-                    PlayerSkill.gunnerSkillSetting.skillList.Remove(targetSkill);
-                break;
-            }
-            case ConstValues.Fighter:
-            {
-                var targetKey = PlayerSkillKey.fighterSkillKeyList.Find(x => x.skillId == id);
-                if (targetKey != null)
-                    targetKey.skillId = default;
-                
-                var targetSkill = PlayerSkill.fighterSkillSetting.skillList.Find(x => x.skillId == id);
-                if (targetSkill != null)
-                    PlayerSkill.fighterSkillSetting.skillList.Remove(targetSkill);
-                break;
-            }
+            var targetSkill = playerInfo.skillList.Find(x => x.skillId == id);
+            if (targetSkill != null)
+                playerInfo.skillList.Remove(targetSkill);
         }
+        
         RefreshSkill();
         // 게임 저장
         SaveGame();
@@ -1339,48 +843,31 @@ public class GameManager : Singleton<GameManager>
         return idx;
     }
 
+    // 스킬 칸 교체
     public void SetSkillId(KeyCode keyCode, string skillId)
     {
-        if (curPlayer.BasicStat.id == ConstValues.Berserker)
-        {
-            var berserkerSkillKey = PlayerSkillKey.berserkerSkillKeyList.Find(x => x.keyCode == keyCode);
-            if (berserkerSkillKey != null)
-                berserkerSkillKey.skillId = skillId;
-        }
-        else if (curPlayer.BasicStat.id == ConstValues.Gunner)
-        {
-            var gunnerSkillKey = PlayerSkillKey.gunnerSkillKeyList.Find(x => x.keyCode == keyCode);
-            if (gunnerSkillKey != null)
-                gunnerSkillKey.skillId = skillId;
-        }
-        else if (curPlayer.BasicStat.id == ConstValues.Fighter)
-        {
-            var gunnerSkillKey = PlayerSkillKey.fighterSkillKeyList.Find(x => x.keyCode == keyCode);
-            if (gunnerSkillKey != null)
-                gunnerSkillKey.skillId = skillId;
-        }
+        PlayerInfo playerInfo = new PlayerInfo();
+
+        playerInfo = saveData.playerInfoList.Find(x => x.playerId == curPlayer.BasicStat.id);
         
+        var skillKey = playerInfo.skillKeyList.Find(x => x.keyCode == keyCode);
+        if (skillKey != null)
+            skillKey.skillId = skillId;
+
         // 저장
         //SaveGame();
     }
     public List<SettingSkill> GetSettingSkillList()
     {
-        List<SkillKey> keyList = null;
-        
-        if(curPlayer.BasicStat.id == ConstValues.Berserker)
-            keyList = PlayerSkillKey.berserkerSkillKeyList;
-        else if(curPlayer.BasicStat.id == ConstValues.Gunner)
-            keyList = PlayerSkillKey.gunnerSkillKeyList;
-        else if(curPlayer.BasicStat.id == ConstValues.Fighter)
-            keyList = PlayerSkillKey.fighterSkillKeyList;
-        
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == curPlayer.BasicStat.id);
+
         List<SettingSkill> settingSkillList = new List<SettingSkill>();
-        foreach (var key in keyList)
+        foreach (var skillKey in playerInfo.skillKeyList)
         {
             SettingSkill settingSkill = new SettingSkill()
             {
-                skillId = key.skillId,
-                keyCode = key.keyCode,
+                skillId = skillKey.skillId,
+                keyCode = skillKey.keyCode,
             };
             settingSkillList.Add(settingSkill);
         }
@@ -2302,5 +1789,316 @@ public class GameManager : Singleton<GameManager>
     public FadeSystem fadeUI()
     {
         return SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
+    }
+    
+    public void PlusAttributePoint(int point)
+    {
+        foreach (var playerInfo in saveData.playerInfoList)
+            playerInfo.attributePoint += point;
+    }
+    
+    public bool IsHaveSkill(string skillId)
+    {
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            var skill = playerInfo.skillList.Find(x => x.skillId == skillId);
+            if (skill != null)
+                return true;
+        }
+        
+        return false;
+    }
+    public List<string> GetSkillAttribute(string skillId)
+    {
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            var skillList = playerInfo.skillList.Find(x => x.skillId == skillId).attributeList;
+            if (skillList != null)
+                return skillList;
+        }
+        
+        Debug.Log("검색되는 특성 없음");
+        return null;
+    }
+    public bool IsHaveAttribute(string skillId, string attributeId)
+    {
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            var skill = playerInfo.skillList.Find(x => x.skillId == skillId);
+            if (skill != null)
+                return skill.attributeList.Contains(attributeId);
+        }
+
+        Debug.Log("해당 특성 자체가 없음");
+        return false;
+    }
+    public async void BuyAttribute(string skillId, string attributeId, Vector3 effectPos)
+    {
+        var attributeData = skillAttributeList.FindAll(x => x.id == attributeId);
+
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            var skill = playerInfo.skillList.Find(x => x.skillId == skillId);
+            if (skill != null)
+            {
+                var targetAttribute = skill.attributeList.Contains(attributeId);
+                if (!targetAttribute)
+                {
+                    if (playerInfo.attributePoint < attributeData[0].cost)
+                    {
+                        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
+                        await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
+                    }
+                    else
+                    {
+                        skill.attributeList.Add(attributeId);
+                        playerInfo.attributePoint -= attributeData[0].cost;
+                        // 올리는 연출 넣기
+                        SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
+                    }
+                }
+                break;
+            }
+        }
+    }
+    
+    public async void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
+    {
+        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.id == attributeId);
+
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            var skill = playerInfo.skillList.Find(x => x.skillId == skillId);
+            if (skill != null)
+            {
+                var targetAttribute = skill.attributeList.Contains(attributeId);
+
+                if (targetAttribute)
+                {
+                    var attributeList = attributeData.FindAll(x => x.skill == skillId);
+                    var attribute = attributeList.Find(x => x.id == attributeId);
+                    playerInfo.attributePoint += attribute.cost;
+                    skill.attributeList.Remove(attributeId);
+                    // 내리는 연출 넣기
+                    GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
+                }
+            }
+            break;
+        }
+    }
+
+    public async void ResetAttribute()
+    {
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            foreach (var skillList in playerInfo.skillList)
+                        skillList.attributeList.Clear();
+            
+            playerInfo.attributePoint = saveData.totalAttributePoint;
+        }
+        
+        await SpawnWarningPopup(GameManager.Instance.GetTalk(30205));
+    }
+    
+    // 해당 스킬의 패시브 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<string> GetAttributePassive(string id)
+    {
+        List<string> passiveList = new List<string>();
+        string[] idSplit = id.Split('_');
+        
+        string skillId = id;
+        if (idSplit.Length > 1)
+            skillId = $"{idSplit[0]}_{idSplit[1]}";
+        
+        string targetId = id;
+        if (idSplit.Length > 2)
+            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
+        
+        // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
+        var attributeData = skillAttributeList.FindAll(x => x.targetObject == targetId);
+        if (attributeData.Count > 0)
+        {
+            foreach (var attribute in attributeData)
+            {
+                if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                foreach (var passive in attribute.passiveId)
+                {
+                    passiveList.Add(passive);
+                }
+            }
+        }
+        
+        // 파생기도 효과를 적용받음
+        attributeData = skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        foreach (var attribute in attributeData)
+        {
+            if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                continue;
+                
+            foreach (var passive in attribute.passiveId)
+            {
+                passiveList.Add(passive);
+            }
+        }
+        return passiveList;
+    }
+    // 해당 스킬의 추가 생성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<SkillAttributeAddObjectInfo> GetAttributeAddObject(string id)
+    {
+        var addObjectList = new List<SkillAttributeAddObjectInfo>();
+        string[] idSplit = id.Split('_');
+        
+        string skillId = id;
+        if (idSplit.Length > 1)
+            skillId = $"{idSplit[0]}_{idSplit[1]}";
+        
+        string targetId = id;
+        if (idSplit.Length > 2)
+            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
+        
+        // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
+        var attributeData = skillAttributeList.FindAll(x => x.targetObject == targetId);
+        if (attributeData.Count > 0)
+        {
+            foreach (var attribute in attributeData)
+            {
+                if (string.IsNullOrWhiteSpace(attribute.addObjectId) || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                var addObjectInfo = new SkillAttributeAddObjectInfo
+                {
+                    addObjectId = attribute.addObjectId,
+                    objectId = attribute.objectId,
+                    objectCount = attribute.objectCount,
+                };
+                addObjectList.Add(addObjectInfo);
+            }
+        }
+        // 파생기도 효과를 적용받음
+        attributeData = skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        foreach (var attribute in attributeData)
+        {
+            if (string.IsNullOrWhiteSpace(attribute.addObjectId) || !IsHaveAttribute(skillId, attribute.id))
+                continue;
+                
+            var addObjectInfo = new SkillAttributeAddObjectInfo
+            {
+                addObjectId = attribute.addObjectId,
+                objectId = attribute.objectId,
+                objectCount = attribute.objectCount,
+            };
+            addObjectList.Add(addObjectInfo);
+        }
+        return addObjectList;
+    }
+    // 해당 스킬의 수치 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<SkillAttributeUpgradeInfo> GetAttributeUpgrade(string id)
+    {
+        var upgradeList = new List<SkillAttributeUpgradeInfo>();
+        string[] idSplit = id.Split('_');
+        
+        string skillId = id;
+        if (idSplit.Length > 1)
+            skillId = $"{idSplit[0]}_{idSplit[1]}";
+        
+        string targetId = id;
+        if (idSplit.Length > 2)
+            targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
+        
+        // 정확히 일치하는 타겟 데이터가 있는지 확인
+        var attributeData = skillAttributeList.FindAll(x => x.targetObject == targetId);
+        
+        // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
+        if (attributeData.Count > 0)
+        {
+            foreach (var attribute in attributeData)
+            {
+                if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                for (int i = 0; i < attribute.upgradeId.Count; i++)
+                {
+                    var upgradeInfo = new SkillAttributeUpgradeInfo
+                    {
+                        upgradeId = attribute.upgradeId[i],
+                        upgradeValue = attribute.upgradeValue[i]
+                    };
+                    upgradeList.Add(upgradeInfo);
+                }
+            }
+        }
+        // 파생기도 해당 효과를 적용받음
+        attributeData = skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        foreach (var attribute in attributeData)
+        {
+            if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                continue;
+                
+            for (int i = 0; i < attribute.upgradeId.Count; i++)
+            {
+                var upgradeInfo = new SkillAttributeUpgradeInfo
+                {
+                    upgradeId = attribute.upgradeId[i],
+                    upgradeValue = attribute.upgradeValue[i]
+                };
+                upgradeList.Add(upgradeInfo);
+            }
+        }
+        return upgradeList;
+    }
+    // 해당 스킬의 버프 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<SkillAttributeBuffInfo> GetAttributeBuff(string id)
+    {
+        var buffList = new List<SkillAttributeBuffInfo>();
+        string[] idSplit = id.Split('_');
+        if (idSplit.Length > 1)
+        {
+            // 파생기도 해당 효과를 적용받음
+            string skillId = $"{idSplit[0]}_{idSplit[1]}";
+            var attributeData = skillAttributeList.FindAll(x => x.skill == skillId);
+            foreach (var attribute in attributeData)
+            {
+                if (string.IsNullOrWhiteSpace(attribute.buffId) || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                var buffInfo = new SkillAttributeBuffInfo
+                {
+                    buffId = attribute.buffId,
+                    buffTime = attribute.buffTime,
+                    buffValue = attribute.buffValue,
+                };
+                buffList.Add(buffInfo);
+            }
+        }
+        return buffList;
+    }
+    
+    // 해당 스킬의 버프 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    public List<SkillAttributeBuffInfo> GetAttributeDeBuff(string id)
+    {
+        var buffList = new List<SkillAttributeBuffInfo>();
+        string[] idSplit = id.Split('_');
+        if (idSplit.Length > 1)
+        {
+            // 파생기도 해당 효과를 적용받음
+            string skillId = $"{idSplit[0]}_{idSplit[1]}";
+            var attributeData = skillAttributeList.FindAll(x => x.skill == skillId);
+            foreach (var attribute in attributeData)
+            {
+                if (string.IsNullOrWhiteSpace(attribute.deBuffId) || !IsHaveAttribute(skillId, attribute.id))
+                    continue;
+                
+                var buffInfo = new SkillAttributeBuffInfo
+                {
+                    buffId = attribute.deBuffId,
+                    buffTime = attribute.buffTime,
+                    buffValue = attribute.buffValue,
+                };
+                buffList.Add(buffInfo);
+            }
+        }
+        return buffList;
     }
 }

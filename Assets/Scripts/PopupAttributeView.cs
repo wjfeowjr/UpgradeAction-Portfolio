@@ -7,17 +7,16 @@ using UnityEngine;
 
 public interface IPopupAttributeView
 {
-    void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillData> fighterList, SkillCollection playerSkill);
+    void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo);
     void SetAction(Action playMoveSound, Action playSelectSound, Action playCancelSound, Action closeAction, Action<string, Sprite, int, Action, Action> popupAction);
 }
 
 public class PopupAttributeModel
 {
     public string playerId;
-    public List<SkillData> berserkerSkillList = new List<SkillData>();
-    public List<SkillData> gunnerSkillList = new List<SkillData>();
-    public List<SkillData> fighterSkillList = new List<SkillData>();
-    public SkillCollection playerSkill;
+    public List<SkillData> skillDataList = new List<SkillData>();
+    public List<PlayerInfo> playerInfoList;
+    
     public Action playMoveSound;
     public Action playSelectSound;
     public Action playCancelSound;
@@ -38,7 +37,7 @@ public class PopupAttributePresenter
 
     public void SetModel()
     {
-        _attributeView.SetModel(_model.playerId, _model.berserkerSkillList, _model.gunnerSkillList, _model.fighterSkillList, _model.playerSkill);
+        _attributeView.SetModel(_model.playerId, _model.skillDataList, _model.playerInfoList);
     }
 
     public void SetAction()
@@ -99,14 +98,11 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private Action playCancelSound;
     private Action closeAction;
     private Action<string, Sprite, int, Action, Action> popupAction;
-
-    private SkillCollection skillInfo;
-    private SkillSetting skillSetting;
-    private readonly List<SkillData> skillInfoList = new List<SkillData>();
-    private List<SkillData> berserkerSkillList = new List<SkillData>();
-    private List<SkillData> gunnerSkillList = new List<SkillData>();
-    private List<SkillData> fighterSkillList = new List<SkillData>();
     
+    private List<SkillData> skillTableList = new List<SkillData>();
+    private List<SkillData> skillDataList = new List<SkillData>();
+    private List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
+
     private List<SkillAttributeInfo> attributeList;
 
     // 현재 스킬에서 사용 가능한 "특성 id"(중복 레벨 행 제거)
@@ -181,12 +177,12 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void SetSkillList()
     {
-        var showCount = Mathf.Min(skillInfoList.Count, skillArray.Length);
+        //var showCount = Mathf.Min(skillDataList.Count, skillArray.Length);
 
         List<SkillData> playerSkillList = new List<SkillData>();
-        foreach (var skillTable in skillInfoList)
+        foreach (var skillTable in skillTableList)
         {
-            if (skillTable.caster == curPlayerId)
+            if (skillTable.caster == curPlayerId && skillTable.type != ConstValues.Dash)
             {
                 playerSkillList.Add(skillTable);
             }
@@ -194,10 +190,11 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
         for (var i = 0; i < skillArray.Length; i++)
         {
-            if (i < showCount)
+            if (i < playerSkillList.Count)
             {
                 skillArray[i].gameObject.SetActive(true);
-                skillArray[i].SetData(skillSetting.skillList.Find(x => x.skillId == playerSkillList[i].id) != null, playerSkillList[i]);
+                var playerInfo = playerInfoList.Find(x => x.playerId == curPlayerId);
+                skillArray[i].SetData(playerInfo.skillList.Find(x => x.skillId == playerSkillList[i].id) != null, playerSkillList[i]);
             }
             else
             {
@@ -208,7 +205,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void SetupSkillNavigation()
     {
-        skillCount = Mathf.Min(skillInfoList.Count, skillArray.Length);
+        skillCount = Mathf.Min(skillTableList.Count, skillArray.Length);
         if (skillCount <= 0)
         {
             curSkillIndex = 0;
@@ -249,7 +246,15 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         }
 
         // 스킬이 바뀌면 특성 리스트 갱신 + 선택 리셋
-        BuildAttributeListForSkill(skillInfoList[curSkillIndex].id, resetSelection: true);
+        skillDataList.Clear();
+        foreach (var skillTable in skillTableList)
+        {
+            if (skillTable.caster == curPlayerId && skillTable.type != ConstValues.Dash)
+            {
+                skillDataList.Add(skillTable);
+            }
+        }
+        BuildAttributeListForSkill(skillDataList[curSkillIndex].id, resetSelection: true);
         playMoveSound();
     }
 
@@ -491,7 +496,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     
     private void CheckAdjust()
     {
-        Skill skill = skillSetting.skillList.Find(x => x.skillId == curSkillId);
+        var playerInfo = playerInfoList.Find(x => x.playerId == curPlayerId);
+        Skill skill = playerInfo.skillList.Find(x => x.skillId == curSkillId);
         bool isHaveAttribute = skill.attributeList.Contains(curAttributeId);
         if(isHaveAttribute)
             curAdjust = eAdjust.Sell;
@@ -521,9 +527,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void ApplyPointAdjust()
     {
-        if (skillInfo == null || skillSetting == null)
-            return;
-
         Vector2 effectVector = Vector2.zero;
         foreach (var attribute in attributeArray)
         {
@@ -534,9 +537,9 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             }
         }
         if (curAdjust == eAdjust.Buy)
-            skillInfo.BuyAttribute(curSkillId, curAttributeId, effectVector);
+            GameManager.Instance.BuyAttribute(curSkillId, curAttributeId, effectVector);
         else
-            skillInfo.SellAttribute(curSkillId, curAttributeId, effectVector);
+            GameManager.Instance.SellAttribute(curSkillId, curAttributeId, effectVector);
 
         // async void 내부에서 저장/경고가 발생할 수 있으니, 다음 프레임에 UI를 한 번 더 갱신
         RefreshAfterAdjust();
@@ -556,14 +559,12 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     #region Data/Refresh
 
-    public void SetModel(string playerId, List<SkillData> berserkerList, List<SkillData> gunnerList, List<SkillData> fighterList, SkillCollection playerSkill)
+    public void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo)
     {
-        skillInfo = playerSkill;
         curPlayerId = playerId;
         
-        berserkerSkillList = berserkerList;
-        gunnerSkillList = gunnerList;
-        fighterSkillList = fighterList;
+        skillTableList = skillData;
+        playerInfoList = playerInfo;
 
         SetPlayerInfo();
 
@@ -595,38 +596,13 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void SetPlayerInfo()
     {
-        skillInfoList.Clear();
-        
-        switch (curPlayerId)
-        {
-            case ConstValues.Berserker:
-                skillSetting = skillInfo.berserkerSkillSetting;
-                skillInfoList.AddRange(berserkerSkillList);
-                berserkerObject.SetActive(true);
-                gunnerObject.SetActive(false);
-                fighterObject.SetActive(false);
-                break;
-
-            case ConstValues.Gunner:
-                skillSetting = skillInfo.gunnerSkillSetting;
-                skillInfoList.AddRange(gunnerSkillList);
-                berserkerObject.SetActive(false);
-                gunnerObject.SetActive(true);
-                fighterObject.SetActive(false);
-                break;
-            
-            case ConstValues.Fighter:
-                skillSetting = skillInfo.fighterSkillSetting;
-                skillInfoList.AddRange(fighterSkillList);
-                berserkerObject.SetActive(false);
-                gunnerObject.SetActive(false);
-                fighterObject.SetActive(true);
-                break;
-        }
-
         SetSkillList();
         SetupSkillNavigation();
         RefreshLeftPoint();
+        
+        berserkerObject.SetActive(curPlayerId == ConstValues.Berserker);
+        gunnerObject.SetActive(curPlayerId == ConstValues.Gunner);
+        fighterObject.SetActive(curPlayerId == ConstValues.Fighter);
 
         // 초기 상태: 스킬 선택 단계, 0번 선택
         curStep = eStep.SkillSelect;
@@ -636,18 +612,19 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void RefreshLeftPoint()
     {
-        if (leftPoint != null && skillSetting != null)
-            leftPoint.text = skillSetting.attributePoint.ToString();
+        var playerInfo = playerInfoList.Find(x => x.playerId == curPlayerId);
+        if (leftPoint != null && playerInfo != null)
+            leftPoint.text = playerInfo.attributePoint.ToString();
     }
 
     private void BuildAttributeListForSkill(string skillId, bool resetSelection)
     {
         curSkillId = skillId;
         explainObject.SetActive(false);
-        //attributeText.gameObject.SetActive(false);
+        var playerInfo = playerInfoList.Find(x => x.playerId == curPlayerId);
         
         // 배우지 않은 스킬이면 슬롯 숨김
-        if (skillSetting == null || skillSetting.skillList.Find(x => x.skillId == curSkillId) == null)
+        if (playerInfo.skillList.Count == 0 || playerInfo.skillList.Find(x => x.skillId == curSkillId) == null)
         {
             for (int i = 0; i < attributeArray.Length; i++)
             {
@@ -673,7 +650,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         attributeList = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == curSkillId);
         BuildAttributeIdList();
 
-        var skill = skillSetting.skillList.Find(x => x.skillId == curSkillId);
+        
+        var skill = playerInfo.skillList.Find(x => x.skillId == curSkillId);
 
         for (int i = 0; i < attributeArray.Length; i++)
         {

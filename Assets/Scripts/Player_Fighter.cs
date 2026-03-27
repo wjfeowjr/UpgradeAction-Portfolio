@@ -234,7 +234,8 @@ public class Player_Fighter : Player
         if (Time.timeScale == 0)
             return;
 
-        var skillId = GameManager.Instance.PlayerSkillKey.fighterSkillKeyList.Find(x => x.keyCode == skillKey).skillId;
+        var playerInfo = GameManager.Instance.PlayerInfoList.Find(x => x.playerId == basicStat.id);
+        var skillId = playerInfo.skillKeyList.Find(x => x.keyCode == skillKey).skillId;
         if (!IsCanSkill(skillId))
             return;
         
@@ -328,7 +329,7 @@ public class Player_Fighter : Player
         // 특성 체크
         var skillId = ConstValues.FighterLightningKick;
         
-        bool kickWave = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.KickWave);
+        bool kickWave = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.KickWave);
         
         StateSetting(ENormalState.Skill, skillId, skillId);
         
@@ -361,7 +362,7 @@ public class Player_Fighter : Player
     {
         // 특성 체크
         var skillId = ConstValues.FighterLightningPunch;
-        bool movingPunch = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.MovingPunch);
+        bool movingPunch = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.MovingPunch);
         
         StateSetting(ENormalState.Skill, skillId, skillId);
         
@@ -373,7 +374,7 @@ public class Player_Fighter : Player
             myRigidbody.linearVelocity = Vector2.zero;
 
         int punchCount = 10;
-        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skillId);
+        var upgradeList = GameManager.Instance.GetAttributeUpgrade(skillId);
         foreach (var upgrade in upgradeList)
         {
             switch (upgrade.upgradeId)
@@ -423,8 +424,8 @@ public class Player_Fighter : Player
         // 특성 체크
         var skillId = ConstValues.FighterLightningSmash;
         
-        bool lightningStrike = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.LightningStrike);
-        bool shockSmash = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.ShockSmash);
+        bool lightningStrike = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.LightningStrike);
+        bool shockSmash = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.ShockSmash);
         
         StateSetting(ENormalState.Skill, skillId, skillId);
         
@@ -479,8 +480,8 @@ public class Player_Fighter : Player
         var skillId = ConstValues.FighterStrongPunch;
         StateSetting(ENormalState.Skill, skillId, skillId);
         
-        bool lightningIron = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.LightningIron);
-        bool counterPunch = GameManager.Instance.PlayerSkill.IsHaveAttribute(skillId, ConstValues.CounterPunch);
+        bool lightningIron = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.LightningIron);
+        bool counterPunch = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.CounterPunch);
         
         float delay1 = 0.15f;
         float delay2 = 0.5f;

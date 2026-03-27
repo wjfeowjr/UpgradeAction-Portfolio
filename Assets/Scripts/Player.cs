@@ -947,7 +947,7 @@ public abstract class Player : Character
 
     protected void UseSkill(string id)
     {
-        if (id == ConstValues.GunnerGrenade && GameManager.Instance.PlayerSkill.IsHaveAttribute(id, ConstValues.MadBomber))
+        if (id == ConstValues.GunnerGrenade && GameManager.Instance.IsHaveAttribute(id, ConstValues.MadBomber))
             return;
         
         var targetSkill = GetSkill(id);
@@ -1378,7 +1378,7 @@ public abstract class Player : Character
         
         foreach (var skill in skillList)
         {
-            var passiveList = GameManager.Instance.PlayerSkill.GetAttributePassive(skill.id);
+            var passiveList = GameManager.Instance.GetAttributePassive(skill.id);
             foreach (var passive in passiveList)
             {
                 switch (passive)
@@ -1390,7 +1390,7 @@ public abstract class Player : Character
                 }
             }
 
-            var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(skill.id);
+            var upgradeList = GameManager.Instance.GetAttributeUpgrade(skill.id);
             foreach (var upgrade in upgradeList)
             {
                 switch (upgrade.upgradeId)
@@ -1457,7 +1457,7 @@ public abstract class Player : Character
 
         foreach (var animations in animationList)
         {
-            var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(animations.id);
+            var upgradeList = GameManager.Instance.GetAttributeUpgrade(animations.id);
             foreach (var upgrade in upgradeList)
             {
                 switch (upgrade.upgradeId)

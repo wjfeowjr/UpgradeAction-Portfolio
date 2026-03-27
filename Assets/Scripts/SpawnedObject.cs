@@ -185,7 +185,7 @@ public class SpawnedObject : MonoBehaviour
     // 크기를 변경하는 특성은 여기서 관리
     public void AttributeCheck()
     {
-        var upgradeList = GameManager.Instance.PlayerSkill.GetAttributeUpgrade(spawnObjectInfo.id);
+        var upgradeList = GameManager.Instance.GetAttributeUpgrade(spawnObjectInfo.id);
         foreach (var upgrade in upgradeList)
         {
             switch (upgrade.upgradeId)
