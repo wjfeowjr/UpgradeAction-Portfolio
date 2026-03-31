@@ -134,7 +134,7 @@ public class RoomManager : Singleton<RoomManager>
                 SpawnMinimap();
 
             if ((!popupCharacter || !popupCharacter.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.attributeKey) && GameManager.Instance.FirstGetAttribute)
-                SpawnAttribute();
+                SpawnCharacterPopup();
         }
     }
 
@@ -265,40 +265,43 @@ public class RoomManager : Singleton<RoomManager>
         popupMinimap.PopupMinimapPresenter.OpenAction();
     }
 
-    private void SpawnAttribute()
+    private void SpawnCharacterPopup()
     {
-        popupCharacter = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Attribute, Vector3.zero).GetComponent<Popup_Character>();
-            
-        // 바인딩
-        var attributeInterface = popupCharacter.AttributeView.ConvertTo<IPopupAttributeView>();
-        var attributeModel = new PopupAttributeModel()
+        popupCharacter = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Character, Vector3.zero).GetComponent<Popup_Character>();
+        string initialPlayerId = GameManager.Instance.CurPlayer.BasicStat.id;
+        
+        // 1. 공통 액션 정의 (중복 방지)
+        var common = new PopupCommonActions
         {
-            playerId = GameManager.Instance.CurPlayer.BasicStat.id,
+            PlayMoveSound = () => SoundManager.Instance.PlaySound(ConstValues.Jump1, true),
+            PlaySelectSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true),
+            PlayCancelSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton, true),
+        };
+        
+        // 2. Character MVP 생성
+        var charModel = new PopupCharacterModel
+        {
+            playerId = initialPlayerId, 
+            commonActions = common
+        };
+        var charPresenter = new PopupCharacterPresenter(popupCharacter.CharacterView, charModel);
+
+        // 3. Attribute MVP 생성
+        var attrModel = new PopupAttributeModel 
+        {
+            playerId = initialPlayerId,
             skillDataList = TableManager.Instance.skillTable.Skill,
             playerInfoList = GameManager.Instance.PlayerInfoList,
-            playMoveSound = () =>
-            {
-                SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
-            },
-            playSelectSound = () =>
-            {
-                SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-            },
-            playCancelSound = () =>
-            {
-                SoundManager.Instance.PlaySound(ConstValues.NormalButton, true);
-            },
-            closeAction = () =>
-            {
-                popupCharacter.ReductionClose(true, true);
-            },
-            popupAction = GameManager.Instance.SpawnSelect
+            commonActions = common,
+            popupAction = GameManager.Instance.SpawnSelect,
+            closeAction = () => popupCharacter.SetState(ePopupState.Character),
         };
-        var attributePresenter = new PopupAttributePresenter(attributeInterface, attributeModel);
-        popupCharacter.SetAttributePresenter(attributePresenter);
-        popupCharacter.PopupAttributePresenter.SetAction();
-        popupCharacter.PopupAttributePresenter.SetModel();
+        var attrPresenter = new PopupAttributePresenter(popupCharacter.AttributeView, attrModel);
+        
+        // 4. 메인 팝업에 주입 및 초기화 실행
+        popupCharacter.UpdateCommonUI(initialPlayerId);
         popupCharacter.ExpansionOpen(true, true);
+        popupCharacter.InitPresenters(charPresenter, attrPresenter);
     }
 
     private void MinimapCameraMove()

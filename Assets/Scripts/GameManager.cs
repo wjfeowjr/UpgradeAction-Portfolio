@@ -366,7 +366,7 @@ public enum eUIType
     Popup_Guide,
     Popup_Minimap,
     Popup_Warning,
-    Popup_Attribute,
+    Popup_Character,
     Popup_Select,
 }
 
