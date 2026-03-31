@@ -407,10 +407,11 @@ public class Player_Berserker : Player
         //Leap(0, 20, 0.8f);
         
         SpawnAttackObject(ConstValues.BerserkerUpperSlash, upperSlashPos).GetComponent<Attack>();
+        if (swordBeam)
+            SpawnAttackObject(ConstValues.BerserkerUpperSlashSwordBeam, upperSlashPos);
         
         // 후딜동안 스킬버튼 한번 더 누르면 추가타격
         float addTime = 0;
-        bool firstSword = false;
         bool inputCombo = false;
         while (addTime < delay3)
         {
@@ -421,12 +422,6 @@ public class Player_Berserker : Player
             if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
 
-            if (swordBeam && addTime > delay4 && !firstSword)
-            {
-                SpawnAttackObject(ConstValues.BerserkerUpperSlashSwordBeam, upperSlashPos);
-                firstSword = true;
-            }
-            
             // 추가 타격
             if (comboSlash && inputCombo && addTime >= delay2)
             {

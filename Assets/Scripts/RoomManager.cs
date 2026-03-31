@@ -28,7 +28,7 @@ public class RoomManager : Singleton<RoomManager>
 
     private UI_Episode uiEpisode;
     private Popup_Minimap popupMinimap;
-    private Popup_Attribute popupAttribute;
+    private Popup_Character popupCharacter;
     private CancellationTokenSource dieCancellation;
 
     // 프로퍼티
@@ -133,7 +133,7 @@ public class RoomManager : Singleton<RoomManager>
             if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.tabKey))
                 SpawnMinimap();
 
-            if ((!popupAttribute || !popupAttribute.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.attributeKey) && GameManager.Instance.FirstGetAttribute)
+            if ((!popupCharacter || !popupCharacter.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.attributeKey) && GameManager.Instance.FirstGetAttribute)
                 SpawnAttribute();
         }
     }
@@ -267,10 +267,10 @@ public class RoomManager : Singleton<RoomManager>
 
     private void SpawnAttribute()
     {
-        popupAttribute = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Attribute, Vector3.zero).GetComponent<Popup_Attribute>();
+        popupCharacter = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Attribute, Vector3.zero).GetComponent<Popup_Character>();
             
         // 바인딩
-        var attributeInterface = popupAttribute.AttributeView.ConvertTo<IPopupAttributeView>();
+        var attributeInterface = popupCharacter.AttributeView.ConvertTo<IPopupAttributeView>();
         var attributeModel = new PopupAttributeModel()
         {
             playerId = GameManager.Instance.CurPlayer.BasicStat.id,
@@ -290,15 +290,15 @@ public class RoomManager : Singleton<RoomManager>
             },
             closeAction = () =>
             {
-                popupAttribute.ReductionClose(true, true);
+                popupCharacter.ReductionClose(true, true);
             },
             popupAction = GameManager.Instance.SpawnSelect
         };
         var attributePresenter = new PopupAttributePresenter(attributeInterface, attributeModel);
-        popupAttribute.SetAttributePresenter(attributePresenter);
-        popupAttribute.PopupAttributePresenter.SetAction();
-        popupAttribute.PopupAttributePresenter.SetModel();
-        popupAttribute.ExpansionOpen(true, true);
+        popupCharacter.SetAttributePresenter(attributePresenter);
+        popupCharacter.PopupAttributePresenter.SetAction();
+        popupCharacter.PopupAttributePresenter.SetModel();
+        popupCharacter.ExpansionOpen(true, true);
     }
 
     private void MinimapCameraMove()

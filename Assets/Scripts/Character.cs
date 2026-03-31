@@ -115,7 +115,19 @@ public class BasicStat
 }
 
 [Serializable]
-public class BonusStat
+public class EquipStat
+{
+    public int hp;
+    public int power;
+    public int defence;
+    public float moveSpeed;
+    public float attackSpeed;
+    public float criticalChance;
+    public float criticalDamage;
+}
+
+[Serializable]
+public class BuffStat
 {
     public int hp;
     public int power;
@@ -137,7 +149,8 @@ public abstract class Character : InteractionController
 {
     [SerializeField] protected BasicStat originStat; // 원본 스텟
     [SerializeField] protected BasicStat basicStat;  // 내 스텟(변동되어야 함)
-    [SerializeField] protected BonusStat bonusStat;  // 유물, 버프 등으로 얻는 추가 스텟
+    [SerializeField] protected EquipStat equipStat;  // 유물로 얻는 추가 스텟
+    [SerializeField] protected BuffStat buffStat;    // 버프로 얻는 추가 스텟
 
     protected Rigidbody2D myRigidbody;
     protected BoxCollider2D myBoxCollider;
@@ -704,49 +717,74 @@ public abstract class Character : InteractionController
     // 추가스텟, 장비 탈착, 버프 시작 또는 끝나는 시점에 사용
     public void InitBonusStat()
     {
-        bonusStat.hp = 0;
-        bonusStat.power = 0;
-        bonusStat.defence = 0;
-        bonusStat.moveSpeed = 0;
-        bonusStat.attackSpeed = 0; // 1이 기본값. %단위로 적을것
-        bonusStat.criticalChance = 0;
-        bonusStat.criticalDamage = 0;
+        equipStat.hp = 0;
+        equipStat.power = 0;
+        equipStat.defence = 0;
+        equipStat.moveSpeed = 0;
+        equipStat.attackSpeed = 0; // 1이 기본값. %단위로 적을것
+        equipStat.criticalChance = 0;
+        equipStat.criticalDamage = 0;
+        
+        foreach (var relic in GameManager.Instance.GetRelicList())
+        {
+            var relicInfo = GameManager.Instance.relicList.Find(x => x.id == relic);
+            switch (relicInfo.stat)
+            {
+                case eEquipStat.Power:
+                    equipStat.power += relicInfo.value;
+                    break;
+                
+                case eEquipStat.PowerPercent:
+                    equipStat.power += Mathf.RoundToInt(originStat.power * (relicInfo.value * 0.01f));
+                    break;
+            }
+        }
+
+        buffStat.hp = 0;
+        buffStat.power = 0;
+        buffStat.defence = 0;
+        buffStat.moveSpeed = 0;
+        buffStat.attackSpeed = 0; // 1이 기본값. %단위로 적을것
+        buffStat.criticalChance = 0;
+        buffStat.criticalDamage = 0;
 
         foreach (var buff in buffList)
         {
             switch (buff.buffType)
             {
                 case EBuffType.PowerUpPercent:
-                    bonusStat.power += Mathf.RoundToInt(originStat.power * (buff.buffValue * 0.01f));
+                    buffStat.power += Mathf.RoundToInt(originStat.power * (buff.buffValue * 0.01f));
                     break;
             }
         }
         
         // 항상 hp <= maxHp
-        basicStat.maxHp = originStat.hp + bonusStat.hp;
-        var finalHp = basicStat.hp + bonusStat.hp;
+        basicStat.maxHp = originStat.hp + equipStat.hp + buffStat.hp;
+        var finalHp = basicStat.hp + equipStat.hp + buffStat.hp;
         basicStat.hp = finalHp;
         
-        basicStat.power = originStat.power + bonusStat.power;
-        basicStat.defence = originStat.defence + bonusStat.defence;
+        basicStat.power = originStat.power + equipStat.power + buffStat.power;
+        basicStat.defence = originStat.defence + equipStat.defence + buffStat.defence;
         
         // 이동속도
-        var finalMoveSpeed = originStat.moveSpeed + (originStat.moveSpeed * (bonusStat.moveSpeed * 0.01f));
-        var moveAnimSpeed = finalMoveSpeed / originStat.moveSpeed;
+        var equipMoveSpeed = originStat.moveSpeed + equipStat.moveSpeed;
+        var finalMoveSpeed = equipMoveSpeed + (equipMoveSpeed * (buffStat.moveSpeed * 0.01f));
+        var finalMoveAnimSpeed = finalMoveSpeed / originStat.moveSpeed;
         basicStat.moveSpeed = finalMoveSpeed;
         if(myAnimator)
-            myAnimator.SetFloat(ConstValues.MoveSpeed, moveAnimSpeed);
+            myAnimator.SetFloat(ConstValues.MoveSpeed, finalMoveAnimSpeed);
         
         // 공격속도
         SetAttackSpeed(1);
         
-        basicStat.criticalChance = originStat.criticalChance + bonusStat.criticalChance;
-        basicStat.criticalDamage = originStat.criticalDamage + bonusStat.criticalDamage;
+        basicStat.criticalChance = originStat.criticalChance + equipStat.criticalChance + buffStat.criticalChance;
+        basicStat.criticalDamage = originStat.criticalDamage + equipStat.criticalChance + buffStat.criticalDamage;
     }
 
     protected void SetAttackSpeed(float skillSpeed)
     {
-        var finalAttackSpeed = (originStat.attackSpeed + originStat.attackSpeed * (bonusStat.attackSpeed * 0.01f)) * skillSpeed;
+        var equipAttackSpeed = originStat.attackSpeed + equipStat.attackSpeed;
+        var finalAttackSpeed = (equipAttackSpeed + equipAttackSpeed * (buffStat.attackSpeed * 0.01f)) * skillSpeed;
         var attackAnimSpeed = finalAttackSpeed / originStat.attackSpeed;
         basicStat.attackSpeed = finalAttackSpeed;
         if(myAnimator)

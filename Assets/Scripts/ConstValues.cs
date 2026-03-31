@@ -186,6 +186,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Missile = "Missile";
     public const string Grenade = "Grenade";
     public const string Item = "Item";
+    public const string Relic = "Relic";
     public const string Player = "Player";
     public const string Monster = "Monster";
     public const string Body = "Body";

@@ -140,6 +140,7 @@ public class ItemData
 {
     public string id;
     public int name;
+    public string type;
 }
 [Serializable]
 public class ItemDataList
@@ -272,6 +273,23 @@ public class ProductDialogueDataList
 }
 
 [Serializable]
+public class RelicData
+{
+    public string id;
+    public int name;
+    public int explain;
+    public string rank;
+    public string stat;
+    public int value;
+    public string specialValue;
+}
+[Serializable]
+public class RelicDataList
+{
+    public List<RelicData> Relic;
+}
+
+[Serializable]
 public class RoomsData
 {
     public string id;
@@ -393,6 +411,7 @@ public class TableManager : SingletonMono<TableManager>
     public NpcDataList npcTable;
     public PlayerDataList playerTable;
     public ProductDialogueDataList productDialogueTable;
+    public RelicDataList relicTable;
     public RoomsDataList roomsTable;
     public SkillDataList skillTable;
     public SkillAttributeDataList skillAttributeTable;
@@ -414,6 +433,7 @@ public class TableManager : SingletonMono<TableManager>
         npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);
         playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
         productDialogueTable = LoadDataFromJson<ProductDialogueDataList>(ConstValues.ProductDialogue);
+        relicTable = LoadDataFromJson<RelicDataList>(ConstValues.Relic);
         roomsTable = LoadDataFromJson<RoomsDataList>(ConstValues.Rooms);
         skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);
         skillAttributeTable = LoadDataFromJson<SkillAttributeDataList>(ConstValues.SkillAttribute);

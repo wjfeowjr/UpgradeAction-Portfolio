@@ -172,6 +172,30 @@ public class SkillAttributeInfo
 }
 
 [Serializable]
+public class RelicInfo
+{
+    public string id;
+    public int name;
+    public int explain;
+    public eEquipRank rank;
+    public eEquipStat stat;
+    public int value;
+    public string specialValue;
+}
+
+public enum eEquipRank
+{
+    Normal,
+    Rare,
+}
+
+public enum eEquipStat
+{
+    Power,
+    PowerPercent,
+}
+
+[Serializable]
 public class SkillAttributeAddObjectInfo
 {
     public string addObjectId;
@@ -198,6 +222,7 @@ public class PlayerInfo
 {
     public string playerId;
     public int attributePoint;
+    public List<string> relicList = new List<string>();
     public List<Skill> skillList = new List<Skill>();
     public List<SkillKey> skillKeyList = new List<SkillKey>();
 }
@@ -439,7 +464,8 @@ public class GameManager : Singleton<GameManager>
     
     // 복제체 데이터들
     public List<SkillAttributeInfo> skillAttributeList = new List<SkillAttributeInfo>();
-
+    public List<RelicInfo> relicList = new List<RelicInfo>();
+    
     // 매니저들
     public TableManager tableManager;
 
@@ -884,6 +910,32 @@ public class GameManager : Singleton<GameManager>
 
         return settingSkillList;
     }
+    
+    public void EquipRelic(string id)
+    {
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == curPlayer.BasicStat.id);
+        var relicTableData = TableManager.Instance.relicTable.Relic.Find(x => x.id == id);
+        var relicName = GetTalk(relicTableData.name);
+        
+        if (playerInfo.relicList.Contains(id))
+        {
+            playerInfo.relicList.Remove(id);
+            Debug.Log($"{relicName}해제");
+        }
+        else
+        {
+            playerInfo.relicList.Add(id);
+            Debug.Log($"{relicName}장착");
+        }
+
+        // 게임 저장
+        SaveGame();
+    }
+
+    public List<string> GetRelicList()
+    {
+        return saveData.playerInfoList.Find(x => x.playerId == curPlayer.BasicStat.id).relicList;
+    }
 
     private void InitAtlas(SpriteAtlas spriteAtlas)
     {
@@ -953,6 +1005,20 @@ public class GameManager : Singleton<GameManager>
             
             skillAttributeList.Add(data);
         }
+
+        foreach (var relic in tableManager.relicTable.Relic)
+        {
+            var data = new RelicInfo();
+            data.id = relic.id;
+            data.name = relic.name;
+            data.explain = relic.explain;
+            data.rank = (eEquipRank)Enum.Parse(typeof(eEquipRank), relic.rank);
+            data.stat = (eEquipStat)Enum.Parse(typeof(eEquipStat), relic.stat);
+            data.value = relic.value;
+            data.specialValue = relic.specialValue;
+            
+            relicList.Add(data);
+        }
     }
 
     // 플레이어
@@ -1011,6 +1077,7 @@ public class GameManager : Singleton<GameManager>
         foreach (var player in players)
         {
             player.InitBasicStat();
+            player.InitBonusStat();
             player.ResetSkillCoolTime();
         }
     }
@@ -1793,6 +1860,7 @@ public class GameManager : Singleton<GameManager>
     
     public void PlusAttributePoint(int point)
     {
+        saveData.totalAttributePoint += point;
         foreach (var playerInfo in saveData.playerInfoList)
             playerInfo.attributePoint += point;
     }
