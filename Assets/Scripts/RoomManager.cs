@@ -269,39 +269,10 @@ public class RoomManager : Singleton<RoomManager>
     {
         popupCharacter = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Character, Vector3.zero).GetComponent<Popup_Character>();
         string initialPlayerId = GameManager.Instance.CurPlayer.BasicStat.id;
-        
-        // 1. 공통 액션 정의 (중복 방지)
-        var common = new PopupCommonActions
-        {
-            PlayMoveSound = () => SoundManager.Instance.PlaySound(ConstValues.Jump1, true),
-            PlaySelectSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true),
-            PlayCancelSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton, true),
-        };
-        
-        // 2. Character MVP 생성
-        var charModel = new PopupCharacterModel
-        {
-            playerId = initialPlayerId, 
-            commonActions = common
-        };
-        var charPresenter = new PopupCharacterPresenter(popupCharacter.CharacterView, charModel);
 
-        // 3. Attribute MVP 생성
-        var attrModel = new PopupAttributeModel 
-        {
-            playerId = initialPlayerId,
-            skillDataList = TableManager.Instance.skillTable.Skill,
-            playerInfoList = GameManager.Instance.PlayerInfoList,
-            commonActions = common,
-            popupAction = GameManager.Instance.SpawnSelect,
-            closeAction = () => popupCharacter.SetState(ePopupState.Character),
-        };
-        var attrPresenter = new PopupAttributePresenter(popupCharacter.AttributeView, attrModel);
-        
         // 4. 메인 팝업에 주입 및 초기화 실행
-        popupCharacter.UpdateCommonUI(initialPlayerId);
         popupCharacter.ExpansionOpen(true, true);
-        popupCharacter.InitPresenters(charPresenter, attrPresenter);
+        popupCharacter.InitPresenters(initialPlayerId);
     }
 
     private void MinimapCameraMove()

@@ -157,6 +157,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         else if (Input.GetKeyDown(KeyCode.Escape))
         {
             CloseAction();
+            _actions?.PlayMoveSound?.Invoke();
         }
     }
 
