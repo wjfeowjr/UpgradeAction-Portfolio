@@ -1,8 +1,8 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-// 공통 UI 사운드/액션을 관리하는 모델
 public class PopupCommonActions
 {
     public Action PlayMoveSound;
@@ -24,84 +24,120 @@ public class Popup_Character : UIBase
     [SerializeField] private PopupCharacterView characterView;
     [SerializeField] private PopupAttributeView attributeView;
     [SerializeField] private PopupRelicView relicView;
-    
+
     [SerializeField] private TMP_Text popupText;
+    [SerializeField] private TMP_Text selectText;
+    [SerializeField] private TMP_Text backText;
+    [SerializeField] private TMP_Text changeText;
+
+    [SerializeField] private ExpansionUiObject berserkerFrame;
+    [SerializeField] private ExpansionUiObject gunnerFrame;
+    [SerializeField] private ExpansionUiObject fighterFrame;
+
     [SerializeField] private GameObject berserkerObject;
     [SerializeField] private GameObject gunnerObject;
     [SerializeField] private GameObject fighterObject;
-    
+
+    protected List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
+
     private PopupCharacterPresenter _characterPresenter;
     private PopupAttributePresenter _attributePresenter;
-    private PopupRelicPresenter _relicPresenter;
-    
+    private PopupRelicPresenter     _relicPresenter;
+
     private string curPlayerId;
-    
+    private PopupCommonActions commonActions;
+
     public void InitPresenters(string initialPlayerId)
     {
         curPlayerId = initialPlayerId;
-        
-        // 1. 공통 액션 정의 (중복 방지)
+        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
+        backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
+        changeText.text = string.Format(GameManager.Instance.GetTalk(30105), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterLeftKey), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterRightKey));
+
+        berserkerFrame.SetText(GameManager.Instance.GetTalk(50000));
+        gunnerFrame.SetText(GameManager.Instance.GetTalk(50001));
+        fighterFrame.SetText(GameManager.Instance.GetTalk(50002));
+
+        berserkerFrame.gameObject.SetActive(GameManager.Instance.PlayerList.Contains(ConstValues.Berserker));
+        gunnerFrame.gameObject.SetActive(GameManager.Instance.PlayerList.Contains(ConstValues.Gunner));
+        fighterFrame.gameObject.SetActive(GameManager.Instance.PlayerList.Contains(ConstValues.Fighter));
+
+        playerInfoList = GameManager.Instance.PlayerInfoList;
+
         var common = new PopupCommonActions
         {
-            PlayMoveSound = () => SoundManager.Instance.PlaySound(ConstValues.Jump1, true),
-            PlaySelectSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true),
-            PlayCancelSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton, true),
+            PlayMoveSound   = () => SoundManager.Instance.PlaySound(ConstValues.Jump1,         true),
+            PlaySelectSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton2,  true),
+            PlayCancelSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton,   true),
         };
-        
-        // 2. Character MVP 생성
+
+        commonActions = common;
+
         var charModel = new PopupCharacterModel
         {
-            playerId = curPlayerId, 
+            playerId      = curPlayerId,
             commonActions = common
         };
         _characterPresenter = new PopupCharacterPresenter(characterView, charModel);
 
-        // 3. Attribute MVP 생성
-        var attrModel = new PopupAttributeModel 
+        var attrModel = new PopupAttributeModel
         {
-            playerId = curPlayerId,
-            skillDataList = TableManager.Instance.skillTable.Skill,
-            playerInfoList = GameManager.Instance.PlayerInfoList,
-            commonActions = common,
-            popupAction = GameManager.Instance.SpawnSelect,
-            closeAction = () => SetState(ePopupState.Character),
+            playerId       = curPlayerId,
+            skillDataList  = TableManager.Instance.skillTable.Skill,
+            playerInfoList = playerInfoList,
+            commonActions  = common,
+            popupAction    = GameManager.Instance.SpawnSelect,
+            closeAction    = () => SetState(ePopupState.Character),
         };
         _attributePresenter = new PopupAttributePresenter(attributeView, attrModel);
-        
-        // 4. Relic MVP 생성
+
         var relicModel = new PopupRelicModel
         {
-            playerId = curPlayerId, 
-            commonActions = common,
-            closeAction = () => SetState(ePopupState.Character),
+            playerId       = curPlayerId,
+            playerInfoList = playerInfoList,
+            commonActions  = common,
+            closeAction    = () => SetState(ePopupState.Character),
+            // Q/E 캐릭터 변경: dir +1(E) / -1(Q)
+            changeCharAction = (dir) =>
+            {
+                ChangeModel(dir);
+                RefreshAll();
+            },
         };
         _relicPresenter = new PopupRelicPresenter(relicView, relicModel);
 
-        // 초기 상태 설정 (1번 규칙: Character 상태로 시작)
         SetState(ePopupState.Character);
         RefreshAll();
 
-        // CharacterView에 expansionObject 선택 초기화 및 콜백 등록
         characterView.InitExpansionSelection(OnExpansionStateSelected);
     }
-    
+
     private void Update()
     {
-        // 3번 규칙: LeftShift 누르면 캐릭터 변경 및 정보 갱신
-        if (Input.GetKeyDown(KeyCode.LeftShift))
+        // Relic 상태가 아닐 때만 Q/E로 캐릭터 변경 처리
+        // (Relic 상태의 Q/E는 PopupRelicView에서 직접 처리)
+        if (popupState != ePopupState.Relic)
         {
-            ChangeModel();
-            RefreshAll();
+            if (Input.GetKeyDown(KeyCode.Q))
+            {
+                ChangeModel(-1);
+                RefreshAll();
+                commonActions?.PlayMoveSound?.Invoke();
+            }
+            if (Input.GetKeyDown(KeyCode.E))
+            {
+                ChangeModel(+1);
+                RefreshAll();
+                commonActions?.PlayMoveSound?.Invoke();
+            }
         }
 
-        // 5번 규칙: Character 상태에서 Esc 누르면 닫기
         if (popupState == ePopupState.Character && Input.GetKeyDown(KeyCode.Escape))
         {
             ReductionClose(true, true);
         }
     }
 
-    // CharacterView에서 엔터 입력 시 호출되는 콜백
     private void OnExpansionStateSelected(ePopupState selectedState)
     {
         switch (selectedState)
@@ -123,6 +159,7 @@ public class Popup_Character : UIBase
         {
             case ePopupState.Character:
                 popupText.text = GameManager.Instance.GetTalk(30020);
+                //_characterPresenter.UpdatePlayerInfo(curPlayerId);
                 break;
             case ePopupState.Attribute:
                 popupText.text = GameManager.Instance.GetTalk(30021);
@@ -131,27 +168,24 @@ public class Popup_Character : UIBase
                 popupText.text = GameManager.Instance.GetTalk(30022);
                 break;
         }
-        
+
         characterView.gameObject.SetActive(popupState == ePopupState.Character);
         attributeView.gameObject.SetActive(popupState == ePopupState.Attribute);
         relicView.gameObject.SetActive(popupState == ePopupState.Relic);
+        RefreshAll();
     }
 
-    public void ChangeModel()
+    // dir: +1 = 다음(E), -1 = 이전(Q)
+    public void ChangeModel(int dir = 1)
     {
-        // GameManager의 현재 플레이어를 다음 플레이어로 교체하는 로직
-        // 예: 리스트 순환 혹은 토글
-        int curIdx = GameManager.Instance.PlayerList.IndexOf(curPlayerId);
-        int nextIdx = (curIdx + 1) % GameManager.Instance.PlayerList.Count;
+        int curIdx  = GameManager.Instance.PlayerList.IndexOf(curPlayerId);
+        int nextIdx = (curIdx + dir + GameManager.Instance.PlayerList.Count) % GameManager.Instance.PlayerList.Count;
         curPlayerId = GameManager.Instance.PlayerList[nextIdx];
     }
 
     private void RefreshAll()
     {
-        // 최상위 UI(텍스트, 오브젝트) 갱신
         UpdateCommonUI(curPlayerId);
-        
-        // 각 View의 데이터 갱신 (Presenter를 거쳐 실행)
         _characterPresenter.UpdatePlayerInfo(curPlayerId);
         _attributePresenter.UpdatePlayerInfo(curPlayerId);
         _relicPresenter.UpdatePlayerInfo(curPlayerId);
@@ -160,6 +194,29 @@ public class Popup_Character : UIBase
     public void UpdateCommonUI(string playerId)
     {
         curPlayerId = playerId;
+
+        berserkerFrame.Reduction();
+        gunnerFrame.Reduction();
+        fighterFrame.Reduction();
+
+        float expansionScale = 1.1f;
+        switch (curPlayerId)
+        {
+            case ConstValues.Berserker:
+                berserkerFrame.Expansion(expansionScale);
+                break;
+            case ConstValues.Gunner:
+                gunnerFrame.Expansion(expansionScale);
+                break;
+            case ConstValues.Fighter:
+                fighterFrame.Expansion(expansionScale);
+                break;
+        }
+
+        berserkerFrame.SelectObjectActive(curPlayerId == ConstValues.Berserker);
+        gunnerFrame.SelectObjectActive(curPlayerId == ConstValues.Gunner);
+        fighterFrame.SelectObjectActive(curPlayerId == ConstValues.Fighter);
+
         berserkerObject.SetActive(curPlayerId == ConstValues.Berserker);
         gunnerObject.SetActive(curPlayerId == ConstValues.Gunner);
         fighterObject.SetActive(curPlayerId == ConstValues.Fighter);

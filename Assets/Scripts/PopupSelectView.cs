@@ -57,20 +57,16 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
     
     [SerializeField] private Image goodsIcon;
     [SerializeField] private GameObject goodsObject;
-    
-    [SerializeField] private Transform yesButton;
-    [SerializeField] private GameObject yesSelectObject;
-    
-    [SerializeField] private Transform noButton;
-    [SerializeField] private GameObject noSelectObject;
-    
+
+    [SerializeField] private ExpansionUiObject yesObject;
+    [SerializeField] private ExpansionUiObject noObject;
+
+    private float expansionValue = 1.1f;
     private bool isYes;
     private Action startAction;
     private Action yesAction;
     private Action noAction;
     private Action moveSoundAction;
-
-    private Tween selectTween;
 
     private void OnEnable()
     {
@@ -138,26 +134,22 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
     private void Yes()
     {
         isYes = true;
-        selectTween?.Kill(false);
-        selectTween = yesButton.DOScale(1.1f, 0.2f).SetEase(Ease.OutQuad).SetUpdate(true);
-        selectTween = noButton.DOScale(1.0f, 0.2f).SetEase(Ease.OutQuad).SetUpdate(true);
-        yesSelectObject.SetActive(true);
-        noSelectObject.SetActive(false);
+        
+        yesObject.SelectObjectActive(true);
+        yesObject.Expansion(expansionValue);
+        
+        noObject.SelectObjectActive(false);
+        noObject.Reduction();
     }
 
     private void No()
     {
         isYes = false;
-        selectTween?.Kill(false);
-        selectTween = yesButton.DOScale(1.0f, 0.2f).SetEase(Ease.OutQuad).SetUpdate(true);
-        selectTween = noButton.DOScale(1.1f, 0.2f).SetEase(Ease.OutQuad).SetUpdate(true);
-        yesSelectObject.SetActive(false);
-        noSelectObject.SetActive(true);
-    }
-    
-    protected void OnDisable()
-    {
-        selectTween?.Kill(false);
-        selectTween = null;
+        
+        noObject.SelectObjectActive(true);
+        noObject.Expansion(expansionValue);
+        
+        yesObject.SelectObjectActive(false);
+        yesObject.Reduction();
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -178,8 +179,8 @@ public class RelicInfo
     public int name;
     public int explain;
     public eEquipRank rank;
-    public eEquipStat stat;
-    public int value;
+    public List<eEquipStat> statList = new List<eEquipStat>();
+    public List<int> valueList = new List<int>();
     public string specialValue;
 }
 
@@ -384,6 +385,7 @@ public class SaveData
     
     public List<string> playerList = new List<string>();
     public List<ItemInfo> itemList = new List<ItemInfo>();
+    public List<string> relicList = new List<string>();
     
     // 플레이어 개별로 만들기(스킬, 스킬 키, 유물)
     public int totalAttributePoint;
@@ -425,6 +427,9 @@ public class GameManager : Singleton<GameManager>
     //public KeyCode skillKey7;
     //public KeyCode skillKey8;
 
+    public KeyCode changeCharacterLeftKey;
+    public KeyCode changeCharacterRightKey;
+    
     public KeyCode interactionKey;
     public KeyCode optionKey;
 
@@ -539,6 +544,11 @@ public class GameManager : Singleton<GameManager>
         set => saveData.playerList = value;
     }
 
+    public List<string> RelicList
+    {
+        get => saveData.relicList;
+    }
+
     public List<Vector2> MiniMapCheckers
     {
         get => saveData.miniMapCheckers;
@@ -629,6 +639,7 @@ public class GameManager : Singleton<GameManager>
         DeleteData();
         DefaultDataSetting();
         DefaultSkillSetting();
+        DefaultRelicSetting();
         DefaultMapSetting();
         DefaultNpcSetting();
         AddPlayer(ConstValues.Berserker);
@@ -743,7 +754,7 @@ public class GameManager : Singleton<GameManager>
             saveData.playerInfoList.Add(playerInfo);
         }
     }
-    
+
     public void DefaultSkillKeySetting()
     {
         escKey = KeyCode.Escape;
@@ -770,6 +781,17 @@ public class GameManager : Singleton<GameManager>
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
 
         interactionKey = KeyBinding.LoadKey(ConstValues.InteractionKey, KeyCode.UpArrow);
+        
+        changeCharacterLeftKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterLeftKey, KeyCode.Q);
+        changeCharacterRightKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterRightKey, KeyCode.E);
+    }
+    
+    private void DefaultRelicSetting()
+    {
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            playerInfo.relicList.Add(default);
+        }
     }
 
     private void DefaultMapSetting()
@@ -911,32 +933,140 @@ public class GameManager : Singleton<GameManager>
         return settingSkillList;
     }
     
-    public void EquipRelic(string id)
+    public void EquipRelic(string playerId, string relicId)
     {
-        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == curPlayer.BasicStat.id);
-        var relicTableData = TableManager.Instance.relicTable.Relic.Find(x => x.id == id);
-        var relicName = GetTalk(relicTableData.name);
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
+
+        if (playerInfo.relicList.Contains(relicId))
+            return;
         
-        if (playerInfo.relicList.Contains(id))
+        for (var i = 0; i < playerInfo.relicList.Count; i++)
         {
-            playerInfo.relicList.Remove(id);
-            Debug.Log($"{relicName}해제");
-        }
-        else
-        {
-            playerInfo.relicList.Add(id);
-            Debug.Log($"{relicName}장착");
+            // 빈칸에 자동 장착
+            if (string.IsNullOrWhiteSpace(playerInfo.relicList[i]))
+            {
+                playerInfo.relicList[i] = relicId;
+                var relicTableData = TableManager.Instance.relicTable.Relic.Find(x => x.id == relicId);
+                var relicName = GetTalk(relicTableData.name);
+                Debug.Log($"{relicName}장착");
+                break;
+            }
         }
 
+        foreach (var player in players)
+            player.InitBonusStat();
+        
+        // 게임 저장
+        SaveGame();
+    }
+    public void TargetEquipRelic(string playerId, string relicId, int idx)
+    {
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
+
+        playerInfo.relicList[idx] = relicId;
+        var relicTableData = TableManager.Instance.relicTable.Relic.Find(x => x.id == relicId);
+        var relicName = GetTalk(relicTableData.name);
+        Debug.Log($"{relicName}장착");
+        
+        foreach (var player in players)
+            player.InitBonusStat();
+        
         // 게임 저장
         SaveGame();
     }
 
-    public List<string> GetRelicList()
+    public void UnEquipRelic(string playerId, string relicId)
+    {
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
+
+        if (!playerInfo.relicList.Contains(relicId))
+        {
+            Debug.Log("해당 유물을 장착하고 있지 않음");
+            return;
+        }
+        
+        for (var i = 0; i < playerInfo.relicList.Count; i++)
+        {
+            if (playerInfo.relicList[i] == relicId)
+            {
+                playerInfo.relicList[i] = default;
+                var relicTableData = TableManager.Instance.relicTable.Relic.Find(x => x.id == relicId);
+                var relicName = GetTalk(relicTableData.name);
+                Debug.Log($"{relicName}해제");
+                
+                foreach (var player in players)
+                    player.InitBonusStat();
+                break;
+            }
+        }
+        
+        // 게임 저장
+        SaveGame();
+    }
+
+    public List<string> GetPlayerRelicList()
     {
         return saveData.playerInfoList.Find(x => x.playerId == curPlayer.BasicStat.id).relicList;
     }
 
+    public string GetEquipRelicPlayer(string relicId) 
+    {
+        string player = default;
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            if (playerInfo.relicList.Contains(relicId))
+            {
+                player = playerInfo.playerId;
+                break;
+            }
+        }
+        
+        return player;
+    }
+    
+    // 현재 캐릭터가 해당 유물을 장착하고 있는가
+    public bool GetIsEquippedRelic(string curPlayerId, string relicId) 
+    {
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == curPlayerId);
+
+        return playerInfo.relicList.Contains(relicId);
+    }
+    
+    // 현재 캐릭터의 유물 장착슬롯에 공간이 있는가
+    public bool GetCanEquipSlot(string playerId) 
+    {
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
+
+        return playerInfo.relicList.Contains(default);
+    }
+    
+    // 현재 캐릭터의 모든 유물칸이 비어있는가?
+    public bool GetIsEmptyRelicList(string playerId)
+    {
+        bool isEmpty = true;
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
+        foreach (var relic in playerInfo.relicList)
+        {
+            if (!string.IsNullOrWhiteSpace(relic))
+            {
+                isEmpty = false;
+                break;
+            }
+        }
+        return isEmpty;
+    }
+
+    // 현재 캐릭터의 해당 인덱스에 있는 유물의 Id
+    public string GetEquippedRelicId(string playerId, int idx)
+    {
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
+
+        if (playerInfo.relicList.Count < idx + 1)
+            return ConstValues.Lock;
+        
+        return playerInfo.relicList[idx];
+    }
+    
     private void InitAtlas(SpriteAtlas spriteAtlas)
     {
         // Atlas 안에 들어있는 스프라이트 개수만큼 배열 생성
@@ -1013,8 +1143,15 @@ public class GameManager : Singleton<GameManager>
             data.name = relic.name;
             data.explain = relic.explain;
             data.rank = (eEquipRank)Enum.Parse(typeof(eEquipRank), relic.rank);
-            data.stat = (eEquipStat)Enum.Parse(typeof(eEquipStat), relic.stat);
-            data.value = relic.value;
+
+            var statSplit = relic.stat.Split(';');
+            foreach (var stat in statSplit)
+                data.statList.Add((eEquipStat)Enum.Parse(typeof(eEquipStat), stat));
+            
+            var valueSplit = relic.value.Split(';');
+            foreach (var value in valueSplit)
+                data.valueList.Add(int.Parse(value));
+
             data.specialValue = relic.specialValue;
             
             relicList.Add(data);

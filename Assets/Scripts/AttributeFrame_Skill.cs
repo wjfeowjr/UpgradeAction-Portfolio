@@ -8,7 +8,6 @@ using UnityEngine.UI;
 
 public class AttributeFrame_Skill : AttributeFrame
 {
-    [SerializeField] private TMP_Text skillName;
     [SerializeField] private GameObject skillObject;
     [SerializeField] private GameObject lockObject;
 
@@ -20,14 +19,14 @@ public class AttributeFrame_Skill : AttributeFrame
         if (isHaveSkill)
         {
             mainImage.sprite = GameManager.Instance.GetAtlasSprite(skill.id);
-            skillName.text = GameManager.Instance.GetTalk(skill.talk);
+            SetText(GameManager.Instance.GetTalk(skill.talk));
             skillObject.SetActive(true);
             lockObject.SetActive(false);
             frameImage.sprite = frameSprite[1];
         }
         else
         {
-            skillName.text = "???";
+            SetText("???");
             skillObject.SetActive(false);
             lockObject.SetActive(true);
             frameImage.sprite = frameSprite[0];

@@ -239,14 +239,7 @@ public abstract class Player : Character
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
         UpdateBuff();
-        
-        // 유물 추가 테스트
-        if (Input.GetKeyDown(KeyCode.Space))
-        {
-            GameManager.Instance.EquipRelic("HeartAttack");
-            InitBonusStat();
-        }
-        
+
         // 스킬 추가 테스트
         if (Input.GetKeyDown(KeyCode.P))
         {

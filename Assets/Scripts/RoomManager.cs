@@ -270,7 +270,7 @@ public class RoomManager : Singleton<RoomManager>
         popupCharacter = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Character, Vector3.zero).GetComponent<Popup_Character>();
         string initialPlayerId = GameManager.Instance.CurPlayer.BasicStat.id;
 
-        // 4. 메인 팝업에 주입 및 초기화 실행
+        // 메인 팝업에 주입 및 초기화 실행
         popupCharacter.ExpansionOpen(true, true);
         popupCharacter.InitPresenters(initialPlayerId);
     }

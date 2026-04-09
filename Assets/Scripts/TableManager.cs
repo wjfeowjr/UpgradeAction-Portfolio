@@ -280,7 +280,7 @@ public class RelicData
     public int explain;
     public string rank;
     public string stat;
-    public int value;
+    public string value;
     public string specialValue;
 }
 [Serializable]

@@ -64,6 +64,9 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string InteractionKey = "InteractionKey";
     public const string OptionKey = "OptionKey";
+
+    public const string ChangeCharacterLeftKey = "ChangeCharacterLeftKey";
+    public const string ChangeCharacterRightKey = "ChangeCharacterRightKey";
     
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";
@@ -90,7 +93,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string Guide = "Guide";
 
     public const string Object = "Object";
-
+    public const string Lock = "Lock";
+    
     public const string Berserker = "Berserker";
     public const string Gunner = "Gunner";
     public const string Fighter = "Fighter";

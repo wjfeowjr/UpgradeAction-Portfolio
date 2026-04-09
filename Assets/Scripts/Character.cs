@@ -725,18 +725,25 @@ public abstract class Character : InteractionController
         equipStat.criticalChance = 0;
         equipStat.criticalDamage = 0;
         
-        foreach (var relic in GameManager.Instance.GetRelicList())
+        foreach (var relic in GameManager.Instance.GetPlayerRelicList())
         {
+            if(string.IsNullOrWhiteSpace(relic))
+                continue;
+            
             var relicInfo = GameManager.Instance.relicList.Find(x => x.id == relic);
-            switch (relicInfo.stat)
+
+            for (var i = 0; i < relicInfo.statList.Count; i++)
             {
-                case eEquipStat.Power:
-                    equipStat.power += relicInfo.value;
-                    break;
-                
-                case eEquipStat.PowerPercent:
-                    equipStat.power += Mathf.RoundToInt(originStat.power * (relicInfo.value * 0.01f));
-                    break;
+                switch (relicInfo.statList[i])
+                {
+                    case eEquipStat.Power:
+                        equipStat.power += relicInfo.valueList[i];
+                        break;
+
+                    case eEquipStat.PowerPercent:
+                        equipStat.power += Mathf.RoundToInt(originStat.power * (relicInfo.valueList[i] * 0.01f));
+                        break;
+                }
             }
         }
 

@@ -1,13 +1,14 @@
 using DG.Tweening;
+using TMPro;
 using UnityEngine;
 
-public class ExpansionUiObject : MonoBehaviour
+public class ExpansionUiObject : TextUiObject
 {
     private Tween selectTween;
     
     [SerializeField] protected GameObject selectObject;
     [SerializeField] protected GameObject unSelectObject;
-    
+
     public virtual void SelectObjectActive(bool active)
     {
         if(selectObject)

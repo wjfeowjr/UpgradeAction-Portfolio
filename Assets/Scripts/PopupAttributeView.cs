@@ -76,9 +76,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [SerializeField] private TMP_Text buyText;
     [SerializeField] private TMP_Text sellText;
     [SerializeField] private TMP_Text[] enterTexts;
-    [SerializeField] private TMP_Text selectText;
-    [SerializeField] private TMP_Text backText;
-    [SerializeField] private TMP_Text changeText;
 
     [Header("Frames")]
     [SerializeField] private AttributeFrame_Skill[] skillArray;
@@ -144,15 +141,18 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             SetSkillIndex(curSkillIndex - 1);
+            _actions?.PlayMoveSound?.Invoke();
         }
         else if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             SetSkillIndex(curSkillIndex + 1);
+            _actions?.PlayMoveSound?.Invoke();
         }
         else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             // 스킬 선택 확정 → 특성 선택 단계 진입
             EnterAttributeSelect();
+            _actions?.PlaySelectSound?.Invoke();
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {
@@ -241,7 +241,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             }
         }
         BuildAttributeListForSkill(skillDataList[curSkillIndex].id, resetSelection: true);
-        _actions?.PlayMoveSound?.Invoke();
     }
 
     #endregion
@@ -289,7 +288,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         SetAttributeIndex(FindFirstSelectableAttributeIndex(), true);
         //skillArray[curSkillIndex].SelectObjectActive(false);
         skillArray[curSkillIndex].Reduction();
-        _actions?.PlaySelectSound?.Invoke();
     }
 
     private void BackToSkillSelect()
@@ -561,11 +559,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         sellText.text = GameManager.Instance.GetTalk(30009);
 
         foreach (var enterText in enterTexts)
-            enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey);
-        
-        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
-        backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
-        changeText.text = string.Format(GameManager.Instance.GetTalk(30105), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
+            enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey); 
     }
     
     public void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action> popupAction, Action closeAction)
