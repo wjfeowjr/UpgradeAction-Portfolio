@@ -450,7 +450,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
         string ownerName = GameManager.Instance.GetTalk(ownerNameTalkIdx);
 
         // TODO: 경고문 talk 번호 확정 후 교체 (현재 임시 문자열 사용)
-        string message = string.Format($"{ownerName}가 이미 장착 중인 유물입니다.\n빼앗아 장착하시겠습니까?");
+        string message = string.Format(GameManager.Instance.GetTalk(41000), ownerName);
         GameManager.Instance.SpawnSelect(message, null, 0, yesAction: DoConfirmYes, noAction: DoConfirmNo);
     }
 

@@ -5,28 +5,23 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 
+interface IFirstDialogAction
+{
+    public UniTask DialogAction();
+}
+
 public class Npc : Character
 {
-    [SerializeField] private Transform speechPos;
     [SerializeField] private NpcInfo npcInfo;
-
-    private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
-    private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
-    private SpeechFrame speechFrameStrong;
-    private SpeechFrame speechFrameTitle;
+    [SerializeField] private Npc[] anotherNpc;
     
     private NpcData npcData;
-    private List<Action> dialogueAction = new List<Action>();
-
     private bool isFirstTalk;
-
-    public Transform SpeechPos => speechPos;
 
     protected override void OnEnable()
     {
         base.OnEnable();
         DataSetting();
-        SpeechFrameSetting();
     }
     
     protected override void Update()
@@ -42,20 +37,17 @@ public class Npc : Character
         if(npcData == null)
             npcData = TableManager.Instance.npcTable.Npc.Find(x => x.id == name);
     }
-    
-    private void SpeechFrameSetting()
-    {
-        speechFrame1 = RoomManager.Instance.SpeechFrame1;
-        speechFrame2 = RoomManager.Instance.SpeechFrame2;
-        speechFrameStrong = RoomManager.Instance.SpeechFrameStrong;
-        speechFrameTitle = RoomManager.Instance.SpeechFrameTitle;
-    }
 
     public void SetInteractionAction()
     {
         SetInteractionAction(StartDialogue, GameManager.Instance.GetTalk(30016), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
     }
 
+    public void SetAnotherNpc(Npc[] npc)
+    {
+        anotherNpc = npc;
+    }
+    
     public void SetStartTalkAction()
     {
         isFirstTalk = false;
@@ -64,76 +56,7 @@ public class Npc : Character
     private async void SetDialogueAction(string choice)
     {
         ActiveInteractionSelect(false);
-        
-        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice);
-        string checkKey = talkDataList[0].checkKey;
-        string endEvent = talkDataList[0].endEvent;
-        string eventReward = talkDataList[0].reward;
-        bool checkKeyValue = npcInfo.dialogKey.isUse;
-        
-        List<DialogueData> talkList = new List<DialogueData>();
-        if (string.IsNullOrWhiteSpace(checkKey))
-        {
-            talkList.AddRange(talkDataList);
-        }
-        else
-        {
-            talkList.AddRange(talkDataList.FindAll(x => x.checkKey == checkKey && x.checkKeyValue == checkKeyValue));
-        }
-        
-        foreach (var talk in talkList)
-        {
-            var speechFrame = speechFrame1[0];
-            switch (talk.speechFrame)
-            {
-                case ConstValues.SpeechFrame2:
-                    speechFrame = speechFrame2[0];
-                    break;
-            }
-
-            var speechVector = speechPos.position;
-            var speechPose = talk.speechPose;
-            if (string.IsNullOrWhiteSpace(speechPose))
-                speechPose = ConstValues.Idle;
-            
-            if (talk.isSpeaker)
-            {
-                CustomAnimTrigger(ENormalState.Idle, speechPose);
-                // 포즈를 지었으면, 다시 원위치 시킴 다음컷에서
-                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-            }
-            else
-            {
-                GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, speechPose, ConstValues.Idle);
-                speechVector = GameManager.Instance.CurPlayer.FontPos.position;
-            }
-
-            if(!string.IsNullOrWhiteSpace(talk.sound))
-                SoundManager.Instance.PlaySound(talk.sound);
-            
-            var cameraShakeArray = talk.cameraShake.Split(';');
-            var cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
-            if(cameraShake != Vector2.zero)
-                GameManager.Instance.CameraShake(cameraShake.x, cameraShake.y, talk.shakeTime);
-            
-            SpawnSpeechFrame(speechFrame, speechVector, GameManager.Instance.GetTalk(talk.talk));
-            await NextDialog(speechFrame);
-            if (talk.isEnd)
-                break;
-        }
-        GameManager.Instance.ControlStart = true;
-
-        if (string.IsNullOrWhiteSpace(endEvent))
-        {
-            SpawnInteractionObject();
-        }
-        else
-        {
-            if(checkKeyValue)
-                SpawnInteractionObject();
-            else
-                PlayEndEvent(endEvent, eventReward);
-        }
+        await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject);
     }
 
     public void AddData()
@@ -144,6 +67,7 @@ public class Npc : Character
             NpcInfo npc = new NpcInfo();
             npc.id = name;
             npc.dialogKey.id = npcData.dialogKey;
+            npc.isFirstDialogFinish = string.IsNullOrWhiteSpace(npcData.firstDialog);
             GameManager.Instance.NpcInfoInfoList.Add(npc);
             npcInfo = GameManager.Instance.NpcInfoInfoList.Find(x => x.id == name);
         }
@@ -153,67 +77,39 @@ public class Npc : Character
         }
     }
 
-    private void PlayEndEvent(string eventKey, string reward)
-    {
-        switch (eventKey)
-        {
-            case ConstValues.GetSkill:
-                npcInfo.dialogKey.isUse = true;
-                GameManager.Instance.AddNewSkill(reward);
-                GameManager.Instance.GetSkillProduct(reward, GetSkillDialogue);
-                break;
-        }
-    }
-    
     private void SetCloseAction()
     {
         ActiveInteractionSelect(false);
         GameManager.Instance.ControlStart = true;
         SpawnInteractionObject();
     }
-    
-    private void SpawnSpeechFrame(SpeechFrame speechFrame, Vector2 speechPos, string dialog)
-    {
-        speechFrame.SetPos(speechPos);
-        speechFrame.Speech(dialog);
-    }
-
-    private async UniTask NextDialog(SpeechFrame speechFrame)
-    {
-        speechFrame.NextObjectActive();
-        // 스페이스바를 누르면 넘어간다
-        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.ProductCancellation.Token).SuppressCancellationThrow())
-        {
-            speechFrame.SpeechEnd();
-            return;
-        }
-        speechFrame.SpeechEnd();
-    }
 
     protected virtual async void StartDialogue()
     {
-        //ActiveInteractionObject(false);
         ReduceInteractionObject();
         GameManager.Instance.InitProductCancellation();
         GameManager.Instance.ControlStart = false;
         
         // 최초응답
-        if (!isFirstTalk)
+        if (!npcInfo.isFirstDialogFinish)
         {
-            var firstTalk = TableManager.Instance.dialogueTable.Dialogue.Find(x => x.id == npcData.startDialog);
-            var speechFrame = speechFrame1[0];
-            switch (firstTalk.speechFrame)
-            {
-                case ConstValues.SpeechFrame2:
-                    speechFrame = speechFrame2[0];
-                    break;
-            }
-            
-            SpawnSpeechFrame(speechFrame, speechPos.position, GameManager.Instance.GetTalk(firstTalk.talk));
-            await NextDialog(speechFrame);
-            isFirstTalk = true;
+            var actionInterface = GetComponent<IFirstDialogAction>();
+            if (actionInterface != null)
+                await actionInterface.DialogAction();
+
+            SetDialogueAction($"{name}_{ConstValues.First}");
+            npcInfo.isFirstDialogFinish = true;
+            GameManager.Instance.SaveGame();
         }
-        SetActionInteractionSelect(SetDialogueAction, SetCloseAction);
+        else
+        {
+            if (!isFirstTalk)
+            {
+                await GameManager.Instance.NpcFirstTalk(npcData.startDialog, speechPos);
+                isFirstTalk = true;
+            }
+            SetActionInteractionSelect(SetDialogueAction, SetCloseAction);
+        }
     }
 
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)
@@ -298,14 +194,7 @@ public class Npc : Character
         Stop();
         StopVelocity_Y();
     }
-    
-    // 스킬을 획득 후 독백 이벤트
-    private async void GetSkillDialogue(string skillName)
-    {
-        string getMessage = string.Format(GameManager.Instance.GetTalk(30200), skillName);
-        await GameManager.Instance.SpawnWarningPopup(getMessage);
-    }
-    
+
     protected virtual void OnCollisionEnter2D(Collision2D col)
     {
         // 착지

@@ -85,11 +85,12 @@ public class BuffDataList
 public class DialogueData
 {
     public string id;
-    public bool isSpeaker;
+    public string speaker;
     public int talk;
     public bool isEnd;
     public string choiceGroupId;
     public string speechFrame;
+    public string poseCharacter;
     public string speechPose;
     public string sound;
     public string cameraShake;
@@ -219,6 +220,7 @@ public class NpcData
 {
     public string id;
     public int talk;
+    public string firstDialog;
     public string startDialog;
     public string dialogKey;
 }

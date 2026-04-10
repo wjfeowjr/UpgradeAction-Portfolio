@@ -26,7 +26,7 @@ public class UIBase : MonoBehaviour
         if (timeStop)
             Time.timeScale = 0;
 
-        PlaySound(ConstValues.Popup);
+        PlaySound(ConstValues.Popup, true);
         uiObject.transform.localScale = Vector3.zero;
         var endVector = Vector3.one;
         var time = 0.2f;
@@ -37,7 +37,7 @@ public class UIBase : MonoBehaviour
     }
     public async void ReductionClose(bool timeReset, bool controlStart)
     {
-        PlaySound(ConstValues.NormalButton2);
+        PlaySound(ConstValues.NormalButton2, true);
         var endVector = Vector3.zero;
         var time = 0.2f;
         uiObject.transform.DOScale(endVector, time).SetUpdate(true);
@@ -50,8 +50,8 @@ public class UIBase : MonoBehaviour
             GameManager.Instance.ControlStart = true;
     }
 
-    private void PlaySound(string soundId)
+    private void PlaySound(string soundId, bool ignoreTime)
     {
-        SoundManager.Instance.PlaySound(soundId);
+        SoundManager.Instance.PlaySound(soundId, ignoreTime);
     }
 }

@@ -282,10 +282,10 @@ public class Room : MonoBehaviour
 
     public void SpeechFrameSetting()
     {
-        speechFrame1 = RoomManager.Instance.SpeechFrame1;
-        speechFrame2 = RoomManager.Instance.SpeechFrame2;
-        speechFrameStrong = RoomManager.Instance.SpeechFrameStrong;
-        speechFrameTitle = RoomManager.Instance.SpeechFrameTitle;
+        speechFrame1 = GameManager.Instance.SpeechFrame1;
+        speechFrame2 = GameManager.Instance.SpeechFrame2;
+        speechFrameStrong = GameManager.Instance.SpeechFrameStrong;
+        speechFrameTitle = GameManager.Instance.SpeechFrameTitle;
     }
 
     public void EntranceSetting()
@@ -580,6 +580,7 @@ public class Room : MonoBehaviour
             person.SetInteractionAction();
             person.SetSelectAction();
             person.SetStartTalkAction();
+            person.SetAnotherNpc(npc);
         }
 
         // 스킬 및 패시브를 획득했으면, 나오지 않게 조정
@@ -1645,7 +1646,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.InitProductCancellation();
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
-        var berserkerPos = GameManager.Instance.CurPlayer.FontPos.position;
+        var berserkerPos = GameManager.Instance.CurPlayer.SpeechPos.position;
         SpawnSpeechFrame(speechFrame1[0], berserkerPos, talkList[0]);
         await NextDialog(speechFrame1[0]);
 
@@ -1707,7 +1708,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+        var berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
 
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
         await NextDialog(speechFrame1[0]);
@@ -1738,7 +1739,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+        var berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
         
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
         await NextDialog(speechFrame1[0]);
@@ -1788,7 +1789,7 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             
-            berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+            berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
 
             GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
@@ -1847,7 +1848,7 @@ public class Room : MonoBehaviour
         
         if (roomInfo.roomProduct[0].count == 1)
         {
-            berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+            berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
             sunSpeechPos = new Vector2(bosses[0].CenterPos.position.x - 2.0f, bosses[0].CenterPos.position.y);
             
             SpawnSpeechFrame(speechFrame2[0], sunSpeechPos, talkList[5]);
@@ -1896,7 +1897,7 @@ public class Room : MonoBehaviour
 
         if (roomInfo.roomProduct[0].count == 1)
         {
-            berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+            berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
 
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[10]);
             await NextDialog(speechFrame1[0]);
@@ -1921,7 +1922,7 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             
-            berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+            berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
             moonSpeechPos = new Vector2(bosses[1].CenterPos.position.x - 2.0f, bosses[1].CenterPos.position.y);
             
             await NextDialog(speechFrame1[0]);
@@ -1994,7 +1995,7 @@ public class Room : MonoBehaviour
         RoomManager.Instance.BgSpriteChange(ConstValues.BgSunHill);
         RoomManager.Instance.BgDecoActive(true);
         
-        berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
+        berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[17]); 
         await NextDialog(speechFrame1[0]);
         
@@ -2057,8 +2058,8 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        var berserkerSpeechPos = GameManager.Instance.CurPlayer.FontPos.position;
-        var gunnerSpeechPos = npc[0].FontPos.position;
+        var berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
+        var gunnerSpeechPos = ((Character)npc[0]).SpeechPos.position;
         
         SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[0]);
         await NextDialog(speechFrame1[0]);

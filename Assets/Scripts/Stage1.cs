@@ -119,7 +119,7 @@ public class Stage1 : Stage
             dialogCancellation = new CancellationTokenSource();
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
-            var berserkerPos = curPlayer.FontPos.position;
+            var berserkerPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog1);
             await NextDialog(speechFrame1[0]);
             
@@ -210,7 +210,7 @@ public class Stage1 : Stage
                 return;
             sunObject.gameObject.SetActive(false);
             
-            var berserkerSpeechPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog2);
             await NextDialog(speechFrame1[0]);
 
@@ -270,15 +270,15 @@ public class Stage1 : Stage
             string dialog7 = "우리가 이렇게 한 줄씩 말하는것도\n시간 끌기 전략이다!";
             string dialog8 = "악!!!!!!!!!";
 
-            var berserkerSpeechPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog1);
             await NextDialog(speechFrame1[0]);
             
-            var monster1Pos = dialogMonster1.FontPos.position;
+            var monster1Pos = dialogMonster1.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], new Vector2(monster1Pos.x, monster1Pos.y), dialog2);
             await NextDialog(speechFrame1[0]);
 
-            var monster2Pos = dialogMonster2.FontPos.position;
+            var monster2Pos = dialogMonster2.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], new Vector2(monster2Pos.x, monster2Pos.y), dialog3);
             await NextDialog(speechFrame1[0]);
             
@@ -328,17 +328,17 @@ public class Stage1 : Stage
             if (await NormalDelay(0.5f, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            var berserkerSpeechPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.SpeechPos.position;
             string dialog1 = "어차피.. 환불은..\n유저 맘이야.. 끄윽";
             string dialog2 = "잡몹 두 마리로\n플레이 타임을 늘릴 수 있을 거 같았냐?";
             string dialog3 = "레벨디자인 꼬라지 봐라!!";
             string dialog4 = "환불은 안 돼!!!";
             
-            var monsterSpeech = dialogMonster1.FontPos.position;
+            var monsterSpeech = dialogMonster1.SpeechPos.position;
             var monsterTransform = dialogMonster1.transform;
             if (!dialogMonster1.gameObject.activeSelf)
             {
-                monsterSpeech = dialogMonster2.FontPos.position;
+                monsterSpeech = dialogMonster2.SpeechPos.position;
                 monsterTransform = dialogMonster2.transform;
             }
             
@@ -411,7 +411,7 @@ public class Stage1 : Stage
             SpawnSpeechFrame(speechFrameStrong, strongSpeechPos[0].position, dialog5);
             await NextDialog(speechFrameStrong);
 
-            var berserkerSpeechPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.SpeechPos.position;
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.4f, 0.4f, 1.0f);
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog6);
@@ -504,7 +504,7 @@ public class Stage1 : Stage
             string dialog3 = "자랑스러워 해라";
             string dialog4 = "진짜 미친 게임이네 ㅋㅋ";
             
-            var coalPos = coalMonster.FontPos.position;
+            var coalPos = coalMonster.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], coalPos, dialog1);
             await NextDialog(speechFrame1[0]);
 
@@ -514,7 +514,7 @@ public class Stage1 : Stage
             SpawnSpeechFrame(speechFrame1[0], coalPos, dialog3);
             await NextDialog(speechFrame1[0]);
 
-            var berserkerPos = curPlayer.FontPos.position;
+            var berserkerPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog4);
             await NextDialog(speechFrame1[0]);
 
@@ -598,7 +598,7 @@ public class Stage1 : Stage
                 return;
 
             curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
-            var berserkerSpeech = curPlayer.FontPos.position;
+            var berserkerSpeech = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeech, dialog1);
             await NextDialog(speechFrame1[0]);
             
@@ -684,7 +684,7 @@ public class Stage1 : Stage
             string dialog6 = "이 세상에 영원한 건 없다.";
             string dialog7 = "흙으로 돌아가라 태양..";
 
-            var berserkerSpeechPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog5); 
             await NextDialog(speechFrame1[0]);
             
@@ -709,7 +709,7 @@ public class Stage1 : Stage
             string dialog8 = "어둠이 찾아왔다..";
             string dialog9 = "?";
             
-            var berserkerSpeechPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog8); 
             await NextDialog(speechFrame1[0]);
             
@@ -740,7 +740,7 @@ public class Stage1 : Stage
                 return;
             await NextDialog(speechFrame1[0]);
             
-            var berserkerSpeechPos = curPlayer.FontPos.position;
+            var berserkerSpeechPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog10); 
             await NextDialog(speechFrame1[0]);
 
@@ -823,7 +823,7 @@ public class Stage1 : Stage
                 stageWall.SetActive(false);
             GameManager.Instance.SetCameraTarget(null);
             
-            var berserkerPos = curPlayer.FontPos.position;
+            var berserkerPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerPos, dialog16); 
             await NextDialog(speechFrame1[0]);
 

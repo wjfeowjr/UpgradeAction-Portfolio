@@ -343,6 +343,7 @@ public class NpcInfo
 {
     public string id;
     public DialogKey dialogKey = new DialogKey();
+    public bool isFirstDialogFinish;
 }
 
 [Serializable]
@@ -449,6 +450,11 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
+    
+    private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
+    private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
+    private SpeechFrame speechFrameStrong;
+    private SpeechFrame speechFrameTitle;
 
     private UI_Interface uiInterface;
     private Popup_Warning popupWarning;
@@ -489,6 +495,16 @@ public class GameManager : Singleton<GameManager>
         get => curPlayer;
         set => curPlayer = value;
     }
+
+    public Player[] Players
+    {
+        get => players;
+    }
+    
+    public List<SpeechFrame> SpeechFrame1 => speechFrame1;
+    public List<SpeechFrame> SpeechFrame2 => speechFrame2;
+    public SpeechFrame SpeechFrameStrong => speechFrameStrong;
+    public SpeechFrame SpeechFrameTitle => speechFrameTitle;
 
     public bool ControlStart 
     {
@@ -608,6 +624,7 @@ public class GameManager : Singleton<GameManager>
         InitChangeSkill();
         SetPrefabActive(false);
         FirstCashing();
+        CashingSpeechFrame();
     }
 
     private void OnDestroy()
@@ -1004,9 +1021,9 @@ public class GameManager : Singleton<GameManager>
         SaveGame();
     }
 
-    public List<string> GetPlayerRelicList()
+    public List<string> GetPlayerRelicList(string playerId)
     {
-        return saveData.playerInfoList.Find(x => x.playerId == curPlayer.BasicStat.id).relicList;
+        return saveData.playerInfoList.Find(x => x.playerId == playerId).relicList;
     }
 
     public string GetEquipRelicPlayer(string relicId) 
@@ -1036,8 +1053,17 @@ public class GameManager : Singleton<GameManager>
     public bool GetCanEquipSlot(string playerId) 
     {
         var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
-
-        return playerInfo.relicList.Contains(default);
+        bool canEquipSlot = false;
+        foreach (var relic in playerInfo.relicList)
+        {
+            if (string.IsNullOrWhiteSpace(relic))
+            {
+                canEquipSlot = true;
+                break;
+            }
+        }
+        
+        return canEquipSlot;
     }
     
     // 현재 캐릭터의 모든 유물칸이 비어있는가?
@@ -1475,6 +1501,26 @@ public class GameManager : Singleton<GameManager>
         
         var skillExplosion = SpawnToObjectPool(ConstValues.GetSkillExplosion, Vector2.zero);
         skillExplosion.SetActive(false);
+    }
+    
+    private void CashingSpeechFrame()
+    {
+        int count = 3;
+        for (int i = 0; i < count; i++)
+        {
+            speechFrame1.Add(GetSpeechFrame(ConstValues.SpeechFrame1));
+            speechFrame2.Add(GetSpeechFrame(ConstValues.SpeechFrame2));
+        }
+        for (int i = 0; i < count; i++)
+        {
+            speechFrame1[i].gameObject.SetActive(false);
+            speechFrame2[i].gameObject.SetActive(false); 
+        }
+        speechFrameStrong = GetSpeechFrame(ConstValues.SpeechFrameStrong);
+        speechFrameStrong.gameObject.SetActive(false);
+        
+        speechFrameTitle = GetSpeechFrame(ConstValues.SpeechFrameTitle);
+        speechFrameTitle.gameObject.SetActive(false);
     }
 
     private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)
@@ -2305,5 +2351,203 @@ public class GameManager : Singleton<GameManager>
             }
         }
         return buffList;
+    }
+    
+    // 대화
+    private Character GetCharacter(string characterId, Npc[] npc)
+    {
+        Character character = null;
+        foreach (var player in Players)
+        {
+            if (player.name == characterId)
+            {
+                character = player;
+                break;
+            }
+        }
+        foreach (var targetNpc in npc)
+        {
+            if (targetNpc.name == characterId)
+            {
+                character = targetNpc;
+                break;
+            }
+        }
+
+        if(character == null)
+            Debug.Log($"{characterId}가 존재하지 않는다");
+        
+        return character;
+    }
+    
+    // 대화 세팅 연출
+    public async UniTask NpcDialogue(string choice, Npc[] npc, NpcInfo npcInfo, Action finishAction)
+    {
+        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice);
+        string checkKey = talkDataList[0].checkKey;
+        string endEvent = talkDataList[0].endEvent;
+        string eventReward = talkDataList[0].reward;
+        bool checkKeyValue = npcInfo.dialogKey.isUse;
+        
+        List<DialogueData> talkList = new List<DialogueData>();
+        if (string.IsNullOrWhiteSpace(checkKey))
+        {
+            talkList.AddRange(talkDataList);
+        }
+        else
+        {
+            talkList.AddRange(talkDataList.FindAll(x => x.checkKey == checkKey && x.checkKeyValue == checkKeyValue));
+        }
+        
+        foreach (var talk in talkList)
+        {
+            var speechFrame = speechFrame1[0];
+            switch (talk.speechFrame)
+            {
+                case ConstValues.SpeechFrame2:
+                    speechFrame = speechFrame2[0];
+                    break;
+            }
+
+            var speechCharacter = GetCharacter(talk.speaker, npc);
+            List<Character> poseCharacterList = new List<Character>();
+
+            var poseCharacters = talk.poseCharacter.Split(';');
+            foreach (var poseCharacter in poseCharacters)
+            {
+                if (!string.IsNullOrWhiteSpace(poseCharacter))
+                {
+                    poseCharacterList.Add(GetCharacter(poseCharacter, npc));
+                }
+            }
+            
+            List<string> speechPoseList = new List<string>();
+            var speechPoses = talk.speechPose.Split(';');
+            foreach (var speechPose in speechPoses)
+            {
+                if (!string.IsNullOrWhiteSpace(speechPose))
+                {
+                    speechPoseList.Add(speechPose);
+                }
+            }
+            
+            var speechPos = speechCharacter.SpeechPos;
+
+            for (var i = 0; i < poseCharacterList.Count; i++)
+                poseCharacterList[i].CustomAnimTrigger(ENormalState.Idle, speechPoseList[i], ConstValues.Idle);
+
+            if(!string.IsNullOrWhiteSpace(talk.sound))
+                SoundManager.Instance.PlaySound(talk.sound);
+            
+            var cameraShakeArray = talk.cameraShake.Split(';');
+            var cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
+            if(cameraShake != Vector2.zero)
+                CameraShake(cameraShake.x, cameraShake.y, talk.shakeTime);
+            
+            SpawnSpeechFrame(speechFrame, speechPos.position, GetTalk(talk.talk));
+            await NextDialog(speechFrame);
+            if (talk.isEnd)
+                break;
+        }
+        ControlStart = true;
+
+        if (string.IsNullOrWhiteSpace(endEvent))
+        {
+            finishAction();
+        }
+        else
+        {
+            if(checkKeyValue)
+                finishAction();
+            else
+                PlayEndEvent(npcInfo, endEvent, eventReward);
+        }
+    }
+    
+    private void PlayEndEvent(NpcInfo npcInfo, string eventKey, string reward)
+    {
+        switch (eventKey)
+        {
+            case ConstValues.GetSkill:
+                npcInfo.dialogKey.isUse = true;
+                AddNewSkill(reward);
+                GetSkillProduct(reward, GetSkillDialogue);
+                break;
+        }
+    }
+
+    public async UniTask NpcFirstTalk(string startDialog, Transform speechPos)
+    {
+        var firstTalk = TableManager.Instance.dialogueTable.Dialogue.Find(x => x.id == startDialog);
+        var speechFrame = speechFrame1[0];
+        switch (firstTalk.speechFrame)
+        {
+            case ConstValues.SpeechFrame2:
+                speechFrame = speechFrame2[0];
+                break;
+        }
+            
+        SpawnSpeechFrame(speechFrame, speechPos.position, GameManager.Instance.GetTalk(firstTalk.talk));
+        await NextDialog(speechFrame);
+    }
+    
+    private void SpawnSpeechFrame(SpeechFrame speechFrame, Vector2 speechPos, string dialog)
+    {
+        speechFrame.SetPos(speechPos);
+        speechFrame.Speech(dialog);
+    }
+
+    private async UniTask NextDialog(SpeechFrame speechFrame)
+    {
+        speechFrame.NextObjectActive();
+        // 스페이스바를 누르면 넘어간다
+        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.ProductCancellation.Token).SuppressCancellationThrow())
+        {
+            speechFrame.SpeechEnd();
+            return;
+        }
+        speechFrame.SpeechEnd();
+    }
+    
+    // 스킬 획득 문구
+    private async void GetSkillDialogue(string skillName)
+    {
+        string getMessage = string.Format(GetTalk(30200), skillName);
+        await SpawnWarningPopup(getMessage);
+    }
+
+    public async UniTask DialogueMove(float xPos)
+    {
+        // 항상 광전사가 플레이어의 위치에 있어야함
+        var berserker = GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+        var gunner = GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+
+        var berserkerPos = curPlayer.transform.position;
+        var gunnerPos = new Vector2(berserkerPos.x + xPos, berserkerPos.y);
+
+        berserker.gameObject.SetActive(true);
+        berserker.transform.position = berserkerPos;
+        berserker.Flip(1);
+
+        gunner.gameObject.SetActive(true);
+        gunner.transform.position = berserkerPos;
+        await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
+    }
+    
+    public void DialogueEnd()
+    {
+        var berserker = GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+        var gunner = GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+        
+        if (curPlayer == berserker)
+        {
+            gunner.SpawnObject(ConstValues.BangEffect, gunner.CenterPos.position);
+            gunner.gameObject.SetActive(false);
+        }
+        else if (curPlayer == gunner)
+        {
+            berserker.SpawnObject(ConstValues.BangEffect, berserker.CenterPos.position);
+            berserker.gameObject.SetActive(false);
+        }
     }
 }

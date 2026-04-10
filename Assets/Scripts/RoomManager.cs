@@ -21,11 +21,6 @@ public class RoomManager : Singleton<RoomManager>
     [SerializeField] private FadeSystem fadeUI;
     [SerializeField] private TotalRoom totalRoom;
 
-    private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
-    private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
-    private SpeechFrame speechFrameStrong;
-    private SpeechFrame speechFrameTitle;
-
     private UI_Episode uiEpisode;
     private Popup_Minimap popupMinimap;
     private Popup_Character popupCharacter;
@@ -45,11 +40,6 @@ public class RoomManager : Singleton<RoomManager>
         get => currentRoom;
         set => currentRoom = value;
     }
-
-    public List<SpeechFrame> SpeechFrame1 => speechFrame1;
-    public List<SpeechFrame> SpeechFrame2 => speechFrame2;
-    public SpeechFrame SpeechFrameStrong => speechFrameStrong;
-    public SpeechFrame SpeechFrameTitle => speechFrameTitle;
 
     protected override void Awake()
     {
@@ -79,8 +69,6 @@ public class RoomManager : Singleton<RoomManager>
             fadeUI = GameManager.Instance.SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
         
         fadeUI.gameObject.SetActive(false);
-
-        CashingSpeechFrame();
 
         foreach (var room in totalRoom.RoomArray)
         {
@@ -196,26 +184,6 @@ public class RoomManager : Singleton<RoomManager>
         fadeUI.gameObject.SetActive(true);
         fadeUI.SetParameter(1, 0, 0.35f, true, 1);
         await fadeUI.Fade();
-    }
-    
-    private void CashingSpeechFrame()
-    {
-        int count = 3;
-        for (int i = 0; i < count; i++)
-        {
-            speechFrame1.Add(GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame1));
-            speechFrame2.Add(GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrame2));
-        }
-        for (int i = 0; i < count; i++)
-        {
-            speechFrame1[i].gameObject.SetActive(false);
-            speechFrame2[i].gameObject.SetActive(false); 
-        }
-        speechFrameStrong = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameStrong);
-        speechFrameStrong.gameObject.SetActive(false);
-        
-        speechFrameTitle = GameManager.Instance.GetSpeechFrame(ConstValues.SpeechFrameTitle);
-        speechFrameTitle.gameObject.SetActive(false);
     }
 
     protected void SpawnBossMessage(string bossName)

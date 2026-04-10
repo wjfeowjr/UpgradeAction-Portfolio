@@ -245,7 +245,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string DialogueChoice = "DialogueChoice";
     public const string ProductDialogue = "ProductDialogue";
     public const string Talk = "Talk";
-
+    public const string First = "First";
+    
     public const string Episode1Title = "Episode1_Title";
     public const string Episode2Title = "Episode2_Title";
     public const string FirstGetSkill = "FirstGetSkill";

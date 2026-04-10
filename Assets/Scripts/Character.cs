@@ -189,6 +189,7 @@ public abstract class Character : InteractionController
     [SerializeField] protected Transform centerPos;
     [SerializeField] protected Transform fontPos;
     [SerializeField] protected Transform physicCenterPos;
+    [SerializeField] protected Transform speechPos;
 
     [SerializeField] protected Vector2 standHitBoxSize;
     [SerializeField] protected Vector2 downHitBoxSize;
@@ -220,11 +221,9 @@ public abstract class Character : InteractionController
     // 프로퍼티
     public BasicStat OriginStat => originStat;
     public BasicStat BasicStat => basicStat;
-    public Rigidbody2D MyRigidbody => myRigidbody;
     public BoxCollider2D MyBoxCollider => myBoxCollider;
     public Transform CenterPos => centerPos;
-    public Transform FontPos => fontPos;
-    public List<Buff> BuffList => buffList;
+    public Transform SpeechPos => speechPos;
 
     [Header("Box Sizes")]
     [SerializeField] private Vector2 horizontalBoxSize; // 좌우 (세로로 긴 박스)
@@ -725,24 +724,27 @@ public abstract class Character : InteractionController
         equipStat.criticalChance = 0;
         equipStat.criticalDamage = 0;
         
-        foreach (var relic in GameManager.Instance.GetPlayerRelicList())
+        if (GetComponent<Player>())
         {
-            if(string.IsNullOrWhiteSpace(relic))
-                continue;
-            
-            var relicInfo = GameManager.Instance.relicList.Find(x => x.id == relic);
-
-            for (var i = 0; i < relicInfo.statList.Count; i++)
+            foreach (var relic in GameManager.Instance.GetPlayerRelicList(basicStat.id))
             {
-                switch (relicInfo.statList[i])
-                {
-                    case eEquipStat.Power:
-                        equipStat.power += relicInfo.valueList[i];
-                        break;
+                if(string.IsNullOrWhiteSpace(relic))
+                    continue;
+            
+                var relicInfo = GameManager.Instance.relicList.Find(x => x.id == relic);
 
-                    case eEquipStat.PowerPercent:
-                        equipStat.power += Mathf.RoundToInt(originStat.power * (relicInfo.valueList[i] * 0.01f));
-                        break;
+                for (var i = 0; i < relicInfo.statList.Count; i++)
+                {
+                    switch (relicInfo.statList[i])
+                    {
+                        case eEquipStat.Power:
+                            equipStat.power += relicInfo.valueList[i];
+                            break;
+
+                        case eEquipStat.PowerPercent:
+                            equipStat.power += Mathf.RoundToInt(originStat.power * (relicInfo.valueList[i] * 0.01f));
+                            break;
+                    }
                 }
             }
         }

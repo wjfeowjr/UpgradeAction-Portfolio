@@ -187,7 +187,7 @@ public class Stage2 : Stage
             dialogCancellation = new CancellationTokenSource();
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
-            var gunnerSpeechPos = curPlayer.FontPos.position;
+            var gunnerSpeechPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, dialog1);
             await NextDialog(speechFrame1[0]);
 
@@ -204,7 +204,7 @@ public class Stage2 : Stage
             traceMonsters[1].transform.position = traceMonsterPos2;
 
             var arrivePos = new Vector2(npcPos[1].position.x, npcPos[1].position.y);
-            var npcSpeechPos = citizen.FontPos;
+            var npcSpeechPos = ((Character)citizen).SpeechPos;
             PlaySound(ConstValues.PlayerScream);
             speechFrame1[0].SetPos(npcSpeechPos.position);
             speechFrame1[0].Speech(dialog2);
@@ -373,7 +373,7 @@ public class Stage2 : Stage
             await curPlayer.EpisodeMove(customMovePos[episodeStep.customMoveStep].position, curPlayer.BasicStat.moveSpeed, 1);
             
             dialogCancellation = new CancellationTokenSource();
-            var citizenSpeechPosition = citizen.FontPos.position;
+            var citizenSpeechPosition = ((Character)citizen).SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], citizenSpeechPosition, dialog1);
             await NextDialog(speechFrame1[0]);
             
@@ -386,11 +386,11 @@ public class Stage2 : Stage
             //     if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
             //         return;
             // }
-            var gunnerSpeechPos = curPlayer.FontPos.position;
+            var gunnerSpeechPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, dialog2);
             await NextDialog(speechFrame1[0]);
 
-            var monsterSpeechPos = traceMonsters[0].FontPos.position;
+            var monsterSpeechPos = traceMonsters[0].SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], monsterSpeechPos, dialog3);
             await NextDialog(speechFrame1[0]);
 
@@ -423,11 +423,11 @@ public class Stage2 : Stage
 
             curPlayer.CustomAnimTrigger(ENormalState.Normal, ConstValues.Idle);
             
-            citizenSpeechPosition = citizen.FontPos.position;
+            citizenSpeechPosition = ((Character)citizen).SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], new Vector2(citizenSpeechPosition.x, citizenSpeechPosition.y - 1.0f), dialog4);
             await NextDialog(speechFrame1[0]);
 
-            gunnerSpeechPos = curPlayer.FontPos.position;
+            gunnerSpeechPos = curPlayer.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, dialog5);
             await NextDialog(speechFrame1[0]);
 
@@ -440,7 +440,7 @@ public class Stage2 : Stage
             SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, dialog6);
             await NextDialog(speechFrame1[0]);
             
-            var systemSpeechPos = system.FontPos.position;
+            var systemSpeechPos = ((Character)system).SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], systemSpeechPos, dialog7);
             await NextDialog(speechFrame1[0]);
             
@@ -500,7 +500,7 @@ public class Stage2 : Stage
             await chargeMonster.EpisodeMove_X(stopPos, chargeMonster.BasicStat.moveSpeed, -1);
             
             chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
-            var chargeSpeechPosition = chargeMonster.FontPos.position;
+            var chargeSpeechPosition = chargeMonster.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPosition, dialog16);
             await NextDialog(speechFrame1[0]);
 
@@ -524,7 +524,7 @@ public class Stage2 : Stage
             
             speechFrame1[0].SetPos(citizenSpeechPosition);
             speechFrame1[0].Speech(dialog20);
-            speechFrame1[0].Trace(citizen.FontPos);
+            speechFrame1[0].Trace(((Character)citizen).SpeechPos);
             
             var runPos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x - 12.0f, citizen.transform.position.y);
             await citizen.EpisodeMove_X(runPos, 10, -1);
@@ -543,7 +543,7 @@ public class Stage2 : Stage
                 return;
 
             curPlayer.BasicStat.bodyType = EBodyType.Normal;
-            chargeSpeechPosition = chargeMonster.FontPos.position;
+            chargeSpeechPosition = chargeMonster.SpeechPos.position;
             
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPosition, dialog22);
             await NextDialog(speechFrame1[0]);
@@ -555,9 +555,9 @@ public class Stage2 : Stage
             curPlayer.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
             
             // 어이 잡초맨! 죽었냐??
-            chargeSpeechPosition = chargeMonster.FontPos.position;
+            chargeSpeechPosition = chargeMonster.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPosition, dialog23);
-            speechFrame1[0].Trace(chargeMonster.FontPos);
+            speechFrame1[0].Trace(chargeMonster.SpeechPos);
             
             chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
             chargeMonster.Flip(1);
@@ -569,7 +569,7 @@ public class Stage2 : Stage
             system.transform.position = new Vector2(traceMonsters[0].transform.position.x, traceMonsters[0].transform.position.y + 2.0f);
             system.SpawnObject(ConstValues.BangEffect, system.CenterPos.position);
             // 짜잔!
-            systemSpeechPos = system.FontPos.position;
+            systemSpeechPos = ((Character)system).SpeechPos.position;
             
             SpawnSpeechFrame(speechFrame1[0], systemSpeechPos, dialog24);
             await NextDialog(speechFrame1[0]);
@@ -579,9 +579,9 @@ public class Stage2 : Stage
             await NextDialog(speechFrame1[0]);
             
             // 집어치워!
-            chargeSpeechPosition = chargeMonster.FontPos.position;
+            chargeSpeechPosition = chargeMonster.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPosition, dialog26);
-            speechFrame1[0].Trace(chargeMonster.FontPos);
+            speechFrame1[0].Trace(chargeMonster.SpeechPos);
             await chargeMonster.GetComponent<Monster_Charge>().EventCharge(0.1f, 20, 20);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
@@ -593,7 +593,7 @@ public class Stage2 : Stage
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPosition, dialog27);
             await NextDialog(speechFrame1[0]);
 
-            var traceMonsterPos1 = new Vector2(traceMonsters[0].FontPos.position.x, traceMonsters[0].FontPos.position.y - 1.0f);
+            var traceMonsterPos1 = new Vector2(traceMonsters[0].SpeechPos.position.x, traceMonsters[0].SpeechPos.position.y - 1.0f);
             SpawnSpeechFrame(speechFrame1[0], traceMonsterPos1, dialog28);
             traceMonsters[0].BlinkDelete();
             traceMonsters[1].BlinkDelete();
@@ -602,20 +602,20 @@ public class Stage2 : Stage
             await NextDialog(speechFrame1[0]);
             
             // 게임시스템 나와!
-            chargeSpeechPosition = chargeMonster.FontPos.position;
+            chargeSpeechPosition = chargeMonster.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPosition, dialog29);
             await NextDialog(speechFrame1[0]);
-            speechFrame1[0].Trace(chargeMonster.FontPos);
+            speechFrame1[0].Trace(chargeMonster.SpeechPos);
 
             gameSystem.gameObject.SetActive(true);
-            gameSystem.transform.position = new Vector2(chargeMonster.transform.position.x + 5.0f, chargeMonster.FontPos.position.y);
+            gameSystem.transform.position = new Vector2(chargeMonster.transform.position.x + 5.0f, chargeMonster.SpeechPos.position.y);
             gameSystem.SpawnObject(ConstValues.BangEffect, gameSystem.CenterPos.position);
             GameManager.Instance.SetCameraTarget(gameSystem.transform);
             //GameManager.Instance.MainCamera.MaxXAndY = new Vector2(59.0f, GameManager.Instance.MainCamera.MinXAndY.y);
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
             
-            var gameSystemPosition = gameSystem.FontPos.position;
+            var gameSystemPosition = ((Character)gameSystem).SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], gameSystemPosition, dialog30);
             await NextDialog(speechFrame1[0]);
 
@@ -673,7 +673,7 @@ public class Stage2 : Stage
             await NextDialog(speechFrameStrong);
 
             // 광고를 왜 봐? 게임시스템 부수면 되는걸
-            chargeSpeechPosition = chargeMonster.FontPos.position;
+            chargeSpeechPosition = chargeMonster.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPosition, dialog33);
             await NextDialog(speechFrame1[0]);
 
@@ -736,7 +736,7 @@ public class Stage2 : Stage
 
             // 땅에 박혀버렸어
             speechFrame1[0].gameObject.SetActive(true);
-            gunnerSpeechPos = new Vector2(gunner.FontPos.position.x, gunner.FontPos.position.y - 0.5f);
+            gunnerSpeechPos = new Vector2(gunner.SpeechPos.position.x, gunner.SpeechPos.position.y - 0.5f);
             
             SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, dialog38);
             await NextDialog(speechFrame1[0]);
@@ -747,7 +747,7 @@ public class Stage2 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            var berserkerSpeechPos = berserker.FontPos.position;
+            var berserkerSpeechPos = berserker.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog39);
             await NextDialog(speechFrame1[0]);
 
@@ -783,7 +783,7 @@ public class Stage2 : Stage
             berserker.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
             
             // 어헝 고마워
-            gunnerSpeechPos = gunner.FontPos.position;
+            gunnerSpeechPos = gunner.SpeechPos.position;
             PlaySound(ConstValues.GunnerLaugh);
             SpawnSpeechFrame(speechFrame1[0], new Vector2(gunnerSpeechPos.x, gunnerSpeechPos.y + 0.5f), dialog45);
             for (int i = 0; i < 2; i++)
@@ -974,14 +974,14 @@ public class Stage2 : Stage
             await chargeMonster.EpisodeMove_X(movePos, 4, -1);
             chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
 
-            var chargeSpeechPos = chargeMonster.FontPos.position;
+            var chargeSpeechPos = chargeMonster.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPos, dialog2);
             await NextDialog(speechFrame1[0]);
 
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPos, dialog3);
             await NextDialog(speechFrame1[0]);
 
-            var berserkerSpeechPos = berserker.FontPos.position;
+            var berserkerSpeechPos = berserker.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog4);
             await NextDialog(speechFrame1[0]);
             
@@ -991,7 +991,7 @@ public class Stage2 : Stage
             SpawnSpeechFrame(speechFrame1[0], chargeSpeechPos, dialog6);
             await NextDialog(speechFrame1[0]);
             
-            var gunnerSpeechPos = gunner.FontPos.position;
+            var gunnerSpeechPos = gunner.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, dialog7);
             PlaySound(ConstValues.GunnerLaugh);
             for (int i = 0; i < 2; i++)
@@ -1061,7 +1061,7 @@ public class Stage2 : Stage
         if (episodeStep.dialogStep == 3)
         {
             string dialog1 = "이익!";
-            var chargeSpeechPos = chargeMonster.FontPos.position;
+            var chargeSpeechPos = chargeMonster.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], new Vector2(chargeSpeechPos.x, chargeSpeechPos.y - 0.6f), dialog1);
             await NextDialog(speechFrame1[0]);
         }
@@ -1122,7 +1122,7 @@ public class Stage2 : Stage
             string dialog6 = "근데, 저런 놈도 <color=#F36B6B>무력화</color>시킬 방법이 있을거다";
             string dialog7 = "가자!";
 
-            var bossSpeechPos = chargeBoss.FontPos.position;
+            var bossSpeechPos = chargeBoss.SpeechPos.position;
             
             CameraShake(0.5f, 0.5f, 0.5f); 
             PlaySound(ConstValues.FighterStrongPunch);
@@ -1133,7 +1133,7 @@ public class Stage2 : Stage
             var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
             var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
 
-            var gunnerSpeechPos = gunner.FontPos.position;
+            var gunnerSpeechPos = gunner.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, dialog4);
             PlaySound(ConstValues.GunnerLaugh);
             for (int i = 0; i < 2; i++)
@@ -1146,7 +1146,7 @@ public class Stage2 : Stage
             }
             await NextDialog(speechFrame1[0]);
 
-            var berserkerSpeechPos = berserker.FontPos.position;
+            var berserkerSpeechPos = berserker.SpeechPos.position;
             SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, dialog5);
             await NextDialog(speechFrame1[0]);
             
@@ -1220,8 +1220,8 @@ public class Stage2 : Stage
             if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
                 return;
 
-            var berserkerSpeechPos = berserker.FontPos.position;
-            var gunnerSpeechPos = gunner.FontPos.position;
+            var berserkerSpeechPos = berserker.SpeechPos.position;
+            var gunnerSpeechPos = gunner.SpeechPos.position;
             
             SpawnSpeechFrame(speechFrame1[0], gunnerSpeechPos, dialog1);
             await NextDialog(speechFrame1[0]);

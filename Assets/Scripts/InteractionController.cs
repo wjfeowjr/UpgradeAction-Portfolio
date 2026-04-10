@@ -76,7 +76,11 @@ public class InteractionController : MonoBehaviour
         return obj;
     }
     
-    // 선택지
+    // 최초 대화
+    protected void FirstDialog(Action dialogueAction, Action closeAction)
+    {
+        
+    }
     
     // 대화 선택지 및 선택 액션
     protected void SetActionInteractionSelect(Action<string> dialogueAction, Action closeAction)
