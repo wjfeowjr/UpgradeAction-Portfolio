@@ -7,7 +7,8 @@ using UnityEngine.Serialization;
 
 interface IFirstDialogAction
 {
-    public UniTask DialogAction();
+    public UniTask DialogStartAction();
+    public void DialogEndAction();
 }
 
 public class Npc : Character
@@ -53,12 +54,6 @@ public class Npc : Character
         isFirstTalk = false;
     }
 
-    private async void SetDialogueAction(string choice)
-    {
-        ActiveInteractionSelect(false);
-        await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject);
-    }
-
     public void AddData()
     {
         var data = GameManager.Instance.NpcInfoInfoList.Find(x => x.id == name);
@@ -74,9 +69,37 @@ public class Npc : Character
         else
         {
             npcInfo = data;
+            if (string.IsNullOrWhiteSpace(npcData.firstDialog))
+                npcInfo.isFirstDialogFinish = true;
         }
     }
 
+    private async void SetDialogueAction(string choice)
+    {
+        ActiveInteractionSelect(false);
+
+        var choiceSplit = choice.Split('_');
+        var choiceType = choiceSplit[0];
+
+        if (choiceType == ConstValues.Open)
+        {
+            string popupId = choiceSplit[1];
+            Debug.Log($"{popupId} 팝업이 뜬다!");
+            
+        }
+        else
+        {
+            await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject);
+        }
+    }
+    
+    private async UniTask SetFirstDialogueAction(string choice)
+    {
+        ActiveInteractionSelect(false);
+        await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject);
+        
+    }
+    
     private void SetCloseAction()
     {
         ActiveInteractionSelect(false);
@@ -95,9 +118,12 @@ public class Npc : Character
         {
             var actionInterface = GetComponent<IFirstDialogAction>();
             if (actionInterface != null)
-                await actionInterface.DialogAction();
+                await actionInterface.DialogStartAction();
 
-            SetDialogueAction($"{name}_{ConstValues.First}");
+            await SetFirstDialogueAction($"{name}_{ConstValues.First}");
+
+            actionInterface?.DialogEndAction();
+
             npcInfo.isFirstDialogFinish = true;
             GameManager.Instance.SaveGame();
         }

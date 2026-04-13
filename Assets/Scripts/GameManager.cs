@@ -370,6 +370,7 @@ public enum eUIType
     Popup_Warning,
     Popup_Character,
     Popup_Select,
+    Popup_Store,
 }
 
 [Serializable]

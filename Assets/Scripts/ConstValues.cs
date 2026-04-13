@@ -94,7 +94,7 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string Object = "Object";
     public const string Lock = "Lock";
-    
+
     public const string Berserker = "Berserker";
     public const string Gunner = "Gunner";
     public const string Fighter = "Fighter";
@@ -133,7 +133,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Arrive = "Arrive";
     public const string Thumbs = "Thumbs";
     public const string Point = "Point";
-    
+
     public const string Normal = "Normal";
     public const string Pattern = "Pattern";
     public const string Appear = "Appear";
