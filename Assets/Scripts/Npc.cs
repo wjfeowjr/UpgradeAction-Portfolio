@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -85,7 +86,24 @@ public class Npc : Character
         {
             string popupId = choiceSplit[1];
             Debug.Log($"{popupId} 팝업이 뜬다!");
+
+            // TODO: Popup_Store 생성 및 MVP 초기화
+            var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Store, Vector3.zero).GetComponent<UIBase>();
+            uiBase.ExpansionOpen(true, true);
             
+            if (uiBase is Popup_Store popupStore)
+            {
+                var storeInterface = popupStore.StoreView.ConvertTo<IPopupStoreView>();
+                var storeModel = new PopupStoreModel()
+                {
+                
+                };
+                var storePresenter = new PopupStorePresenter(storeInterface, storeModel);
+                popupStore.SetStorePresenter(storePresenter);
+                storePresenter.SetModel();
+                storePresenter.SetItem();
+                storePresenter.SetAction();
+            }
         }
         else
         {
