@@ -150,7 +150,8 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
         if (!gameObject.activeSelf) return;
 
         // SpawnSelect 팝업이 떠 있는 동안 입력 차단
-        if (_confirmActive) return;
+        if (_confirmActive)
+            return;
 
         HandleKeyInput();
     }
@@ -588,7 +589,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
         }
         else
         {
-            var relicInfo = GameManager.Instance.relicList.Find(x => x.id == _curRelicId);
+            var relicInfo = GameManager.Instance.relicCopyList.Find(x => x.id == _curRelicId);
             relicNameText.text = GameManager.Instance.GetTalk(relicInfo.name);
             relicExplainText.text = GameManager.Instance.GetTalk(relicInfo.explain);
 

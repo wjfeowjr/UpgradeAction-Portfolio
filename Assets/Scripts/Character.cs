@@ -731,7 +731,7 @@ public abstract class Character : InteractionController
                 if(string.IsNullOrWhiteSpace(relic))
                     continue;
             
-                var relicInfo = GameManager.Instance.relicList.Find(x => x.id == relic);
+                var relicInfo = GameManager.Instance.relicCopyList.Find(x => x.id == relic);
 
                 for (var i = 0; i < relicInfo.statList.Count; i++)
                 {

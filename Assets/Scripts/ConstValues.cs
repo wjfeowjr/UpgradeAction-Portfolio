@@ -304,6 +304,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Platform = "Platform";
     public const string DestroyPlatform = "DestroyPlatform";
 
+    public const string Icon = "Icon";
     public const string Gold = "Gold";
     public const string FollowGold = "FollowGold";
     public const string GoldExplosion = "GoldExplosion";
@@ -554,4 +555,5 @@ public class ConstValues : Singleton<ConstValues>
     public const string ElevatorHiss = "ElevatorHiss";
     public const string Pickup = "Pickup";
     public const string DestroyDoor = "DestroyDoor";
+    public const string ProductMailDelivery = "ProductMailDelivery";
 }

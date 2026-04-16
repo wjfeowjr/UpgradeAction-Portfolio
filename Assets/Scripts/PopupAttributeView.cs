@@ -622,7 +622,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         }
 
         //attributeText.gameObject.SetActive(true);
-        attributeList = GameManager.Instance.skillAttributeList.FindAll(x => x.skill == curSkillId);
+        attributeList = GameManager.Instance.skillAttributeCopyList.FindAll(x => x.skill == curSkillId);
         BuildAttributeIdList();
 
         

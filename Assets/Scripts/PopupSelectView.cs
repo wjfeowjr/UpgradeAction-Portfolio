@@ -8,7 +8,7 @@ using UnityEngine.UI;
 public interface IPopupSelectView
 {
     void SetModel(string message, Sprite goods, int cost);
-    void SetAction(Action start, Action yes, Action no, Action moveSoundAction);
+    void SetAction(Action start, Action yes, Action no, Action escAction, PopupCommonActions commonActions);
 }
 
 public class PopupSelectModel
@@ -20,7 +20,8 @@ public class PopupSelectModel
     public Action startAction;
     public Action yesAction;
     public Action noAction;
-    public Action moveSoundAction;
+    public Action escAction;
+    public PopupCommonActions commonActions;
 }
 
 public class PopupSelectPresenter
@@ -46,7 +47,7 @@ public class PopupSelectPresenter
     
     public void SetAction()
     {
-        _selectView.SetAction(_model.startAction, _model.yesAction, _model.noAction, _model.moveSoundAction);
+        _selectView.SetAction(_model.startAction, _model.yesAction, _model.noAction, _model.escAction, _model.commonActions);
     }
 }
 
@@ -66,7 +67,8 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
     private Action startAction;
     private Action yesAction;
     private Action noAction;
-    private Action moveSoundAction;
+    private Action escAction;
+    private PopupCommonActions popupCommonActions;
 
     private void OnEnable()
     {
@@ -83,7 +85,7 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
                 return;
             
             Yes();
-            moveSoundAction?.Invoke();
+            popupCommonActions?.PlayMoveSound.Invoke();
         }
         else if (Input.GetKeyDown(KeyCode.RightArrow))
         {
@@ -92,7 +94,7 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
                 return;
             
             No();
-            moveSoundAction?.Invoke();
+            popupCommonActions?.PlayMoveSound.Invoke();
         }
         else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
@@ -104,7 +106,7 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
         }
         else if (Input.GetKeyDown(KeyCode.Escape))
         {
-            noAction();
+            escAction();
         }
     }
 
@@ -123,12 +125,13 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
         }
     }
     
-    public void SetAction(Action start, Action yes, Action no, Action move)
+    public void SetAction(Action start, Action yes, Action no, Action esc, PopupCommonActions common)
     {
         startAction = start;
         yesAction = yes;
         noAction = no;
-        moveSoundAction = move;
+        escAction = esc;
+        popupCommonActions = common;
     }
     
     private void Yes()

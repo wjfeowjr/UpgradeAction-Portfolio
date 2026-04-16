@@ -491,9 +491,9 @@ public class GameManager : Singleton<GameManager>
     private SettingSkill changeSkill;
     
     // 복제체 데이터들
-    public List<SkillAttributeInfo> skillAttributeList = new List<SkillAttributeInfo>();
-    public List<ItemInfo> itemList = new List<ItemInfo>();
-    public List<RelicInfo> relicList = new List<RelicInfo>();
+    public List<SkillAttributeInfo> skillAttributeCopyList = new List<SkillAttributeInfo>();
+    public List<ItemInfo> itemCopyList = new List<ItemInfo>();
+    public List<RelicInfo> relicCopyList = new List<RelicInfo>();
     
     // 매니저들
     public TableManager tableManager;
@@ -981,7 +981,7 @@ public class GameManager : Singleton<GameManager>
             if (string.IsNullOrWhiteSpace(playerInfo.relicList[i]))
             {
                 playerInfo.relicList[i] = relicId;
-                var itemData = itemList.Find(x => x.id == relicId);
+                var itemData = itemCopyList.Find(x => x.id == relicId);
                 var relicName = GetTalk(itemData.name);
                 Debug.Log($"{relicName}장착");
                 break;
@@ -999,7 +999,7 @@ public class GameManager : Singleton<GameManager>
         var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
 
         playerInfo.relicList[idx] = relicId;
-        var itemData = itemList.Find(x => x.id == relicId);
+        var itemData = itemCopyList.Find(x => x.id == relicId);
         var relicName = GetTalk(itemData.name);
         Debug.Log($"{relicName}장착");
         
@@ -1025,7 +1025,7 @@ public class GameManager : Singleton<GameManager>
             if (playerInfo.relicList[i] == relicId)
             {
                 playerInfo.relicList[i] = default;
-                var itemData = itemList.Find(x => x.id == relicId);
+                var itemData = itemCopyList.Find(x => x.id == relicId);
                 var relicName = GetTalk(itemData.name);
                 Debug.Log($"{relicName}해제");
                 
@@ -1139,6 +1139,26 @@ public class GameManager : Singleton<GameManager>
 
         return sb.ToString();
     }
+
+    public void BuyItem(StoreItemData storeItemData)
+    {
+        var itemData = itemCopyList.Find(x => x.id == storeItemData.id);
+        if (Gold < storeItemData.cost)
+        {
+            SpawnWarningPopup(GetTalk(30212));
+            SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
+            return;
+        }
+        
+        switch (itemData.type)
+        {
+            case eItemType.Relic:
+                saveData.relicList.Add(storeItemData.id);
+                break;
+        }
+        Gold -= storeItemData.cost;
+        SoundManager.Instance.PlaySound(ConstValues.ProductMailDelivery, true);
+    }
     
     private void InitAtlas(SpriteAtlas spriteAtlas)
     {
@@ -1206,7 +1226,7 @@ public class GameManager : Singleton<GameManager>
             data.talk = skillAttribute.talk;
             data.explainTalk = skillAttribute.explainTalk;
             
-            skillAttributeList.Add(data);
+            skillAttributeCopyList.Add(data);
         }
         
         foreach (var item in tableManager.itemTable.Item)
@@ -1218,7 +1238,7 @@ public class GameManager : Singleton<GameManager>
             data.rank = (eItemRank)Enum.Parse(typeof(eItemRank), item.rank);
             data.type = (eItemType)Enum.Parse(typeof(eItemType), item.type);
             
-            itemList.Add(data);
+            itemCopyList.Add(data);
         }
 
         foreach (var relic in tableManager.relicTable.Relic)
@@ -1226,7 +1246,7 @@ public class GameManager : Singleton<GameManager>
             var data = new RelicInfo();
             data.id = relic.id;
             
-            var itemData = itemList.Find(x => x.id == relic.id);
+            var itemData = itemCopyList.Find(x => x.id == relic.id);
             data.name = itemData.name;
             data.explain = itemData.explain;
             data.rank = itemData.rank;
@@ -1241,7 +1261,7 @@ public class GameManager : Singleton<GameManager>
 
             data.specialValue = relic.specialValue;
             
-            relicList.Add(data);
+            relicCopyList.Add(data);
         }
     }
 
@@ -1507,9 +1527,9 @@ public class GameManager : Singleton<GameManager>
         var go = SpawnToPool(type.ToString(), popupPool, objTransform);
         return go;
     }
-    public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector)
+    public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector, bool isHighest = false)
     {
-        var go = SpawnToPool(type.ToString(), popupPool, objVector);
+        var go = SpawnToPool(type.ToString(), popupPool, objVector, isHighest);
         return go;
     }
     // 최상위 UI오브젝트
@@ -1615,7 +1635,7 @@ public class GameManager : Singleton<GameManager>
         go.SetActive(true);
         return go;
     }
-    private GameObject SpawnToPool(string id, Transform pool, Vector3 objVector)
+    private GameObject SpawnToPool(string id, Transform pool, Vector3 objVector, bool isHightest = false)
     { 
         var objectName = $"{id}(Clone)";
         var isSearch = objectList.FindAll(x => x.name == objectName);
@@ -1644,6 +1664,9 @@ public class GameManager : Singleton<GameManager>
         
         go.transform.position = objVector;
         go.SetActive(true);
+        if(isHightest)
+            go.transform.SetAsLastSibling();
+        
         return go;
     }
     public GameObject SpawnToMonster(string id, Transform pool, Vector3 objVector, bool isActive)
@@ -2060,11 +2083,16 @@ public class GameManager : Singleton<GameManager>
 
     public void SpawnSelect(string message, Sprite goodsSprite, int cost, Action yesAction, Action noAction)
     {
-        var uiBase = SpawnToPopupPool(eUIType.Popup_Select, Vector3.zero).GetComponent<UIBase>();
+        var uiBase = SpawnToPopupPool(eUIType.Popup_Select, Vector3.zero, true).GetComponent<UIBase>();
         
         if (uiBase is Popup_Select popupSelect)
         {
-            var selectInterface = popupSelect.SelectView.ConvertTo<IPopupSelectView>();
+            var common = new PopupCommonActions
+            {
+                PlayMoveSound   = () => SoundManager.Instance.PlaySound(ConstValues.Jump1,         true),
+                PlaySelectSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton2,  true),
+                PlayCancelSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton,   true),
+            };
             var selectModel = new PopupSelectModel()
             {
                 message = message,
@@ -2081,11 +2109,16 @@ public class GameManager : Singleton<GameManager>
                     uiBase.Close();
                     noAction();
                 },
-                moveSoundAction = () =>
+                escAction = ()=>
                 {
-                    SoundManager.Instance.PlaySound(ConstValues.Jump1, true);
-                }
+                    //uiBase.ReductionClose(false, false);
+                    uiBase.Close();
+                    noAction();
+                },
+                commonActions = common
             };
+            
+            var selectInterface = popupSelect.SelectView.ConvertTo<IPopupSelectView>();
             var selectPresenter = new PopupSelectPresenter(selectInterface, selectModel);
             popupSelect.SetSelectPresenter(selectPresenter);
             selectPresenter.Expansion(() =>
@@ -2146,7 +2179,7 @@ public class GameManager : Singleton<GameManager>
     }
     public async void BuyAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
-        var attributeData = skillAttributeList.FindAll(x => x.id == attributeId);
+        var attributeData = skillAttributeCopyList.FindAll(x => x.id == attributeId);
 
         foreach (var playerInfo in saveData.playerInfoList)
         {
@@ -2159,7 +2192,7 @@ public class GameManager : Singleton<GameManager>
                     if (playerInfo.attributePoint < attributeData[0].cost)
                     {
                         SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                        await GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
+                        await SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
                     }
                     else
                     {
@@ -2176,7 +2209,7 @@ public class GameManager : Singleton<GameManager>
     
     public async void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
-        var attributeData = GameManager.Instance.skillAttributeList.FindAll(x => x.id == attributeId);
+        var attributeData = GameManager.Instance.skillAttributeCopyList.FindAll(x => x.id == attributeId);
 
         foreach (var playerInfo in saveData.playerInfoList)
         {
@@ -2227,7 +2260,7 @@ public class GameManager : Singleton<GameManager>
             targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
         // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
-        var attributeData = skillAttributeList.FindAll(x => x.targetObject == targetId);
+        var attributeData = skillAttributeCopyList.FindAll(x => x.targetObject == targetId);
         if (attributeData.Count > 0)
         {
             foreach (var attribute in attributeData)
@@ -2243,7 +2276,7 @@ public class GameManager : Singleton<GameManager>
         }
         
         // 파생기도 효과를 적용받음
-        attributeData = skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
         foreach (var attribute in attributeData)
         {
             if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
@@ -2271,7 +2304,7 @@ public class GameManager : Singleton<GameManager>
             targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
         // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
-        var attributeData = skillAttributeList.FindAll(x => x.targetObject == targetId);
+        var attributeData = skillAttributeCopyList.FindAll(x => x.targetObject == targetId);
         if (attributeData.Count > 0)
         {
             foreach (var attribute in attributeData)
@@ -2289,7 +2322,7 @@ public class GameManager : Singleton<GameManager>
             }
         }
         // 파생기도 효과를 적용받음
-        attributeData = skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
         foreach (var attribute in attributeData)
         {
             if (string.IsNullOrWhiteSpace(attribute.addObjectId) || !IsHaveAttribute(skillId, attribute.id))
@@ -2320,7 +2353,7 @@ public class GameManager : Singleton<GameManager>
             targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
         // 정확히 일치하는 타겟 데이터가 있는지 확인
-        var attributeData = skillAttributeList.FindAll(x => x.targetObject == targetId);
+        var attributeData = skillAttributeCopyList.FindAll(x => x.targetObject == targetId);
         
         // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
         if (attributeData.Count > 0)
@@ -2342,7 +2375,7 @@ public class GameManager : Singleton<GameManager>
             }
         }
         // 파생기도 해당 효과를 적용받음
-        attributeData = skillAttributeList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
         foreach (var attribute in attributeData)
         {
             if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
@@ -2369,7 +2402,7 @@ public class GameManager : Singleton<GameManager>
         {
             // 파생기도 해당 효과를 적용받음
             string skillId = $"{idSplit[0]}_{idSplit[1]}";
-            var attributeData = skillAttributeList.FindAll(x => x.skill == skillId);
+            var attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId);
             foreach (var attribute in attributeData)
             {
                 if (string.IsNullOrWhiteSpace(attribute.buffId) || !IsHaveAttribute(skillId, attribute.id))
@@ -2396,7 +2429,7 @@ public class GameManager : Singleton<GameManager>
         {
             // 파생기도 해당 효과를 적용받음
             string skillId = $"{idSplit[0]}_{idSplit[1]}";
-            var attributeData = skillAttributeList.FindAll(x => x.skill == skillId);
+            var attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId);
             foreach (var attribute in attributeData)
             {
                 if (string.IsNullOrWhiteSpace(attribute.deBuffId) || !IsHaveAttribute(skillId, attribute.id))
