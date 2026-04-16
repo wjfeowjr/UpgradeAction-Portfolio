@@ -100,7 +100,7 @@ public class Npc : Character
                 };
                 var storePresenter = new PopupStorePresenter(storeInterface, storeModel);
                 popupStore.SetStorePresenter(storePresenter);
-                storePresenter.SetModel();
+                storePresenter.SetModel(popupId);
                 storePresenter.SetItem();
                 storePresenter.SetAction();
             }

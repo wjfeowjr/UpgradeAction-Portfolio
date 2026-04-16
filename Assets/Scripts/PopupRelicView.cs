@@ -594,31 +594,8 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
 
             for (int i = 0; i < relicInfo.statList.Count; i++)
             {
-                StringBuilder sb = new StringBuilder();
-                switch (relicInfo.statList[i])
-                {
-                    case eEquipStat.Power:
-                        sb.Append(GameManager.Instance.GetTalk(50101));
-                        break;
-                
-                    case eEquipStat.PowerPercent:
-                        sb.Append(GameManager.Instance.GetTalk(50101));
-                        break;
-                }
-                
-                if(relicInfo.valueList[i] > 0)
-                    sb.Append($" +{relicInfo.valueList[i]}");
-                else
-                    sb.Append($" -{relicInfo.valueList[i]}");
-                
-                switch (relicInfo.statList[i])
-                {
-                    case eEquipStat.PowerPercent:
-                        sb.Append('%');
-                        break;
-                }
                 relicValueFrames[i].gameObject.SetActive(true);
-                relicValueFrames[i].SetText(sb.ToString());
+                relicValueFrames[i].SetText(GameManager.Instance.GetRelicStat(relicInfo, i));
             }
         }
     }

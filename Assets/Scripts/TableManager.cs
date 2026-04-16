@@ -141,6 +141,8 @@ public class ItemData
 {
     public string id;
     public int name;
+    public int explain;
+    public string rank;
     public string type;
 }
 [Serializable]
@@ -278,9 +280,6 @@ public class ProductDialogueDataList
 public class RelicData
 {
     public string id;
-    public int name;
-    public int explain;
-    public string rank;
     public string stat;
     public string value;
     public string specialValue;
@@ -387,6 +386,19 @@ public class SpawnedObjectDataList
 }
 
 [Serializable]
+public class StoreItemData
+{
+    public string id;
+    public string storeId;
+    public int cost;
+}
+[Serializable]
+public class StoreItemDataList
+{
+    public List<StoreItemData> StoreItem;
+}
+
+[Serializable]
 public class TalkData
 {
     public int idx;
@@ -418,6 +430,7 @@ public class TableManager : SingletonMono<TableManager>
     public SkillDataList skillTable;
     public SkillAttributeDataList skillAttributeTable;
     public SpawnedObjectDataList spawnedObjectTable;
+    public StoreItemDataList storeItemTable;
     public TalkDataList talkTable;
     
     public void Init()
@@ -440,6 +453,7 @@ public class TableManager : SingletonMono<TableManager>
         skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);
         skillAttributeTable = LoadDataFromJson<SkillAttributeDataList>(ConstValues.SkillAttribute);
         spawnedObjectTable = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject);
+        storeItemTable = LoadDataFromJson<StoreItemDataList>(ConstValues.StoreItem);
         talkTable = LoadDataFromJson<TalkDataList>(ConstValues.Talk);
         Debug.Log($"{name} 초기화 완료");
     }

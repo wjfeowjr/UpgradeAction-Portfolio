@@ -172,28 +172,44 @@ public class SkillAttributeInfo
     public int explainTalk;
 }
 
+public enum eItemRank
+{
+    Normal,
+    Rare,
+}
+
+public enum eItemStat
+{
+    Power,
+    PowerPercent,
+}
+
 [Serializable]
 public class RelicInfo
 {
     public string id;
     public int name;
     public int explain;
-    public eEquipRank rank;
-    public List<eEquipStat> statList = new List<eEquipStat>();
+    public eItemRank rank;
+    public List<eItemStat> statList = new List<eItemStat>();
     public List<int> valueList = new List<int>();
     public string specialValue;
 }
 
-public enum eEquipRank
+public enum eItemType
 {
     Normal,
-    Rare,
+    Relic,
 }
 
-public enum eEquipStat
+[Serializable]
+public class ItemInfo
 {
-    Power,
-    PowerPercent,
+    public string id;
+    public int name;
+    public int explain;
+    public eItemRank rank;
+    public eItemType type;
 }
 
 [Serializable]
@@ -332,7 +348,7 @@ public class RoomInfo
 }
 
 [Serializable]
-public class ItemInfo
+public class HaveItemInfo
 {
     public string id;
     public int count;
@@ -386,7 +402,7 @@ public class SaveData
     public bool firstGetAttribute;
     
     public List<string> playerList = new List<string>();
-    public List<ItemInfo> itemList = new List<ItemInfo>();
+    public List<HaveItemInfo> itemList = new List<HaveItemInfo>();
     public List<string> relicList = new List<string>();
     
     // 플레이어 개별로 만들기(스킬, 스킬 키, 유물)
@@ -476,6 +492,7 @@ public class GameManager : Singleton<GameManager>
     
     // 복제체 데이터들
     public List<SkillAttributeInfo> skillAttributeList = new List<SkillAttributeInfo>();
+    public List<ItemInfo> itemList = new List<ItemInfo>();
     public List<RelicInfo> relicList = new List<RelicInfo>();
     
     // 매니저들
@@ -572,7 +589,7 @@ public class GameManager : Singleton<GameManager>
         set => saveData.miniMapCheckers = value;
     }
 
-    public List<ItemInfo> ItemList => saveData.itemList;
+    public List<HaveItemInfo> ItemList => saveData.itemList;
 
     public List<PlayerInfo> PlayerInfoList => saveData.playerInfoList;
 
@@ -964,8 +981,8 @@ public class GameManager : Singleton<GameManager>
             if (string.IsNullOrWhiteSpace(playerInfo.relicList[i]))
             {
                 playerInfo.relicList[i] = relicId;
-                var relicTableData = TableManager.Instance.relicTable.Relic.Find(x => x.id == relicId);
-                var relicName = GetTalk(relicTableData.name);
+                var itemData = itemList.Find(x => x.id == relicId);
+                var relicName = GetTalk(itemData.name);
                 Debug.Log($"{relicName}장착");
                 break;
             }
@@ -982,8 +999,8 @@ public class GameManager : Singleton<GameManager>
         var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
 
         playerInfo.relicList[idx] = relicId;
-        var relicTableData = TableManager.Instance.relicTable.Relic.Find(x => x.id == relicId);
-        var relicName = GetTalk(relicTableData.name);
+        var itemData = itemList.Find(x => x.id == relicId);
+        var relicName = GetTalk(itemData.name);
         Debug.Log($"{relicName}장착");
         
         foreach (var player in players)
@@ -1008,8 +1025,8 @@ public class GameManager : Singleton<GameManager>
             if (playerInfo.relicList[i] == relicId)
             {
                 playerInfo.relicList[i] = default;
-                var relicTableData = TableManager.Instance.relicTable.Relic.Find(x => x.id == relicId);
-                var relicName = GetTalk(relicTableData.name);
+                var itemData = itemList.Find(x => x.id == relicId);
+                var relicName = GetTalk(itemData.name);
                 Debug.Log($"{relicName}해제");
                 
                 foreach (var player in players)
@@ -1093,6 +1110,35 @@ public class GameManager : Singleton<GameManager>
         
         return playerInfo.relicList[idx];
     }
+
+    public string GetRelicStat(RelicInfo relicInfo, int idx)
+    {
+        StringBuilder sb = new StringBuilder();
+        switch (relicInfo.statList[idx])
+        {
+            case eItemStat.Power:
+                sb.Append(GetTalk(50101));
+                break;
+                
+            case eItemStat.PowerPercent:
+                sb.Append(GetTalk(50101));
+                break;
+        }
+                
+        if(relicInfo.valueList[idx] > 0)
+            sb.Append($" +{relicInfo.valueList[idx]}");
+        else
+            sb.Append($" -{relicInfo.valueList[idx]}");
+                
+        switch (relicInfo.statList[idx])
+        {
+            case eItemStat.PowerPercent:
+                sb.Append('%');
+                break;
+        }
+
+        return sb.ToString();
+    }
     
     private void InitAtlas(SpriteAtlas spriteAtlas)
     {
@@ -1162,18 +1208,32 @@ public class GameManager : Singleton<GameManager>
             
             skillAttributeList.Add(data);
         }
+        
+        foreach (var item in tableManager.itemTable.Item)
+        {
+            var data = new ItemInfo();
+            data.id = item.id;
+            data.name = item.name;
+            data.explain = item.explain;
+            data.rank = (eItemRank)Enum.Parse(typeof(eItemRank), item.rank);
+            data.type = (eItemType)Enum.Parse(typeof(eItemType), item.type);
+            
+            itemList.Add(data);
+        }
 
         foreach (var relic in tableManager.relicTable.Relic)
         {
             var data = new RelicInfo();
             data.id = relic.id;
-            data.name = relic.name;
-            data.explain = relic.explain;
-            data.rank = (eEquipRank)Enum.Parse(typeof(eEquipRank), relic.rank);
+            
+            var itemData = itemList.Find(x => x.id == relic.id);
+            data.name = itemData.name;
+            data.explain = itemData.explain;
+            data.rank = itemData.rank;
 
             var statSplit = relic.stat.Split(';');
             foreach (var stat in statSplit)
-                data.statList.Add((eEquipStat)Enum.Parse(typeof(eEquipStat), stat));
+                data.statList.Add((eItemStat)Enum.Parse(typeof(eItemStat), stat));
             
             var valueSplit = relic.value.Split(';');
             foreach (var value in valueSplit)

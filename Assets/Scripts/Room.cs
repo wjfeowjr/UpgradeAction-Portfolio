@@ -947,7 +947,7 @@ public class Room : MonoBehaviour
 
     private void GetItem(string id, int count)
     {
-        var itemInfo = new ItemInfo()
+        var itemInfo = new HaveItemInfo()
         {
             id = id,
             count = count,

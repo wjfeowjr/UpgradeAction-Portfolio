@@ -316,6 +316,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string ShortcutCrashExplosion = "ShortcutCrashExplosion";
     
     public const string SpawnedObject = "SpawnedObject";
+    public const string StoreItem = "StoreItem";
     public const string Animations = "Animations";
     public const string Arena = "Arena";
     

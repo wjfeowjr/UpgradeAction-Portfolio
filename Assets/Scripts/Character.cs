@@ -737,11 +737,11 @@ public abstract class Character : InteractionController
                 {
                     switch (relicInfo.statList[i])
                     {
-                        case eEquipStat.Power:
+                        case eItemStat.Power:
                             equipStat.power += relicInfo.valueList[i];
                             break;
 
-                        case eEquipStat.PowerPercent:
+                        case eItemStat.PowerPercent:
                             equipStat.power += Mathf.RoundToInt(originStat.power * (relicInfo.valueList[i] * 0.01f));
                             break;
                     }
