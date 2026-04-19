@@ -137,6 +137,8 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
             staggerGauge.gameObject.SetActive(true);
             staggerGauge.GaugeSetting(character.BasicStat.stagger, character.BasicStat.maxStagger);
         }
+
+        character.ImmuneStagger = false;
         
         SetStaggerText(character);
         if (character.BasicStat.hp <= 0 || character.BasicStat.stagger <= 0)

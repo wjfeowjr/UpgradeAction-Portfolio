@@ -356,7 +356,7 @@ public class Attack : MonoBehaviour
             float critDamage = originDamage * castChar.BasicStat.criticalDamage * 0.01f;
             finalDamage = (int)critDamage;
         }
-
+        
         return finalDamage;
     }
 
@@ -513,21 +513,21 @@ public class Attack : MonoBehaviour
             float randDmg = Random.Range(0.95f, 1.05f);
             damage = (int)(damage * randDmg);
 
+            int finalDamage = hitTarget.FinalDamage(damage);
             // 피해입기
-            hitTarget.TakeDamage(damage, isTrapAttack);
+            hitTarget.TakeDamage(finalDamage, isTrapAttack);
             // 폰트소환
-            hitTarget.SpawnDamageFont(damage, critical, false, false);
-
+            hitTarget.SpawnDamageFont(finalDamage, critical, false, false);
+            
             // 감전 추가피해
             var shockDeBuff = hitTarget.TargetBuff(EBuffType.Shock);
             if (!isTrapAttack && shockDeBuff != null)
             {
-                var additionalDamage = (int)(damage * 0.1f);
-                if (additionalDamage < 1)
-                    additionalDamage = 1;
-                
-                hitTarget.TakeDamage(additionalDamage, false);
-                hitTarget.SpawnDamageFont(additionalDamage, critical, true, false);
+                var additionalDamage = (int)(finalDamage * 0.1f);
+                int finalAdditionalDamage = hitTarget.FinalDamage(additionalDamage);
+
+                hitTarget.TakeDamage(finalAdditionalDamage, false);
+                hitTarget.SpawnDamageFont(finalAdditionalDamage, critical, true, false);
                 // 여기 감전 추가피해 이팩트 넣기
                 hitTarget.SpawnHitEffect(ConstValues.ShockHitEffect);
             }
@@ -574,7 +574,8 @@ public class Attack : MonoBehaviour
             if (!attackInfo.duplicate)
                 IgnoreCol(col);
 
-            hitTarget.TakeStagger(attackInfo.stagger);
+            int finalStagger = (int)(attackInfo.stagger + (attackInfo.stagger * castChar.BasicStat.staggerDamage * 0.01f));
+            hitTarget.TakeStagger(finalStagger);
             if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
             {
                 // 무력화 효과 넣기

@@ -9,6 +9,11 @@ public class StoreItemFrame : ExpansionUiObject
     [SerializeField] private GameObject soldOutObject;
 
     private bool isSoldOut;
+
+    public float VerticalSize()
+    {
+        return GetComponent<RectTransform>().sizeDelta.y;
+    }
     
     public void SetData(StoreItemData storeItemData, bool soldOut)
     {

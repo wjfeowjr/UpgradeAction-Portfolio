@@ -108,6 +108,8 @@ public class BasicStat
     public float attackSpeed;
     public float criticalChance;
     public float criticalDamage;
+    public float staggerDamage;
+    
     public float weight;
     public int stagger;
     public int maxStagger;
@@ -124,6 +126,7 @@ public class EquipStat
     public float attackSpeed;
     public float criticalChance;
     public float criticalDamage;
+    public float staggerDamage;
 }
 
 [Serializable]
@@ -276,7 +279,11 @@ public abstract class Character : InteractionController
         set => immortal = value;
     }
 
-    public bool ImmuneStagger => immuneStagger;
+    public bool ImmuneStagger
+    {
+        get => immuneStagger;
+        set => immuneStagger = value;
+    }
 
     public bool IsDie
     {
@@ -723,6 +730,7 @@ public abstract class Character : InteractionController
         equipStat.attackSpeed = 0; // 1이 기본값. %단위로 적을것
         equipStat.criticalChance = 0;
         equipStat.criticalDamage = 0;
+        equipStat.staggerDamage = 0;
         
         if (GetComponent<Player>())
         {
@@ -741,8 +749,28 @@ public abstract class Character : InteractionController
                             equipStat.power += relicInfo.valueList[i];
                             break;
 
-                        case eItemStat.PowerPercent:
-                            equipStat.power += Mathf.RoundToInt(originStat.power * (relicInfo.valueList[i] * 0.01f));
+                        case eItemStat.Defence:
+                            equipStat.defence += relicInfo.valueList[i];
+                            break;
+                        
+                        case eItemStat.MoveSpeed:
+                            equipStat.moveSpeed += originStat.moveSpeed * (relicInfo.valueList[i] * 0.01f);
+                            break;
+                        
+                        case eItemStat.AttackSpeed:
+                            equipStat.attackSpeed += originStat.attackSpeed * (relicInfo.valueList[i] * 0.01f);
+                            break;
+                        
+                        case eItemStat.CriticalPercent:
+                            equipStat.criticalChance += relicInfo.valueList[i];
+                            break;
+                        
+                        case eItemStat.CriticalDamage:
+                            equipStat.criticalDamage += relicInfo.valueList[i];
+                            break;
+                        
+                        case eItemStat.StaggerDamage:
+                            equipStat.staggerDamage += relicInfo.valueList[i];
                             break;
                     }
                 }
@@ -787,7 +815,8 @@ public abstract class Character : InteractionController
         SetAttackSpeed(1);
         
         basicStat.criticalChance = originStat.criticalChance + equipStat.criticalChance + buffStat.criticalChance;
-        basicStat.criticalDamage = originStat.criticalDamage + equipStat.criticalChance + buffStat.criticalDamage;
+        basicStat.criticalDamage = originStat.criticalDamage + equipStat.criticalDamage + buffStat.criticalDamage;
+        basicStat.staggerDamage = originStat.staggerDamage + equipStat.staggerDamage;
     }
 
     protected void SetAttackSpeed(float skillSpeed)
@@ -1113,6 +1142,14 @@ public abstract class Character : InteractionController
             basicStat.stagger = 0;
     }
 
+    public int FinalDamage(int damage)
+    {
+        damage -= basicStat.defence;
+        if (damage < 1)
+            damage = 1;
+
+        return damage;
+    }
     public virtual void TakeDamage(int damage, bool isTrapAttack)
     {
         if (damage == 0)

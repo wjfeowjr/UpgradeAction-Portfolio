@@ -104,6 +104,11 @@ public class Npc : Character
                 var storeModel = new PopupStoreModel()
                 {
                     commonActions = common,
+                    closeAction = () =>
+                    {
+                        uiBase.ReductionClose(true, true);
+                        SpawnInteractionObject();
+                    }
                 };
                 
                 var storePresenter = new PopupStorePresenter(storeInterface, storeModel);

@@ -178,10 +178,16 @@ public enum eItemRank
     Rare,
 }
 
+[Flags]
 public enum eItemStat
 {
     Power,
-    PowerPercent,
+    Defence,
+    MoveSpeed,
+    AttackSpeed,
+    CriticalPercent,
+    CriticalDamage,
+    StaggerDamage,
 }
 
 [Serializable]
@@ -1120,8 +1126,28 @@ public class GameManager : Singleton<GameManager>
                 sb.Append(GetTalk(50101));
                 break;
                 
-            case eItemStat.PowerPercent:
-                sb.Append(GetTalk(50101));
+            case eItemStat.Defence:
+                sb.Append(GetTalk(50102));
+                break;
+            
+            case eItemStat.MoveSpeed:
+                sb.Append(GetTalk(50103));
+                break;
+            
+            case eItemStat.AttackSpeed:
+                sb.Append(GetTalk(50104));
+                break;
+            
+            case eItemStat.CriticalPercent:
+                sb.Append(GetTalk(50105));
+                break;
+            
+            case eItemStat.CriticalDamage:
+                sb.Append(GetTalk(50106));
+                break;
+            
+            case eItemStat.StaggerDamage:
+                sb.Append(GetTalk(50107));
                 break;
         }
                 
@@ -1132,7 +1158,19 @@ public class GameManager : Singleton<GameManager>
                 
         switch (relicInfo.statList[idx])
         {
-            case eItemStat.PowerPercent:
+            case eItemStat.MoveSpeed:
+                sb.Append('%');
+                break;
+            case eItemStat.AttackSpeed:
+                sb.Append('%');
+                break;
+            case eItemStat.CriticalPercent:
+                sb.Append('%');
+                break;
+            case eItemStat.CriticalDamage:
+                sb.Append('%');
+                break;
+            case eItemStat.StaggerDamage:
                 sb.Append('%');
                 break;
         }

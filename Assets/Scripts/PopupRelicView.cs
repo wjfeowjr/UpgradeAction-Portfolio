@@ -337,12 +337,14 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
     // ── 방향키 처리 ───────────────────────────────────
     private void HandleArrows()
     {
-        bool moved = false;
+        Zone prevZone       = _zone;
+        int  prevGridCursor = _gridCursor;
+        int  prevSlotCursor = _slotCursor;
 
         if (_zone == Zone.Grid || _pendingSlot >= 0)
         {
-            int row = _gridCursor / _gridCols;
-            int col = _gridCursor % _gridCols;
+            int row    = _gridCursor / _gridCols;
+            int col    = _gridCursor % _gridCols;
             int maxIdx = _relicCount - 1;
 
             if (Input.GetKeyDown(KeyCode.RightArrow))
@@ -362,7 +364,6 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
                     int next = row * _gridCols + col + 1;
                     _gridCursor = Mathf.Min(next, maxIdx);
                 }
-                moved = true;
             }
             else if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
@@ -377,19 +378,16 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
                     _gridCursor = row * _gridCols + col - 1;
                     _gridCursor = Mathf.Max(_gridCursor, row * _gridCols); // 행 밖으로 안 나가게
                 }
-                moved = true;
             }
             else if (Input.GetKeyDown(KeyCode.DownArrow))
             {
                 int next = ((row + 1) % _gridRows) * _gridCols + col;
                 _gridCursor = Mathf.Min(next, maxIdx);
-                moved = true;
             }
             else if (Input.GetKeyDown(KeyCode.UpArrow))
             {
                 int next = ((row - 1 + _gridRows) % _gridRows) * _gridCols + col;
                 _gridCursor = Mathf.Min(next, maxIdx);
-                moved = true;
             }
         }
         else // Zone.Slot
@@ -406,7 +404,6 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
                 {
                     _slotCursor++;
                 }
-                moved = true;
             }
             else if (Input.GetKeyDown(KeyCode.LeftArrow))
             {
@@ -421,9 +418,10 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
                 {
                     _slotCursor--;
                 }
-                moved = true;
             }
         }
+
+        bool moved = (_zone != prevZone) || (_gridCursor != prevGridCursor) || (_slotCursor != prevSlotCursor);
 
         if (moved)
         {

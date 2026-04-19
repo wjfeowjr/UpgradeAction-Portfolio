@@ -20,8 +20,8 @@ public class Popup_Store : UIBase
             // 구매 확인 팝업이 열려 있으면 ESC를 SpawnSelect가 처리하도록 넘김
             if (storeView.IsConfirmActive)
                 return;
-
-            ReductionClose(true, true);
+    
+            popupStorePresenter.CloseStore();
         }
     }
 }

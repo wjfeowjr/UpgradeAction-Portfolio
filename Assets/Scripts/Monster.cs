@@ -615,7 +615,7 @@ public class Monster : Character
 
         if (armorBreakOrStagger.Count == 0)
         {
-            immuneStagger = false;
+            //immuneStagger = false;
             basicStat.bodyType = originStat.bodyType;
             basicStat.stagger = basicStat.maxStagger;
             curGlobalCoolTime = 0;
