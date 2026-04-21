@@ -70,7 +70,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [SerializeField] private GameObject explainObject;
     [SerializeField] private GameObject activeObject;
     [SerializeField] private GameObject disActiveObject;
-
+    [SerializeField] private GameObject[] infoObjects;
+    
     [SerializeField] private GameObject buyButton;
     [SerializeField] private GameObject sellButton;
     [SerializeField] private TMP_Text buyText;
@@ -93,7 +94,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     // 현재 스킬에서 사용 가능한 "특성 id"(중복 레벨 행 제거)
     private readonly List<string> attributeIdList = new List<string>();
-    private readonly HashSet<string> attributeIdSet = new HashSet<string>();
 
     private string curPlayerId;
     private string curSkillId;
@@ -286,7 +286,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
         curStep = eStep.AttributeSelect;
         SetAttributeIndex(FindFirstSelectableAttributeIndex(), true);
-        //skillArray[curSkillIndex].SelectObjectActive(false);
         skillArray[curSkillIndex].Reduction();
     }
 
@@ -613,7 +612,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
             attributeList = null;
             attributeIdList.Clear();
-            attributeIdSet.Clear();
             attributeSlotCount = 0;
             if (resetSelection)
                 curAttributeIndex = 0;
@@ -625,7 +623,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         attributeList = GameManager.Instance.skillAttributeCopyList.FindAll(x => x.skill == curSkillId);
         BuildAttributeIdList();
 
-        
         var skill = playerInfo.skillList.Find(x => x.skillId == curSkillId);
 
         for (int i = 0; i < attributeArray.Length; i++)
@@ -644,7 +641,8 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             attributeArray[i].gameObject.SetActive(true);
             string attrId = attributeIdList[i];
             bool isActive = skill.attributeList.Contains(attrId);
-            attributeArray[i].SetData(attrId, isActive);
+            bool isLocked = GameManager.Instance.LockAttributeList.Find(x => x.id == attributeIdList[i]).isLock;
+            attributeArray[i].SetData(attrId, isActive, isLocked);
         }
 
         attributeSlotCount = showCount;
@@ -667,21 +665,18 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private void BuildAttributeIdList()
     {
         attributeIdList.Clear();
-        attributeIdSet.Clear();
 
         if (attributeList == null)
             return;
 
         for (int i = 0; i < attributeList.Count; i++)
         {
-            var row = attributeList[i];
-            if (row == null) continue;
-            if (attributeIdSet.Add(row.id))
-            {
-                attributeIdList.Add(row.id);
-                if (attributeIdList.Count >= attributeArray.Length)
-                    break;
-            }
+            if (attributeList[i] == null)
+                continue;
+            
+            attributeIdList.Add(attributeList[i].id);
+            if (attributeIdList.Count >= attributeArray.Length)
+                break;
         }
     }
 
@@ -690,14 +685,29 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     {
         if (attributeList == null)
             return;
-
+        
+        bool isLocked = GameManager.Instance.LockAttributeList.Find(x => x.id == id).isLock;
+        if (isLocked)
+        {
+            attributeNameText.text =  GameManager.Instance.GetTalk(81000);
+            attributeExplainText.text = GameManager.Instance.GetTalk(91000);
+            
+            foreach (var infoObject in infoObjects)
+                infoObject.SetActive(false);
+            
+            explainObject.SetActive(true);
+            return;
+        }
+        
         // 이름/설명
         SkillAttributeInfo skillAttributeInfo = attributeList.Find(x => x.id == id);
         if (skillAttributeInfo == null)
             return;
         
         attributeNameText.text = GameManager.Instance.GetTalk(skillAttributeInfo.talk);
-
+        foreach (var infoObject in infoObjects)
+            infoObject.SetActive(true);
+        
         if (skillAttributeInfo.upgradeValue.Count > 0 || skillAttributeInfo.buffTime > 0 || skillAttributeInfo.buffValue > 0 || skillAttributeInfo.objectCount > 1)
         {
             List<object> timeAndValue = new List<object>();

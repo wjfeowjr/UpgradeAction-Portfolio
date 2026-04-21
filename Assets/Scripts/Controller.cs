@@ -28,6 +28,9 @@ public class Controller : Singleton<Controller>
 
     private void Update()
     {
+        if(!GameManager.Instance.InGame)
+            return;
+        
         StopControl();
         DirControl();
 

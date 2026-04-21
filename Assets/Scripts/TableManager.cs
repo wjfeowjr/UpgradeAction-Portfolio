@@ -351,6 +351,7 @@ public class SkillAttributeData
     public int buffValue;
     public int talk;
     public int explainTalk;
+    public bool firstLock;
 }
 [Serializable]
 public class SkillAttributeDataList

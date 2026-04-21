@@ -7,13 +7,15 @@ using UnityEngine.Serialization;
 public class AttributeFrame_Attribute : AttributeFrame
 {
     [SerializeField] private GameObject activeObject;
+    [SerializeField] private GameObject iconObject;
+    [SerializeField] private GameObject lockObject;
     
     private Vector2 effectPos;
     public string attributeId;
 
     public Vector2 EffectPos => effectPos;
     
-    public void SetData(string id, bool isActive)
+    public void SetData(string id, bool isActive, bool isLock)
     {
         mainImage.sprite = GameManager.Instance.GetAtlasSprite(id);
         if (isActive)
@@ -23,6 +25,8 @@ public class AttributeFrame_Attribute : AttributeFrame
 
         attributeId = id;
         activeObject.SetActive(isActive);
+        iconObject.SetActive(!isLock);
+        lockObject.SetActive(isLock);
     }
     
     public override void SelectObjectActive(bool active)

@@ -113,8 +113,11 @@ public class RoomManager : Singleton<RoomManager>
         GameManager.Instance.ReduceSkillPlayer();
         
         // 테스트 용도
-        // if (Input.GetKeyDown(KeyCode.F1))
-        //     Guide(40003);
+        // if (Input.GetKeyDown(KeyCode.F3))
+        // {
+        //     GameManager.Instance.UnLockAttributeSlot("HeavySlash");
+        //     GameManager.Instance.UnLockRelicSlot(ConstValues.Berserker);
+        // }
 
         if (GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && !GameManager.Instance.TimeProduct)
         {

@@ -113,6 +113,21 @@ public static class SaveSystem
             Debug.LogError($"[SaveSystem] Delete failed ({fileName}): {e}");
         }
     }
+
+    public static void Copy(string srcFileName, string dstFileName)
+    {
+        try
+        {
+            string srcPath = GetSavePath(srcFileName);
+            string dstPath = GetSavePath(dstFileName);
+            if (File.Exists(srcPath))
+                File.Copy(srcPath, dstPath, overwrite: true);
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[SaveSystem] Copy failed ({srcFileName} → {dstFileName}): {e}");
+        }
+    }
 }
 
 public static class KeyBinding
@@ -170,6 +185,7 @@ public class SkillAttributeInfo
     public int buffValue;
     public int talk;
     public int explainTalk;
+    public bool firstLock;
 }
 
 public enum eItemRank
@@ -361,6 +377,13 @@ public class HaveItemInfo
 }
 
 [Serializable]
+public class AttributeLockInfo
+{
+    public string id;
+    public bool isLock;
+}
+
+[Serializable]
 public class NpcInfo
 {
     public string id;
@@ -410,11 +433,11 @@ public class SaveData
     public List<string> playerList = new List<string>();
     public List<HaveItemInfo> itemList = new List<HaveItemInfo>();
     public List<string> relicList = new List<string>();
+    public List<AttributeLockInfo> lockAttributeList = new List<AttributeLockInfo>();
     
     // 플레이어 개별로 만들기(스킬, 스킬 키, 유물)
     public int totalAttributePoint;
     public List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
-    
     public List<Vector2> miniMapCheckers = new List<Vector2>();
     public List<NpcInfo> npcInfoList = new List<NpcInfo>();
     public List<RoomInfo> roomInfoList = new List<RoomInfo>();
@@ -483,9 +506,9 @@ public class GameManager : Singleton<GameManager>
     private Popup_Warning popupWarning;
     
     // 세이브 넘버
-    private string saveFileName;
-    private int saveIdx;
-    
+    private string curSaveFileName;
+
+    [SerializeField] private bool inGame;
     [SerializeField] private bool controlStart;
     private bool bossProduct;
     private bool timeProduct;
@@ -530,6 +553,12 @@ public class GameManager : Singleton<GameManager>
     public SpeechFrame SpeechFrameStrong => speechFrameStrong;
     public SpeechFrame SpeechFrameTitle => speechFrameTitle;
 
+    public bool InGame 
+    {
+        get => inGame;
+        set => inGame = value;
+    }
+    
     public bool ControlStart 
     {
         get => controlStart;
@@ -589,6 +618,11 @@ public class GameManager : Singleton<GameManager>
         get => saveData.relicList;
     }
 
+    public List<AttributeLockInfo> LockAttributeList
+    {
+        get => saveData.lockAttributeList;
+    }
+
     public List<Vector2> MiniMapCheckers
     {
         get => saveData.miniMapCheckers;
@@ -633,20 +667,13 @@ public class GameManager : Singleton<GameManager>
         base.Awake();
         //QualitySettings.vSyncCount = 0;
         
-        saveFileName = $"{ConstValues.User}_{saveIdx}";
-#if UNITY_EDITOR
-        saveFileName = $"{ConstValues.User}_{saveIdx}_Editor";
-#endif
-        
         Application.targetFrameRate = 60;
         InitManager();
         SetCopyData();
-        GameStart();
         InitAtlas(uiAtlas);
         InitAtlas(bgAtlas);
-        InitPlayer();
-        InitChangeSkill();
         SetPrefabActive(false);
+        DefaultSkillKeySetting();
         FirstCashing();
         CashingSpeechFrame();
     }
@@ -659,25 +686,41 @@ public class GameManager : Singleton<GameManager>
     public void SaveGame()
     {
         // json화
-        SaveSystem.Save(saveFileName, saveData);
+        SaveSystem.Save(curSaveFileName, saveData);
     }
 
-    public void LoadGame()
+    public SaveData LoadGame(string fileName)
     {
+        SaveData data = null;
         // json화
-        if(SaveSystem.TryLoad(saveFileName, out SaveData loadData))
-            saveData = loadData;
+        if(SaveSystem.TryLoad(fileName, out SaveData loadData))
+            data = loadData;
+
+        // saveData = loadData;
+        return data;
     }
     
     public void DeleteData()
     {
         // json화
-        SaveSystem.Delete(saveFileName);
+        SaveSystem.Delete(curSaveFileName);
+    }
+
+    public void CopyData(int srcIdx, int dstIdx)
+    {
+        string srcName = $"{ConstValues.User}_{srcIdx}";
+        string dstName = $"{ConstValues.User}_{dstIdx}";
+#if UNITY_EDITOR
+        srcName = $"{ConstValues.User}_{srcIdx}_Editor";
+        dstName = $"{ConstValues.User}_{dstIdx}_Editor";
+#endif
+        if (!SaveSystem.Exists(srcName))
+            return;
+        SaveSystem.Copy(srcName, dstName);
     }
 
     public void FirstStart()
     {
-        DeleteData();
         DefaultDataSetting();
         DefaultSkillSetting();
         DefaultRelicSetting();
@@ -687,18 +730,46 @@ public class GameManager : Singleton<GameManager>
         SaveGame();
     }
 
-    private void GameStart()
+    public void GameStart()
     {
-        DefaultSkillKeySetting();
+        inGame = true;
+        controlStart = true;
+        GameStartSetting();
+        InitPlayer();
+        InitChangeSkill();
         
-        if (SaveSystem.Exists(saveFileName))
+        // 페이드를 넣을거면 여기 넣기
+        GoScene(ConstValues.BattleScene);
+    }
+
+    public string SaveFileName(int idx)
+    {
+        string fileName = default;
+        
+        fileName = $"{ConstValues.User}_{idx}";
+#if UNITY_EDITOR
+        fileName = $"{ConstValues.User}_{idx}_Editor";
+#endif
+        curSaveFileName = fileName;
+        
+        if (!SaveSystem.Exists(fileName))
+            fileName = default;
+        
+        return fileName;
+    }
+
+    private void GameStartSetting()
+    {
+        if (SaveSystem.Exists(curSaveFileName))
         {
-            LoadGame();
+            saveData = LoadGame(curSaveFileName);
         }
         else
         {
             FirstStart(); 
         }
+        
+        LockAttributeSetting();
         curPlayer = GetPlayer(saveData.playerList[0]);
         
 #if UNITY_EDITOR
@@ -794,6 +865,41 @@ public class GameManager : Singleton<GameManager>
             playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey4));
             saveData.playerInfoList.Add(playerInfo);
         }
+    }
+
+    private void LockAttributeSetting()
+    {
+        if (skillAttributeCopyList.Count > saveData.lockAttributeList.Count)
+        {
+            foreach (var skillAttributeCopy in skillAttributeCopyList)
+            {
+                if (!saveData.lockAttributeList.Exists(x => x.id == skillAttributeCopy.id))
+                {
+                    var attributeLockInfo = new AttributeLockInfo();
+                    attributeLockInfo.id = skillAttributeCopy.id;
+                    attributeLockInfo.isLock = skillAttributeCopy.firstLock;
+                    saveData.lockAttributeList.Add(attributeLockInfo);
+                }
+            }
+        }
+        else
+        {
+            foreach (var skillAttributeCopy in skillAttributeCopyList)
+            {
+                var targetAttribute = saveData.lockAttributeList.Find(x => x.id == skillAttributeCopy.id);
+                if (targetAttribute == null)
+                    continue;
+                
+                if (targetAttribute.isLock && !skillAttributeCopy.firstLock)
+                    targetAttribute.isLock = false;
+            }
+        }
+    }
+
+    public void UnLockAttributeSlot(string attributeId)
+    {
+        var targetAttribute = saveData.lockAttributeList.Find(x => x.id == attributeId);
+        targetAttribute.isLock = false;
     }
 
     public void DefaultSkillKeySetting()
@@ -1178,6 +1284,12 @@ public class GameManager : Singleton<GameManager>
         return sb.ToString();
     }
 
+    public void UnLockRelicSlot(string playerId)
+    {
+        var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
+        playerInfo.relicList.Add(default);
+    }
+
     public void BuyItem(StoreItemData storeItemData)
     {
         var itemData = itemCopyList.Find(x => x.id == storeItemData.id);
@@ -1263,6 +1375,7 @@ public class GameManager : Singleton<GameManager>
             data.buffValue = skillAttribute.buffValue;
             data.talk = skillAttribute.talk;
             data.explainTalk = skillAttribute.explainTalk;
+            data.firstLock = skillAttribute.firstLock;
             
             skillAttributeCopyList.Add(data);
         }
@@ -2219,29 +2332,38 @@ public class GameManager : Singleton<GameManager>
     {
         var attributeData = skillAttributeCopyList.FindAll(x => x.id == attributeId);
 
-        foreach (var playerInfo in saveData.playerInfoList)
+        for (var i = 0; i < saveData.playerInfoList.Count; i++)
         {
+            var playerInfo = saveData.playerInfoList[i];
             var skill = playerInfo.skillList.Find(x => x.skillId == skillId);
-            if (skill != null)
+            if (skill == null)
+                continue;
+
+            var isLock = saveData.lockAttributeList.Find(x => x.id == attributeId).isLock;
+            if (isLock)
             {
-                var targetAttribute = skill.attributeList.Contains(attributeId);
-                if (!targetAttribute)
-                {
-                    if (playerInfo.attributePoint < attributeData[0].cost)
-                    {
-                        SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-                        await SpawnWarningPopup(GameManager.Instance.GetTalk(30202));
-                    }
-                    else
-                    {
-                        skill.attributeList.Add(attributeId);
-                        playerInfo.attributePoint -= attributeData[0].cost;
-                        // 올리는 연출 넣기
-                        SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
-                    }
-                }
-                break;
+                SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
+                await SpawnWarningPopup(GetTalk(30213));
+                return;
             }
+
+            var targetAttribute = skill.attributeList.Contains(attributeId);
+            if (!targetAttribute)
+            {
+                if (playerInfo.attributePoint < attributeData[0].cost)
+                {
+                    SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
+                    await SpawnWarningPopup(GetTalk(30202));
+                }
+                else
+                {
+                    skill.attributeList.Add(attributeId);
+                    playerInfo.attributePoint -= attributeData[0].cost;
+                    // 올리는 연출 넣기
+                    SpawnHighestObject(ConstValues.AttributeUpEffect, effectPos);
+                }
+            }
+            break;
         }
     }
     
