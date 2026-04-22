@@ -416,6 +416,7 @@ public enum eUIType
     Popup_Character,
     Popup_Select,
     Popup_Store,
+    Popup_Pause,
 }
 
 [Serializable]
@@ -497,10 +498,7 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
     
-    //private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
-    //private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
-    //private SpeechFrame speechFrameStrong;
-    //private SpeechFrame speechFrameTitle;
+    [SerializeField] private FadeSystem fadeSystem;
 
     private UI_Interface uiInterface;
     private Popup_Warning popupWarning;
@@ -543,10 +541,7 @@ public class GameManager : Singleton<GameManager>
         set => curPlayer = value;
     }
 
-    //public List<SpeechFrame> SpeechFrame1 => speechFrame1;
-    //public List<SpeechFrame> SpeechFrame2 => speechFrame2;
-    //public SpeechFrame SpeechFrameStrong => speechFrameStrong;
-    //public SpeechFrame SpeechFrameTitle => speechFrameTitle;
+    public FadeSystem FadeSystem => fadeSystem;
 
     public bool InGame 
     {
@@ -723,16 +718,17 @@ public class GameManager : Singleton<GameManager>
         SaveGame();
     }
 
-    public void GameStart()
+    public async void GameStart()
     {
-        inGame = true;
         controlStart = true;
         CreatePlayer();
         GameStartSetting();
         InitPlayer();
         InitChangeSkill();
         
-        // 페이드를 넣을거면 여기 넣기
+        BgmManager.Instance.Stop();
+        SoundManager.Instance.PlaySound(ConstValues.Upgrade, true);
+        await Fading(0, 1, 0.75f, false, ConstValues.BlackColor);
         GoScene(ConstValues.BattleScene);
     }
 
@@ -1736,8 +1732,21 @@ public class GameManager : Singleton<GameManager>
         //
         // var skillExplosion = SpawnToObjectPool(ConstValues.GetSkillExplosion, Vector2.zero);
         // skillExplosion.SetActive(false);
+        
+        if(!fadeSystem)
+            fadeSystem = SpawnToHighestPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
+        fadeSystem.gameObject.SetActive(false);
     }
 
+    public async UniTask Fading(float start, float end, float duration, bool delete, Color color)
+    {
+        fadeCancellation = new CancellationTokenSource();
+        fadeSystem.ColorInput(color);
+        fadeSystem.gameObject.SetActive(true);
+        fadeSystem.SetParameter(start, end, duration, delete);
+        await fadeSystem.Fade();
+    }
+    
     public void PoolDisActive()
     {
         inGame = false;
@@ -1758,8 +1767,8 @@ public class GameManager : Singleton<GameManager>
         foreach (Transform child in popupPool)
             Destroy(child.gameObject);
 
-        foreach (Transform child in highestPool)
-            Destroy(child.gameObject);
+        // foreach (Transform child in highestPool)
+        //     Destroy(child.gameObject);
     }
     
     // private void CashingSpeechFrame()
@@ -2306,11 +2315,6 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-    public FadeSystem fadeUI()
-    {
-        return SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
-    }
-    
     public void PlusAttributePoint(int point)
     {
         saveData.totalAttributePoint += point;

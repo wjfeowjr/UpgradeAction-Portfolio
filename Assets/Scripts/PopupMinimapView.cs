@@ -76,8 +76,6 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
     [SerializeField] private GameObject miniMapObject;
     [SerializeField] private GameObject miniMapLayout;
     [SerializeField] private GameObject[] arrowArray;
-    
-    [SerializeField] private FadeSystem fadeSystem;
 
     private Action closeAction;
 
@@ -115,9 +113,7 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
         miniMapLayout.SetActive(true);
         isClosing = false;
         
-        // 플레이어 위치
-        fadeSystem.SetParameter(1, 0, 0.25f, false);
-        await fadeSystem.Fade();
+        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
     }
     
     public async void CloseAction()
@@ -129,9 +125,7 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
         miniMapObject.SetActive(false);
         miniMapLayout.SetActive(false);
         
-        // 플레이어 위치
-        fadeSystem.SetParameter(1, 0, 0.25f, false);
-        await fadeSystem.Fade();
+        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
         gameObject.SetActive(false);
         Time.timeScale = 1.0f;
         closeAction?.Invoke();

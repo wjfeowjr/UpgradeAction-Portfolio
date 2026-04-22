@@ -10,10 +10,10 @@ public class LateTrace : MonoBehaviour
         if (!target)
             return;
         
-        Test();
+        TraceTarget();
     }
 
-    private void Test()
+    private void TraceTarget()
     {
         var targetPosition = target.position;
         var centerX = RoomManager.Instance.CurrentRoom.SetCenterX();

@@ -20,7 +20,6 @@ public enum EntranceDir
 public class Room : MonoBehaviour
 {
     private bool firstStart;
-    private bool isFading;
     private bool nearBossRoom;
     private int productViewIdx;
     private float dialogDelay1 = 2.5f;
@@ -230,7 +229,6 @@ public class Room : MonoBehaviour
     public async void FirstStart()
     {
         SetBgm(true);
-        isFading = true;
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[0].position;
         SetCameraLimit();
@@ -239,18 +237,18 @@ public class Room : MonoBehaviour
         SetTrap();
         SetSavePoint();
         SetActionGoldObject();
-        await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
+        
+        GameManager.Instance.InitProductCancellation();
+        if(await WaitUntil(() => !GameManager.Instance.FadeSystem.gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
         
         if(!firstStart)
             GameManager.Instance.ControlStart = true;
-        
-        isFading = false;
     }
     // 세이브 포인트가 있을때 적용
     public async void SaveStart()
     {
         SetBgm(true);
-        isFading = true;
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.transform.position = saveObject.SavePointPos.position;
         SetCameraLimit();
@@ -264,10 +262,12 @@ public class Room : MonoBehaviour
         SetSavePoint();
         // 여기서 골드오브젝트 액션 넣기
         SetActionGoldObject();
-
-        await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
+        
+        GameManager.Instance.InitProductCancellation();
+        if(await WaitUntil(() => !GameManager.Instance.FadeSystem.gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
         GameManager.Instance.ControlStart = true;
-        isFading = false;
     }
 
     public void SetGroundVector()
@@ -751,7 +751,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
             return;
         
-        await RoomManager.Instance.FadeOut(ConstValues.BlackColor);
+        await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor);
 
         ObjectActive(false);
         GameManager.Instance.CurPlayer.RoomMoveState();
@@ -770,7 +770,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
             return;
         
-        await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
+        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
         
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
             return;
@@ -784,14 +784,12 @@ public class Room : MonoBehaviour
         targetRoom.PortalSoundActive(true);
         
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
-        isFading = false;
         GameManager.Instance.MovePlayer();
         GameManager.Instance.CurPlayer.ClearLastPlatform();
     }
 
     private async void SettingRoom(int idx, EntranceDir dir, Room pastRoom)
     {
-        isFading = true;
         GameManager.Instance.StopPlayer();
         GameManager.Instance.RoomMoveSetting();
 
@@ -799,7 +797,7 @@ public class Room : MonoBehaviour
         foreach (var monster in monsters)
             monster.CancelMotion();
         
-        await RoomManager.Instance.FadeOut(ConstValues.BlackColor);
+        await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor);
 
         switch (dir)
         {
@@ -847,7 +845,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
             return;
         
-        await RoomManager.Instance.FadeIn(ConstValues.BlackColor);
+        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
 
         switch (dir)
@@ -860,7 +858,6 @@ public class Room : MonoBehaviour
                 await GameManager.Instance.CurPlayer.EntranceJump();
                 break;
         }
-        isFading = false;
         GameManager.Instance.MovePlayer();
         GameManager.Instance.CurPlayer.ClearLastPlatform();
         
@@ -926,8 +923,8 @@ public class Room : MonoBehaviour
             }
         }
     }
-    
-    protected async UniTask WaitUntil(Func<bool> condition, CancellationTokenSource tokenSource)
+
+    private async UniTask WaitUntil(Func<bool> condition, CancellationTokenSource tokenSource)
     {
         await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
     }
@@ -1128,7 +1125,7 @@ public class Room : MonoBehaviour
         portalObject.SoundActive(active);
     }
     
-    private void SetBgm(bool immediately)
+    private async void SetBgm(bool immediately)
     {
         if (isBossRoom)
             return;
@@ -1137,6 +1134,7 @@ public class Room : MonoBehaviour
         if (roomsData == null)
             return;
         
+        await UniTask.WaitUntil(() => GameManager.Instance.InGame && !firstStart);
         PlayBGM(roomsData.bgm, immediately);
     }
 
@@ -1616,8 +1614,9 @@ public class Room : MonoBehaviour
     private async void Product1()
     {
         // 연출 시작 전 세팅
+        GameManager.Instance.InitProductCancellation();
+        
         firstStart = true;
-        StopBGM();
         roomCustomObjects[0].SetActive(false);
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
         
@@ -1625,12 +1624,17 @@ public class Room : MonoBehaviour
         bosses[0].transform.position = bossPos[0].position;
         bosses[0].gameObject.SetActive(true);
         bosses[0].Flip(-1);
-
-        PlayBGM(ConstValues.BGMEpisodeStart, true);
-        await UniTask.WaitUntil(() => !isFading);
         
         // 에피소드 팝업부터 시작
         GameManager.Instance.ControlStart = false;
+        
+        if(await WaitUntil(() => !GameManager.Instance.FadeSystem.gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        StopBGM();
+        PlayBGM(ConstValues.BGMEpisodeStart, true);
+        if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
         
         int titleTalk = TableManager.Instance.productDialogueTable.ProductDialogue.Find(x => x.id == ConstValues.Episode1Title).talk;
         string title = GameManager.Instance.GetTalk(titleTalk);
@@ -1641,7 +1645,6 @@ public class Room : MonoBehaviour
             talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
 
         //await RoomManager.Instance.ProductEpisode(title);
-        GameManager.Instance.InitProductCancellation();
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
 
         var berserkerPos = GameManager.Instance.CurPlayer.SpeechPos.position;

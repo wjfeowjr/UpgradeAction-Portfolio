@@ -24,14 +24,17 @@ public class TitleManager : MonoBehaviour
     private bool _isCopyMode = false;
     private int _copySrcCursor = 0;
 
-    private void Start()
+    private async void Start()
     {
+        Time.timeScale = 1.0f;
         GameManager.Instance.InGame = false;
-        StartBGM();
         if (SceneChanger.Instance)
             SceneChanger.Instance.TitleScene = true;
 
         StartSetting();
+        
+        await GameManager.Instance.Fading(1, 0, 0.5f, true, ConstValues.BlackColor);
+        StartBGM();
     }
 
     private void Update()
@@ -167,7 +170,10 @@ public class TitleManager : MonoBehaviour
         _isSaveSelect = true;
 
         for (int i = 0; i < saveFrames.Length; i++)
+        {
+            saveFrames[i].gameObject.SetActive(true);
             saveFrames[i].SetData(GameManager.Instance.SaveFileName(i + 1), i + 1);
+        }
 
         _cursor = 0;
         RefreshSaveFrameCursors();

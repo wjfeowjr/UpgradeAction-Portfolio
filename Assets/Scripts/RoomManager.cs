@@ -18,12 +18,12 @@ public class RoomManager : Singleton<RoomManager>
     [SerializeField] private SpriteRenderer bgSprite;
     [SerializeField] private GameObject bgDeco;
     [SerializeField] private Room currentRoom;
-    [SerializeField] private FadeSystem fadeUI;
     [SerializeField] private TotalRoom totalRoom;
 
     private UI_Episode uiEpisode;
     private Popup_Minimap popupMinimap;
     private Popup_Character popupCharacter;
+    private Popup_Pause popupPause;
     private CancellationTokenSource dieCancellation;
 
     [SerializeField] private int popupLayer;
@@ -57,20 +57,13 @@ public class RoomManager : Singleton<RoomManager>
         groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
     }
 
-    public void Start()
+    public async void Start()
     {
-        BgmManager.Instance.Play();
-        //GameManager.Instance.AddPlayer(ConstValues.Berserker);
         GameManager.Instance.SpawnGameInterface();
         GameManager.Instance.InitPlayerStat();
         GameManager.Instance.SpawnPlayer(GameManager.Instance.PlayerList[0]);
         GameManager.Instance.RefreshPlayerHp();
         GameManager.Instance.RefreshGoods();
-
-        if (!fadeUI)
-            fadeUI = GameManager.Instance.SpawnToUIPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
-        
-        fadeUI.gameObject.SetActive(false);
 
         foreach (var room in totalRoom.RoomArray)
         {
@@ -107,6 +100,9 @@ public class RoomManager : Singleton<RoomManager>
 
         // 세팅
         GameOverCycle();
+        
+        await GameManager.Instance.Fading(1, 0, 0.75f, true, ConstValues.BlackColor);
+        GameManager.Instance.InGame = true;
     }
     
     protected virtual void Update()
@@ -131,10 +127,7 @@ public class RoomManager : Singleton<RoomManager>
                     SpawnCharacterPopup();
             
                 if (Input.GetKeyDown(KeyCode.Escape))
-                {
-                    GameManager.Instance.PoolDisActive();
-                    GameManager.Instance.GoScene(ConstValues.TitleScene);
-                }
+                    SpawnPausePopup();
             }
         }
     }
@@ -166,37 +159,11 @@ public class RoomManager : Singleton<RoomManager>
         if (downRay.collider != null)
             groundPosY = downRay.point.y;
     }
-    
-    // 페이드 아웃
-    public async UniTask FadeOut(Color settingColor)
-    {
-        fadeUI.ColorInput(settingColor);
-        fadeUI.gameObject.SetActive(true);
-        fadeUI.SetParameter(0, 1, 0.25f, false);
-        await fadeUI.Fade();
-    }
-    
-    // 페이드 인
-    public async UniTask FadeIn(Color settingColor)
-    {
-        fadeUI.ColorInput(settingColor);
-        fadeUI.gameObject.SetActive(true);
-        fadeUI.SetParameter(1, 0, 0.25f, false);
-        await fadeUI.Fade();
-    }
 
     public void SetCameraPos()
     {
         Vector2 playerPos = GameManager.Instance.CurPlayer.CenterPos.position;
         mainCameraFollow.transform.position = new Vector3(playerPos.x, playerPos.y, mainCameraFollow.transform.position.z);
-    }
-
-    // 페이드 루프
-    public async UniTask EntranceFadeLoop()
-    {
-        fadeUI.gameObject.SetActive(true);
-        fadeUI.SetParameter(1, 0, 0.35f, true, 1);
-        await fadeUI.Fade();
     }
 
     protected void SpawnBossMessage(string bossName)
@@ -221,6 +188,51 @@ public class RoomManager : Singleton<RoomManager>
     private void PopupLayerReset()
     {
         popupLayer = 0;
+    }
+
+    private async void ReturnToMenu()
+    {
+        BgmManager.Instance.Stop();
+        SoundManager.Instance.PlaySound(ConstValues.Upgrade, true);
+        await GameManager.Instance.Fading(0, 1, 0.5f, false, ConstValues.BlackColor);
+
+        GameManager.Instance.PoolDisActive();
+        GameManager.Instance.GoScene(ConstValues.TitleScene);
+    }
+
+    private void SpawnPausePopup()
+    {
+        popupPause = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Pause, Vector3.zero).GetComponent<Popup_Pause>();
+        popupPause.ExpansionOpen(true, true);
+
+        var common = new PopupCommonActions
+        {
+            PlayMoveSound   = () => SoundManager.Instance.PlaySound(ConstValues.Jump1,        true),
+            PlaySelectSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true),
+            PlayCancelSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton,  true),
+        };
+
+        var model = new PopupPauseModel
+        {
+            resumeAction  = () =>
+            {
+                popupPause.ReductionClose(true, true);
+                PopupLayerReset();
+            },
+            settingAction = () =>
+            {
+                
+            },
+            returnAction  = ReturnToMenu,
+            commonActions = common,
+        };
+
+        var presenter = new PopupPausePresenter(
+            popupPause.PauseView.ConvertTo<IPopupPauseView>(), model);
+        popupPause.SetPausePresenter(presenter);
+        presenter.SetAction();
+
+        popupLayer = 1;
     }
 
     private void SpawnMinimap()
@@ -375,7 +387,10 @@ public class RoomManager : Singleton<RoomManager>
             {
                 guideMessage = model.guideMessage,
                 imgName = model.imgName,
-                closeAction = () => { uiBase.ReductionClose(true, true); }
+                closeAction = () =>
+                {
+                    uiBase.ReductionClose(true, true);
+                }
             };
             var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
             popupGuide.SetGuidePresenter(guidePresenter);
