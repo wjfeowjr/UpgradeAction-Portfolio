@@ -68,6 +68,7 @@ public class InteractionObject : MonoBehaviour
             myText.color = ConstValues.WhiteColorAlpha0;
         foreach (var mySpriteRenderer in myImages)
             mySpriteRenderer.color = ConstValues.WhiteColorAlpha0;
+        
         transform.localScale = reduceScale;
     }
 

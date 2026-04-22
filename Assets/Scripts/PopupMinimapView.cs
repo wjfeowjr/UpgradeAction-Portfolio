@@ -11,8 +11,7 @@ public interface IPopupMinimapView
     void SetMinimapText(string check, string cancel);
     void LimitAction(bool[] boolArray);
     void OpenAction();
-    void CloseAction();
-    void CheckerAction(Vector2 checkerPos);
+    void SetAction(Action closeAction);
 }
 
 public class PopupMinimapModel
@@ -21,32 +20,33 @@ public class PopupMinimapModel
     public string closeString;
     public Action moveAction;
     public Action checkAction;
+    public Action closeAction;
 }
 
 public class PopupMinimapPresenter
 {
-    private readonly IPopupMinimapView _minimapview;
+    private readonly IPopupMinimapView _view;
     private PopupMinimapModel _model;
 
     public PopupMinimapPresenter(IPopupMinimapView minimapView, PopupMinimapModel model)
     {
-        _minimapview = minimapView;
+        _view = minimapView;
         _model = model;
     }
     
     public void SetMinimapText()
     {
-        _minimapview.SetMinimapText(_model.checkString, _model.closeString);
+        _view.SetMinimapText(_model.checkString, _model.closeString);
     }
 
     public void OpenAction()
     {
-        _minimapview.OpenAction();
+        _view.OpenAction();
     }
 
-    private void CloseAction()
+    public void SetAction()
     {
-        _minimapview.CloseAction();
+        _view.SetAction(_model.closeAction);
     }
 
     public void CheckAction()
@@ -55,12 +55,6 @@ public class PopupMinimapPresenter
             _model.checkAction();
     }
 
-    public void CloseMinimap()
-    {
-        if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
-            CloseAction();
-    }
-    
     public void MoveAction()
     {
         _model.moveAction();
@@ -68,12 +62,7 @@ public class PopupMinimapPresenter
 
     public void LimitAction(bool[] limitArray)
     {
-        _minimapview.LimitAction(limitArray);
-    }
-
-    public void SetCheckerPos(Vector2 checkerPos)
-    {
-        _minimapview.CheckerAction(checkerPos);
+        _view.LimitAction(limitArray);
     }
 }
 
@@ -90,12 +79,25 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
     
     [SerializeField] private FadeSystem fadeSystem;
 
+    private Action closeAction;
+
     private bool isClosing;
+    
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
+            CloseAction();
+    }
 
     public void SetMinimapText(string check, string cancel)
     {
         checkText.text = check;
         cancelText.text = cancel;
+    }
+
+    public void SetAction(Action close)
+    {
+        closeAction = close;
     }
 
     public void LimitAction(bool[] boolArray)
@@ -132,10 +134,6 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
         await fadeSystem.Fade();
         gameObject.SetActive(false);
         Time.timeScale = 1.0f;
-    }
-
-    public void CheckerAction(Vector2 checkerPos)
-    {
-        
+        closeAction?.Invoke();
     }
 }

@@ -353,6 +353,11 @@ public abstract class Character : InteractionController
         UpdateMovingPlatform();
     }
 
+    private void OnDisable()
+    {
+        ClearIgnorePlatform();
+    }
+
     protected virtual void CheckCollisions()
     {
         WallCheck();

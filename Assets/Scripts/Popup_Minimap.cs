@@ -17,7 +17,6 @@ public class Popup_Minimap : UIBase
 
     private void Update()
     {
-        popupMinimapPresenter.CloseMinimap();
         popupMinimapPresenter.MoveAction();
         popupMinimapPresenter.CheckAction();
     }

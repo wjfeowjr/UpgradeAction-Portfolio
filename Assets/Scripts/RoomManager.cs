@@ -26,6 +26,8 @@ public class RoomManager : Singleton<RoomManager>
     private Popup_Character popupCharacter;
     private CancellationTokenSource dieCancellation;
 
+    [SerializeField] private int popupLayer;
+
     // 프로퍼티
     public float GroundPosY
     {
@@ -74,7 +76,6 @@ public class RoomManager : Singleton<RoomManager>
         {
             room.AddRoomData();
             room.AddNpcData();
-            room.SpeechFrameSetting();
             room.EntranceSetting();
             room.InfoSetting();
             room.MonsterPosSetting();
@@ -121,11 +122,20 @@ public class RoomManager : Singleton<RoomManager>
 
         if (GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && !GameManager.Instance.TimeProduct)
         {
-            if ((!popupMinimap || !popupMinimap.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.tabKey))
-                SpawnMinimap();
+            if (popupLayer == 0)
+            {
+                if (Input.GetKeyDown(GameManager.Instance.tabKey))
+                    SpawnMinimap();
 
-            if ((!popupCharacter || !popupCharacter.gameObject.activeSelf) && Input.GetKeyDown(GameManager.Instance.attributeKey) && GameManager.Instance.FirstGetAttribute)
-                SpawnCharacterPopup();
+                if (Input.GetKeyDown(GameManager.Instance.attributeKey) && GameManager.Instance.FirstGetAttribute)
+                    SpawnCharacterPopup();
+            
+                if (Input.GetKeyDown(KeyCode.Escape))
+                {
+                    GameManager.Instance.PoolDisActive();
+                    GameManager.Instance.GoScene(ConstValues.TitleScene);
+                }
+            }
         }
     }
 
@@ -208,6 +218,11 @@ public class RoomManager : Singleton<RoomManager>
         }
     }
 
+    private void PopupLayerReset()
+    {
+        popupLayer = 0;
+    }
+
     private void SpawnMinimap()
     {
         var playerPos = GameManager.Instance.CurPlayer.CenterPos.position;
@@ -228,12 +243,15 @@ public class RoomManager : Singleton<RoomManager>
                 closeString = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
                 moveAction = MinimapCameraMove,
                 checkAction = SpawnCheckMark,
+                closeAction = PopupLayerReset,
             };
             var minimapPresenter = new PopupMinimapPresenter(minimapInterface, minimapModel);
             popupMinimap.SetMinimapPresenter(minimapPresenter);
             popupMinimap.PopupMinimapPresenter.SetMinimapText();
         }
         popupMinimap.PopupMinimapPresenter.OpenAction();
+        popupMinimap.PopupMinimapPresenter.SetAction();
+        popupLayer = 1;
     }
 
     private void SpawnCharacterPopup()
@@ -243,7 +261,8 @@ public class RoomManager : Singleton<RoomManager>
 
         // 메인 팝업에 주입 및 초기화 실행
         popupCharacter.ExpansionOpen(true, true);
-        popupCharacter.InitPresenters(initialPlayerId);
+        popupCharacter.InitPresenters(initialPlayerId, PopupLayerReset);
+        popupLayer = 1;
     }
 
     private void MinimapCameraMove()
@@ -277,10 +296,10 @@ public class RoomManager : Singleton<RoomManager>
     {
         totalRoom.SpawnChecker();
     }
-    
-    protected async void GameOverCycle()
+
+    private async void GameOverCycle()
     {
-        await UniTask.WaitUntil(() => GameManager.Instance.CurPlayer.IsDie);
+        await UniTask.WaitUntil(() => GameManager.Instance.InGame && GameManager.Instance.CurPlayer.IsDie);
         GameManager.Instance.ControlStart = false;
         dieCancellation = new CancellationTokenSource();
         if (await NormalDelay(1.0f, dieCancellation).SuppressCancellationThrow())

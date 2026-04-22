@@ -39,7 +39,7 @@ public class PopupCharacterPresenter
  
 public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
 {
-    private PopupCommonActions _actions;
+    private PopupCommonActions commonActions;
     private string curPlayerId;
  
     [SerializeField] private TMP_Text curPlayerText;
@@ -59,8 +59,11 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
     {
         curPlayerId = playerId;
     }
- 
-    public void SetAction(PopupCommonActions actions) => _actions = actions;
+
+    public void SetAction(PopupCommonActions common)
+    {
+        commonActions = common;
+    }
  
     public void SetPlayerInfo()
     {
@@ -109,14 +112,15 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
  
     private void Update()
     {
-        if (expansionObjects == null || expansionObjects.Length == 0) return;
+        if (expansionObjects == null || expansionObjects.Length == 0)
+            return;
  
         // 위 방향키: 이전 항목 선택 (사이클)
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
             _selectedIndex = (_selectedIndex - 1 + expansionObjects.Length) % expansionObjects.Length;
             RefreshExpansionSelection();
-            _actions?.PlayMoveSound?.Invoke();
+            commonActions?.PlayMoveSound?.Invoke();
         }
  
         // 아래 방향키: 다음 항목 선택 (사이클)
@@ -124,7 +128,7 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
         {
             _selectedIndex = (_selectedIndex + 1) % expansionObjects.Length;
             RefreshExpansionSelection();
-            _actions?.PlayMoveSound?.Invoke();
+            commonActions?.PlayMoveSound?.Invoke();
         }
  
         // 엔터: 현재 선택된 항목의 팝업 상태를 콜백으로 전달
@@ -132,7 +136,7 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
         {
             if (_selectedIndex >= 0 && _selectedIndex < _popupStateOrder.Length)
                 _onStateSelected?.Invoke(_popupStateOrder[_selectedIndex]);
-            _actions?.PlayCancelSound?.Invoke();
+            commonActions?.PlayCancelSound?.Invoke();
         }
     }
  

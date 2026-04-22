@@ -1620,6 +1620,9 @@ public abstract class Player : Character
 
     private void OnTriggerExit2D(Collider2D col)
     {
+        if(!GameManager.Instance.InGame)
+            return;
+        
         // 상호작용
         if (col.CompareTag(ConstValues.Interaction))
         {

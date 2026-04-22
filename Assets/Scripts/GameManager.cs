@@ -492,15 +492,15 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private Transform popupPool;
     [SerializeField] private Transform highestPool;
 
-    [SerializeField] private Player[] players;
+    [SerializeField] private List<Player> players = new List<Player>();
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
     [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
     
-    private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
-    private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
-    private SpeechFrame speechFrameStrong;
-    private SpeechFrame speechFrameTitle;
+    //private List<SpeechFrame> speechFrame1 = new List<SpeechFrame>();
+    //private List<SpeechFrame> speechFrame2 = new List<SpeechFrame>();
+    //private SpeechFrame speechFrameStrong;
+    //private SpeechFrame speechFrameTitle;
 
     private UI_Interface uiInterface;
     private Popup_Warning popupWarning;
@@ -543,15 +543,10 @@ public class GameManager : Singleton<GameManager>
         set => curPlayer = value;
     }
 
-    public Player[] Players
-    {
-        get => players;
-    }
-    
-    public List<SpeechFrame> SpeechFrame1 => speechFrame1;
-    public List<SpeechFrame> SpeechFrame2 => speechFrame2;
-    public SpeechFrame SpeechFrameStrong => speechFrameStrong;
-    public SpeechFrame SpeechFrameTitle => speechFrameTitle;
+    //public List<SpeechFrame> SpeechFrame1 => speechFrame1;
+    //public List<SpeechFrame> SpeechFrame2 => speechFrame2;
+    //public SpeechFrame SpeechFrameStrong => speechFrameStrong;
+    //public SpeechFrame SpeechFrameTitle => speechFrameTitle;
 
     public bool InGame 
     {
@@ -637,8 +632,6 @@ public class GameManager : Singleton<GameManager>
     public List<NpcInfo> NpcInfoInfoList => saveData.npcInfoList;
 
     public SettingSkill ChangeSkill => changeSkill;
-    
-    public Transform ObjectPool => objectPool;
 
     public List<Monster> MonsterList
     {
@@ -675,7 +668,7 @@ public class GameManager : Singleton<GameManager>
         SetPrefabActive(false);
         DefaultSkillKeySetting();
         FirstCashing();
-        CashingSpeechFrame();
+        //CashingSpeechFrame();
     }
 
     private void OnDestroy()
@@ -719,7 +712,7 @@ public class GameManager : Singleton<GameManager>
         SaveSystem.Copy(srcName, dstName);
     }
 
-    public void FirstStart()
+    private void FirstStart()
     {
         DefaultDataSetting();
         DefaultSkillSetting();
@@ -734,6 +727,7 @@ public class GameManager : Singleton<GameManager>
     {
         inGame = true;
         controlStart = true;
+        CreatePlayer();
         GameStartSetting();
         InitPlayer();
         InitChangeSkill();
@@ -758,16 +752,25 @@ public class GameManager : Singleton<GameManager>
         return fileName;
     }
 
+    private void CreatePlayer()
+    {
+        players.Add(SpawnToObjectPool(ConstValues.Berserker, Vector2.zero).GetComponent<Player>());
+        players.Add(SpawnToObjectPool(ConstValues.Gunner, Vector2.zero).GetComponent<Player>());
+        players.Add(SpawnToObjectPool(ConstValues.Fighter, Vector2.zero).GetComponent<Player>());
+        foreach (var player in players)
+        {
+            var playerSplit = player.name.Split('(');
+            player.name = playerSplit[0];
+            player.gameObject.SetActive(false);
+        }
+    }
+
     private void GameStartSetting()
     {
         if (SaveSystem.Exists(curSaveFileName))
-        {
             saveData = LoadGame(curSaveFileName);
-        }
         else
-        {
             FirstStart(); 
-        }
         
         LockAttributeSetting();
         curPlayer = GetPlayer(saveData.playerList[0]);
@@ -1716,44 +1719,68 @@ public class GameManager : Singleton<GameManager>
 
     private void FirstCashing()
     {
-        foreach (var prefab in prefabList)
-        {
-            GameObject go = Instantiate(prefab, objectPool);
-            Destroy(go);
-        }
+        // foreach (var prefab in prefabList)
+        // {
+        //     GameObject go = Instantiate(prefab, objectPool);
+        //     Destroy(go);
+        // }
 
-        for (int i = 0; i < 30; i++)
-        {
-            var font = SpawnToUIObjectPoolInstantiate(ConstValues.TextFont, Vector2.zero);
-            font.SetActive(false);
-        }
+        // for (int i = 0; i < 30; i++)
+        // {
+        //     var font = SpawnToUIObjectPoolInstantiate(ConstValues.TextFont, Vector2.zero);
+        //     font.SetActive(false);
+        // }
+        //
+        // var guide = SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero);
+        // guide.SetActive(false);
+        //
+        // var skillExplosion = SpawnToObjectPool(ConstValues.GetSkillExplosion, Vector2.zero);
+        // skillExplosion.SetActive(false);
+    }
+
+    public void PoolDisActive()
+    {
+        inGame = false;
         
-        var guide = SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero);
-        guide.SetActive(false);
+        players.Clear();
+        objectList.Clear();
+        monsterList.Clear();
         
-        var skillExplosion = SpawnToObjectPool(ConstValues.GetSkillExplosion, Vector2.zero);
-        skillExplosion.SetActive(false);
+        foreach (Transform child in objectPool)
+            Destroy(child.gameObject);
+
+        foreach (Transform child in uiObjectPool)
+            Destroy(child.gameObject);
+
+        foreach (Transform child in uiPool)
+            Destroy(child.gameObject);
+        
+        foreach (Transform child in popupPool)
+            Destroy(child.gameObject);
+
+        foreach (Transform child in highestPool)
+            Destroy(child.gameObject);
     }
     
-    private void CashingSpeechFrame()
-    {
-        int count = 3;
-        for (int i = 0; i < count; i++)
-        {
-            speechFrame1.Add(GetSpeechFrame(ConstValues.SpeechFrame1));
-            speechFrame2.Add(GetSpeechFrame(ConstValues.SpeechFrame2));
-        }
-        for (int i = 0; i < count; i++)
-        {
-            speechFrame1[i].gameObject.SetActive(false);
-            speechFrame2[i].gameObject.SetActive(false); 
-        }
-        speechFrameStrong = GetSpeechFrame(ConstValues.SpeechFrameStrong);
-        speechFrameStrong.gameObject.SetActive(false);
-        
-        speechFrameTitle = GetSpeechFrame(ConstValues.SpeechFrameTitle);
-        speechFrameTitle.gameObject.SetActive(false);
-    }
+    // private void CashingSpeechFrame()
+    // {
+    //     int count = 3;
+    //     for (int i = 0; i < count; i++)
+    //     {
+    //         speechFrame1.Add(GetSpeechFrame(ConstValues.SpeechFrame1));
+    //         speechFrame2.Add(GetSpeechFrame(ConstValues.SpeechFrame2));
+    //     }
+    //     for (int i = 0; i < count; i++)
+    //     {
+    //         speechFrame1[i].gameObject.SetActive(false);
+    //         speechFrame2[i].gameObject.SetActive(false); 
+    //     }
+    //     speechFrameStrong = GetSpeechFrame(ConstValues.SpeechFrameStrong);
+    //     speechFrameStrong.gameObject.SetActive(false);
+    //     
+    //     speechFrameTitle = GetSpeechFrame(ConstValues.SpeechFrameTitle);
+    //     speechFrameTitle.gameObject.SetActive(false);
+    // }
 
     private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)
     {
@@ -2099,17 +2126,15 @@ public class GameManager : Singleton<GameManager>
 
     public SpeechFrame GetSpeechFrame(string frameName)
     {
-        GameObject speechFrame;
+        SpeechFrame speechFrame;
         if(frameName == ConstValues.SpeechFrameTitle)
-            speechFrame = SpawnToHighestPool(frameName, Vector2.zero);
+            speechFrame = SpawnToHighestPool(frameName, Vector2.zero).GetComponent<SpeechFrame>();
         else
-            speechFrame = SpawnToUIObjectPool(frameName, Vector2.zero);
-        
-        var frameClass = speechFrame.GetComponent<SpeechFrame>();
-        
+            speechFrame = SpawnToUIObjectPool(frameName, Vector2.zero).GetComponent<SpeechFrame>();
+
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == frameName);
         if (objectData == null)
-            return frameClass;
+            return speechFrame;
         
         var spawnedObject = speechFrame.GetComponent<SpawnedObject>();
         if (!spawnedObject)
@@ -2125,7 +2150,7 @@ public class GameManager : Singleton<GameManager>
                 speechFrame.AddComponent<Trace>();
         }
         
-        return frameClass;
+        return speechFrame;
     }
 
     public void RoomMoveSetting()
@@ -2611,7 +2636,7 @@ public class GameManager : Singleton<GameManager>
     private Character GetCharacter(string characterId, Npc[] npc)
     {
         Character character = null;
-        foreach (var player in Players)
+        foreach (var player in players)
         {
             if (player.name == characterId)
             {
@@ -2655,11 +2680,11 @@ public class GameManager : Singleton<GameManager>
         
         foreach (var talk in talkList)
         {
-            var speechFrame = speechFrame1[0];
+            var speechFrame = GetSpeechFrame(ConstValues.SpeechFrame1);
             switch (talk.speechFrame)
             {
                 case ConstValues.SpeechFrame2:
-                    speechFrame = speechFrame2[0];
+                    speechFrame = GetSpeechFrame(ConstValues.SpeechFrame2);
                     break;
             }
 
@@ -2733,11 +2758,11 @@ public class GameManager : Singleton<GameManager>
     public async UniTask NpcFirstTalk(string startDialog, Transform speechPos)
     {
         var firstTalk = TableManager.Instance.dialogueTable.Dialogue.Find(x => x.id == startDialog);
-        var speechFrame = speechFrame1[0];
+        var speechFrame = GetSpeechFrame(ConstValues.SpeechFrame1);
         switch (firstTalk.speechFrame)
         {
             case ConstValues.SpeechFrame2:
-                speechFrame = speechFrame2[0];
+                speechFrame = GetSpeechFrame(ConstValues.SpeechFrame2);
                 break;
         }
             

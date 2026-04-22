@@ -45,9 +45,10 @@ public class Popup_Character : UIBase
     private PopupRelicPresenter     _relicPresenter;
 
     private string curPlayerId;
+    private Action closeAction;
     private PopupCommonActions commonActions;
 
-    public void InitPresenters(string initialPlayerId)
+    public void InitPresenters(string initialPlayerId, Action close)
     {
         curPlayerId = initialPlayerId;
         selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
@@ -64,13 +65,14 @@ public class Popup_Character : UIBase
 
         playerInfoList = GameManager.Instance.PlayerInfoList;
 
+        closeAction = close;
+
         var common = new PopupCommonActions
         {
             PlayMoveSound   = () => SoundManager.Instance.PlaySound(ConstValues.Jump1,         true),
             PlaySelectSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton2,  true),
             PlayCancelSound = () => SoundManager.Instance.PlaySound(ConstValues.NormalButton,   true),
         };
-
         commonActions = common;
 
         var charModel = new PopupCharacterModel
@@ -135,6 +137,7 @@ public class Popup_Character : UIBase
         if (popupState == ePopupState.Character && Input.GetKeyDown(KeyCode.Escape))
         {
             ReductionClose(true, true);
+            closeAction?.Invoke();
         }
     }
 
