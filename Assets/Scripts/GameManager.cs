@@ -1731,9 +1731,12 @@ public class GameManager : Singleton<GameManager>
         //
         // var skillExplosion = SpawnToObjectPool(ConstValues.GetSkillExplosion, Vector2.zero);
         // skillExplosion.SetActive(false);
-        
-        if(!fadeSystem)
+
+        if (!fadeSystem)
+        {
             fadeSystem = SpawnToHighestPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
+            fadeSystem.transform.localPosition = Vector3.zero;
+        }
         fadeSystem.gameObject.SetActive(false);
     }
 
