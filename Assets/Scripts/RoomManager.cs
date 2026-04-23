@@ -126,7 +126,7 @@ public class RoomManager : Singleton<RoomManager>
                 if (Input.GetKeyDown(GameManager.Instance.attributeKey) && GameManager.Instance.FirstGetAttribute)
                     SpawnCharacterPopup();
             
-                if (Input.GetKeyDown(KeyCode.Escape))
+                if (Input.GetKeyDown(GameManager.Instance.pauseKey))
                     SpawnPausePopup();
             }
         }
@@ -409,7 +409,7 @@ public class RoomManager : Singleton<RoomManager>
                 guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.tabKey));
                 break;
             case 40001:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
                 break;
             case 40003:
                 guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.attributeKey));

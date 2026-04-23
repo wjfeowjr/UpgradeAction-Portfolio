@@ -44,7 +44,7 @@ public class Elevator_Lever : Lever
 
     public void SetInteractionAction()
     {
-        SetInteractionAction(InteractionAction, GameManager.Instance.GetTalk(30003), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
+        SetInteractionAction(InteractionAction, GameManager.Instance.GetTalk(30003), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
     }
 
     private void InteractionAction()

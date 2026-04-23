@@ -478,8 +478,7 @@ public class GameManager : Singleton<GameManager>
     public KeyCode changeCharacterLeftKey;
     public KeyCode changeCharacterRightKey;
     
-    public KeyCode interactionKey;
-    public KeyCode optionKey;
+    public KeyCode pauseKey;
 
     [SerializeField] private SpriteAtlas uiAtlas;
     [SerializeField] private SpriteAtlas bgAtlas;
@@ -901,7 +900,7 @@ public class GameManager : Singleton<GameManager>
         targetAttribute.isLock = false;
     }
 
-    public void DefaultSkillKeySetting()
+    private void DefaultSkillKeySetting()
     {
         escKey = KeyCode.Escape;
         tabKey = KeyCode.Tab;
@@ -912,22 +911,21 @@ public class GameManager : Singleton<GameManager>
         
         leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
         rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
+        upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
+        downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
+        
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
         jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
-        downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
-        upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
-        
+
         changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
         dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
-        optionKey = KeyBinding.LoadKey(ConstValues.OptionKey, KeyCode.Escape);
-        
         skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.A);
         skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
         skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
-
-        interactionKey = KeyBinding.LoadKey(ConstValues.InteractionKey, KeyCode.UpArrow);
         
+        pauseKey = KeyBinding.LoadKey(ConstValues.OptionKey, KeyCode.Escape);
+
         changeCharacterLeftKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterLeftKey, KeyCode.Q);
         changeCharacterRightKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterRightKey, KeyCode.E);
     }

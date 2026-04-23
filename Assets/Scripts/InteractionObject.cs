@@ -37,7 +37,7 @@ public class InteractionObject : MonoBehaviour
     private void Update()
     {
         if (GameManager.Instance.ControlStart && GameManager.Instance.CurPlayer.NormalState == ENormalState.Idle && !isFading && isExpansion
-            && Input.GetKeyDown(GameManager.Instance.interactionKey))
+            && Input.GetKeyDown(GameManager.Instance.upKey))
         {
             if(interactionAction != null)
                 interactionAction();

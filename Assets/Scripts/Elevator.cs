@@ -46,7 +46,7 @@ public class Elevator : InteractionController
 
     public void SetInteractionAction()
     {
-        SetInteractionAction(Operation, GameManager.Instance.GetTalk(30003), GameManager.Instance.GetKeyCode(GameManager.Instance.interactionKey));
+        SetInteractionAction(Operation, GameManager.Instance.GetTalk(30003), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
     }
 
     public void SetLeverAction()
