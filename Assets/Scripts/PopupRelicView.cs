@@ -347,7 +347,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
             int col    = _gridCursor % _gridCols;
             int maxIdx = _relicCount - 1;
 
-            if (Input.GetKeyDown(KeyCode.RightArrow))
+            if (Input.GetKeyDown(GameManager.Instance.rightKey))
             {
                 // 현재 행에서 실제로 존재하는 마지막 col 계산
                 int rowLastIdx = Mathf.Min(row * _gridCols + (_gridCols - 1), maxIdx);
@@ -365,7 +365,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
                     _gridCursor = Mathf.Min(next, maxIdx);
                 }
             }
-            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            else if (Input.GetKeyDown(GameManager.Instance.leftKey))
             {
                 if (col == 0 && _pendingSlot < 0)
                 {
@@ -379,12 +379,12 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
                     _gridCursor = Mathf.Max(_gridCursor, row * _gridCols); // 행 밖으로 안 나가게
                 }
             }
-            else if (Input.GetKeyDown(KeyCode.DownArrow))
+            else if (Input.GetKeyDown(GameManager.Instance.downKey))
             {
                 int next = ((row + 1) % _gridRows) * _gridCols + col;
                 _gridCursor = Mathf.Min(next, maxIdx);
             }
-            else if (Input.GetKeyDown(KeyCode.UpArrow))
+            else if (Input.GetKeyDown(GameManager.Instance.upKey))
             {
                 int next = ((row - 1 + _gridRows) % _gridRows) * _gridCols + col;
                 _gridCursor = Mathf.Min(next, maxIdx);
@@ -392,7 +392,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
         }
         else // Zone.Slot
         {
-            if (Input.GetKeyDown(KeyCode.RightArrow))
+            if (Input.GetKeyDown(GameManager.Instance.rightKey))
             {
                 if (_slotCursor == _slotCount - 1)
                 {
@@ -405,7 +405,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
                     _slotCursor++;
                 }
             }
-            else if (Input.GetKeyDown(KeyCode.LeftArrow))
+            else if (Input.GetKeyDown(GameManager.Instance.leftKey))
             {
                 if (_slotCursor == 0)
                 {

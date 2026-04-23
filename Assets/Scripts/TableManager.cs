@@ -303,6 +303,7 @@ public class RoomsData
     public string bgSprite;
     public bool bgDeco;
     public string bgm;
+    public string place;
 }
 [Serializable]
 public class RoomsDataList

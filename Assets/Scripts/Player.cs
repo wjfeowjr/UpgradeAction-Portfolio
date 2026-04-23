@@ -961,10 +961,10 @@ public abstract class Player : Character
         var dir = 0;
         
         // 오른쪽
-        if (transform.localScale.x > 0 && Input.GetKey(GameManager.Instance.rightMoveKey))
+        if (transform.localScale.x > 0 && Input.GetKey(GameManager.Instance.rightKey))
             dir = 1;
         // 왼쪽
-        if (transform.localScale.x < 0 && Input.GetKey(GameManager.Instance.leftMoveKey))
+        if (transform.localScale.x < 0 && Input.GetKey(GameManager.Instance.leftKey))
             dir = -1;
         
         if(dir != 0)

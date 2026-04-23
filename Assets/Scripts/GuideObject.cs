@@ -28,8 +28,8 @@ public class GuideObject : MonoBehaviour
         {
             case GuideType.Move:
                 controlText.text = GameManager.Instance.GetTalk(30011);
-                keyTexts[0].text = GameManager.Instance.GetKeyCode(GameManager.Instance.leftMoveKey);
-                keyTexts[1].text = GameManager.Instance.GetKeyCode(GameManager.Instance.rightMoveKey);
+                keyTexts[0].text = GameManager.Instance.GetKeyCode(GameManager.Instance.leftKey);
+                keyTexts[1].text = GameManager.Instance.GetKeyCode(GameManager.Instance.rightKey);
                 break;
             
             case GuideType.Jump:

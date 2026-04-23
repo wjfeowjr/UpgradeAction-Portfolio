@@ -102,9 +102,9 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
         if (_isConfirmActive)
             return;
 
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(GameManager.Instance.upKey))
             HandleArrow(-1);
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKeyDown(GameManager.Instance.downKey))
             HandleArrow(+1);
         if (Input.GetKeyDown(KeyCode.Return))
             HandleEnter();
@@ -305,7 +305,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
             itemNameText.text    = GameManager.Instance.GetTalk(itemInfo.name);
             itemExplainText.text = GameManager.Instance.GetTalk(itemInfo.explain);
 
-            selectText.text = string.Format(GameManager.Instance.GetTalk(30110), GameManager.Instance.GetKeyCode(KeyCode.UpArrow), GameManager.Instance.GetKeyCode(KeyCode.DownArrow));
+            selectText.text = string.Format(GameManager.Instance.GetTalk(30110), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey), GameManager.Instance.GetKeyCode(GameManager.Instance.downKey));
             backText.text   = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(KeyCode.Escape));
         }
 

@@ -89,7 +89,7 @@ public class Popup_Setting : UIBase
     {
         if (Input.GetKeyDown(KeyCode.Escape) && settingState == eSettingState.Setting)
         {
-            Close();
+            ReductionClose(false, false);
             closeAction?.Invoke();
         }
     }

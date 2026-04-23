@@ -41,13 +41,13 @@ public class InteractionSelect : MonoBehaviour
         if(!choiceReady)
             return;
         
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(GameManager.Instance.upKey))
         {
             CurrentIdxPlus();
             SelectChoice(currentIdx);
             SoundManager.Instance.PlaySound(ConstValues.Popup);
         }
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKeyDown(GameManager.Instance.downKey))
         {
             CurrentIdxMinus();
             SelectChoice(currentIdx);

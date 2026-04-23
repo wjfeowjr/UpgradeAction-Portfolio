@@ -76,14 +76,14 @@ public class Controller : Singleton<Controller>
     // 방향 컨트롤(좌,우 동시입력 방지)
     private void DirControl()
     {
-        if (Input.GetKeyDown(GameManager.Instance.leftMoveKey))
+        if (Input.GetKeyDown(GameManager.Instance.leftKey))
         {
             isLeftMove = true;
             if(isRightMove)
                 isRightMove = false;
         }
         
-        if (Input.GetKeyDown(GameManager.Instance.rightMoveKey))
+        if (Input.GetKeyDown(GameManager.Instance.rightKey))
         {
             isRightMove = true;
             if(isLeftMove)
@@ -93,10 +93,10 @@ public class Controller : Singleton<Controller>
 
     private void StopControl()
     {
-        if (Input.GetKeyUp(GameManager.Instance.leftMoveKey))
+        if (Input.GetKeyUp(GameManager.Instance.leftKey))
         {
             isLeftMove = false;
-            if (Input.GetKey(GameManager.Instance.rightMoveKey))
+            if (Input.GetKey(GameManager.Instance.rightKey))
             {
                 if (GameManager.Instance.ControlStart)
                 {
@@ -110,10 +110,10 @@ public class Controller : Singleton<Controller>
             }
         }
 
-        if (Input.GetKeyUp(GameManager.Instance.rightMoveKey))
+        if (Input.GetKeyUp(GameManager.Instance.rightKey))
         {
             isRightMove = false;
-            if (Input.GetKey(GameManager.Instance.leftMoveKey))
+            if (Input.GetKey(GameManager.Instance.leftKey))
             {
                 if (GameManager.Instance.ControlStart)
                 {

@@ -116,7 +116,7 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
             return;
  
         // 위 방향키: 이전 항목 선택 (사이클)
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(GameManager.Instance.upKey))
         {
             _selectedIndex = (_selectedIndex - 1 + expansionObjects.Length) % expansionObjects.Length;
             RefreshExpansionSelection();
@@ -124,7 +124,7 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
         }
  
         // 아래 방향키: 다음 항목 선택 (사이클)
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKeyDown(GameManager.Instance.downKey))
         {
             _selectedIndex = (_selectedIndex + 1) % expansionObjects.Length;
             RefreshExpansionSelection();

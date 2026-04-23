@@ -28,7 +28,34 @@ public class SaveFrame : ExpansionUiObject
         {
             var saveData = GameManager.Instance.LoadGame(fileName);
 
-            placeText.text = "귀신_";
+            if (string.IsNullOrWhiteSpace(saveData.savePoint))
+            {
+                placeText.text = "태양의 언덕_";
+            }
+            else
+            {
+                var roomTableData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == saveData.savePoint);
+                var place = roomTableData.place;
+                switch (place)
+                {
+                    case ConstValues.SunHill:
+                        placeText.text = "태양의 언덕_";
+                        break;
+                    
+                    case ConstValues.BaseCamp:
+                        placeText.text = "베이스 캠프_";
+                        break;
+                    
+                    case ConstValues.Forest:
+                        placeText.text = "위험한 숲_";
+                        break;
+                    
+                    case ConstValues.Mine:
+                        placeText.text = "금광_";
+                        break;
+                }
+            }
+            
             goldText.text = GameManager.Instance.GetThousandCommaText(saveData.gold);
 
             foreach (var characterImage in characterImages)

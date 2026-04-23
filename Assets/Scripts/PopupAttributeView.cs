@@ -138,12 +138,12 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         if (skillCount <= 0)
             return;
 
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(GameManager.Instance.upKey))
         {
             SetSkillIndex(curSkillIndex - 1);
             _actions?.PlayMoveSound?.Invoke();
         }
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        else if (Input.GetKeyDown(GameManager.Instance.downKey))
         {
             SetSkillIndex(curSkillIndex + 1);
             _actions?.PlayMoveSound?.Invoke();
@@ -252,19 +252,19 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         if (attributeSlotCount <= 0)
             return;
 
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        if (Input.GetKeyDown(GameManager.Instance.leftKey))
         {
             MoveAttributeHorizontal(-1);
         }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        else if (Input.GetKeyDown(GameManager.Instance.rightKey))
         {
             MoveAttributeHorizontal(1);
         }
-        else if (Input.GetKeyDown(KeyCode.UpArrow))
+        else if (Input.GetKeyDown(GameManager.Instance.upKey))
         {
             MoveAttributeVertical(-1);
         }
-        else if (Input.GetKeyDown(KeyCode.DownArrow))
+        else if (Input.GetKeyDown(GameManager.Instance.downKey))
         {
             MoveAttributeVertical(1);
         }

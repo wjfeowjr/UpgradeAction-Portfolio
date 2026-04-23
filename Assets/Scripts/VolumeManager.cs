@@ -6,15 +6,22 @@ public class VolumeManager : Singleton<VolumeManager>
 {
     public AudioMixer audioMixer;
 
+    private void Start()
+    {
+        SetMasterVolume(GameManager.Instance.masterVolume);
+        SetSfxVolume(GameManager.Instance.sfxVolume);
+        SetBGMVolume(GameManager.Instance.bgmVolume);
+    }
+
     // private void Update()
     // {
     //     if (Input.GetKeyDown(KeyCode.F1))
     //     {
-    //         SetMasterVolume(0.0001f);
+    //         SetMasterVolume(GameManager.Instance.masterVolume);
     //     }
     //     if (Input.GetKeyDown(KeyCode.F2))
     //     {
-    //         SetMasterVolume(1);
+    //         SetMasterVolume(1.0f);
     //     }
     // }
 
@@ -25,7 +32,7 @@ public class VolumeManager : Singleton<VolumeManager>
     }
     
     // 효과음 볼륨
-    public void SetSFXVolume(float volume)
+    public void SetSfxVolume(float volume)
     {
         audioMixer.SetFloat(ConstValues.SFXVolume, Mathf.Log10(volume) * 20);
     }

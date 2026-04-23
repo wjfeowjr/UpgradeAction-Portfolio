@@ -147,13 +147,36 @@ public static class KeyBinding
             Debug.Log($"저장된 키값 {PlayerPrefs.GetInt(prefKey)}을 불러왔습니다");
             return (KeyCode)PlayerPrefs.GetInt(prefKey);
         }
-        else
+        
+        // 처음 실행 시 디폴트 키를 저장
+        Debug.Log($"최초 키 설정: {prefKey}를 {defaultKey}로 저장");
+        SaveKey(prefKey, defaultKey);
+        return defaultKey;
+    }
+}
+
+public static class VolumeBinding
+{
+    // 저장할 때
+    public static void SaveVolume(string prefKey, float volume)
+    {
+        PlayerPrefs.SetFloat(prefKey, volume);
+        PlayerPrefs.Save();
+    }
+  
+    // 불러올 때 (디폴트 볼륨도 지정 가능)
+    public static float LoadVolume(string prefKey, float defaultVolume)
+    {
+        if (PlayerPrefs.HasKey(prefKey))
         {
-            // 처음 실행 시 디폴트 키를 저장
-            Debug.Log($"최초 키 설정: {prefKey}를 {defaultKey}로 저장");
-            SaveKey(prefKey, defaultKey);
-            return defaultKey;
+            Debug.Log($"저장된 {prefKey}: {PlayerPrefs.GetFloat(prefKey)}");
+            return PlayerPrefs.GetFloat(prefKey);
         }
+        
+        // 처음 실행 시 디폴트 볼륨 저장
+        Debug.Log($"최초 {prefKey} 설정: {defaultVolume}");
+        SaveVolume(prefKey, defaultVolume);
+        return defaultVolume;
     }
 }
 
@@ -451,19 +474,18 @@ public class GameManager : Singleton<GameManager>
     public Material hitMaterial;
     
     public KeyCode escKey;
-    public KeyCode tabKey;
     public KeyCode spaceKey;
-    public KeyCode attributeKey;
     public KeyCode markKey;
     public KeyCode confirmKey;
     
-    public KeyCode leftMoveKey;
-    public KeyCode rightMoveKey;
-
-    public KeyCode attackKey;
-    public KeyCode jumpKey;
+    public KeyCode leftKey;
+    public KeyCode rightKey;
     public KeyCode upKey;
     public KeyCode downKey;
+    public KeyCode miniMapKey;
+    public KeyCode characterInfoKey;
+    public KeyCode attackKey;
+    public KeyCode jumpKey;
 
     public KeyCode changeCharacterKey;
     public KeyCode dashKey;
@@ -480,6 +502,10 @@ public class GameManager : Singleton<GameManager>
     public KeyCode changeCharacterRightKey;
     
     public KeyCode pauseKey;
+
+    [SerializeField] public float masterVolume;
+    [SerializeField] public float sfxVolume;
+    [SerializeField] public float bgmVolume;
 
     [SerializeField] private SpriteAtlas uiAtlas;
     [SerializeField] private SpriteAtlas bgAtlas;
@@ -661,7 +687,7 @@ public class GameManager : Singleton<GameManager>
         InitAtlas(uiAtlas);
         InitAtlas(bgAtlas);
         SetPrefabActive(false);
-        DefaultSkillKeySetting();
+        DefaultKeySetting();
         FirstCashing();
         //CashingSpeechFrame();
     }
@@ -901,19 +927,20 @@ public class GameManager : Singleton<GameManager>
         targetAttribute.isLock = false;
     }
 
-    private void DefaultSkillKeySetting()
+    private void DefaultKeySetting()
     {
         escKey = KeyCode.Escape;
-        tabKey = KeyCode.Tab;
         spaceKey = KeyCode.Space;
-        attributeKey = KeyCode.I;
         markKey = KeyCode.Return;
         confirmKey = KeyCode.Return;
         
-        leftMoveKey = KeyBinding.LoadKey(ConstValues.LeftMoveKey, KeyCode.LeftArrow);
-        rightMoveKey = KeyBinding.LoadKey(ConstValues.RightMoveKey, KeyCode.RightArrow);
+        leftKey = KeyBinding.LoadKey(ConstValues.LeftKey, KeyCode.LeftArrow);
+        rightKey = KeyBinding.LoadKey(ConstValues.RightKey, KeyCode.RightArrow);
         upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
         downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
+        
+        miniMapKey = KeyBinding.LoadKey(ConstValues.MiniMapKey, KeyCode.LeftArrow);
+        characterInfoKey = KeyBinding.LoadKey(ConstValues.CharacterInfoKey, KeyCode.I);
         
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
         jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
@@ -925,12 +952,16 @@ public class GameManager : Singleton<GameManager>
         skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
         
-        pauseKey = KeyBinding.LoadKey(ConstValues.OptionKey, KeyCode.Escape);
+        pauseKey = KeyBinding.LoadKey(ConstValues.PauseKey, KeyCode.Escape);
+
+        masterVolume = VolumeBinding.LoadVolume(ConstValues.MasterVolume, 0.8f);
+        sfxVolume = VolumeBinding.LoadVolume(ConstValues.SFXVolume, 1.0f);
+        bgmVolume = VolumeBinding.LoadVolume(ConstValues.BGMVolume, 1.0f);
 
         changeCharacterLeftKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterLeftKey, KeyCode.Q);
         changeCharacterRightKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterRightKey, KeyCode.E);
     }
-    
+
     private void DefaultRelicSetting()
     {
         foreach (var playerInfo in saveData.playerInfoList)
@@ -1676,9 +1707,9 @@ public class GameManager : Singleton<GameManager>
         var go = SpawnToPool(type.ToString(), popupPool, objTransform);
         return go;
     }
-    public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector, bool isHighest = false)
+    public GameObject SpawnToPopupPool(eUIType type, Vector2 objVector)
     {
-        var go = SpawnToPool(type.ToString(), popupPool, objVector, isHighest);
+        var go = SpawnToPool(type.ToString(), popupPool, objVector, true);
         return go;
     }
     // 최상위 UI오브젝트
@@ -2270,7 +2301,7 @@ public class GameManager : Singleton<GameManager>
 
     public void SpawnSelect(string message, Sprite goodsSprite, int cost, Action yesAction, Action noAction)
     {
-        var uiBase = SpawnToPopupPool(eUIType.Popup_Select, Vector3.zero, true).GetComponent<UIBase>();
+        var uiBase = SpawnToPopupPool(eUIType.Popup_Select, Vector3.zero).GetComponent<UIBase>();
         
         if (uiBase is Popup_Select popupSelect)
         {

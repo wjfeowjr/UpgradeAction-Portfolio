@@ -120,10 +120,10 @@ public class RoomManager : Singleton<RoomManager>
         {
             if (popupLayer == 0)
             {
-                if (Input.GetKeyDown(GameManager.Instance.tabKey))
+                if (Input.GetKeyDown(GameManager.Instance.miniMapKey))
                     SpawnMinimap();
 
-                if (Input.GetKeyDown(GameManager.Instance.attributeKey) && GameManager.Instance.FirstGetAttribute)
+                if (Input.GetKeyDown(GameManager.Instance.characterInfoKey) && GameManager.Instance.FirstGetAttribute)
                     SpawnCharacterPopup();
             
                 if (Input.GetKeyDown(GameManager.Instance.pauseKey))
@@ -288,13 +288,13 @@ public class RoomManager : Singleton<RoomManager>
         float upLimit = 50;
         float downLimit = -50;
         
-        if(Input.GetKey(KeyCode.LeftArrow) && minimapCameraPos.x > leftLimit)
+        if(Input.GetKey(GameManager.Instance.leftKey) && minimapCameraPos.x > leftLimit)
             GameManager.Instance.MiniMapCamera.Translate(Vector2.left * (speed * Time.unscaledDeltaTime));
-        if(Input.GetKey(KeyCode.RightArrow) && minimapCameraPos.x < rightLimit)
+        if(Input.GetKey(GameManager.Instance.rightKey) && minimapCameraPos.x < rightLimit)
             GameManager.Instance.MiniMapCamera.Translate(Vector2.right * (speed * Time.unscaledDeltaTime));
-        if(Input.GetKey(KeyCode.UpArrow) && minimapCameraPos.y < upLimit)
+        if(Input.GetKey(GameManager.Instance.upKey) && minimapCameraPos.y < upLimit)
             GameManager.Instance.MiniMapCamera.Translate(Vector2.up * (speed * Time.unscaledDeltaTime));
-        if(Input.GetKey(KeyCode.DownArrow) && minimapCameraPos.y > downLimit)
+        if(Input.GetKey(GameManager.Instance.downKey) && minimapCameraPos.y > downLimit)
             GameManager.Instance.MiniMapCamera.Translate(Vector2.down * (speed * Time.unscaledDeltaTime));
         
         boolArray[0] = minimapCameraPos.x <= leftLimit;
@@ -411,13 +411,13 @@ public class RoomManager : Singleton<RoomManager>
         switch (idx)
         {
             case 40000:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.tabKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.miniMapKey));
                 break;
             case 40001:
                 guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
                 break;
             case 40003:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.attributeKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
                 break;
             case 40004:
                 guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));

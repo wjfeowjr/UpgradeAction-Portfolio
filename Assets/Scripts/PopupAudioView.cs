@@ -37,7 +37,7 @@ public class PopupAudioPresenter
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupAudioView : MonoBehaviour, IPopupAudioView
 {
-    [SerializeField] private ExpansionUiObject[] buttons;
+    [SerializeField] private VolumeFrame[] buttons;
 
     private PopupAudioPresenter _presenter;
     private PopupCommonActions  _commonActions;
@@ -54,9 +54,9 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
         if (_presenter == null)
             return;
 
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(GameManager.Instance.upKey))
             HandleArrow(-1);
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKeyDown(GameManager.Instance.downKey))
             HandleArrow(+1);
         if (Input.GetKeyDown(KeyCode.Escape))
             _presenter.HandleEsc();

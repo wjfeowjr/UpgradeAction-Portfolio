@@ -54,9 +54,9 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
         if (_presenter == null)
             return;
 
-        if (Input.GetKeyDown(KeyCode.UpArrow))
+        if (Input.GetKeyDown(GameManager.Instance.upKey))
             HandleArrow(-1);
-        if (Input.GetKeyDown(KeyCode.DownArrow))
+        if (Input.GetKeyDown(GameManager.Instance.downKey))
             HandleArrow(+1);
         if (Input.GetKeyDown(KeyCode.Escape))
             _presenter.HandleEsc();

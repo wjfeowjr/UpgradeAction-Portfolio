@@ -6,15 +6,15 @@ public class ExpansionUiObject : TextUiObject
 {
     private Tween selectTween;
     
-    [SerializeField] protected GameObject selectObject;
-    [SerializeField] protected GameObject unSelectObject;
+    [SerializeField] protected GameObject[] selectObjects;
+    [SerializeField] protected GameObject[] unSelectObjects;
 
     public virtual void SelectObjectActive(bool active)
     {
-        if(selectObject)
+        foreach (var selectObject in selectObjects)
             selectObject.SetActive(active);
-        
-        if(unSelectObject)
+
+        foreach (var unSelectObject in unSelectObjects)
             unSelectObject.SetActive(!active);
     }
     

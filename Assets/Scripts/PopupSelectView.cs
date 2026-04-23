@@ -78,7 +78,7 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
 
     private void Update()
     {
-        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        if (Input.GetKeyDown(GameManager.Instance.leftKey))
         {
             // 왼쪽이동
             if (isYes)
@@ -87,7 +87,7 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
             Yes();
             popupCommonActions?.PlayMoveSound.Invoke();
         }
-        else if (Input.GetKeyDown(KeyCode.RightArrow))
+        else if (Input.GetKeyDown(GameManager.Instance.rightKey))
         {
             // 오른쪽이동
             if (!isYes)

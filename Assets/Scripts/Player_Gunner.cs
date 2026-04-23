@@ -806,7 +806,7 @@ public class Player_Gunner : Player
             SpawnObject(ConstValues.GunnerFlash, centerPos);
             Scream();
             var selectObject = SpawnObject(ConstValues.GunnerElementalInfusionSelect, elementalInfusionPos).GetComponent<Gunner_ElementalInfusionSelect>();
-            selectObject.SetText(GameManager.Instance.GetKeyCode(GameManager.Instance.leftMoveKey), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey), GameManager.Instance.GetKeyCode(GameManager.Instance.rightMoveKey));
+            selectObject.SetText(GameManager.Instance.GetKeyCode(GameManager.Instance.leftKey), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey), GameManager.Instance.GetKeyCode(GameManager.Instance.rightKey));
             
             bool isChoice = false;
             string elemental = default;
@@ -814,7 +814,7 @@ public class Player_Gunner : Player
             float timer = 0;
             while (!isChoice && timer < limitTime)
             {
-                if (Input.GetKeyDown(GameManager.Instance.leftMoveKey))
+                if (Input.GetKeyDown(GameManager.Instance.leftKey))
                 {
                     isChoice = true;
                     elemental = ConstValues.Ice;
@@ -824,7 +824,7 @@ public class Player_Gunner : Player
                     isChoice = true;
                     elemental = ConstValues.Lightning;
                 }
-                if (Input.GetKeyDown(GameManager.Instance.rightMoveKey))
+                if (Input.GetKeyDown(GameManager.Instance.rightKey))
                 {
                     isChoice = true;
                     elemental = ConstValues.Fire;

@@ -44,9 +44,9 @@ public class TitleManager : MonoBehaviour
 
         if (_isSaveSelect)
         {
-            if (Input.GetKeyDown(KeyCode.LeftArrow))
+            if (Input.GetKeyDown(GameManager.Instance.leftKey))
                 HandleArrow(-1);
-            if (Input.GetKeyDown(KeyCode.RightArrow))
+            if (Input.GetKeyDown(GameManager.Instance.rightKey))
                 HandleArrow(+1);
             if (Input.GetKeyDown(KeyCode.X) && !_isCopyMode)
                 HandleDelete();
@@ -55,9 +55,9 @@ public class TitleManager : MonoBehaviour
         }
         else
         {
-            if (Input.GetKeyDown(KeyCode.UpArrow))
+            if (Input.GetKeyDown(GameManager.Instance.upKey))
                 HandleArrow(-1);
-            if (Input.GetKeyDown(KeyCode.DownArrow))
+            if (Input.GetKeyDown(GameManager.Instance.downKey))
                 HandleArrow(+1);
         }
         if (Input.GetKeyDown(KeyCode.Return))
@@ -173,7 +173,6 @@ public class TitleManager : MonoBehaviour
         popup.InitPresenters(() =>
         {
             _isConfirmActive = false;
-            SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
         });
     }
 

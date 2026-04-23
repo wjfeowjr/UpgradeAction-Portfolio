@@ -46,12 +46,14 @@ public class ConstValues : Singleton<ConstValues>
     public const string All = "All";
     public const string Shift = "Shift";
     
-    public const string LeftMoveKey = "LeftMoveKey";
-    public const string RightMoveKey = "RightMoveKey";
-    public const string AttackKey = "AttackKey";
-    public const string JumpKey = "JumpKey";
+    public const string LeftKey = "LeftKey";
+    public const string RightKey = "RightKey";
     public const string UpKey = "UpKey";
     public const string DownKey = "DownKey";
+    public const string MiniMapKey = "MiniMapKey";
+    public const string CharacterInfoKey = "CharacterInfoKey";
+    public const string AttackKey = "AttackKey";
+    public const string JumpKey = "JumpKey";
     public const string DashKey = "DashKey";
     public const string SkillKey1 = "SkillKey1";
     public const string SkillKey2 = "SkillKey2";
@@ -61,9 +63,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string SkillKey6 = "SkillKey6";
     public const string SkillKey7 = "SkillKey7";
     public const string SkillKey8 = "SkillKey8";
-
-    public const string InteractionKey = "InteractionKey";
-    public const string OptionKey = "OptionKey";
+    
+    public const string PauseKey = "PauseKey";
 
     public const string ChangeCharacterLeftKey = "ChangeCharacterLeftKey";
     public const string ChangeCharacterRightKey = "ChangeCharacterRightKey";
@@ -536,6 +537,12 @@ public class ConstValues : Singleton<ConstValues>
     public const string BGMEpisode2Battle = "BGM_Episode2Battle";
     public const string BGMArena = "BGM_Arena";
     public const string BGMBoss = "BGM_Boss";
+    
+    // 지역
+    public const string SunHill = "SunHill";
+    public const string BaseCamp = "BaseCamp";
+    public const string Forest = "Forest";
+    public const string Mine = "Mine";
     
     // 사운드
     public const string Laugh = "Laugh";
