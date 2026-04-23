@@ -57,6 +57,11 @@ public class UIComboView : MonoBehaviour, IUIComboView
     public event Action OnComboEnd;
     [SerializeField] private TMP_Text comboText;
 
+    private void OnDisable()
+    {
+        comboCancellation?.Cancel();
+    }
+
     // 딜레이
     private async UniTask ComboDelay(float second)
     {

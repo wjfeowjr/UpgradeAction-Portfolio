@@ -68,6 +68,11 @@ public class ConstValues : Singleton<ConstValues>
     public const string ChangeCharacterLeftKey = "ChangeCharacterLeftKey";
     public const string ChangeCharacterRightKey = "ChangeCharacterRightKey";
     
+    // 볼륨 믹서 이름
+    public const string MasterVolume = "MasterVolume";
+    public const string SFXVolume = "SFXVolume";
+    public const string BGMVolume = "BGMVolume";
+    
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";
     public const string SkillImage = "SkillImage";

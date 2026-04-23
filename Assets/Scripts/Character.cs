@@ -1527,6 +1527,9 @@ public abstract class Character : InteractionController
 
     protected async void ClearObjectList(List<GameObject> list, float timer = 0.0f)
     {
+        if(!GameManager.Instance.InGame)
+            return;
+        
         if (timer > 0)
             await UniTask.WaitForSeconds(timer);
 

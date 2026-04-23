@@ -417,6 +417,7 @@ public enum eUIType
     Popup_Select,
     Popup_Store,
     Popup_Pause,
+    Popup_Setting,
 }
 
 [Serializable]

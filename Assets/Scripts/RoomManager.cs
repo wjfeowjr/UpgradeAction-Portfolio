@@ -390,13 +390,18 @@ public class RoomManager : Singleton<RoomManager>
                 closeAction = () =>
                 {
                     uiBase.ReductionClose(true, true);
+                    PopupLayerReset();
                 }
             };
             var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
             popupGuide.SetGuidePresenter(guidePresenter);
-            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true, true); });
+            guidePresenter.Expansion(() =>
+            {
+                uiBase.ExpansionOpen(true, true);
+            });
             guidePresenter.SetModel();
             guidePresenter.SetAction(guideModel.closeAction);
+            popupLayer = 1;
         }
     }
     public void Guide(int idx)

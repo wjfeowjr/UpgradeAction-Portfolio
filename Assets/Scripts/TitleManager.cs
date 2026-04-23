@@ -92,7 +92,7 @@ public class TitleManager : MonoBehaviour
                 for (int i = 0; i < saveFrames.Length; i++)
                     saveFrames[i].SetData(GameManager.Instance.SaveFileName(i + 1), i + 1);
                 RefreshSaveFrameCursors();
-                SoundManager.Instance.PlaySound(ConstValues.NormalButton);
+                SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
                 return;
             }
             GameManager.Instance.SaveFileName(_cursor + 1);
@@ -102,8 +102,10 @@ public class TitleManager : MonoBehaviour
 
         if (_cursor == 0)
             OpenSaveSelect();
+        if (_cursor == 1)
+            OpenSettingPopup();
 
-        SoundManager.Instance.PlaySound(ConstValues.NormalButton);
+        SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
     }
 
     private void HandleDelete()
@@ -159,8 +161,20 @@ public class TitleManager : MonoBehaviour
 
         _isCopyMode = true;
         _copySrcCursor = _cursor;
-        SoundManager.Instance.PlaySound(ConstValues.NormalButton);
+        SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
         RefreshSaveFrameCursors();
+    }
+
+    private void OpenSettingPopup()
+    {
+        _isConfirmActive = true;
+        var popup = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Setting, Vector3.zero).GetComponent<Popup_Setting>();
+        popup.ExpansionOpen(false, false);
+        popup.InitPresenters(() =>
+        {
+            _isConfirmActive = false;
+            SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
+        });
     }
 
     private void OpenSaveSelect()
@@ -204,7 +218,7 @@ public class TitleManager : MonoBehaviour
             if (isSelected)
             {
                 saveFrames[i].SelectObjectActive(true);
-                saveFrames[i].Expansion(1.1f);
+                saveFrames[i].Expansion(1.05f);
             }
             else
             {

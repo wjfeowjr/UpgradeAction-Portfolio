@@ -24,12 +24,11 @@ public enum EFontType
 
 public class TextFont : MonoBehaviour
 {
-    private CancellationToken myCancellationToken;
+    private CancellationTokenSource delayCancellation;
     private TextMeshProUGUI myText;
     private Tween expansionTween;
     private Tween fadeTween;
     private Tween moveTween;
-    private TimeSpan upSecondTime;
     private string textValue;
 
     private EFontType fontType;
@@ -46,14 +45,17 @@ public class TextFont : MonoBehaviour
     private void Awake()
     {
         myText = GetComponent<TextMeshProUGUI>();
-        myCancellationToken = this.GetCancellationTokenOnDestroy();
-        upSecondTime = TimeSpan.FromSeconds(upSecond);
     }
 
     private void OnEnable()
     {
         transform.SetAsLastSibling();
         FontProduction();
+    }
+
+    private void OnDisable()
+    {
+        delayCancellation?.Cancel();
     }
 
     // 폰트 보여주기(단위, 사이즈, 값, 타입)
@@ -100,7 +102,9 @@ public class TextFont : MonoBehaviour
     // 폰트 연출
     private async void FontProduction()
     {
-        await UniTask.Yield(cancellationToken: myCancellationToken);
+        delayCancellation = new CancellationTokenSource();
+        if (await YieldDelay(delayCancellation).SuppressCancellationThrow())
+            return;
         
         Vector2 startVector = transform.position;
         Vector2 secondVector = new Vector2(startVector.x, startVector.y + arrivePosY - 0.1f);
@@ -121,15 +125,34 @@ public class TextFont : MonoBehaviour
         else
             moveTween.Restart();
         
-        await UniTask.Delay(upSecondTime, cancellationToken: myCancellationToken);
+        if(await NormalDelay(upSecond, delayCancellation).SuppressCancellationThrow())
+            return;
+        //await UniTask.Delay(upSecondTime, cancellationToken: delayCancellation);
 
         transform.DOScale(startScale, stopSecond);
         transform.DOMove(secondVector, stopSecond);
-        await UniTask.Delay(TimeSpan.FromSeconds(stopSecond), cancellationToken: myCancellationToken);
-        await UniTask.Delay(TimeSpan.FromSeconds(delay), cancellationToken: myCancellationToken);
+        if(await NormalDelay(stopSecond, delayCancellation).SuppressCancellationThrow())
+            return;
+        
+        if(await NormalDelay(delay, delayCancellation).SuppressCancellationThrow())
+            return;
+        
         myText.DOFade(0, fadeSecond);
         transform.DOMove(startVector, downSecond);
-        await UniTask.Delay(TimeSpan.FromSeconds(downSecond), cancellationToken: myCancellationToken);
+        if(await NormalDelay(downSecond, delayCancellation).SuppressCancellationThrow())
+            return;
+        
         gameObject.SetActive(false);
+    }
+    
+    // 1프레임 딜레이
+    private async UniTask YieldDelay(CancellationTokenSource tokenSource)
+    {
+        await UniTask.Yield(cancellationToken: tokenSource.Token);
+    }
+    // 일반 딜레이
+    private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
 }
