@@ -48,6 +48,7 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
     private void OnEnable()
     {
         RefreshCursors();
+        SetTextGameFrames();
     }
 
     private void Update()
@@ -61,6 +62,16 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
             HandleArrow(+1);
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             HandleEnter();
+    }
+    
+    private void SetTextGameFrames()
+    {
+        if (settingButtons.Length > 0)
+            settingButtons[0].SetText(GameManager.Instance.GetTalk(30053));
+        if (settingButtons.Length > 1)
+            settingButtons[1].SetText(GameManager.Instance.GetTalk(30054));
+        if (settingButtons.Length > 2)
+            settingButtons[2].SetText(GameManager.Instance.GetTalk(30055));
     }
 
     private void HandleArrow(int dir)

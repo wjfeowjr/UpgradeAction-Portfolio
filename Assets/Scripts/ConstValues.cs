@@ -74,6 +74,14 @@ public class ConstValues : Singleton<ConstValues>
     public const string SFXVolume = "SFXVolume";
     public const string BGMVolume = "BGMVolume";
     
+    // 설정
+    public const string Language = "Language";
+    public const string CameraShaking = "CameraShaking";
+    
+    // 언어
+    public const string Korean = "Korean";
+    public const string English = "English";
+    
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";
     public const string SkillImage = "SkillImage";

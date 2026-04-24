@@ -30,7 +30,7 @@ public class ExpansionUiObject : TextUiObject
         selectTween = transform.DOScale(1.0f, 0.2f).SetEase(Ease.OutQuad).SetUpdate(true);
     }
     
-    protected void OnDisable()
+    protected virtual void OnDisable()
     {
         selectTween?.Kill(false);
         selectTween = null;

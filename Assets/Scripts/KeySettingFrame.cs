@@ -15,46 +15,46 @@ public class KeySettingFrame : ExpansionUiObject
         switch (actionKey)
         {
             case ConstValues.LeftKey:
-                SetText("왼쪽_");
+                SetText(GameManager.Instance.GetTalk(30035));
                 break;
             case ConstValues.RightKey:
-                SetText("오른쪽_");
+                SetText(GameManager.Instance.GetTalk(30036));
                 break;
             case ConstValues.UpKey:
-                SetText("위쪽_");
+                SetText(GameManager.Instance.GetTalk(30037));
                 break;
             case ConstValues.DownKey:
-                SetText("아래쪽_");
+                SetText(GameManager.Instance.GetTalk(30038));
                 break;
             case ConstValues.MiniMapKey:
-                SetText("지도_");
+                SetText(GameManager.Instance.GetTalk(30039));
                 break;
             case ConstValues.CharacterInfoKey:
-                SetText("캐릭터 정보_");
+                SetText(GameManager.Instance.GetTalk(30040));
                 break;
             case ConstValues.AttackKey:
-                SetText("공격_");
+                SetText(GameManager.Instance.GetTalk(30041));
                 break;
             case ConstValues.JumpKey:
-                SetText("점프_");
+                SetText(GameManager.Instance.GetTalk(30042));
                 break;
             case ConstValues.DashKey:
-                SetText("대시_");
+                SetText(GameManager.Instance.GetTalk(30043));
                 break;
             case ConstValues.ChangeCharacterKey:
-                SetText("캐릭터 교체_");
+                SetText(GameManager.Instance.GetTalk(30044));
                 break;
             case ConstValues.SkillKey1:
-                SetText("스킬1_");
+                SetText(GameManager.Instance.GetTalk(30045));
                 break;
             case ConstValues.SkillKey2:
-                SetText("스킬2_");
+                SetText(GameManager.Instance.GetTalk(30046));
                 break;
             case ConstValues.SkillKey3:
-                SetText("스킬3_");
+                SetText(GameManager.Instance.GetTalk(30047));
                 break;
             case ConstValues.SkillKey4:
-                SetText("스킬4_");
+                SetText(GameManager.Instance.GetTalk(30048));
                 break;
         }
         keyText.text = GameManager.Instance.GetKeyCode(actionKeyCode);

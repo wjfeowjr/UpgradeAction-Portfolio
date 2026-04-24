@@ -25,21 +25,24 @@ public class VolumeManager : Singleton<VolumeManager>
     //     }
     // }
 
+    private float ToDecibel(float volume) =>
+        volume > 0f ? Mathf.Log10(volume) * 20f : -80f;
+
     // 마스터 볼륨
     public void SetMasterVolume(float volume)
     {
-        audioMixer.SetFloat(ConstValues.MasterVolume, Mathf.Log10(volume) * 20);
+        audioMixer.SetFloat(ConstValues.MasterVolume, ToDecibel(volume));
     }
-    
+
     // 효과음 볼륨
     public void SetSfxVolume(float volume)
     {
-        audioMixer.SetFloat(ConstValues.SFXVolume, Mathf.Log10(volume) * 20);
+        audioMixer.SetFloat(ConstValues.SFXVolume, ToDecibel(volume));
     }
 
     // 배경음악 볼륨
     public void SetBGMVolume(float volume)
     {
-        audioMixer.SetFloat(ConstValues.BGMVolume, Mathf.Log10(volume) * 20);
+        audioMixer.SetFloat(ConstValues.BGMVolume, ToDecibel(volume));
     }
 }

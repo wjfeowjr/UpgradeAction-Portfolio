@@ -18,11 +18,11 @@ public class SaveFrame : ExpansionUiObject
         var isNewGame = string.IsNullOrWhiteSpace(fileName);
         newGameObject.SetActive(isNewGame);
         saveGameObject.SetActive(!isNewGame);
-        numText.text = $"세이브{idx}_";
+        numText.text = string.Format(GameManager.Instance.GetTalk(30051), idx);
         
         if (isNewGame)
         {
-            newGameText.text = "새 게임_";
+            newGameText.text = GameManager.Instance.GetTalk(30052);
         }
         else
         {
@@ -30,7 +30,7 @@ public class SaveFrame : ExpansionUiObject
 
             if (string.IsNullOrWhiteSpace(saveData.savePoint))
             {
-                placeText.text = "태양의 언덕_";
+                placeText.text = GameManager.Instance.GetTalk(130000);
             }
             else
             {
@@ -39,19 +39,19 @@ public class SaveFrame : ExpansionUiObject
                 switch (place)
                 {
                     case ConstValues.SunHill:
-                        placeText.text = "태양의 언덕_";
+                        placeText.text = GameManager.Instance.GetTalk(130000);
                         break;
                     
                     case ConstValues.BaseCamp:
-                        placeText.text = "베이스 캠프_";
+                        placeText.text = GameManager.Instance.GetTalk(130001);
                         break;
                     
                     case ConstValues.Forest:
-                        placeText.text = "위험한 숲_";
+                        placeText.text = GameManager.Instance.GetTalk(130002);
                         break;
                     
                     case ConstValues.Mine:
-                        placeText.text = "금광_";
+                        placeText.text = GameManager.Instance.GetTalk(130003);
                         break;
                 }
             }

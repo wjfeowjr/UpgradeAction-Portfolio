@@ -14,29 +14,66 @@ public enum eSettingState
 public class Popup_Setting : UIBase
 {
     [SerializeField] private TMP_Text settingText;
-
+    [SerializeField] private TMP_Text selectText;
+    [SerializeField] private TMP_Text backText;
+    
     [SerializeField] private PopupSettingView  settingView;
     [SerializeField] private PopupGameView     gameView;
     [SerializeField] private PopupAudioView    audioView;
     [SerializeField] private PopupKeyboardView keyboardView;
 
-    private Action        closeAction;
+    private Action languageChangeAction;
+    private Action closeAction;
     private eSettingState settingState;
 
-    public void SetState(eSettingState state)
+    private void OnEnable()
+    {
+        LanguageChange();
+    }
+
+    private void LanguageChange()
+    {
+        SetSettingText();
+        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
+        backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
+    }
+
+    private void SetSettingText()
+    {
+        switch (settingState)
+        {
+            case eSettingState.Setting:
+                settingText.text = GameManager.Instance.GetTalk(30026);
+                break;
+            
+            case eSettingState.Game:
+                settingText.text = GameManager.Instance.GetTalk(30053);
+                break;
+            
+            case eSettingState.Audio:
+                settingText.text = GameManager.Instance.GetTalk(30054);
+                break;
+            
+            case eSettingState.Keyboard:
+                settingText.text = GameManager.Instance.GetTalk(30055);
+                break;
+        }
+    }
+
+    private void SetState(eSettingState state)
     {
         settingState = state;
         settingView.gameObject.SetActive(state == eSettingState.Setting);
         gameView.gameObject.SetActive(state == eSettingState.Game);
         audioView.gameObject.SetActive(state == eSettingState.Audio);
         keyboardView.gameObject.SetActive(state == eSettingState.Keyboard);
+        SetSettingText();
     }
 
-    public void InitPresenters(Action close)
+    public void InitPresenters(Action close, Action languageChange)
     {
+        languageChangeAction = languageChange;
         closeAction = close;
-        settingText.text = "설정_";
-
         SetState(eSettingState.Setting);
 
         var common = new PopupCommonActions
@@ -49,6 +86,11 @@ public class Popup_Setting : UIBase
         // GameView
         var gameModel = new PopupGameModel
         {
+            languageChangeAction = () =>
+            {
+                languageChangeAction?.Invoke();
+                LanguageChange();
+            },
             closeAction   = () => SetState(eSettingState.Setting),
             commonActions = common,
         };
@@ -85,11 +127,11 @@ public class Popup_Setting : UIBase
         settingPresenter.SetAction();
     }
 
-    private void Update()
+    private async void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape) && settingState == eSettingState.Setting)
         {
-            ReductionClose(false, false);
+            await ReductionClose(false, false);
             closeAction?.Invoke();
         }
     }

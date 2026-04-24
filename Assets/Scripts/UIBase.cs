@@ -36,7 +36,7 @@ public class UIBase : MonoBehaviour
         if(controlStop)
             GameManager.Instance.ControlStart = false;
     }
-    public async void ReductionClose(bool timeReset, bool controlStart)
+    public async UniTask ReductionClose(bool timeReset, bool controlStart)
     {
         PlaySound(ConstValues.NormalButton2, true);
         var endVector = Vector3.zero;

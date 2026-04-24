@@ -44,9 +44,9 @@ public class InteractionObject : MonoBehaviour
         }
     }
 
-    public void SetText(string name, string key)
+    public void SetText(string text, string key)
     {
-        myTexts[0].text = name;
+        myTexts[0].text = text;
         myTexts[1].text = key;
     }
 

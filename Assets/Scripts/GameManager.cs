@@ -180,6 +180,56 @@ public static class VolumeBinding
     }
 }
 
+public static class SettingStringBinding
+{
+    // 저장할 때
+    public static void SaveSetting(string prefKey, string value)
+    {
+        PlayerPrefs.SetString(prefKey, value);
+        PlayerPrefs.Save();
+    }
+  
+    // 불러올 때 (디폴트 설정값도 지정 가능)
+    public static string LoadSetting(string prefKey, string defaultValue)
+    {
+        if (PlayerPrefs.HasKey(prefKey))
+        {
+            Debug.Log($"저장된 {prefKey}: {PlayerPrefs.GetString(prefKey)}");
+            return PlayerPrefs.GetString(prefKey);
+        }
+        
+        // 처음 실행 시 디폴트 설정 저장
+        Debug.Log($"최초 {prefKey} 설정: {defaultValue}");
+        SaveSetting(prefKey, defaultValue);
+        return defaultValue;
+    }
+}
+
+public static class SettingIntBinding
+{
+    // 저장할 때
+    public static void SaveSetting(string prefKey, int value)
+    {
+        PlayerPrefs.SetInt(prefKey, value);
+        PlayerPrefs.Save();
+    }
+  
+    // 불러올 때 (디폴트 설정값도 지정 가능)
+    public static int LoadSetting(string prefKey, int defaultValue)
+    {
+        if (PlayerPrefs.HasKey(prefKey))
+        {
+            Debug.Log($"저장된 {prefKey}: {PlayerPrefs.GetInt(prefKey)}");
+            return PlayerPrefs.GetInt(prefKey);
+        }
+        
+        // 처음 실행 시 디폴트 설정 저장
+        Debug.Log($"최초 {prefKey} 설정: {defaultValue}");
+        SaveSetting(prefKey, defaultValue);
+        return defaultValue;
+    }
+}
+
 [Serializable]
 public class Skill
 {
@@ -477,6 +527,8 @@ public class GameManager : Singleton<GameManager>
     public KeyCode spaceKey;
     public KeyCode markKey;
     public KeyCode confirmKey;
+    public KeyCode deleteKey;
+    public KeyCode copyKey;
     
     public KeyCode leftKey;
     public KeyCode rightKey;
@@ -503,10 +555,13 @@ public class GameManager : Singleton<GameManager>
     
     public KeyCode pauseKey;
 
-    [SerializeField] public float masterVolume;
-    [SerializeField] public float sfxVolume;
-    [SerializeField] public float bgmVolume;
+    public float masterVolume;
+    public float sfxVolume;
+    public float bgmVolume;
 
+    public string language;
+    public int cameraShaking;
+   
     [SerializeField] private SpriteAtlas uiAtlas;
     [SerializeField] private SpriteAtlas bgAtlas;
     private Sprite[] cloneSprites;
@@ -819,12 +874,25 @@ public class GameManager : Singleton<GameManager>
 
     public string GetTalk(int idx)
     {
-        return TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).kr;
+        string talk = default;
+        switch (language)
+        {
+            case ConstValues.Korean:
+                talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).kr;
+                break;
+            
+            case ConstValues.English:
+                talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).en;
+                break;
+        }
+        
+        return talk;
     }
     public string GetItemTalk(string id)
     {
         int itemName = TableManager.Instance.itemTable.Item.Find(x => x.id == id).name;
-        return TableManager.Instance.talkTable.Talk.Find(x => x.idx == itemName).kr;
+
+        return GetTalk(itemName);
     }
     
     public string GetKeyCode(KeyCode keycode)
@@ -933,13 +1001,15 @@ public class GameManager : Singleton<GameManager>
         spaceKey = KeyCode.Space;
         markKey = KeyCode.Return;
         confirmKey = KeyCode.Return;
+        deleteKey = KeyCode.X;
+        copyKey = KeyCode.C;
         
         leftKey = KeyBinding.LoadKey(ConstValues.LeftKey, KeyCode.LeftArrow);
         rightKey = KeyBinding.LoadKey(ConstValues.RightKey, KeyCode.RightArrow);
         upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
         downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
         
-        miniMapKey = KeyBinding.LoadKey(ConstValues.MiniMapKey, KeyCode.LeftArrow);
+        miniMapKey = KeyBinding.LoadKey(ConstValues.MiniMapKey, KeyCode.Tab);
         characterInfoKey = KeyBinding.LoadKey(ConstValues.CharacterInfoKey, KeyCode.I);
         
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
@@ -957,6 +1027,9 @@ public class GameManager : Singleton<GameManager>
         masterVolume = VolumeBinding.LoadVolume(ConstValues.MasterVolume, 0.8f);
         sfxVolume = VolumeBinding.LoadVolume(ConstValues.SFXVolume, 1.0f);
         bgmVolume = VolumeBinding.LoadVolume(ConstValues.BGMVolume, 1.0f);
+
+        language = SettingStringBinding.LoadSetting(ConstValues.Language, Application.systemLanguage.ToString());
+        cameraShaking = SettingIntBinding.LoadSetting(ConstValues.CameraShaking, 1);
 
         changeCharacterLeftKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterLeftKey, KeyCode.Q);
         changeCharacterRightKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterRightKey, KeyCode.E);

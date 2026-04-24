@@ -114,7 +114,7 @@ public class Popup_Character : UIBase
         characterView.InitExpansionSelection(OnExpansionStateSelected);
     }
 
-    private void Update()
+    private async void Update()
     {
         // Relic 상태가 아닐 때만 Q/E로 캐릭터 변경 처리
         // (Relic 상태의 Q/E는 PopupRelicView에서 직접 처리)
@@ -136,7 +136,7 @@ public class Popup_Character : UIBase
 
         if (popupState == ePopupState.Character && Input.GetKeyDown(KeyCode.Escape))
         {
-            ReductionClose(true, true);
+            await ReductionClose(true, true);
             closeAction?.Invoke();
         }
     }

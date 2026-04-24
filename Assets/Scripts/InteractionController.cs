@@ -43,8 +43,8 @@ public class InteractionController : MonoBehaviour
         if (interactionObject == null)
         {
             interactionObject = SpawnInteraction(ConstValues.InteractionUI, objectPos).GetComponent<InteractionObject>();
-            interactionObject.SetInteractionAction(action);
             interactionObject.SetText(text, key);
+            interactionObject.SetInteractionAction(action);
             interactionObject.gameObject.SetActive(false);
         }
     }

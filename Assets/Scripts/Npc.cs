@@ -106,7 +106,7 @@ public class Npc : Character
                     commonActions = common,
                     closeAction = () =>
                     {
-                        uiBase.ReductionClose(true, true);
+                        uiBase.ReductionClose(true, true).Forget();
                         SpawnInteractionObject();
                     }
                 };

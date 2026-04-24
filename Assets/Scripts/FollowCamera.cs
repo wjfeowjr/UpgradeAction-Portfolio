@@ -113,6 +113,9 @@ public class FollowCamera : MonoBehaviour
 
     public void Shake(float amountX, float amountY, float time)
     {
+        if (GameManager.Instance.cameraShaking == 0)
+            return;
+        
         if (shakeTime > 0 && (shakeAmountX >= amountX || shakeAmountY >= amountY))
             return;
         

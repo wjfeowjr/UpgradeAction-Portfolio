@@ -126,7 +126,7 @@ public class RoomManager : Singleton<RoomManager>
                 if (Input.GetKeyDown(GameManager.Instance.characterInfoKey) && GameManager.Instance.FirstGetAttribute)
                     SpawnCharacterPopup();
             
-                if (Input.GetKeyDown(GameManager.Instance.pauseKey))
+                if (Input.GetKeyUp(GameManager.Instance.pauseKey))
                     SpawnPausePopup();
             }
         }
@@ -185,21 +185,6 @@ public class RoomManager : Singleton<RoomManager>
         }
     }
 
-    private void PopupLayerReset()
-    {
-        popupLayer = 0;
-    }
-
-    private async void ReturnToMenu()
-    {
-        BgmManager.Instance.Stop();
-        SoundManager.Instance.PlaySound(ConstValues.Upgrade, true);
-        await GameManager.Instance.Fading(0, 1, 0.5f, false, ConstValues.BlackColor);
-
-        GameManager.Instance.PoolDisActive();
-        GameManager.Instance.GoScene(ConstValues.TitleScene);
-    }
-
     private void SpawnPausePopup()
     {
         popupPause = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Pause, Vector3.zero).GetComponent<Popup_Pause>();
@@ -214,25 +199,56 @@ public class RoomManager : Singleton<RoomManager>
 
         var model = new PopupPauseModel
         {
-            resumeAction  = () =>
-            {
-                popupPause.ReductionClose(true, true);
-                PopupLayerReset();
-            },
-            settingAction = () =>
-            {
-                
-            },
+            resumeAction  = PopupLayerReset,
+            settingAction = OpenSettingPopup,
             returnAction  = ReturnToMenu,
             commonActions = common,
         };
 
-        var presenter = new PopupPausePresenter(
-            popupPause.PauseView.ConvertTo<IPopupPauseView>(), model);
+        var presenter = new PopupPausePresenter(popupPause.PauseView.ConvertTo<IPopupPauseView>(), model);
         popupPause.SetPausePresenter(presenter);
         presenter.SetAction();
 
+        PopupLayerOn();
+    }
+    
+    private void PopupLayerReset()
+    {
+        popupLayer = 0;
+    }
+    
+    private void PopupLayerOn()
+    {
         popupLayer = 1;
+    }
+    
+    private void OpenSettingPopup()
+    {
+        popupPause.PausePresenter.SetSettingOpen(true);
+        var popup = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Setting, Vector3.zero).GetComponent<Popup_Setting>();
+        popup.ExpansionOpen(false, false);
+        popup.InitPresenters(
+            () =>
+            {
+                popupPause.PausePresenter.SetSettingOpen(false); 
+                popupPause.PausePresenter.SetButtonText();
+            },
+            LanguageSetting);
+    }
+
+    private async void ReturnToMenu()
+    {
+        BgmManager.Instance.Stop();
+        SoundManager.Instance.PlaySound(ConstValues.Upgrade, true);
+        await GameManager.Instance.Fading(0, 1, 0.5f, false, ConstValues.BlackColor);
+
+        GameManager.Instance.PoolDisActive();
+        GameManager.Instance.GoScene(ConstValues.TitleScene);
+    }
+
+    private void LanguageSetting()
+    {
+        
     }
 
     private void SpawnMinimap()
@@ -240,30 +256,25 @@ public class RoomManager : Singleton<RoomManager>
         var playerPos = GameManager.Instance.CurPlayer.CenterPos.position;
         var minimapCameraPos = GameManager.Instance.MiniMapCamera.transform.position;
         GameManager.Instance.MiniMapCamera.transform.position = new Vector3(playerPos.x, playerPos.y, minimapCameraPos.z);
-        if (popupMinimap)
-        {
-            popupMinimap.gameObject.SetActive(true);
-        }
-        else
-        {
-            popupMinimap = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Minimap, Vector3.zero).GetComponent<Popup_Minimap>();
         
-            var minimapInterface = popupMinimap.MinimapView.ConvertTo<IPopupMinimapView>();
-            var minimapModel = new PopupMinimapModel()
-            {
-                checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(GameManager.Instance.markKey)),
-                closeString = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
-                moveAction = MinimapCameraMove,
-                checkAction = SpawnCheckMark,
-                closeAction = PopupLayerReset,
-            };
-            var minimapPresenter = new PopupMinimapPresenter(minimapInterface, minimapModel);
-            popupMinimap.SetMinimapPresenter(minimapPresenter);
-            popupMinimap.PopupMinimapPresenter.SetMinimapText();
-        }
+        popupMinimap = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Minimap, Vector3.zero).GetComponent<Popup_Minimap>();
+        
+        var minimapInterface = popupMinimap.MinimapView.ConvertTo<IPopupMinimapView>();
+        var minimapModel = new PopupMinimapModel()
+        {
+            checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(GameManager.Instance.markKey)),
+            closeString = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
+            moveAction = MinimapCameraMove,
+            checkAction = SpawnCheckMark,
+            closeAction = PopupLayerReset,
+        };
+        var minimapPresenter = new PopupMinimapPresenter(minimapInterface, minimapModel);
+        popupMinimap.SetMinimapPresenter(minimapPresenter);
+        popupMinimap.PopupMinimapPresenter.SetMinimapText();
+        
         popupMinimap.PopupMinimapPresenter.OpenAction();
         popupMinimap.PopupMinimapPresenter.SetAction();
-        popupLayer = 1;
+        PopupLayerOn();
     }
 
     private void SpawnCharacterPopup()
@@ -274,7 +285,7 @@ public class RoomManager : Singleton<RoomManager>
         // 메인 팝업에 주입 및 초기화 실행
         popupCharacter.ExpansionOpen(true, true);
         popupCharacter.InitPresenters(initialPlayerId, PopupLayerReset);
-        popupLayer = 1;
+        PopupLayerOn();
     }
 
     private void MinimapCameraMove()
@@ -401,7 +412,7 @@ public class RoomManager : Singleton<RoomManager>
             });
             guidePresenter.SetModel();
             guidePresenter.SetAction(guideModel.closeAction);
-            popupLayer = 1;
+            PopupLayerOn();
         }
     }
     public void Guide(int idx)

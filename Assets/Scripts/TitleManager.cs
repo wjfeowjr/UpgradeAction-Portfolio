@@ -9,7 +9,11 @@ using UnityEngine.UI;
 public class TitleManager : MonoBehaviour
 {
     [SerializeField] private TMP_Text titleText;
-
+    [SerializeField] private TMP_Text selectText;
+    [SerializeField] private TMP_Text backText;
+    [SerializeField] private TMP_Text deleteText;
+    [SerializeField] private TMP_Text copyText;
+    
     [SerializeField] private GameObject titleObject;
     [SerializeField] private GameObject saveSelectObject;
     
@@ -115,7 +119,7 @@ public class TitleManager : MonoBehaviour
 
         _isConfirmActive = true;
         GameManager.Instance.SpawnSelect(
-            "선택된 세이브 데이터를 삭제하시겠습니까?_",
+            GameManager.Instance.GetTalk(41002),
             null,
             0,
             yesAction: () =>
@@ -170,10 +174,7 @@ public class TitleManager : MonoBehaviour
         _isConfirmActive = true;
         var popup = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Setting, Vector3.zero).GetComponent<Popup_Setting>();
         popup.ExpansionOpen(false, false);
-        popup.InitPresenters(() =>
-        {
-            _isConfirmActive = false;
-        });
+        popup.InitPresenters(() => { _isConfirmActive = false; }, LanguageSetting);
     }
 
     private void OpenSaveSelect()
@@ -229,13 +230,22 @@ public class TitleManager : MonoBehaviour
 
     private void StartSetting()
     {
-        titleText.text = "망할 모험_";
-        titleButtons[0].SetText("게임 시작_");
-        titleButtons[1].SetText("설정_");
-        titleButtons[2].SetText("게임 종료_");
-
+        LanguageSetting();
         _cursor = 0;
         RefreshCursors();
+    }
+
+    private void LanguageSetting()
+    {
+        titleText.text = GameManager.Instance.GetTalk(10000);
+        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
+        backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
+        deleteText.text = string.Format(GameManager.Instance.GetTalk(30111), GameManager.Instance.GetKeyCode(GameManager.Instance.deleteKey));
+        copyText.text = string.Format(GameManager.Instance.GetTalk(30112), GameManager.Instance.GetKeyCode(GameManager.Instance.copyKey));
+
+        titleButtons[0].SetText(GameManager.Instance.GetTalk(30025));
+        titleButtons[1].SetText(GameManager.Instance.GetTalk(30026));
+        titleButtons[2].SetText(GameManager.Instance.GetTalk(30027));
     }
 
     private void StartBGM()

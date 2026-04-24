@@ -405,6 +405,7 @@ public class TalkData
 {
     public int idx;
     public string kr;
+    public string en;
 }
 [Serializable]
 public class TalkDataList

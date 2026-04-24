@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 // ── Model ────────────────────────────────────────────────────────────────────
@@ -14,6 +15,8 @@ public class PopupPauseModel
 public interface IPopupPauseView
 {
     void SetAction(PopupPausePresenter presenter, PopupCommonActions commonActions);
+    void SetSettingOpen(bool isOpen);
+    void SetButtonText();
 }
 
 // ── Presenter ─────────────────────────────────────────────────────────────────
@@ -33,10 +36,19 @@ public class PopupPausePresenter
         _view.SetAction(this, _model.commonActions);
     }
 
-    public void ResumeAction()  => _model.resumeAction?.Invoke();
-    public void SettingAction() => _model.settingAction?.Invoke();
-    public void ReturnAction()  => _model.returnAction?.Invoke();
-    public void HandleEsc()     => _model.resumeAction?.Invoke();
+    public void ResumeAction()
+    {
+        _model.resumeAction?.Invoke();
+    }
+    public void SettingAction()          => _model.settingAction?.Invoke();
+    public void ReturnAction()           => _model.returnAction?.Invoke();
+
+    public void HandleEsc()
+    {
+        _model.resumeAction?.Invoke();
+    }
+    public void SetSettingOpen(bool isOpen) => _view.SetSettingOpen(isOpen);
+    public void SetButtonText() => _view.SetButtonText();
 }
 
 // ── View ──────────────────────────────────────────────────────────────────────
@@ -46,16 +58,19 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
 
     private PopupPausePresenter _presenter;
     private PopupCommonActions  _commonActions;
-    private int _cursor = 0;
-    private bool _isExecuted = false;
+    private int  _cursor      = 0;
+    
+    [SerializeField] private bool _isSettingOpen = false;
     
     [SerializeField] private ExpansionUiObject resumeButton;
     [SerializeField] private ExpansionUiObject settingButton;
     [SerializeField] private ExpansionUiObject returnButton;
+
+    public bool _IsSettingOpen => _isSettingOpen;
     
     private void Update()
     {
-        if (_presenter == null || _isExecuted)
+        if (_presenter == null || _isSettingOpen)
             return;
 
         if (Input.GetKeyDown(GameManager.Instance.upKey))
@@ -64,8 +79,6 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
             HandleArrow(+1);
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
             HandleEnter();
-        if (Input.GetKeyDown(KeyCode.Escape))
-            _presenter.HandleEsc();
     }
 
     private void HandleArrow(int dir)
@@ -102,30 +115,37 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
         switch (_cursor)
         {
             case 0:
-                _isExecuted = true;
                 _presenter.ResumeAction();
                 break;
             case 1:
                 _presenter.SettingAction();
                 break;
             case 2:
-                _isExecuted = true;
                 _presenter.ReturnAction();
                 break;
         }
     }
 
     // IPopupPauseView
+    public void SetSettingOpen(bool isOpen)
+    {
+        _isSettingOpen = isOpen;
+    }
+
+    public void SetButtonText()
+    {
+        resumeButton.SetText(GameManager.Instance.GetTalk(30049));
+        settingButton.SetText(GameManager.Instance.GetTalk(30026));
+        returnButton.SetText(GameManager.Instance.GetTalk(30050));
+    }
+
     public void SetAction(PopupPausePresenter presenter, PopupCommonActions commonActions)
     {
         _presenter     = presenter;
         _commonActions = commonActions;
         _cursor        = 0;
 
-        resumeButton.SetText("계속_");
-        settingButton.SetText("설정_");
-        returnButton.SetText("종료하고 메뉴로 이동_");
-
+        SetButtonText();
         RefreshCursors();
     }
 }
