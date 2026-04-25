@@ -32,7 +32,7 @@ public class LockDoor : InteractionController
     
     public void SetInteractionAction()
     {
-        SetInteractionAction(OpenAction, GameManager.Instance.GetTalk(30001), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+        SetInteractionAction(OpenAction, 30001, GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
     }
 
     // 문 열기 연출

@@ -126,7 +126,7 @@ public class RoomManager : Singleton<RoomManager>
                 if (Input.GetKeyDown(GameManager.Instance.characterInfoKey) && GameManager.Instance.FirstGetAttribute)
                     SpawnCharacterPopup();
             
-                if (Input.GetKeyUp(GameManager.Instance.pauseKey))
+                if (Input.GetKeyDown(GameManager.Instance.pauseKey))
                     SpawnPausePopup();
             }
         }
@@ -199,7 +199,7 @@ public class RoomManager : Singleton<RoomManager>
 
         var model = new PopupPauseModel
         {
-            resumeAction  = PopupLayerReset,
+            resumeAction  = ResumeAction,
             settingAction = OpenSettingPopup,
             returnAction  = ReturnToMenu,
             commonActions = common,
@@ -211,7 +211,13 @@ public class RoomManager : Singleton<RoomManager>
 
         PopupLayerOn();
     }
-    
+
+    private async void ResumeAction()
+    {
+        await popupPause.ReductionClose(true, true);
+        PopupLayerReset();
+    }
+
     private void PopupLayerReset()
     {
         popupLayer = 0;
@@ -248,7 +254,8 @@ public class RoomManager : Singleton<RoomManager>
 
     private void LanguageSetting()
     {
-        
+        foreach (var room in totalRoom.RoomArray)
+            room.RefreshTalk();
     }
 
     private void SpawnMinimap()

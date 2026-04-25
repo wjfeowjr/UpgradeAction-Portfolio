@@ -12,6 +12,7 @@ public class InteractionController : MonoBehaviour
     private InteractionSelect interactionSelect;
 
     protected bool isPlayerTouch;
+    private int talkIdx;
 
     public InteractionObject InteractionObject => interactionObject;
 
@@ -38,15 +39,25 @@ public class InteractionController : MonoBehaviour
         interactionObject.gameObject.SetActive(active);
     }
     
-    protected void SetInteractionAction(Action action, string text, string key)
+    protected void SetInteractionAction(Action action, int idx, string key)
     {
-        if (interactionObject == null)
+        talkIdx = idx;
+        if (!interactionObject)
         {
             interactionObject = SpawnInteraction(ConstValues.InteractionUI, objectPos).GetComponent<InteractionObject>();
-            interactionObject.SetText(text, key);
+            interactionObject.SetTalkText(talkIdx);
+            interactionObject.SetKeyText(key);
             interactionObject.SetInteractionAction(action);
             interactionObject.gameObject.SetActive(false);
         }
+    }
+
+    public virtual void RefreshTalkText()
+    {
+        if(interactionObject)
+            interactionObject.SetTalkText(talkIdx);
+        if (interactionSelect)
+            interactionSelect.RefreshTalk();
     }
     
     private GameObject SpawnInteraction(string id, Transform pos)
@@ -98,15 +109,15 @@ public class InteractionController : MonoBehaviour
         {
             interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, selectPos).GetComponent<InteractionSelect>();
             
-            List<string> choiceList = new List<string>();
+            List<int> choiceIdxList = new List<int>();
             foreach (var select in selectList)
-                choiceList.Add(GameManager.Instance.GetTalk(select.talk));
+                choiceIdxList.Add(select.talk);
             
             List<string> idList = new List<string>();
             foreach (var select in selectList)
                 idList.Add(select.id);
             
-            interactionSelect.StartSetting(choiceList, idList);
+            interactionSelect.StartSetting(choiceIdxList, idList);
             interactionSelect.gameObject.SetActive(false);
         }
     }

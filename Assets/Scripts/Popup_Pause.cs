@@ -13,14 +13,13 @@ public class Popup_Pause : UIBase
         pausePresenter = presenter;
     }
     
-    private async void Update()
+    private void Update()
     {
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (pauseView._IsSettingOpen)
                 return;
             
-            await ReductionClose(true, true);
             pausePresenter.HandleEsc();
         }
     }

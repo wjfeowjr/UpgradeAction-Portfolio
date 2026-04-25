@@ -18,9 +18,9 @@ public class InteractionSelect : MonoBehaviour
 
     private bool choiceReady;
     private int currentIdx;
-    private int selectCount;
+    private List<int> talkIdxList = new List<int>();
     private List<string> choiceIdList = new List<string>();
-    
+
     private Tween[] expansionTween;
     private Action<string> interactionAction;
     private Action closeAction;
@@ -84,14 +84,14 @@ public class InteractionSelect : MonoBehaviour
     private void CurrentIdxPlus()
     {
         currentIdx++;
-        if (currentIdx > selectCount - 1)
+        if (currentIdx > talkIdxList.Count - 1)
             currentIdx = 0;
     }
     private void CurrentIdxMinus()
     {
         currentIdx--;
         if (currentIdx < 0)
-            currentIdx = selectCount - 1;
+            currentIdx = talkIdxList.Count - 1;
     }
 
     public void SetDelay()
@@ -106,13 +106,13 @@ public class InteractionSelect : MonoBehaviour
         closeAction = close;
     }
     
-    public void StartSetting(List<string> selectList, List<string> idList)
+    public void StartSetting(List<int> selectList, List<string> idList)
     {
         currentIdx = 0;
-        selectCount = selectList.Count;
+        talkIdxList = selectList;
         choiceIdList = idList;
         expansionTween = new Tween[selectTexts.Length];
-        
+
         foreach (var selectText in selectTexts)
         {
             selectText.color = ConstValues.WhiteColor;
@@ -120,13 +120,19 @@ public class InteractionSelect : MonoBehaviour
             selectText.gameObject.SetActive(false);
         }
 
-        for (int i = 0; i < selectCount; i++)
+        for (int i = 0; i < talkIdxList.Count; i++)
         {
-            selectTexts[i].text = selectList[i];
+            selectTexts[i].text = GameManager.Instance.GetTalk(talkIdxList[i]);
             selectTexts[i].gameObject.SetActive(true);
         }
 
         SelectChoice(currentIdx);
+    }
+
+    public void RefreshTalk()
+    {
+        for (int i = 0; i < talkIdxList.Count; i++)
+            selectTexts[i].text = GameManager.Instance.GetTalk(talkIdxList[i]);
     }
 
     private void SelectChoice(int idx)

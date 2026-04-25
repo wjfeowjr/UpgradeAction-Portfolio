@@ -44,9 +44,13 @@ public class InteractionObject : MonoBehaviour
         }
     }
 
-    public void SetText(string text, string key)
+    public void SetTalkText(int idx)
     {
-        myTexts[0].text = text;
+        myTexts[0].text = GameManager.Instance.GetTalk(idx);
+    }
+
+    public void SetKeyText(string key)
+    {
         myTexts[1].text = key;
     }
 

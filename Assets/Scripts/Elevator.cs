@@ -15,6 +15,14 @@ public class Elevator : InteractionController
         get => movingPlatform.TargetIdx;
         set => movingPlatform.TargetIdx = value;
     }
+    
+    public override void RefreshTalkText()
+    {
+        foreach (var lever in levers)
+            lever.RefreshTalkText();
+
+        base.RefreshTalkText();
+    }
 
     public void SetUpDown(int idx)
     {
@@ -46,7 +54,7 @@ public class Elevator : InteractionController
 
     public void SetInteractionAction()
     {
-        SetInteractionAction(Operation, GameManager.Instance.GetTalk(30003), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+        SetInteractionAction(Operation, 30003, GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
     }
 
     public void SetLeverAction()

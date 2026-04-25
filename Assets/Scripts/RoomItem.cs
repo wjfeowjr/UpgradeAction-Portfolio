@@ -40,7 +40,7 @@ public class RoomItem : InteractionController
     
     public void SetInteractionAction()
     {
-        SetInteractionAction(GetItem, GameManager.Instance.GetTalk(30017), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+        SetInteractionAction(GetItem, 30017, GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
     }
     
     private void GetItem()

@@ -705,6 +705,38 @@ public class Room : MonoBehaviour
             }
         }
     }
+
+    public void RefreshTalk()
+    {
+        // 여기서 npc 활성화
+        foreach (var person in npc)
+            person.RefreshTalkText();
+
+        // 아이템을 얻었으면, 그 아이템은 비활성화
+        foreach (var item in roomItem)
+            item.RefreshTalkText();
+
+        // 보물상자를 열었으면, 열린 상태로 나오게 조정
+        foreach (var treasureBox in roomTreasureBox)
+            treasureBox.RefreshTalkText();
+
+        // 엘리베이터
+        for (int i = 0; i < roomInfo.elevators.Count; i++)
+            elevators[i].RefreshTalkText();
+
+        // 잠긴 문
+        for (int i = 0; i < roomInfo.lockDoors.Count; i++)
+            lockDoors[i].RefreshTalkText();
+        
+        // 포탈
+        if (portalObject)
+            portalObject.RefreshTalkText();
+        
+        // 세이브 오브젝트
+        if(saveObject)
+            saveObject.RefreshTalkText();
+    }
+    
     public void MonsterPosSetting()
     {
         if (firstMonsterPosList.Count > 0)

@@ -16,7 +16,7 @@ public class SaveObject : InteractionController
 
     public void SetSaveAction(Action action)
     {
-        SetInteractionAction(action, GameManager.Instance.GetTalk(30002), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+        SetInteractionAction(action, 30002, GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
     }
 
     public void SetParents(Transform targetTransform)
