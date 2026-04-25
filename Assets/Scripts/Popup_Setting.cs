@@ -21,8 +21,9 @@ public class Popup_Setting : UIBase
     [SerializeField] private PopupGameView     gameView;
     [SerializeField] private PopupAudioView    audioView;
     [SerializeField] private PopupKeyboardView keyboardView;
-
+    
     private Action languageChangeAction;
+    private Action keyChangeAction;
     private Action closeAction;
     private eSettingState settingState;
 
@@ -70,9 +71,10 @@ public class Popup_Setting : UIBase
         SetSettingText();
     }
 
-    public void InitPresenters(Action close, Action languageChange)
+    public void InitPresenters(Action close, Action languageChange, Action keyChange)
     {
         languageChangeAction = languageChange;
+        keyChangeAction = keyChange;
         closeAction = close;
         SetState(eSettingState.Setting);
 
@@ -109,7 +111,11 @@ public class Popup_Setting : UIBase
         // KeyboardView
         var keyboardModel = new PopupKeyboardModel
         {
-            closeAction   = () => SetState(eSettingState.Setting),
+            closeAction   = () =>
+            {
+                keyChangeAction?.Invoke();
+                SetState(eSettingState.Setting);
+            },
             commonActions = common,
         };
         var keyboardPresenter = new PopupKeyboardPresenter(keyboardView.ConvertTo<IPopupKeyboardView>(), keyboardModel);

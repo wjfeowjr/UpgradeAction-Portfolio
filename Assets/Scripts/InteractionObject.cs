@@ -49,9 +49,9 @@ public class InteractionObject : MonoBehaviour
         myTexts[0].text = GameManager.Instance.GetTalk(idx);
     }
 
-    public void SetKeyText(string key)
+    public void SetKeyText(KeyCode key)
     {
-        myTexts[1].text = key;
+        myTexts[1].text = GameManager.Instance.GetKeyCode(key);
     }
 
     public void SetInteractionAction(Action action)

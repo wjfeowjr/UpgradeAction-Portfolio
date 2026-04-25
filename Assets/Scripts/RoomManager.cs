@@ -239,7 +239,9 @@ public class RoomManager : Singleton<RoomManager>
                 popupPause.PausePresenter.SetSettingOpen(false); 
                 popupPause.PausePresenter.SetButtonText();
             },
-            LanguageSetting);
+            LanguageSetting,
+            KeyboardSetting);
+        
     }
 
     private async void ReturnToMenu()
@@ -256,6 +258,12 @@ public class RoomManager : Singleton<RoomManager>
     {
         foreach (var room in totalRoom.RoomArray)
             room.RefreshTalk();
+    }
+
+    private void KeyboardSetting()
+    {
+        foreach (var room in totalRoom.RoomArray)
+            room.RefreshKey();
     }
 
     private void SpawnMinimap()

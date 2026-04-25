@@ -103,6 +103,7 @@ public class Room : MonoBehaviour
     [SerializeField] protected Transform monsterLimitRight;
     
     [SerializeField] protected ProductTrigger[] productTriggers;
+    [SerializeField] protected GuideObject[] guideObjects;
     [SerializeField] protected Transform[] customMovePos;
     [SerializeField] protected Transform[] strongSpeechPos;
     
@@ -704,6 +705,10 @@ public class Room : MonoBehaviour
                 });
             }
         }
+        
+        // 가이드 오브젝트
+        foreach (var guideObject in guideObjects)
+            guideObject.Setting();
     }
 
     public void RefreshTalk()
@@ -735,6 +740,45 @@ public class Room : MonoBehaviour
         // 세이브 오브젝트
         if(saveObject)
             saveObject.RefreshTalkText();
+        
+        // 가이드 오브젝트
+        foreach (var guideObject in guideObjects)
+            guideObject.Setting();
+    }
+
+    public void RefreshKey()
+    {
+        // 여기서 npc 활성화
+        foreach (var person in npc)
+            person.RefreshKeyText(GameManager.Instance.upKey);
+
+        // 아이템을 얻었으면, 그 아이템은 비활성화
+        foreach (var item in roomItem)
+            item.RefreshKeyText(GameManager.Instance.upKey);
+
+        // 보물상자를 열었으면, 열린 상태로 나오게 조정
+        foreach (var treasureBox in roomTreasureBox)
+            treasureBox.RefreshKeyText(GameManager.Instance.upKey);
+
+        // 엘리베이터
+        for (int i = 0; i < roomInfo.elevators.Count; i++)
+            elevators[i].RefreshKeyText(GameManager.Instance.upKey);
+
+        // 잠긴 문
+        for (int i = 0; i < roomInfo.lockDoors.Count; i++)
+            lockDoors[i].RefreshKeyText(GameManager.Instance.upKey);
+        
+        // 포탈
+        if (portalObject)
+            portalObject.RefreshKeyText(GameManager.Instance.upKey);
+        
+        // 세이브 오브젝트
+        if(saveObject)
+            saveObject.RefreshKeyText(GameManager.Instance.upKey);
+        
+        // 가이드 오브젝트
+        foreach (var guideObject in guideObjects)
+            guideObject.Setting();
     }
     
     public void MonsterPosSetting()
@@ -2382,6 +2426,7 @@ public class Room : MonoBehaviour
                     downEntrance.Add(entrance);
             }
         }
+        guideObjects = roomGameObject.GetComponentsInChildren<GuideObject>();
     }
     
     // 캐싱

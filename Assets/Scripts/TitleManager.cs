@@ -174,7 +174,7 @@ public class TitleManager : MonoBehaviour
         _isConfirmActive = true;
         var popup = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Setting, Vector3.zero).GetComponent<Popup_Setting>();
         popup.ExpansionOpen(false, false);
-        popup.InitPresenters(() => { _isConfirmActive = false; }, LanguageSetting);
+        popup.InitPresenters(() => { _isConfirmActive = false; }, LanguageSetting, null);
     }
 
     private void OpenSaveSelect()

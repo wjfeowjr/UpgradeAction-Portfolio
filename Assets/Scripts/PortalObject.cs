@@ -28,7 +28,7 @@ public class PortalObject : InteractionController
 
     public void SetPortalAction(Action action)
     {
-        SetInteractionAction(action, 30018, GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+        SetInteractionAction(action, 30018, GameManager.Instance.upKey);
     }
     
     public void SetParents(Transform targetTransform)

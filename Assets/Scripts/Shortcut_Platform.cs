@@ -46,7 +46,7 @@ public class Shortcut_Platform : ShortcutObject
 
     private void SetInteractionAction()
     {
-        SetInteractionAction(InteractionAction, 30003, GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+        SetInteractionAction(InteractionAction, 30003, GameManager.Instance.upKey);
     }
 
     private void InteractionAction()

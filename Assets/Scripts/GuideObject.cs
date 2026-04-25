@@ -17,12 +17,7 @@ public class GuideObject : MonoBehaviour
     [SerializeField] private TextMeshPro controlText;
     [SerializeField] private TextMeshPro[] keyTexts;
 
-    private void Awake()
-    {
-        Setting();
-    }
-
-    private void Setting()
+    public void Setting()
     {
         switch (type)
         {

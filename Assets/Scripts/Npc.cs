@@ -42,7 +42,7 @@ public class Npc : Character
 
     public void SetInteractionAction()
     {
-        SetInteractionAction(StartDialogue, 30016, GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+        SetInteractionAction(StartDialogue, 30016, GameManager.Instance.upKey);
     }
 
     public void SetAnotherNpc(Npc[] npc)

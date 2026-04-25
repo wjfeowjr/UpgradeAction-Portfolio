@@ -13,6 +13,7 @@ public class InteractionController : MonoBehaviour
 
     protected bool isPlayerTouch;
     private int talkIdx;
+    private KeyCode keyCode;
 
     public InteractionObject InteractionObject => interactionObject;
 
@@ -39,14 +40,15 @@ public class InteractionController : MonoBehaviour
         interactionObject.gameObject.SetActive(active);
     }
     
-    protected void SetInteractionAction(Action action, int idx, string key)
+    protected void SetInteractionAction(Action action, int idx, KeyCode key)
     {
         talkIdx = idx;
+        keyCode = key;
         if (!interactionObject)
         {
             interactionObject = SpawnInteraction(ConstValues.InteractionUI, objectPos).GetComponent<InteractionObject>();
             interactionObject.SetTalkText(talkIdx);
-            interactionObject.SetKeyText(key);
+            interactionObject.SetKeyText(keyCode);
             interactionObject.SetInteractionAction(action);
             interactionObject.gameObject.SetActive(false);
         }
@@ -58,6 +60,13 @@ public class InteractionController : MonoBehaviour
             interactionObject.SetTalkText(talkIdx);
         if (interactionSelect)
             interactionSelect.RefreshTalk();
+    }
+
+    public void RefreshKeyText(KeyCode key)
+    {
+        keyCode = key;
+        if(interactionObject)
+            interactionObject.SetKeyText(keyCode);
     }
     
     private GameObject SpawnInteraction(string id, Transform pos)
