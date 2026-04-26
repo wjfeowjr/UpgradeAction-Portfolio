@@ -1,0 +1,40 @@
+using TMPro;
+using UnityEngine;
+
+public enum ePlace
+{
+    SunHill,
+    BaseCamp,
+    Forest,
+    Mine,
+}
+
+public class PlaceName : MonoBehaviour
+{
+    [SerializeField] private TextMeshPro nameText;
+    [SerializeField] private ePlace ePlace;
+
+    public string Place => ePlace.ToString();
+
+    public void SetText()
+    {
+        switch (ePlace)
+        {
+            case ePlace.SunHill:
+                nameText.text = GameManager.Instance.GetTalk(130000);
+                break;
+            
+            case ePlace.BaseCamp:
+                nameText.text = GameManager.Instance.GetTalk(130001);
+                break;
+            
+            case ePlace.Forest:
+                nameText.text = GameManager.Instance.GetTalk(130002);
+                break;
+            
+            case ePlace.Mine:
+                nameText.text = GameManager.Instance.GetTalk(130003);
+                break;
+        }
+    }
+}

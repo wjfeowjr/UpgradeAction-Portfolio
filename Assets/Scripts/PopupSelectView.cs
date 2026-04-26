@@ -7,12 +7,13 @@ using UnityEngine.UI;
 
 public interface IPopupSelectView
 {
-    void SetModel(string message, Sprite goods, int cost);
+    void SetModel(string message, Sprite goods, int cost, bool yes);
     void SetAction(Action start, Action yes, Action no, Action escAction, PopupCommonActions commonActions);
 }
 
 public class PopupSelectModel
 {
+    public bool yes;
     public string message;
     public Sprite goods;
     public int cost;
@@ -42,7 +43,7 @@ public class PopupSelectPresenter
 
     public void SetModel()
     {
-        _selectView.SetModel(_model.message, _model.goods, _model.cost);
+        _selectView.SetModel(_model.message, _model.goods, _model.cost, _model.yes);
     }
     
     public void SetAction()
@@ -73,7 +74,6 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
     private void OnEnable()
     {
         startAction?.Invoke();
-        Yes();
     }
 
     private void Update()
@@ -110,9 +110,16 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
         }
     }
 
-    public void SetModel(string message, Sprite goods, int cost)
+    public void SetModel(string message, Sprite goods, int cost, bool yes)
     {
+        if (yes)
+            Yes();
+        else
+            No();
+        
         messageText.text = message;
+        yesObject.SetText(GameManager.Instance.GetTalk(30059));
+        noObject.SetText(GameManager.Instance.GetTalk(30060));
         if (goods == null)
         {
             goodsObject.SetActive(false);

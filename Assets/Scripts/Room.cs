@@ -117,7 +117,8 @@ public class Room : MonoBehaviour
     private Vector2 firstMaxLimit;
     private Vector2 firstMinLimit;
 
-    public string Id => roomInfo.roomId;
+    public string Id    => roomInfo.roomId;
+    public string Place => GameManager.Instance.GetPlaceName(roomsData.place);
     
     private void Awake()
     {
@@ -269,6 +270,7 @@ public class Room : MonoBehaviour
             return;
         
         GameManager.Instance.ControlStart = true;
+        GameManager.Instance.RefreshPlaceName();
     }
 
     public void SetGroundVector()
@@ -862,6 +864,13 @@ public class Room : MonoBehaviour
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
         GameManager.Instance.MovePlayer();
         GameManager.Instance.CurPlayer.ClearLastPlatform();
+        
+        RoomManager.Instance.ActivePlaceName();
+        GameManager.Instance.HidePlaceName();
+        if(roomsData.place != targetRoom.roomsData.place)
+        {
+            GameManager.Instance.RefreshPlaceName();
+        }
     }
 
     private async void SettingRoom(int idx, EntranceDir dir, Room pastRoom)
@@ -939,6 +948,12 @@ public class Room : MonoBehaviour
         
         // 여기서 BGM재생
         SetBgm(false);
+        RoomManager.Instance.ActivePlaceName();
+        GameManager.Instance.HidePlaceName();
+        if(pastRoom.roomsData.place != roomsData.place)
+        {
+            GameManager.Instance.RefreshPlaceName();
+        }
     }
     
     private void SetLeftPlayerPos(int idx)
@@ -1773,6 +1788,9 @@ public class Room : MonoBehaviour
         roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
         firstStart = false;
+        
+        RoomManager.Instance.ActivePlaceName();
+        GameManager.Instance.RefreshPlaceName();
     }
 
     // 지도 가이드
@@ -2429,6 +2447,15 @@ public class Room : MonoBehaviour
         guideObjects = roomGameObject.GetComponentsInChildren<GuideObject>();
     }
     
+    // 방문 체크
+    public string VisitedPlace()
+    {
+        if (!string.IsNullOrWhiteSpace(roomInfo.visitedInCells))
+            return roomsData.place;
+
+        return default;
+    }
+
     // 캐싱
     public void ObjectNameChange()
     {

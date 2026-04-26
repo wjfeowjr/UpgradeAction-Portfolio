@@ -13,9 +13,11 @@ using UnityEngine.Tilemaps;
 
 public class TotalRoom : MonoBehaviour
 {
-    [SerializeField] private Room[] roomArray;
     [SerializeField] private Trace playerPoint;
+    [SerializeField] private PlaceName[] placeNames;
+    [SerializeField] private Room[] roomArray;
     [SerializeField] private GameObject[] checkerArray;
+    
     private Player targetPlayer;
 
     private int checkerLayerMask;
@@ -55,6 +57,40 @@ public class TotalRoom : MonoBehaviour
                 playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
                 targetPlayer = GameManager.Instance.CurPlayer;
             }
+        }
+    }
+
+    public void SetPlaceName()
+    {
+        foreach (var placeName in placeNames)
+            placeName.SetText();
+    }
+
+    public void ActivePlaceName()
+    {
+        bool newPlace = false;
+        List<string> placeList = new List<string>();
+        foreach (var room in roomArray)
+        {
+            var place = room.VisitedPlace();
+            if (!string.IsNullOrWhiteSpace(place) && !placeList.Contains(place))
+            {
+                placeList.Add(place);
+            }
+        }
+
+        foreach (var placeName in placeNames)
+        {
+            bool isVisited = false;
+            foreach (var place in placeList)
+            {
+                if (placeName.Place != place)
+                    continue;
+                
+                isVisited = true;
+                break;
+            }
+            placeName.gameObject.SetActive(isVisited);
         }
     }
 
@@ -139,7 +175,7 @@ public class TotalRoom : MonoBehaviour
         }
         Debug.Log($"[{GameManager.Instance.MiniMapCheckers.Count}]개 오브젝트 위치 불러오기 완료)");
     }
-    
+
     // 인스펙터 우클릭 메뉴에 “Cache Prefabs” 항목 추가
     [ContextMenu("Cache Rooms")]
     private void CachePrefabs()

@@ -67,7 +67,12 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
  
     public void SetPlayerInfo()
     {
-        curPlayerText.text = curPlayerId;
+        curPlayerText.text = GameManager.Instance.GetCharacterTalk(curPlayerId);
+        
+        if(expansionObjects.Length > 0)
+            expansionObjects[0].SetText(GameManager.Instance.GetTalk(30057));
+        if(expansionObjects.Length > 1)
+            expansionObjects[1].SetText(GameManager.Instance.GetTalk(30058));
         
         var curPlayer = GameManager.Instance.GetPlayer(curPlayerId);
         int txtIdx = 50100;

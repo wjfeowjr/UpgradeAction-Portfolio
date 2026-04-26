@@ -9,24 +9,29 @@ using UnityEngine.UI;
 public class TitleManager : MonoBehaviour
 {
     [SerializeField] private TMP_Text titleText;
+    [SerializeField] private TMP_Text saveSelectText;
+
     [SerializeField] private TMP_Text selectText;
     [SerializeField] private TMP_Text backText;
     [SerializeField] private TMP_Text deleteText;
     [SerializeField] private TMP_Text copyText;
-    
+
     [SerializeField] private GameObject titleObject;
     [SerializeField] private GameObject saveSelectObject;
-    
+
     [SerializeField] private ExpansionUiObject[] titleButtons;
-    [SerializeField] private SaveFrame[] saveFrames; 
-    
+    [SerializeField] private SaveFrame[] saveFrames;
+
     private CancellationTokenSource fadeCancellation;
 
-    private int _cursor = 0;
-    private bool _isSaveSelect = false;
-    private bool _isConfirmActive = false;
-    private bool _isCopyMode = false;
-    private int _copySrcCursor = 0;
+    [SerializeField] private int  _cursor           = 0;
+    [SerializeField] private int  _saveSelectCursor = 0;
+    [SerializeField] private int  _copySrcCursor    = 0;
+
+    [SerializeField] private bool _isSceneChange    = false;
+    [SerializeField] private bool _isSaveSelect     = false;
+    [SerializeField] private bool _isConfirmActive  = false;
+    [SerializeField] private bool _isCopyMode       = false;
 
     private async void Start()
     {
@@ -36,13 +41,16 @@ public class TitleManager : MonoBehaviour
             SceneChanger.Instance.TitleScene = true;
 
         StartSetting();
-        
+
         await GameManager.Instance.Fading(1, 0, 0.5f, true, ConstValues.BlackColor);
         StartBGM();
     }
 
     private void Update()
     {
+        if (_isSceneChange)
+            return;
+
         if (_isConfirmActive)
             return;
 
@@ -76,7 +84,18 @@ public class TitleManager : MonoBehaviour
         if (targets == 0)
             return;
 
-        _cursor = (_cursor + dir + targets) % targets;
+        if (_isSaveSelect)
+        {
+            int next = (_saveSelectCursor + dir + targets) % targets;
+            if (_isCopyMode && next == _copySrcCursor)
+                next = (next + dir + targets) % targets;
+            _saveSelectCursor = next;
+        }
+        else
+        {
+            _cursor = (_cursor + dir + targets) % targets;
+        }
+
         SoundManager.Instance.PlaySound(ConstValues.Jump1);
 
         if (_isSaveSelect)
@@ -91,15 +110,17 @@ public class TitleManager : MonoBehaviour
         {
             if (_isCopyMode)
             {
-                GameManager.Instance.CopyData(_copySrcCursor + 1, _cursor + 1);
+                GameManager.Instance.CopyData(_copySrcCursor + 1, _saveSelectCursor + 1);
                 _isCopyMode = false;
                 for (int i = 0; i < saveFrames.Length; i++)
                     saveFrames[i].SetData(GameManager.Instance.SaveFileName(i + 1), i + 1);
                 RefreshSaveFrameCursors();
                 SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
+                saveSelectText.text = GameManager.Instance.GetTalk(30061);
                 return;
             }
-            GameManager.Instance.SaveFileName(_cursor + 1);
+            _isSceneChange = true;
+            GameManager.Instance.SaveFileName(_saveSelectCursor + 1);
             GameManager.Instance.GameStart();
             return;
         }
@@ -108,13 +129,15 @@ public class TitleManager : MonoBehaviour
             OpenSaveSelect();
         if (_cursor == 1)
             OpenSettingPopup();
+        if (_cursor == 2)
+            QuitGame();
 
         SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
     }
 
     private void HandleDelete()
     {
-        if (string.IsNullOrEmpty(GameManager.Instance.SaveFileName(_cursor + 1)))
+        if (string.IsNullOrEmpty(GameManager.Instance.SaveFileName(_saveSelectCursor + 1)))
             return;
 
         _isConfirmActive = true;
@@ -142,9 +165,10 @@ public class TitleManager : MonoBehaviour
     {
         if (_isCopyMode)
         {
-            _isCopyMode = false;
-            _cursor = _copySrcCursor;
+            _isCopyMode       = false;
+            _saveSelectCursor = _copySrcCursor;
             RefreshSaveFrameCursors();
+            saveSelectText.text = GameManager.Instance.GetTalk(30061);
             SoundManager.Instance.PlaySound(ConstValues.NormalButton);
             return;
         }
@@ -154,19 +178,45 @@ public class TitleManager : MonoBehaviour
 
         titleObject.SetActive(true);
         saveSelectObject.SetActive(false);
-        _isSaveSelect = false;
+        _isSaveSelect     = false;
+        _saveSelectCursor = 0;
         SoundManager.Instance.PlaySound(ConstValues.NormalButton);
     }
 
     private void EnterCopyMode()
     {
-        if (string.IsNullOrEmpty(GameManager.Instance.SaveFileName(_cursor + 1)))
+        if (string.IsNullOrEmpty(GameManager.Instance.SaveFileName(_saveSelectCursor + 1)))
             return;
 
-        _isCopyMode = true;
-        _copySrcCursor = _cursor;
+        _isCopyMode       = true;
+        _copySrcCursor    = _saveSelectCursor;
+
+        // 소스 슬롯 바로 다음으로 커서 이동 (소스 슬롯 건너뜀)
+        int targets       = saveFrames.Length;
+        _saveSelectCursor = (_copySrcCursor + 1) % targets;
+
+        saveSelectText.text = GameManager.Instance.GetTalk(30062);
         SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
         RefreshSaveFrameCursors();
+    }
+
+    private void QuitGame()
+    {
+        _isConfirmActive = true;
+        GameManager.Instance.SpawnSelect(
+            GameManager.Instance.GetTalk(41003),
+            null,
+            0,
+            yesAction: () =>
+            {
+                Application.Quit();
+            },
+            noAction: () =>
+            {
+                _isConfirmActive = false;
+            },
+            false
+        );
     }
 
     private void OpenSettingPopup()
@@ -189,7 +239,7 @@ public class TitleManager : MonoBehaviour
             saveFrames[i].SetData(GameManager.Instance.SaveFileName(i + 1), i + 1);
         }
 
-        _cursor = 0;
+        _saveSelectCursor = 0;
         RefreshSaveFrameCursors();
     }
 
@@ -214,11 +264,18 @@ public class TitleManager : MonoBehaviour
     {
         for (int i = 0; i < saveFrames.Length; i++)
         {
-            bool isSelected = i == _cursor;
+            bool isSelected = i == _saveSelectCursor;
+            bool isSrc      = _isCopyMode && i == _copySrcCursor;
+
             if (isSelected)
             {
                 saveFrames[i].SelectObjectActive(true);
                 saveFrames[i].Expansion(1.05f);
+            }
+            else if (isSrc)
+            {
+                saveFrames[i].SelectObjectActive(true);
+                saveFrames[i].Reduction();
             }
             else
             {
@@ -238,6 +295,7 @@ public class TitleManager : MonoBehaviour
     private void LanguageSetting()
     {
         titleText.text = GameManager.Instance.GetTalk(10000);
+        saveSelectText.text = GameManager.Instance.GetTalk(30061);
         selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
         backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
         deleteText.text = string.Format(GameManager.Instance.GetTalk(30111), GameManager.Instance.GetKeyCode(GameManager.Instance.deleteKey));
@@ -262,7 +320,7 @@ public class TitleManager : MonoBehaviour
     //         startText.DOFade(0, fadeTime);
     //         if (await NormalDelay(fadeTime, fadeCancellation).SuppressCancellationThrow())
     //             return;
-    //         
+    //
     //         startText.DOFade(1, fadeTime);
     //         if (await NormalDelay(fadeTime, fadeCancellation).SuppressCancellationThrow())
     //             return;
@@ -281,14 +339,14 @@ public class TitleManager : MonoBehaviour
     //     // 아무 키 누르기
     //     if (!Input.anyKeyDown)
     //         return;
-    //     
+    //
     //     // 마우스 클릭은 제외
     //     if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
     //         return;
-    //         
+    //
     //     GameManager.Instance.GoScene(ConstValues.BattleScene);
     // }
-    
+
     private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);

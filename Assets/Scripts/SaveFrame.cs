@@ -36,24 +36,7 @@ public class SaveFrame : ExpansionUiObject
             {
                 var roomTableData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == saveData.savePoint);
                 var place = roomTableData.place;
-                switch (place)
-                {
-                    case ConstValues.SunHill:
-                        placeText.text = GameManager.Instance.GetTalk(130000);
-                        break;
-                    
-                    case ConstValues.BaseCamp:
-                        placeText.text = GameManager.Instance.GetTalk(130001);
-                        break;
-                    
-                    case ConstValues.Forest:
-                        placeText.text = GameManager.Instance.GetTalk(130002);
-                        break;
-                    
-                    case ConstValues.Mine:
-                        placeText.text = GameManager.Instance.GetTalk(130003);
-                        break;
-                }
+                placeText.text = GameManager.Instance.GetPlaceName(place);
             }
             
             goldText.text = GameManager.Instance.GetThousandCommaText(saveData.gold);

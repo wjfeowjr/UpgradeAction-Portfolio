@@ -76,6 +76,8 @@ public class RoomManager : Singleton<RoomManager>
             room.ObjectActive(false);
             room.SetShortCutAndMinimapObject();
         }
+        SetPlaceName();
+        ActivePlaceName();
 
         if (string.IsNullOrEmpty(GameManager.Instance.SavePoint))
         {
@@ -258,6 +260,8 @@ public class RoomManager : Singleton<RoomManager>
     {
         foreach (var room in totalRoom.RoomArray)
             room.RefreshTalk();
+        
+        SetPlaceName();
     }
 
     private void KeyboardSetting()
@@ -462,5 +466,15 @@ public class RoomManager : Singleton<RoomManager>
         };
         
         SpawnGuide(guideModel);
+    }
+
+    private void SetPlaceName()
+    {
+        totalRoom.SetPlaceName();
+    }
+
+    public void ActivePlaceName()
+    {
+        totalRoom.ActivePlaceName();
     }
 }

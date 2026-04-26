@@ -9,7 +9,7 @@ public interface IPopupAttributeView
 {
     void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo);
     void SetPlayerInfo(); // 정보 갱신용 추가
-    void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action> popupAction, Action closeAction);
+    void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action, bool> popupAction, Action closeAction);
 }
 
 public class PopupAttributeModel
@@ -18,7 +18,7 @@ public class PopupAttributeModel
     public List<SkillData> skillDataList = new List<SkillData>();
     public List<PlayerInfo> playerInfoList;
     public PopupCommonActions commonActions; 
-    public Action<string, Sprite, int, Action, Action> popupAction;
+    public Action<string, Sprite, int, Action, Action, bool> popupAction;
     public Action closeAction;
 }
 
@@ -83,7 +83,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [SerializeField] private AttributeFrame_Attribute[] attributeArray;
     
     private PopupCommonActions _actions;
-    private Action<string, Sprite, int, Action, Action> _popupAction;
+    private Action<string, Sprite, int, Action, Action, bool> _popupAction;
     private Action _closeAction;
 
     private List<SkillData> skillTableList = new List<SkillData>();
@@ -561,7 +561,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey); 
     }
     
-    public void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action> popupAction, Action closeAction)
+    public void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action, bool> popupAction, Action closeAction)
     {
         _actions = commonActions;
         _popupAction = popupAction;

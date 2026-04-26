@@ -9,7 +9,7 @@ public class Popup_Warning : MonoBehaviour
     private PopupWarningPresenter popupWarningPresenter;
     public PopupWarningPresenter PopupWarningPresenter => popupWarningPresenter;
     
-    public void SetMinimapPresenter(PopupWarningPresenter presenter)
+    public void SetWarningPresenter(PopupWarningPresenter presenter)
     {
         popupWarningPresenter = presenter;
     }

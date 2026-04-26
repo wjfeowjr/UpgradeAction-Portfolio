@@ -888,6 +888,26 @@ public class GameManager : Singleton<GameManager>
         
         return talk;
     }
+    public string GetCharacterTalk(string id)
+    {
+        string talk = default;
+        switch (id)
+        {
+            case ConstValues.Berserker:
+                talk = GetTalk(50000);
+                break;
+            
+            case ConstValues.Gunner:
+                talk = GetTalk(50001);
+                break;
+            
+            case ConstValues.Fighter:
+                talk = GetTalk(50002);
+                break;
+        }
+
+        return talk;
+    }
     public string GetItemTalk(string id)
     {
         int itemName = TableManager.Instance.itemTable.Item.Find(x => x.id == id).name;
@@ -2017,6 +2037,12 @@ public class GameManager : Singleton<GameManager>
         uiInterface.SetBossHpPresenter(bossHpPresenter);
         bossHpPresenter.HideHp();
             
+        var placeNameInterface = uiInterface.PlaceNameView.ConvertTo<IUIPlaceNameView>();
+        var placeNameModel = new UIPlaceNameModel();
+        var placeNamePresenter = new UIPlaceNamePresenter(placeNameInterface, placeNameModel);
+        uiInterface.SetPlaceNamePresenter(placeNamePresenter);
+        placeNamePresenter.HideImmediate();
+        
         var changeInterface = uiInterface.ChangeSkillView.ConvertTo<IUISkillView>();
         var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
         var skillModel = new UISkillModel
@@ -2048,7 +2074,7 @@ public class GameManager : Singleton<GameManager>
             message = message,
         };
         var warningPresenter = new PopupWarningPresenter(warningInterface, warningModel);
-        popupWarning.SetMinimapPresenter(warningPresenter);
+        popupWarning.SetWarningPresenter(warningPresenter);
         await popupWarning.PopupWarningPresenter.SetMessage();
     }
 
@@ -2111,6 +2137,26 @@ public class GameManager : Singleton<GameManager>
         var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);
         uiInterface.SetGoodsPresenter(goodsPresenter);
         goodsPresenter.SetGoldText();
+    }
+
+    public void RefreshPlaceName()
+    {
+        if (RoomManager.Instance == null || RoomManager.Instance.CurrentRoom == null)
+            return;
+
+        var placeNameInterface = uiInterface.PlaceNameView.ConvertTo<IUIPlaceNameView>();
+        var placeNameModel = new UIPlaceNameModel()
+        {
+            placeName = RoomManager.Instance.CurrentRoom.Place,
+        };
+        var placeNamePresenter = new UIPlaceNamePresenter(placeNameInterface, placeNameModel);
+        uiInterface.SetPlaceNamePresenter(placeNamePresenter);
+        placeNamePresenter.SetPlaceText();
+    }
+
+    public void HidePlaceName()
+    {
+        uiInterface.PlaceNamePresenter?.HideImmediate();
     }
 
     public GameObject GetUI(eUIType type)
@@ -2372,7 +2418,7 @@ public class GameManager : Singleton<GameManager>
             highestPool.GetChild(i).gameObject.SetActive(false);
     }
 
-    public void SpawnSelect(string message, Sprite goodsSprite, int cost, Action yesAction, Action noAction)
+    public void SpawnSelect(string message, Sprite goodsSprite, int cost, Action yesAction, Action noAction, bool yes = true)
     {
         var uiBase = SpawnToPopupPool(eUIType.Popup_Select, Vector3.zero).GetComponent<UIBase>();
         
@@ -2386,6 +2432,7 @@ public class GameManager : Singleton<GameManager>
             };
             var selectModel = new PopupSelectModel()
             {
+                yes = yes,
                 message = message,
                 goods = goodsSprite,
                 cost = cost,
@@ -2937,6 +2984,27 @@ public class GameManager : Singleton<GameManager>
         {
             berserker.SpawnObject(ConstValues.BangEffect, berserker.CenterPos.position);
             berserker.gameObject.SetActive(false);
+        }
+    }
+
+    public string GetPlaceName(string place)
+    {
+        switch (place)
+        {
+            case ConstValues.SunHill:
+                return GetTalk(130000);
+
+            case ConstValues.BaseCamp:
+                return GetTalk(130001);
+
+            case ConstValues.Forest:
+                return GetTalk(130002);
+
+            case ConstValues.Mine:
+                return GetTalk(130003);
+            
+            default:
+                return "Non";
         }
     }
 }
