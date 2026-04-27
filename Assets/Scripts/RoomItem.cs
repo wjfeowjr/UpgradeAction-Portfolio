@@ -4,21 +4,17 @@ using UnityEngine;
 
 public class RoomItem : InteractionController
 {
+    [SerializeField] private string itemId;
+    [SerializeField] private SpriteRenderer itemSpriteRenderer;
     [SerializeField] private GameObject movingObject;
 
     private float moveY = 0.5f;
     private float duration = 1.0f;
-
-    private string id;
+    
     private Tween moveTween;
     private bool isGet;
     private Action action;
-
-    public string Id
-    {
-        get => id;
-        set => id = value;
-    }
+    
     public bool IsGet
     {
         get => isGet;
@@ -69,6 +65,7 @@ public class RoomItem : InteractionController
 
     public void SetAction(Action getAction)
     {
+        itemSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(itemId);
         action = getAction;
     }
 }

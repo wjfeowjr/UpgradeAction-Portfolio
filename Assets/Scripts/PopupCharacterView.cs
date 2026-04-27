@@ -48,8 +48,8 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
     
     [SerializeField] private ExpansionUiObject[] expansionObjects;
  
-    // 팝업 선택 순서: Attribute → Relic
-    private readonly ePopupState[] _popupStateOrder = { ePopupState.Attribute, ePopupState.Relic };
+    // 팝업 선택 순서: Attribute → Relic → Item
+    private readonly ePopupState[] _popupStateOrder = { ePopupState.Attribute, ePopupState.Relic, ePopupState.Item };
     private int _selectedIndex = 0;
  
     // 엔터 입력 시 Popup_Character로 선택된 상태를 전달하는 콜백
@@ -73,6 +73,8 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
             expansionObjects[0].SetText(GameManager.Instance.GetTalk(30057));
         if(expansionObjects.Length > 1)
             expansionObjects[1].SetText(GameManager.Instance.GetTalk(30058));
+        if(expansionObjects.Length > 2)
+            expansionObjects[2].SetText(GameManager.Instance.GetTalk(30063));
         
         var curPlayer = GameManager.Instance.GetPlayer(curPlayerId);
         int txtIdx = 50100;

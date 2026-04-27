@@ -577,20 +577,20 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
 
         if (string.IsNullOrWhiteSpace(_curRelicId))
         {
-            relicNameText.text = GameManager.Instance.GetTalk(101000);
-            relicExplainText.text = GameManager.Instance.GetTalk(102000);
+            relicNameText.text = GameManager.Instance.GetTalk(102000);
+            relicExplainText.text = GameManager.Instance.GetTalk(103000);
         }
         else if (_curRelicId == ConstValues.Lock)
         {
-            relicNameText.text = GameManager.Instance.GetTalk(101001);
-            relicExplainText.text = GameManager.Instance.GetTalk(102001);
+            relicNameText.text = GameManager.Instance.GetTalk(102001);
+            relicExplainText.text = GameManager.Instance.GetTalk(103001);
         }
         else
         {
+            relicNameText.text = GameManager.Instance.GetItemTalk(_curRelicId);
+            relicExplainText.text = GameManager.Instance.GetItemExplain(_curRelicId);
+            
             var relicInfo = GameManager.Instance.relicCopyList.Find(x => x.id == _curRelicId);
-            relicNameText.text = GameManager.Instance.GetTalk(relicInfo.name);
-            relicExplainText.text = GameManager.Instance.GetTalk(relicInfo.explain);
-
             for (int i = 0; i < relicInfo.statList.Count; i++)
             {
                 relicValueFrames[i].gameObject.SetActive(true);
@@ -641,7 +641,8 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
 
     public void CloseAction()
     {
-        if (_closeAction == null) return;
+        if (_closeAction == null)
+            return;
         _closeAction.Invoke();
     }
 }

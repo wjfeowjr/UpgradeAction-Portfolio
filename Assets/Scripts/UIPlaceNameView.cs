@@ -53,7 +53,11 @@ public class UIPlaceNameView : MonoBehaviour, IUIPlaceNameView
         placeText.text    = placeName;
         canvasGroup.alpha = 0f;
 
-        _sequence = DOTween.Sequence().Append(canvasGroup.DOFade(1f, FadeDuration)).AppendInterval(StayDuration).Append(canvasGroup.DOFade(0f, FadeDuration));
+        _sequence = DOTween.Sequence()
+            .Append(canvasGroup.DOFade(1f, FadeDuration))
+            .AppendInterval(StayDuration)
+            .Append(canvasGroup.DOFade(0f, FadeDuration))
+            .SetUpdate(true);
         SoundManager.Instance.PlaySound(ConstValues.Upgrade);
     }
 

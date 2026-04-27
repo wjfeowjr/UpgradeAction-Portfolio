@@ -911,8 +911,13 @@ public class GameManager : Singleton<GameManager>
     public string GetItemTalk(string id)
     {
         int itemName = TableManager.Instance.itemTable.Item.Find(x => x.id == id).name;
-
         return GetTalk(itemName);
+    }
+    
+    public string GetItemExplain(string id)
+    {
+        int itemExplain = TableManager.Instance.itemTable.Item.Find(x => x.id == id).explain;
+        return GetTalk(itemExplain);
     }
     
     public string GetKeyCode(KeyCode keycode)
