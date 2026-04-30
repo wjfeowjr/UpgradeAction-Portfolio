@@ -4,6 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
@@ -87,6 +88,8 @@ public class Monster : Character
     [SerializeField] private Transform hpBarPos;
     [SerializeField] protected TotalBar totalBar;
     [SerializeField] private SpriteRenderer[] appearMotions; // 등장 연출 이미지
+    private SortingGroup sortingGroup;
+    
     protected CancellationTokenSource dieCancellation;
     protected Action<int, Vector2> goldAction;
 
@@ -538,6 +541,14 @@ public class Monster : Character
     public void SetGoldAction(Action<int, Vector2> action)
     {
         goldAction = action;
+    }
+
+    public void SetSortingGroup(int value)
+    {
+        if (!sortingGroup)
+            sortingGroup = transform.AddComponent<SortingGroup>();
+        
+        sortingGroup.sortingOrder = value;
     }
 
     protected override void StateSetting(ENormalState changeNormalState, string triggerName, string animId)

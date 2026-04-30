@@ -39,8 +39,8 @@ public class Monster_FireWizard : Monster
             int missileDir = 1;
             if (GameManager.Instance.CurPlayer.CenterPos.position.x < transform.position.x)
                 missileDir = -1;
-            var attackObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}", attackPos, 0, missileDir).GetComponent<Missile>();
-            attackObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
+            var fireObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}", attackPos, 0, missileDir).GetComponent<Missile>();
+            fireObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
             
             if(await AttackDelay(delay3, true).SuppressCancellationThrow())
                 return;

@@ -87,12 +87,14 @@ public class Arena : MonoBehaviour
         int count = 0;
         foreach (var round in roundList)
         {
-            foreach (var monster in round)
+            for (var i = 0; i < round.Count; i++)
             {
-                SpawnMonster(monster);
-                if (await GameManager.Instance.NormalDelay(monsterDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                SpawnMonster(round[i], -2 - i);
+                if (await GameManager.Instance.NormalDelay(monsterDelay, GameManager.Instance.ProductCancellation)
+                        .SuppressCancellationThrow())
                     return;
             }
+
             if (await GameManager.Instance.WaitUntilDelay(()=> RoundMonsterAllDead(round), GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
@@ -135,12 +137,13 @@ public class Arena : MonoBehaviour
         GameManager.Instance.CurPlayer.Immortal = false;
     }
 
-    private void SpawnMonster(Monster monster)
+    private void SpawnMonster(Monster monster, int value)
     {
         monster.IsBoss = false;
         monster.AlwaysAgro = true;
         monster.gameObject.SetActive(true);
         monster.Appear(null);
+        monster.SetSortingGroup(value);
     }
 
     private bool RoundMonsterAllDead(List<Monster> round)

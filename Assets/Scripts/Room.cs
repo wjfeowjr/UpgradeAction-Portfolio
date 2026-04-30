@@ -1097,6 +1097,7 @@ public class Room : MonoBehaviour
                 monsters[i].gameObject.SetActive(true);
                 monsters[i].ForceIdle();
                 monsters[i].AllBuffCancel();
+                monsters[i].SetSortingGroup(-2 - i);
             }
         }
         
