@@ -467,6 +467,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string FighterStrongPunchWave = "Fighter_StrongPunch_Wave";
     public const string FighterStrongPunchLightning = "Fighter_StrongPunch_Lightning";
     public const string FighterStrongPunchJust = "Fighter_StrongPunch_Just";
+    public const string FighterPunchTrail = "Fighter_PunchTrail";
     
     public const string UIPool = "UIPool";
     public const string PopupPool = "PopupPool";
@@ -551,6 +552,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string BaseCamp = "BaseCamp";
     public const string Forest = "Forest";
     public const string Mine = "Mine";
+    
+    // 아이템
+    public const string KeyForest = "Key_Forest";
+    public const string KeyMine = "Key_Mine";
     
     // 사운드
     public const string Laugh = "Laugh";

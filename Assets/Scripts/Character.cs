@@ -421,6 +421,7 @@ public abstract class Character : InteractionController
     private void UpPlatformCheck()
     {
         // physicCenterPos.position.y + upPlatformBoxSize.y * 0.5f
+
         upPlatformBoxPos = new Vector2(transform.position.x, transform.position.y + upPlatformBoxSize.y * 0.5f + 0.1f);
         upPlatformHit = Physics2D.OverlapBoxAll(upPlatformBoxPos, upPlatformBoxSize, 0, platformLayerMask);
         foreach (var upPlatform in upPlatformHit)

@@ -349,7 +349,7 @@ public class Room : MonoBehaviour
         }
     }
 
-    public void InfoSetting()
+    public async void InfoSetting()
     {
         // 저장되는 룸만 불러온다
         roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
@@ -686,18 +686,16 @@ public class Room : MonoBehaviour
             }
             else
             {
-                lockDoors[i].SetInteractionAction();
-                lockDoors[i].SetAction(() =>
+                lockDoors[i].SetOpenProduct(() =>
+                {
+                    OpenDoor(idx, lockDoors[idx].KeyId, () => lockDoors[idx].OpenAction());
+                });
+                lockDoors[i].SetOpenAction(() =>
                 {
                     // 열쇠를 가지고 있는 경우
                     if (GameManager.Instance.IsHaveItem(lockDoors[idx].KeyId))
                     {
-                        lockDoors[idx].OpenMessage();
                         lockDoors[idx].OpenDoor();
-                        lockDoors[idx].ReduceInteractionObject();
-                        // 이후 연출
-                        roomInfo.lockDoors[idx].isOpen = true;
-                        GameManager.Instance.SaveGame();
                     }
                     // 열쇠가 없는 경우
                     else
@@ -705,6 +703,7 @@ public class Room : MonoBehaviour
                         lockDoors[idx].LockMessage();
                     }
                 });
+                lockDoors[i].SetInteractionAction();
             }
         }
         
@@ -2455,6 +2454,134 @@ public class Room : MonoBehaviour
             return roomsData.place;
 
         return default;
+    }
+    
+    // 문 열때 액션
+    private async void OpenDoor(int idx, string keyId, Func<UniTask> openAction)
+    {
+        switch (keyId)
+        {
+            case ConstValues.KeyForest:
+                await OpenDoorProduct1(openAction);
+                break;
+            case ConstValues.KeyMine:
+                await OpenDoorProduct2(openAction);
+                break;
+        }
+        
+        // 이후 저장
+        roomInfo.lockDoors[idx].isOpen = true;
+        GameManager.Instance.SaveGame();
+    }
+
+    private async UniTask OpenDoorProduct1(Func<UniTask> openAction)
+    {
+        GameManager.Instance.InitWaitCancellation();
+        GameManager.Instance.InitProductCancellation();
+        
+        UIOff();
+        GameManager.Instance.CurPlayer.ForceProduct();
+        await GameManager.Instance.DialogueMove(1.5f);
+        var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker);
+        var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner);
+        
+        berserker.Flip(-1);
+        gunner.Flip(-1);
+        
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        var berserkerSpeechPos = berserker.SpeechPos.position;
+        var gunnerSpeechPos = gunner.SpeechPos.position;
+        
+        var speechFrame1 = SpeechFrame1();
+        speechFrame1.gameObject.SetActive(false);
+        
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "이렇게 여는거 맞나?_");
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "대충 돌려봐!_");
+        await NextDialog(speechFrame1);
+        
+        await openAction();
+        
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "..._");
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "문이 열린게 아니라 부숴졌는데?_");
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "문 부숴진건 나랑 상관 없는 일이다._");
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "너의 그 무책임한 태도가 난 정말 좋아!_");
+        await NextDialog(speechFrame1);
+        
+        GameManager.Instance.DialogueEnd();
+        UIOn();
+    }
+    
+    private async UniTask OpenDoorProduct2(Func<UniTask> openAction)
+    {
+        GameManager.Instance.InitWaitCancellation();
+        GameManager.Instance.InitProductCancellation();
+        
+        UIOff();
+        GameManager.Instance.CurPlayer.ForceProduct();
+        await GameManager.Instance.DialogueMove(1.5f);
+        var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker);
+        var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner);
+
+        berserker.Flip(-1);
+        gunner.Flip(-1);
+        
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        var berserkerSpeechPos = berserker.SpeechPos.position;
+        var gunnerSpeechPos = gunner.SpeechPos.position;
+        var fighterSpeechPos = npc[0].SpeechPos.position;
+        
+        var speechFrame1 = SpeechFrame1();
+        speechFrame1.gameObject.SetActive(false);
+        
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "이거 어떻게 열었더라?_");
+        await NextDialog(speechFrame1);
+
+        await openAction();
+        
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "손만 대면 죄다 박살내는구나!_");
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "나랑 상관 없는 일이다._");
+        await NextDialog(speechFrame1);
+        
+        npc[0].Flip(-1);
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, "뭐야! 광산 문을 열었잖아!_");
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, "열어준 보답으로 나도 동행하겠다!_");
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "누구 맘대로 오겠다는거야_");
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, "나 강하다! 너네랑 같이간다!_");
+        await NextDialog(speechFrame1);
+        
+        npc[0].SpawnObject(ConstValues.BangEffect, npc[0].CenterPos.position);
+        npc[0].gameObject.SetActive(false);
+        
+        // 싸움꾼 합류 및 저장
+        GameManager.Instance.AddPlayer(ConstValues.Fighter);
+        GameManager.Instance.SetCharacterOrder();
+
+        UIOn();
+        roomInfo.eventNpc[0].isActive = false;
+        GameManager.Instance.DialogueEnd();
+
+        GameManager.Instance.SpawnWarningPopup("싸움꾼이 합류하였습니다!_");
+        UIOn();
     }
 
     // 캐싱

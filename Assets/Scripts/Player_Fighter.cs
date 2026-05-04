@@ -18,6 +18,7 @@ public class Player_Fighter : Player
     [SerializeField] private Transform lightningPunchFinishPos;
     [SerializeField] private Transform lightningSmashPos;
     [SerializeField] private Transform strongPunchPos;
+    [SerializeField] private Transform punchTrailPos;
     
     private int maxPunch = 3;
 
@@ -129,6 +130,7 @@ public class Player_Fighter : Player
                     return false;
 
                 GameObject obj = SpawnAttackObject(ConstValues.FighterAttack1, attack1Pos);
+                SpawnObject(ConstValues.FighterLightningEffect, attack1Pos);
 
                 if (await BufferDelay(delay2, afterDelay).SuppressCancellationThrow())
                 {
@@ -151,6 +153,7 @@ public class Player_Fighter : Player
                     return false;
 
                 GameObject obj2 = SpawnAttackObject(ConstValues.FighterAttack2, attack2Pos);
+                SpawnObject(ConstValues.FighterLightningEffect, attack2Pos);
                 if (await BufferDelay(delay4, afterDelay).SuppressCancellationThrow())
                 {
                     obj2.SetActive(false);
@@ -165,14 +168,20 @@ public class Player_Fighter : Player
                 MotionFlip();
                 StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack3);
                 AttackAdvance(3.0f);
-
+                
                 if (await AttackDelay(delay5).SuppressCancellationThrow())
                     return false;
+                
+                var punchTrail = SpawnObject(ConstValues.FighterPunchTrail, punchTrailPos).GetComponent<VectorMove>();
+                punchTrail.StartMove(attack3Pos.position, 0.1f);
 
                 GameObject obj3 = SpawnAttackObject(ConstValues.FighterAttack3, attack3Pos);
+                SpawnObject(ConstValues.FighterLightningEffect, attack3Pos);
+
                 if (await AttackDelay(delay6).SuppressCancellationThrow())
                 {
                     obj3.SetActive(false);
+                    punchTrail.gameObject.SetActive(false);
                     return false;
                 }
                 
@@ -197,21 +206,21 @@ public class Player_Fighter : Player
         if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow()) 
             return false;
         
-        float dropForceX = 10;
-        float dropForceY = 5;
+        float dropForceX = 12;
+        float dropForceY = 15;
         myRigidbody.linearVelocity = new Vector2(transform.localScale.x * dropForceX, -dropForceY);
         var jumpAttackObject = SpawnAttackObject(ConstValues.FighterJumpAttack, jumpAttackPos).GetComponent<Trace>();
-        //var trailObject = SpawnObject(ConstValues.FighterLightningTrail, jumpAttackPos).GetComponent<Trace>();
+        var trailObject = SpawnObject(ConstValues.FighterLightningTrail, jumpAttackPos).GetComponent<Trace>();
         StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack);
 
-        // float timer = 0;
-        // while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f && !isGrounded && timer < jumpAttackDelay2)
-        // {
-        //     if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-        //         return false;
-        //     timer += Time.deltaTime;
-        // }
-        //
+        float timer = 0;
+        while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f && !isGrounded && timer < jumpAttackDelay2)
+        {
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return false;
+            timer += Time.deltaTime;
+        }
+        
         while (GetJumpState())
         {
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
@@ -219,12 +228,12 @@ public class Player_Fighter : Player
         }
         myRigidbody.linearVelocity = Vector2.zero;
         jumpAttackObject.GetComponent<Attack>().DisActiveCollider();
-        //trailObject.SetTarget(null);
+        trailObject.SetTarget(null);
         if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow()) 
             return false;
         
         jumpAttackObject.gameObject.SetActive(false);
-        //trailObject.gameObject.SetActive(false);
+        trailObject.gameObject.SetActive(false);
         canAttack = true;
         return true;
     }
