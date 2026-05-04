@@ -1475,11 +1475,11 @@ public class Room : MonoBehaviour
             SaveVisitedFrameCells();
         
         // 미니맵 내부
-        float extraInVertical = minimapInTilemap.cellSize.y;
+        float extraInVertical = minimapInTilemap.cellSize.y * 0.5f;
         viewRect.yMin += extraInVertical;
-        viewRect.yMax += extraInVertical;
+        viewRect.yMax += extraInVertical * 3;
         
-        Vector2 halfInCell = minimapInTilemap.cellSize; // * 0.5f
+        Vector2 halfInCell = minimapInTilemap.cellSize; // 
         bool inNew = false;
         foreach (var cell in allInCells)
         {
@@ -1871,7 +1871,7 @@ public class Room : MonoBehaviour
             talkList.Add(GameManager.Instance.GetTalk(productDialogue.talk));
         
         UIOff();
-        BgmManager.Instance.DelayStop(0.01f);
+        BgmManager.Instance.DelayStop(0.1f);
         float productDelay = 1.0f;
         if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
@@ -2224,7 +2224,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.StopPlayer();
 
         await arenas[0].ReduceCameraLimitX(firstMaxLimit, firstMinLimit);
-        BgmManager.Instance.DelayStop(0.01f);
+        BgmManager.Instance.DelayStop(0.1f);
         if (await GameManager.Instance.NormalDelay(1.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
@@ -2254,7 +2254,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.InitProductCancellation();
         
         UIOff();
-        BgmManager.Instance.DelayStop(0.01f);
+        BgmManager.Instance.DelayStop(0.1f);
         float productDelay = 1.0f;
         if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;

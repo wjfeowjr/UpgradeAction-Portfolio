@@ -118,7 +118,7 @@ public class Arena : MonoBehaviour
         var endDelay = 2.0f;
         var productDelay = 2.0f;
         
-        BgmManager.Instance.DelayStop(0.01f);
+        BgmManager.Instance.DelayStop(0.1f);
         if (await GameManager.Instance.NormalDelay(finishDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         

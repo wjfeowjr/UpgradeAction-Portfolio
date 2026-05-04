@@ -574,15 +574,18 @@ public class Attack : MonoBehaviour
             if (!attackInfo.duplicate)
                 IgnoreCol(col);
 
-            int finalStagger = (int)(attackInfo.stagger + (attackInfo.stagger * castChar.BasicStat.staggerDamage * 0.01f));
-            hitTarget.TakeStagger(finalStagger);
-            if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
+            if (castChar)
             {
-                // 무력화 효과 넣기
-                hitTarget.Stagger();
-                return;
+                int finalStagger = (int)(attackInfo.stagger + (attackInfo.stagger * castChar.BasicStat.staggerDamage * 0.01f));
+                hitTarget.TakeStagger(finalStagger);
+                if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
+                {
+                    // 무력화 효과 넣기
+                    hitTarget.Stagger();
+                    return;
+                }
             }
-            
+
             // 상태이상을 먼저 추가
             foreach (var debuffInfo in attackInfo.deBuffInfoList)
             {

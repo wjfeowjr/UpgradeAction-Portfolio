@@ -59,6 +59,7 @@ public class UIComboView : MonoBehaviour, IUIComboView
 
     private void OnDisable()
     {
+        comboText.gameObject.SetActive(false);
         comboCancellation?.Cancel();
     }
 
