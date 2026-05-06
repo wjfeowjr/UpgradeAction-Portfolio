@@ -14,6 +14,8 @@ using UnityEngine.Tilemaps;
 public class TotalRoom : MonoBehaviour
 {
     [SerializeField] private Trace playerPoint;
+    [SerializeField] private SpriteRenderer playerSpriteRenderer;
+    
     [SerializeField] private PlaceName[] placeNames;
     [SerializeField] private Room[] roomArray;
     [SerializeField] private GameObject[] checkerArray;
@@ -48,6 +50,7 @@ public class TotalRoom : MonoBehaviour
             {
                 playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
                 targetPlayer = GameManager.Instance.CurPlayer;
+                playerSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}");
             }
         }
         else
@@ -56,6 +59,7 @@ public class TotalRoom : MonoBehaviour
             {
                 playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
                 targetPlayer = GameManager.Instance.CurPlayer;
+                playerSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}");
             }
         }
     }
