@@ -439,6 +439,7 @@ public class Player_Gunner : Player
         
         Debug.Log($"{skillKey} 스킬 끝");
         GravityChange(myGravity);
+
         // 동작이 끝날때 반환하는 트리거
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }

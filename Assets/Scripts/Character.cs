@@ -346,10 +346,11 @@ public abstract class Character : InteractionController
     protected virtual void FixedUpdate()
     {
         UpdateVelocity();
-        CheckCollisions();
+        
         CeilingCheck();
         AddIgnorePlatform();
         RemoveIgnorePlatform();
+        CheckCollisions();
         UpdateMovingPlatform();
     }
 
@@ -442,26 +443,11 @@ public abstract class Character : InteractionController
             groundObject = downLeftHit.collider.gameObject;
         if(downRightHit.collider != null)
             groundObject = downRightHit.collider.gameObject;
-        
-        // 낙하 도중 플랫폼 중간라인에 걸칠 때 예외처리
-        // if (myRigidbody.linearVelocityY < 0.01f && downLeftHit.collider != null && downLeftHit.collider.CompareTag(ConstValues.Platform))
-        // {
-        //     if (!ignorePlatformList.Exists(x => x.collider == downLeftHit.collider))
-        //     {
-        //         IgnorePlatformCheck(downLeftHit.collider);
-        //     }
-        // }
-        // if (myRigidbody.linearVelocityY < 0.01f && downRightHit.collider != null && downRightHit.collider.CompareTag(ConstValues.Platform))
-        // {
-        //     if (!ignorePlatformList.Exists(x => x.collider == downRightHit.collider))
-        //     {
-        //         IgnorePlatformCheck(downRightHit.collider);
-        //     }
-        // }
 
         // 무시된 플랫폼 감지
-        if ((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) || 
-            (downRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == downRightHit.collider)))
+        if (((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) || 
+            (downRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == downRightHit.collider))) &&
+            normalState != ENormalState.Dash)
             isGrounded = false;
         
         if (isGrounded)

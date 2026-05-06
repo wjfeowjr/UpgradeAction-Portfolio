@@ -437,7 +437,7 @@ public abstract class Player : Character
             switch (landingState)
             {
                 case ELandingState.Ground:
-                    normalState = ENormalState.Idle;
+                    normalState = Controller.Instance.IsMoving() ? ENormalState.Move : ENormalState.Idle;
                     break;
                 case ELandingState.Air:
                     normalState = ENormalState.Jump;
@@ -454,7 +454,7 @@ public abstract class Player : Character
             switch (landingState)
             {
                 case ELandingState.Ground:
-                    SetTriggerAnimator(ConstValues.Idle);
+                    SetTriggerAnimator(Controller.Instance.IsMoving() ? ConstValues.Move : ConstValues.Idle);
                     break;
                 case ELandingState.Air:
                     SetTriggerAnimator(ConstValues.JumpDown);
@@ -471,7 +471,7 @@ public abstract class Player : Character
             switch (landingState)
             {
                 case ELandingState.Ground:
-                    animId = ConstValues.Idle;
+                    animId = Controller.Instance.IsMoving() ? ConstValues.Move : ConstValues.Idle;
                     break;
                 case ELandingState.Air:
                     animId = ConstValues.JumpDown;
@@ -738,18 +738,6 @@ public abstract class Player : Character
         // 멈추는 중이었다면 다시 걷기 상태로
         if (moveState == EMoveState.Stopping && Mathf.Abs(dir.x) > 0f)
             MoveStateSetting(EMoveState.Moving);
-
-        // // 서 있는 상태에선 움직이는 모션으로 변경
-        // if (dir == Vector2.left || dir == Vector2.right)
-        // {
-        //     if (normalState == ENormalState.Idle && landingState == ELandingState.Ground)
-        //         StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-        //     
-        //     if(moveState == EMoveState.Stopping)
-        //         MoveStateSetting(EMoveState.Moving);
-        // }
-        //
-        // transform.Translate(dir * (basicStat.moveSpeed * (moveRatio * 0.01f) * Time.deltaTime));
     }
 
     // 플레이어 이동

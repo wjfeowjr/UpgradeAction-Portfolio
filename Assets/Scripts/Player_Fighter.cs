@@ -45,15 +45,7 @@ public class Player_Fighter : Player
     }
     private async UniTask<bool> FighterChangeAttack()
     {
-        // var delay1 = 0.14f;
-        // StateSetting(ENormalState.Attack, ConstValues.ChangeAttack, ConstValues.ChangeAttack);
-        //
-        // for (int i = 0; i < 3; i++)
-        // {
-        //     SpawnAttack($"{ConstValues.Berserker}_{ConstValues.ChangeAttack}", changeAttackPos);
-        //     if (await AttackDelay(delay1).SuppressCancellationThrow())
-        //         return false;
-        // }
+        SpawnAttack($"{ConstValues.Fighter}_{ConstValues.ChangeAttack}", centerPos);
         return true;
     }
     

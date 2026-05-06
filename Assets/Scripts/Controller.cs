@@ -6,8 +6,8 @@ using UnityEngine;
 
 public class Controller : Singleton<Controller>
 {
-    private bool isLeftMove;
-    private bool isRightMove;
+    [SerializeField] private bool isLeftMove;
+    [SerializeField] private bool isRightMove;
 
     public bool IsLeftMove
     {
@@ -61,6 +61,11 @@ public class Controller : Singleton<Controller>
         }
     }
 
+    public bool IsMoving()
+    {
+        return isLeftMove || isRightMove;
+    }
+    
     public void StopMove()
     {
         isLeftMove = false;
