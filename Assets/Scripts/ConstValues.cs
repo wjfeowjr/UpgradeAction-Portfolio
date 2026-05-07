@@ -367,6 +367,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string WarningArea = "WarningArea";
     public const string PlatformFragments = "PlatformFragments";
     public const string PlatformExplosion = "PlatformExplosion";
+    public const string UI = "UI";
 
     public const string BerserkerSlash = "Berserker_Slash";
     public const string BerserkerFlash = "Berserker_Flash";

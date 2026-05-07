@@ -50,7 +50,7 @@ public class TotalRoom : MonoBehaviour
             {
                 playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
                 targetPlayer = GameManager.Instance.CurPlayer;
-                playerSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}");
+                //playerSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}_{ConstValues.UI}");
             }
         }
         else
@@ -59,7 +59,7 @@ public class TotalRoom : MonoBehaviour
             {
                 playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
                 targetPlayer = GameManager.Instance.CurPlayer;
-                playerSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}");
+                //playerSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}_{ConstValues.UI}");
             }
         }
     }

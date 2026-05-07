@@ -146,7 +146,7 @@ public class Controller : Singleton<Controller>
         else
         {
             if (Input.GetKeyDown(GameManager.Instance.jumpKey))
-                GameManager.Instance.CurPlayer.Jump();
+                GameManager.Instance.CurPlayer.RequestJump();
         }
 
         if (Input.GetKeyDown(GameManager.Instance.changeCharacterKey))

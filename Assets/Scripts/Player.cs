@@ -163,6 +163,12 @@ public abstract class Player : Character
     private float jumpLimitY;
     protected bool attackBuffer;
 
+    // 메트로배니아 점프 어시스트
+    private float coyoteTimer;             // 땅을 벗어난 직후 점프 허용 잔여 시간
+    private float jumpBufferTimer;         // 점프 입력 버퍼 잔여 시간
+    private const float CoyoteTime = 0.10f;
+    private const float JumpBufferTime = 0.12f;
+
     private CancellationTokenSource dashDelayCancellation;
     private CancellationTokenSource attackDelayCancellation;
 
@@ -239,6 +245,7 @@ public abstract class Player : Character
         UpdateChangeGlobalCoolTime();
         UpdateSkillGlobalCoolTime();
         UpdateBuff();
+        UpdateJumpAssist();
 
         // 스킬 추가 테스트
         if (Input.GetKeyDown(KeyCode.P))
@@ -959,45 +966,62 @@ public abstract class Player : Character
             myRigidbody.linearVelocity = dir * new Vector2(distance, myRigidbody.linearVelocity.y);
     }
 
-    // 점프
+    // 점프 입력 요청 (Controller에서 호출) — 버퍼에 등록만 하고 실제 발동은 UpdateJumpAssist에서
+    public void RequestJump()
+    {
+        jumpBufferTimer = JumpBufferTime;
+    }
+
+    // 점프 (실제 발동) — 상태 검증은 호출자(UpdateJumpAssist)가 담당
     public async void Jump()
     {
-        if (landingState == ELandingState.Ground && normalState is ENormalState.Idle or ENormalState.Move or ENormalState.Attack)
+        PlaySound(ConstValues.Jump1, 2.0f);
+        jumpAttackCount = 0;
+        CancelMotion();
+        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+        LandingStateSetting(ELandingState.Air);
+
+        jumpLimitY = transform.position.y + myStat.jumpHeight;
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 17.5f);
+
+        // 코요테/버퍼 소비
+        coyoteTimer = 0f;
+        jumpBufferTimer = 0f;
+
+        float timer = 0.0f;
+        float jumpTime = 0.125f;
+        jumpCancellation = new CancellationTokenSource();
+        while (timer < jumpTime)
         {
-            // if(!GetGlobalCoolTime())
-            // {
-            //     Debug.Log("글로벌 쿨타임이 지나지 않음");
-            //     return;
-            // }
-            
-            //Debug.Log("점프");
-            PlaySound(ConstValues.Jump1, 2.0f);
-            //curGlobalCoolTime = 0;
-            jumpAttackCount = 0;
-            CancelMotion();
-            StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
-            LandingStateSetting(ELandingState.Air);
-            
-            jumpLimitY = transform.position.y + myStat.jumpHeight;
-            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 17.5f);
-
-            float timer = 0.0f;
-            float jumpTime = 0.125f; // 0.1f
-            jumpCancellation = new CancellationTokenSource();
-            while (timer < jumpTime) // transform.position.y < jumpLimitY && myRigidbody.linearVelocityY > 0
+            timer += Time.fixedDeltaTime;
+            if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
             {
-                timer += Time.fixedDeltaTime;
-                if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
-                {
-                    Debug.Log("점프 캔슬");
-                    return;
-                }
+                Debug.Log("점프 캔슬");
+                return;
             }
+        }
 
-            if(myRigidbody.linearVelocityY > 0)
-                myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
-            
-            //Debug.Log("점프 끝");
+        if (myRigidbody.linearVelocityY > 0)
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
+    }
+
+    // 점프 어시스트: 코요테 타임 + 점프 버퍼
+    private void UpdateJumpAssist()
+    {
+        // 코요테 타이머: 땅에 있으면 매 프레임 갱신, 공중이면 감소
+        if (landingState == ELandingState.Ground)
+            coyoteTimer = CoyoteTime;
+        else
+            coyoteTimer = Mathf.Max(0f, coyoteTimer - Time.deltaTime);
+
+        // 점프 버퍼 감소
+        jumpBufferTimer = Mathf.Max(0f, jumpBufferTimer - Time.deltaTime);
+
+        // 버퍼된 점프 소비 — 절벽에서 걸어 떨어진 경우(state=Jump이지만 코요테 잔여)도 허용
+        if (jumpBufferTimer > 0f && coyoteTimer > 0f && !downJumping && !IsDamaged()
+            && normalState is ENormalState.Idle or ENormalState.Move or ENormalState.Attack or ENormalState.Jump)
+        {
+            Jump();
         }
     }
     // 아랫점프
