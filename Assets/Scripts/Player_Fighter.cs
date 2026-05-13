@@ -28,25 +28,28 @@ public class Player_Fighter : Player
         CancelMotion();
         
         curGlobalCoolTime = 0;
+        
         stateCancellation = new CancellationTokenSource();
         var finishSuccess = await FighterChangeAttack();
-        
-        // 성공여부와 상관없이 바디타입 원상복구
         ResetBodyType();
         if (!finishSuccess)
         {
             Debug.Log($"교체 공격 캔슬");
             return;
         }
-        
-        //Debug.Log($"교체공격 끝");
-        // 동작이 끝날때 반환하는 트리거
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+        
+        // StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+        // FighterChangeAttackNotMotion();
     }
     private async UniTask<bool> FighterChangeAttack()
     {
         SpawnAttack($"{ConstValues.Fighter}_{ConstValues.ChangeAttack}", centerPos);
         return true;
+    }
+    private void FighterChangeAttackNotMotion()
+    {
+        SpawnAttack($"{ConstValues.Fighter}_{ConstValues.ChangeAttack}", centerPos);
     }
     
     public override async UniTask<bool> Attack()
@@ -202,7 +205,7 @@ public class Player_Fighter : Player
         float dropForceY = 15;
         myRigidbody.linearVelocity = new Vector2(transform.localScale.x * dropForceX, -dropForceY);
         var jumpAttackObject = SpawnAttackObject(ConstValues.FighterJumpAttack, jumpAttackPos).GetComponent<Trace>();
-        var trailObject = SpawnObject(ConstValues.FighterLightningTrail, jumpAttackPos).GetComponent<Trace>();
+        var trailObject = SpawnObject(ConstValues.FighterJumpAttackTrail, jumpAttackPos).GetComponent<Trace>();
         StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack);
 
         float timer = 0;
@@ -272,14 +275,7 @@ public class Player_Fighter : Player
         bool finishSuccess = true;
         if (skillKey == GameManager.Instance.dashKey)
         {
-            var trace = SpawnObject(ConstValues.FighterLightningTrail, centerPos).GetComponent<Trace>();
-            if (transform.localScale.x > 0)
-                trace.transform.position = new Vector3(trace.transform.position.x - 1.5f, trace.transform.position.y, trace.transform.position.z);
-            else
-                trace.transform.position = new Vector3(trace.transform.position.x + 1.5f, trace.transform.position.y, trace.transform.position.z);
-            
             finishSuccess = await Dash();
-            trace.SetTarget(null);
         }
 
         SkillSpeedAndArmorCheck(skillId);

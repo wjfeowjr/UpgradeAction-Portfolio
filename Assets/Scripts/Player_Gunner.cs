@@ -32,34 +32,46 @@ public class Player_Gunner : Player
         //Debug.Log("교체 공격 시작");
         CancelMotion();
         
-        BodyTypeSetting(EBodyType.SuperArmor);
         curGlobalCoolTime = 0;
-        stateCancellation = new CancellationTokenSource();
-        var finishSuccess = await GunnerChangeAttack();
         
-        ResetBodyType();
-        if (!finishSuccess)
-        {
-            Debug.Log($"교체 공격 캔슬");
-            return;
-        }
-        
-        //Debug.Log($"교체 공격 끝");
-        // 동작이 끝날때 반환하는 트리거
-        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+        BodyTypeSetting(EBodyType.SuperArmor);
+         stateCancellation = new CancellationTokenSource();
+         var finishSuccess = await GunnerChangeAttack();
+         ResetBodyType();
+         if (!finishSuccess)
+         {
+             Debug.Log($"교체 공격 캔슬");
+             return;
+         }
+         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+
+        // StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+        // GunnerChangeAttackNotMotion();
     }
     private async UniTask<bool> GunnerChangeAttack()
     {
-        var delay1 = 0.05f;
         StateSetting(ENormalState.Attack, ConstValues.ChangeAttack, ConstValues.ChangeAttack);
+        
+        var delay1 = 0.05f;
         for (int i = 0; i < 10; i++)
         {
             SpawnAttack($"{ConstValues.Gunner}_{ConstValues.ChangeAttack}", changeAttackPos);
             if (await AttackDelay(delay1).SuppressCancellationThrow())
                 return false;
         }
-        
         return true;
+    }
+    
+    private async void GunnerChangeAttackNotMotion()
+    {
+        stateCancellation = new CancellationTokenSource();
+        var delay1 = 0.05f;
+        for (int i = 0; i < 10; i++)
+        {
+            SpawnAttack($"{ConstValues.Gunner}_{ConstValues.ChangeAttack}", changeAttackPos);
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return;
+        }
     }
     
     public override async UniTask<bool> Attack()

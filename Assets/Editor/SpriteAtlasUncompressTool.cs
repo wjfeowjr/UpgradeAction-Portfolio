@@ -6,10 +6,19 @@ using UnityEngine.U2D;
 
 public static class SpriteAtlasUncompressTool
 {
-    private const string MenuPath = "Tools/Sprite Atlas/패킹된 텍스처 압축 해제";
-
-    [MenuItem(MenuPath)]
+    [MenuItem("Tools/Sprite Atlas/패킹된 텍스처 압축 해제 (None)")]
     private static void UncompressSelectedAtlasTextures()
+    {
+        ApplyCompressionToSelected(TextureImporterCompression.Uncompressed, "Uncompressed (None)");
+    }
+
+    [MenuItem("Tools/Sprite Atlas/패킹된 텍스처 Normal 압축 (Compressed)")]
+    private static void NormalCompressSelectedAtlasTextures()
+    {
+        ApplyCompressionToSelected(TextureImporterCompression.Compressed, "Compressed (Normal Quality)");
+    }
+
+    private static void ApplyCompressionToSelected(TextureImporterCompression mode, string label)
     {
         var texturePaths = new HashSet<string>();
         int atlasCount = 0;
@@ -30,7 +39,7 @@ public static class SpriteAtlasUncompressTool
         if (atlasCount == 0)
         {
             EditorUtility.DisplayDialog(
-                "Sprite Atlas 압축 해제",
+                "Sprite Atlas 압축 변경",
                 "Project 창에서 SpriteAtlas(.spriteatlas / .spriteatlasv2) 에셋을 1개 이상 선택한 후 다시 실행하세요.",
                 "확인");
             return;
@@ -39,15 +48,15 @@ public static class SpriteAtlasUncompressTool
         if (texturePaths.Count == 0)
         {
             EditorUtility.DisplayDialog(
-                "Sprite Atlas 압축 해제",
+                "Sprite Atlas 압축 변경",
                 "패킹 대상 텍스처를 찾지 못했습니다.",
                 "확인");
             return;
         }
 
         if (!EditorUtility.DisplayDialog(
-                "Sprite Atlas 압축 해제",
-                $"선택한 Atlas {atlasCount}개의 패킹 대상 텍스처 {texturePaths.Count}개에 대해\nTextureImporter.textureCompression = Uncompressed 로 변경합니다.\n\n진행할까요?",
+                "Sprite Atlas 압축 변경",
+                $"선택한 Atlas {atlasCount}개의 패킹 대상 텍스처 {texturePaths.Count}개를\nTextureImporter.textureCompression = {label} 로 변경합니다.\n\n진행할까요?",
                 "진행",
                 "취소"))
         {
@@ -65,7 +74,7 @@ public static class SpriteAtlasUncompressTool
             {
                 index++;
                 if (EditorUtility.DisplayCancelableProgressBar(
-                        "Sprite Atlas 압축 해제",
+                        "Sprite Atlas 압축 변경",
                         $"{index}/{texturePaths.Count}  {path}",
                         (float)index / texturePaths.Count))
                 {
@@ -78,13 +87,13 @@ public static class SpriteAtlasUncompressTool
                     skipped++;
                     continue;
                 }
-                if (importer.textureCompression == TextureImporterCompression.Uncompressed)
+                if (importer.textureCompression == mode)
                 {
                     skipped++;
                     continue;
                 }
 
-                importer.textureCompression = TextureImporterCompression.Uncompressed;
+                importer.textureCompression = mode;
                 EditorUtility.SetDirty(importer);
                 importer.SaveAndReimport();
                 changed++;
@@ -98,10 +107,10 @@ public static class SpriteAtlasUncompressTool
             AssetDatabase.Refresh();
         }
 
-        Debug.Log($"[SpriteAtlasUncompressTool] 변경 {changed}개 / 이미 무압축이거나 건너뜀 {skipped}개 / 검사 총 {texturePaths.Count}개.");
+        Debug.Log($"[SpriteAtlasUncompressTool] {label} 적용 완료. 변경 {changed}개 / 건너뜀 {skipped}개 / 검사 총 {texturePaths.Count}개.");
         EditorUtility.DisplayDialog(
             "완료",
-            $"변경: {changed}개\n건너뜀(이미 무압축): {skipped}개\n총 검사: {texturePaths.Count}개",
+            $"적용: {label}\n변경: {changed}개\n건너뜀(이미 동일/실패): {skipped}개\n총 검사: {texturePaths.Count}개",
             "확인");
     }
 

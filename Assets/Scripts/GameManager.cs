@@ -431,7 +431,8 @@ public class RoomInfo
     public List<string> visitedShortcutCells = new List<string>();   // 방문한 숏컷
     public bool savePointCheck;                                      // 세이브 포인트
     public bool portalCheck;                                         // 포탈
-
+    public bool merchantCheck;                                       // 상인
+    
     public List<RoomProduct> roomProduct = new List<RoomProduct>();
     public List<EventNpc> eventNpc = new List<EventNpc>();
     public List<ShortCut> shortCut = new List<ShortCut>();
@@ -522,6 +523,7 @@ public class GameManager : Singleton<GameManager>
 {
     public Material defaultMaterial;
     public Material hitMaterial;
+    public GameObject inGameDebugConsole;
     
     public KeyCode escKey;
     public KeyCode spaceKey;
@@ -745,6 +747,12 @@ public class GameManager : Singleton<GameManager>
         DefaultKeySetting();
         FirstCashing();
         //CashingSpeechFrame();
+    }
+
+    private void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.F12))
+            inGameDebugConsole.SetActive(!inGameDebugConsole.activeSelf);
     }
 
     private void OnDestroy()
@@ -2824,36 +2832,23 @@ public class GameManager : Singleton<GameManager>
     // 대화 세팅 연출
     public async UniTask NpcDialogue(string choice, Npc[] npc, NpcInfo npcInfo, Action finishAction)
     {
-        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice);
-        string checkKey = talkDataList[0].checkKey;
-        string endEvent = talkDataList[0].endEvent;
-        string eventReward = talkDataList[0].reward;
         bool checkKeyValue = npcInfo.dialogKey.isUse;
-        
-        List<DialogueData> talkList = new List<DialogueData>();
-        if (string.IsNullOrWhiteSpace(checkKey))
-        {
-            talkList.AddRange(talkDataList);
-        }
-        else
-        {
-            talkList.AddRange(talkDataList.FindAll(x => x.checkKey == checkKey && x.checkKeyValue == checkKeyValue));
-        }
-        
-        foreach (var talk in talkList)
+        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice && x.checkKeyValue == checkKeyValue);
+
+        foreach (var talkData in talkDataList)
         {
             var speechFrame = GetSpeechFrame(ConstValues.SpeechFrame1);
-            switch (talk.speechFrame)
+            switch (talkData.speechFrame)
             {
                 case ConstValues.SpeechFrame2:
                     speechFrame = GetSpeechFrame(ConstValues.SpeechFrame2);
                     break;
             }
 
-            var speechCharacter = GetCharacter(talk.speaker, npc);
+            var speechCharacter = GetCharacter(talkData.speaker, npc);
             List<Character> poseCharacterList = new List<Character>();
 
-            var poseCharacters = talk.poseCharacter.Split(';');
+            var poseCharacters = talkData.poseCharacter.Split(';');
             foreach (var poseCharacter in poseCharacters)
             {
                 if (!string.IsNullOrWhiteSpace(poseCharacter))
@@ -2863,7 +2858,7 @@ public class GameManager : Singleton<GameManager>
             }
             
             List<string> speechPoseList = new List<string>();
-            var speechPoses = talk.speechPose.Split(';');
+            var speechPoses = talkData.speechPose.Split(';');
             foreach (var speechPose in speechPoses)
             {
                 if (!string.IsNullOrWhiteSpace(speechPose))
@@ -2877,32 +2872,27 @@ public class GameManager : Singleton<GameManager>
             for (var i = 0; i < poseCharacterList.Count; i++)
                 poseCharacterList[i].CustomAnimTrigger(ENormalState.Idle, speechPoseList[i], ConstValues.Idle);
 
-            if(!string.IsNullOrWhiteSpace(talk.sound))
-                SoundManager.Instance.PlaySound(talk.sound);
+            if(!string.IsNullOrWhiteSpace(talkData.sound))
+                SoundManager.Instance.PlaySound(talkData.sound);
             
-            var cameraShakeArray = talk.cameraShake.Split(';');
+            var cameraShakeArray = talkData.cameraShake.Split(';');
             var cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
             if(cameraShake != Vector2.zero)
-                CameraShake(cameraShake.x, cameraShake.y, talk.shakeTime);
+                CameraShake(cameraShake.x, cameraShake.y, talkData.shakeTime);
             
-            SpawnSpeechFrame(speechFrame, speechPos.position, GetTalk(talk.talk));
+            SpawnSpeechFrame(speechFrame, speechPos.position, GetTalk(talkData.talk));
             await NextDialog(speechFrame);
-            if (talk.isEnd)
+            
+            string endEvent = talkData.endEvent;
+            string eventReward = talkData.reward;
+            if(!string.IsNullOrWhiteSpace(endEvent))
+                PlayEndEvent(npcInfo, endEvent, eventReward);
+            
+            if (talkData.isEnd)
                 break;
         }
         ControlStart = true;
-
-        if (string.IsNullOrWhiteSpace(endEvent))
-        {
-            finishAction();
-        }
-        else
-        {
-            if(checkKeyValue)
-                finishAction();
-            else
-                PlayEndEvent(npcInfo, endEvent, eventReward);
-        }
+        finishAction();
     }
     
     private void PlayEndEvent(NpcInfo npcInfo, string eventKey, string reward)

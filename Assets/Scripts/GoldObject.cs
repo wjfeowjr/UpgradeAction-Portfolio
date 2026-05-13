@@ -21,13 +21,21 @@ public class GoldObject : MonoBehaviour
         myBoxCollider = GetComponent<BoxCollider2D>();
     }
 
-    private void OnEnable()
+    // private void OnEnable()
+    // {
+    //     ResetObject();
+    //     myBoxCollider.enabled = !isBreak;
+    //     if (isBreak)
+    //         myAnimator.SetTrigger(ConstValues.BreakImmediate);
+    // }
+
+    public void ResetObject()
     {
         hp = 3;
-        gold = Random.Range(6, 10);
-        myBoxCollider.enabled = !isBreak;
-        if (isBreak)
-            myAnimator.SetTrigger(ConstValues.BreakImmediate);
+        gold = Random.Range(2, 5);
+        isBreak = false;
+        myBoxCollider.enabled = true;
+        myAnimator.SetTrigger(ConstValues.Idle);
     }
 
     public void SetAction(Action<int, Vector2> action)
@@ -50,6 +58,7 @@ public class GoldObject : MonoBehaviour
         }
         else
         {
+            delayCancellation?.Cancel();
             float delay1 = 0.2f;
 
             var randomX = Random.Range(-0.5f, 0.5f);
@@ -59,7 +68,7 @@ public class GoldObject : MonoBehaviour
             GameManager.Instance.CameraShake(0.05f, 0.05f, 0.05f);
             myAnimator.SetTrigger(ConstValues.Hit);
             
-            delayCancellation ??= new CancellationTokenSource();
+            delayCancellation = new CancellationTokenSource();
             if(await NormalDelay(delay1, delayCancellation).SuppressCancellationThrow())
                 return;
             
@@ -68,13 +77,13 @@ public class GoldObject : MonoBehaviour
     }
     
     // 일반 딜레이
-    protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
     
     // 오브젝트 소환 (오버로딩)
-    public void SpawnObject(string id, Vector2 pos, int zAngle = 0)
+    private void SpawnObject(string id, Vector2 pos, int zAngle = 0)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
         SetSpawnedObjectData(id, obj, zAngle);

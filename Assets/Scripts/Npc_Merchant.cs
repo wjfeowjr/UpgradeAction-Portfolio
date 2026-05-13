@@ -1,7 +1,7 @@
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-public class Npc_Merchant : Npc//, IFirstDialogAction
+public class Npc_Merchant : Npc
 {
     private void Start()
     {
@@ -13,13 +13,4 @@ public class Npc_Merchant : Npc//, IFirstDialogAction
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         base.StartDialogue();
     }
-    
-    // public async UniTask DialogStartAction()
-    // {
-    //     await GameManager.Instance.DialogueMove(-1.5f);
-    // }
-    // public void DialogEndAction()
-    // {
-    //     GameManager.Instance.DialogueEnd();
-    // }
 }

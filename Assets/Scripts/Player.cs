@@ -791,6 +791,11 @@ public abstract class Player : Character
             return false;
         }
 
+        // 대시 도중 공격 입력으로 캔슬되는 경우, 서브클래스의 landingState 분기보다 먼저
+        // 발 밑 플랫폼 판정을 갱신하여 공중공격이 잘못 발동되지 않도록 함
+        if (normalState == ENormalState.Dash)
+            DashEndLandingCheck();
+
         canAttack = false;
         curGlobalCoolTime = 0;
         //Debug.Log("공격 시작");
@@ -1543,10 +1548,28 @@ public abstract class Player : Character
         var trace = dashEffect.GetComponent<Trace>();
         trace.enabled = true;
 
+        Trace traceLightning = null;
+        switch (basicStat.id)
+        {
+            case ConstValues.Fighter:
+                var lightningEffect = SpawnObject(ConstValues.FighterLightningTrail, centerPos);
+                if (transform.localScale.x > 0)
+                    lightningEffect.transform.position = new Vector3(centerPos.position.x - 1.5f, centerPos.position.y, centerPos.position.z);
+                else
+                    lightningEffect.transform.position = new Vector3(centerPos.position.x + 1.5f, centerPos.position.y, centerPos.position.z);
+
+                traceLightning = lightningEffect.GetComponent<Trace>();
+                traceLightning.enabled = true;
+                break;
+        }
+
         // 돌진
         bool chargeFinish = await Charge(dashSpeed, 0.5f, dashLength, 0.5f);
-
+        
         trace.enabled = false;
+        if (traceLightning)
+            traceLightning.enabled = false;
+        
         ClearObjectList(normalObject, 0.3f);
         
         // 대시 끝

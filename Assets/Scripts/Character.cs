@@ -346,11 +346,11 @@ public abstract class Character : InteractionController
     protected virtual void FixedUpdate()
     {
         UpdateVelocity();
-        
-        CeilingCheck();
         AddIgnorePlatform();
         RemoveIgnorePlatform();
         CheckCollisions();
+        CeilingCheck();
+        
         UpdateMovingPlatform();
     }
 
@@ -445,9 +445,8 @@ public abstract class Character : InteractionController
             groundObject = downRightHit.collider.gameObject;
 
         // 무시된 플랫폼 감지
-        if (((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) || 
-            (downRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == downRightHit.collider))) &&
-            normalState != ENormalState.Dash)
+        if ((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) || 
+            (downRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == downRightHit.collider)))
             isGrounded = false;
         
         if (isGrounded)
@@ -505,30 +504,38 @@ public abstract class Character : InteractionController
             isOnPlatform = true;
             if (leftPlatform)
             {
-                lastStandPlatform = new PlatformObject()
+                var movingPlatform = downLeftHit.collider.GetComponent<MovingPlatform>();
+                if (movingPlatform)
                 {
-                    collider = downLeftHit.collider,
-                    height = ColliderHeight(downLeftHit.collider)
-                };
-                if (downLeftHit.collider.GetComponent<MovingPlatform>())
+                    currentMovingPlatform = movingPlatform;
+                    // MovingPlatform은 매 프레임 height를 갱신하므로 얕은 복사로 동기화시킴
+                    lastStandPlatform = movingPlatform.PlatformObject;
+                }
+                else
                 {
-                    currentMovingPlatform = downLeftHit.collider.GetComponent<MovingPlatform>();
-                    //lastStandPlatform = currentMovingPlatform.PlatformObject;
-                    //currentMovingPlatform.PlatformObject = lastStandPlatform;
+                    lastStandPlatform = new PlatformObject()
+                    {
+                        collider = downLeftHit.collider,
+                        height = ColliderHeight(downLeftHit.collider)
+                    };
                 }
             }
             if (rightPlatform)
             {
-                lastStandPlatform = new PlatformObject()
+                var movingPlatform = downRightHit.collider.GetComponent<MovingPlatform>();
+                if (movingPlatform)
                 {
-                    collider = downRightHit.collider,
-                    height = ColliderHeight(downRightHit.collider)
-                };
-                if (downRightHit.collider.GetComponent<MovingPlatform>())
+                    currentMovingPlatform = movingPlatform;
+                    // MovingPlatform은 매 프레임 height를 갱신하므로 얕은 복사로 동기화시킴
+                    lastStandPlatform = movingPlatform.PlatformObject;
+                }
+                else
                 {
-                    currentMovingPlatform = downRightHit.collider.GetComponent<MovingPlatform>();
-                    //lastStandPlatform = currentMovingPlatform.PlatformObject;
-                    //currentMovingPlatform.PlatformObject = lastStandPlatform;
+                    lastStandPlatform = new PlatformObject()
+                    {
+                        collider = downRightHit.collider,
+                        height = ColliderHeight(downRightHit.collider)
+                    };
                 }
             }
         }
@@ -608,8 +615,9 @@ public abstract class Character : InteractionController
 
     public void ClearLastPlatform()
     {
-        lastStandPlatform.collider = null;
-        lastStandPlatform.height = 0;
+        // lastStandPlatform이 MovingPlatform의 PlatformObject를 얕은 복사로 참조 중일 수 있으므로
+        // 필드를 직접 수정하지 않고 새 인스턴스로 재할당한다 (공유 참조 보호)
+        lastStandPlatform = new PlatformObject();
     }
 
     // 디버그 시각화 (Scene 뷰에서 확인 가능)
@@ -1490,6 +1498,9 @@ public abstract class Character : InteractionController
                 immortal = false;
                 myBoxCollider.enabled = true;
                 myRigidbody.linearVelocity = Vector2.zero;
+                // 대시 캔슬 시점에도 발 밑 플랫폼이 있으면 landingState=Ground로 즉시 갱신
+                // (Charge() 정상 종료 외 캔슬 경로에서도 1프레임 공중 판정/공중공격 발생 방지)
+                DashEndLandingCheck();
                 timer = 0.8f;
                 break;
         }
@@ -1686,10 +1697,13 @@ public abstract class Character : InteractionController
 
         // 4) 돌진 종료 후 정지
         myRigidbody.linearVelocity = Vector2.zero;
-        
-        // if(totalDuration - realDuration > 0) 
+
+        // 대시 종료 시점에 발 밑이 플랫폼/지형이면 즉시 Ground 상태로 인식 (1프레임 떠있는 현상 방지)
+        DashEndLandingCheck();
+
+        // if(totalDuration - realDuration > 0)
         //     Debug.Log($"{totalDuration - realDuration}만큼 대기시간 추가");
-        
+
         // 추가 시간 만큼 정지
         while (elapsed < totalDuration)
         {
@@ -1699,8 +1713,37 @@ public abstract class Character : InteractionController
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return false;
         }
-        
+
         return true;
+    }
+
+    // 대시 종료 시점에 발 밑이 플랫폼이면 무시 해제 + landingState=Ground로 즉시 갱신
+    // (Charge() 도중 ignorePlatformList에 추가된 플랫폼 위에 정지하더라도 직후 StateSetting(Normal) 시 Jump가 아닌 Idle/Move로 전환되도록)
+    protected void DashEndLandingCheck()
+    {
+        var leftPos = (Vector2)physicCenterPos.position + new Vector2(-footOffset, 0);
+        var rightPos = (Vector2)physicCenterPos.position + new Vector2(footOffset, 0);
+        var leftHit = Physics2D.Raycast(leftPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
+        var rightHit = Physics2D.Raycast(rightPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
+
+        if (leftHit.collider == null && rightHit.collider == null)
+            return;
+
+        // 발 밑 콜라이더가 ignore 리스트에 있고 플레이어가 그 위쪽에 있으면 무시 해제
+        var removeList = new List<PlatformObject>();
+        foreach (var ip in ignorePlatformList)
+        {
+            bool footMatch = (leftHit.collider == ip.collider || rightHit.collider == ip.collider);
+            if (footMatch && transform.position.y > ip.height)
+            {
+                Physics2D.IgnoreCollision(physicsCollider, ip.collider, false);
+                removeList.Add(ip);
+            }
+        }
+        foreach (var p in removeList)
+            ignorePlatformList.Remove(p);
+
+        LandingStateSetting(ELandingState.Ground);
     }
 
     private void ChargeTest()

@@ -247,7 +247,9 @@ public class Monster_Knife : Monster
         }
 
         // 사라짐
-        await FadeOut();
+        if (await FadeOut().SuppressCancellationThrow())
+            return;
+        
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
         

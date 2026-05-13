@@ -67,6 +67,7 @@ public class Room : MonoBehaviour
 
     [SerializeField] private SaveObject saveObject;
     [SerializeField] private PortalObject portalObject;
+    [SerializeField] private MerchantObject merchantObject;
     
     [Header("플레이어 도착위치")]
     [SerializeField] private List<Transform> leftPlayerPos;
@@ -239,6 +240,7 @@ public class Room : MonoBehaviour
         SetTrap();
         SetSavePoint();
         SetActionGoldObject();
+        RefreshGoldObject();
         
         GameManager.Instance.InitProductCancellation();
         if(await WaitUntil(() => !GameManager.Instance.FadeSystem.gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
@@ -264,6 +266,8 @@ public class Room : MonoBehaviour
         SetSavePoint();
         // 여기서 골드오브젝트 액션 넣기
         SetActionGoldObject();
+        // 골드오브젝트 초기화
+        RefreshGoldObject();
         
         GameManager.Instance.InitProductCancellation();
         if(await WaitUntil(() => !GameManager.Instance.FadeSystem.gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
@@ -924,6 +928,8 @@ public class Room : MonoBehaviour
         SetPortal();
         // 여기서 골드오브젝트 액션 넣기
         SetActionGoldObject();
+        // 골드오브젝트 초기화
+        RefreshGoldObject();
 
         GameManager.Instance.InitFadeCancellation();
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
@@ -1141,20 +1147,24 @@ public class Room : MonoBehaviour
         for (int i = 0; i < shortCutObjects.Length; i++)
             shortCutObjects[i].OpenSetting(roomInfo.shortCut[i].isOpened, ShortcutOpen);
         
+        Transform tilemapObject = roomGameObject.transform.Find(ConstValues.TilemapObject);
         if (saveObject)
         {
-            Transform tilemapObject = roomGameObject.transform.Find(ConstValues.TilemapObject);
             saveObject.SetParents(tilemapObject);
             // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
             saveObject.MinimapObject.SetActive(roomInfo.savePointCheck);
         }
-        
         if (portalObject)
         {
-            Transform tilemapObject = roomGameObject.transform.Find(ConstValues.TilemapObject);
             portalObject.SetParents(tilemapObject);
             // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
             portalObject.MinimapObject.SetActive(roomInfo.portalCheck);
+        }
+        if (merchantObject)
+        {
+            merchantObject.SetParents(tilemapObject);
+            // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
+            merchantObject.MinimapObject.SetActive(roomInfo.merchantCheck);
         }
     }
 
@@ -1193,6 +1203,12 @@ public class Room : MonoBehaviour
     {
         foreach (var goldObject in goldObjects)
             goldObject.SetAction(PlusGold);
+    }
+    
+    private void RefreshGoldObject()
+    {
+        foreach (var goldObject in goldObjects)
+            goldObject.ResetObject();
     }
 
     private void SetPortal()
@@ -1538,6 +1554,24 @@ public class Room : MonoBehaviour
         }
         if (portalNew)
             SavePortalObject();
+
+        bool merchantNew = false;
+        if(merchantObject)
+        {
+            Vector2 merchantPos = merchantObject.transform.position;
+            Vector2 saveSize = new Vector2(3.5f, 3.5f);
+            
+            Vector2 min = new Vector2(merchantPos.x - saveSize.x, merchantPos.y - saveSize.y);
+            Vector2 max = new Vector2(merchantPos.x + saveSize.x, merchantPos.y + saveSize.y);
+            // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
+            if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
+                max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+            {
+                merchantNew = true;
+            }
+        }
+        if (merchantNew)
+            SaveMerchantObject();
         
         bool shortcutNew = false;
         foreach (var shortcutCell in allshortcutCells)
@@ -1674,6 +1708,12 @@ public class Room : MonoBehaviour
     {
         portalObject.MinimapObject.SetActive(true);
         roomInfo.portalCheck = true;
+    }
+    
+    private void SaveMerchantObject()
+    {
+        merchantObject.MinimapObject.SetActive(true);
+        roomInfo.merchantCheck = true;
     }
 
     /// <summary>
@@ -2383,17 +2423,37 @@ public class Room : MonoBehaviour
         if(goldObjectArray != null)
             goldObjects = goldObjectArray.GetComponentsInChildren<GoldObject>();
         
-        Transform groundGrid = roomGameObject.transform.Find(ConstValues.GroundGrid);
-        if (groundGrid != null)
-            lockDoors = groundGrid.GetComponentsInChildren<LockDoor>();
+        Transform gridObject = roomGameObject.transform.Find(ConstValues.GridObject);
+        if (gridObject != null)
+        {
+            productTriggers = gridObject.GetComponentsInChildren<ProductTrigger>();
+            lockDoors = gridObject.GetComponentsInChildren<LockDoor>();
+            
+            leftEntrance = new List<RoomEntrance>();
+            rightEntrance = new List<RoomEntrance>();
+            upEntrance = new List<RoomEntrance>();
+            downEntrance = new List<RoomEntrance>();
+
+            RoomEntrance[] entranceArray = gridObject.GetComponentsInChildren<RoomEntrance>();
+            foreach (var entrance in entranceArray)
+            {
+                if (entrance.name.Split(' ')[0] == $"{ConstValues.LeftEntrance}")
+                    leftEntrance.Add(entrance);
+                
+                if (entrance.name.Split(' ')[0] == $"{ConstValues.RightEntrance}")
+                    rightEntrance.Add(entrance);
+                
+                if (entrance.name.Split(' ')[0] == $"{ConstValues.UpEntrance}")
+                    upEntrance.Add(entrance);
+                
+                if (entrance.name.Split(' ')[0] == $"{ConstValues.DownEntrance}")
+                    downEntrance.Add(entrance);
+            }
+        }
 
         Transform trapArray = roomGameObject.transform.Find(ConstValues.TrapArray);
         if (trapArray != null)
             traps = trapArray.GetComponentsInChildren<BoxCollider2D>();
-        
-        Transform productTriggerArray = roomGameObject.transform.Find(ConstValues.ProductTriggerArray);
-        if (productTriggerArray != null)
-            productTriggers = productTriggerArray.GetComponentsInChildren<ProductTrigger>();
 
         Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
         if (playerPosArray != null)
@@ -2419,32 +2479,15 @@ public class Room : MonoBehaviour
                     downPlayerPos.Add(poss);
             }
         }
-        
-        Transform entrancePosArray = roomGameObject.transform.Find(ConstValues.EntranceArray);
-        if (entrancePosArray != null)
-        {
-            leftEntrance = new List<RoomEntrance>();
-            rightEntrance = new List<RoomEntrance>();
-            upEntrance = new List<RoomEntrance>();
-            downEntrance = new List<RoomEntrance>();
-
-            RoomEntrance[] entranceArray = entrancePosArray.GetComponentsInChildren<RoomEntrance>();
-            foreach (var entrance in entranceArray)
-            {
-                if (entrance.name.Split(' ')[0] == $"{ConstValues.LeftEntrance}")
-                    leftEntrance.Add(entrance);
-                
-                if (entrance.name.Split(' ')[0] == $"{ConstValues.RightEntrance}")
-                    rightEntrance.Add(entrance);
-                
-                if (entrance.name.Split(' ')[0] == $"{ConstValues.UpEntrance}")
-                    upEntrance.Add(entrance);
-                
-                if (entrance.name.Split(' ')[0] == $"{ConstValues.DownEntrance}")
-                    downEntrance.Add(entrance);
-            }
-        }
         guideObjects = roomGameObject.GetComponentsInChildren<GuideObject>();
+
+        var savePoint = roomGameObject.transform.Find(ConstValues.SavePoint);
+        if(savePoint != null)
+            saveObject = roomGameObject.transform.Find(ConstValues.SavePoint).GetComponentInChildren<SaveObject>();
+        
+        var portal = roomGameObject.transform.Find(ConstValues.PortalObject);
+        if(portal != null) 
+            portalObject = roomGameObject.transform.Find(ConstValues.PortalObject).GetComponentInChildren<PortalObject>();
     }
     
     // 방문 체크
@@ -2497,24 +2540,24 @@ public class Room : MonoBehaviour
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "이렇게 여는거 맞나?_");
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10137));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "대충 돌려봐!_");
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10138));
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10139));
         await NextDialog(speechFrame1);
         
         await openAction();
-        
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "..._");
+
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10140));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "문이 열린게 아니라 부숴졌는데?_");
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10141));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "문 부숴진건 나랑 상관 없는 일이다._");
-        await NextDialog(speechFrame1);
-        
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "너의 그 무책임한 태도가 난 정말 좋아!_");
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10142));
         await NextDialog(speechFrame1);
         
         GameManager.Instance.DialogueEnd();
@@ -2545,28 +2588,40 @@ public class Room : MonoBehaviour
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "이거 어떻게 열었더라?_");
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10143));
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10144));
         await NextDialog(speechFrame1);
 
         await openAction();
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, "손만 대면 죄다 박살내는구나!_");
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10145));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "나랑 상관 없는 일이다._");
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10146));
+        await NextDialog(speechFrame1);
+
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10147));
         await NextDialog(speechFrame1);
         
         npc[0].Flip(-1);
-        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, "뭐야! 광산 문을 열었잖아!_");
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10148));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, "열어준 보답으로 나도 동행하겠다!_");
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10149));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, "누구 맘대로 오겠다는거야_");
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10150));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, "나 강하다! 너네랑 같이간다!_");
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10151));
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10152));
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10153));
         await NextDialog(speechFrame1);
         
         npc[0].SpawnObject(ConstValues.BangEffect, npc[0].CenterPos.position);
@@ -2615,10 +2670,10 @@ public class Room : MonoBehaviour
             }
         }
         
-        Transform entrancePosArray = roomGameObject.transform.Find(ConstValues.EntranceArray);
-        if (entrancePosArray != null)
+        Transform gridObject = roomGameObject.transform.Find(ConstValues.GridObject);
+        if (gridObject != null)
         {
-            RoomEntrance[] entranceArray = entrancePosArray.GetComponentsInChildren<RoomEntrance>();
+            RoomEntrance[] entranceArray = gridObject.GetComponentsInChildren<RoomEntrance>();
             foreach (var entrance in entranceArray)
             {
                 if (entrance.name == $"{ConstValues.LeftEntrance}_1")

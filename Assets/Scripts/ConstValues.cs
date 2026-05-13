@@ -218,12 +218,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string InteractionArray = "InteractionArray";
     public const string GoldObjectArray = "GoldObjectArray";
     public const string PlayerPosArray = "PlayerPosArray";
-    public const string EntranceArray = "EntranceArray";
-    public const string BossGateArray = "BossGateArray";
-    public const string ProductTriggerArray = "ProductTriggerArray";
-    public const string ShortcutArray = "ShortcutArray";
-    public const string GroundGrid = "GroundGrid";
-    public const string ShortcutTileMap = "ShortcutTileMap";
+    public const string GridObject = "GridObject";
     public const string LeftPlayerPos = "LeftPlayerPos";
     public const string RightPlayerPos = "RightPlayerPos";
     public const string UpPlayerPos = "UpPlayerPos";
@@ -246,10 +241,8 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Rooms = "Rooms";
     public const string Minimap = "Minimap";
-    public const string MiniMapVisitedCells = "MiniMapVisitedCells";
-    public const string MiniMapShortcutCells = "MiniMapShortcutCells";
-    public const string MiniMapCheckers = "MiniMapCheckers";
     public const string SavePoint = "SavePoint";
+    public const string PortalObject = "PortalObject";
     public const string Interaction = "Interaction";
     public const string InteractionUI = "InteractionUI";
     public const string InteractionSelectUI = "InteractionSelectUI";
@@ -448,7 +441,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string FighterAttack2 = "Fighter_Attack2";
     public const string FighterAttack3 = "Fighter_Attack3";
     public const string FighterJumpAttack = "Fighter_JumpAttack";
-
+    public const string FighterJumpAttackTrail = "Fighter_JumpAttack_Trail";
+    
     public const string FighterDash = "Fighter_Dash";
     public const string FighterLightningEffect = "Fighter_LightningEffect";
     public const string FighterLightningTrail = "Fighter_LightningTrail";

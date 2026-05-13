@@ -4,8 +4,6 @@ using UnityEngine;
 
 public class RoomEntrance : MonoBehaviour
 {
-    [SerializeField] private BoxCollider2D triggerCollider;
-    
     private Action myAction;
     private Func<UniTask> myAsyncAction;
 

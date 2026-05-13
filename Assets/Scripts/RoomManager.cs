@@ -43,6 +43,8 @@ public class RoomManager : Singleton<RoomManager>
         set => currentRoom = value;
     }
 
+    public int PopupLayer => popupLayer;
+
     protected override void Awake()
     {
         if (!SceneChanger.Instance)
@@ -125,7 +127,7 @@ public class RoomManager : Singleton<RoomManager>
                 if (Input.GetKeyDown(GameManager.Instance.miniMapKey))
                     SpawnMinimap();
 
-                if (Input.GetKeyDown(GameManager.Instance.characterInfoKey) && GameManager.Instance.FirstGetAttribute)
+                if (Input.GetKeyDown(GameManager.Instance.characterInfoKey))
                     SpawnCharacterPopup();
             
                 if (Input.GetKeyDown(GameManager.Instance.pauseKey))

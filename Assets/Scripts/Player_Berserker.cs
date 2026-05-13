@@ -37,28 +37,27 @@ public class Player_Berserker : Player
         //Debug.Log("교체 공격 시작");
         CancelMotion();
 
-        BodyTypeSetting(EBodyType.SuperArmor);
         curGlobalCoolTime = 0;
-        stateCancellation = new CancellationTokenSource();
-        var finishSuccess = await BerserkerChangeAttack();
         
-        // 성공여부와 상관없이 바디타입 원상복구
-        ResetBodyType();
-        if (!finishSuccess)
-        {
-            Debug.Log($"교체 공격 캔슬");
-            return;
-        }
-        
-        //Debug.Log($"교체공격 끝");
-        // 동작이 끝날때 반환하는 트리거
-        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+        BodyTypeSetting(EBodyType.SuperArmor);
+         stateCancellation = new CancellationTokenSource();
+         var finishSuccess = await BerserkerChangeAttack();
+         ResetBodyType();
+         if (!finishSuccess)
+         {
+             Debug.Log($"교체 공격 캔슬");
+             return;
+         }
+         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+
+        // StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+        // BerserkerChangeAttackNotMotion();
     }
     private async UniTask<bool> BerserkerChangeAttack()
     {
-        var delay1 = 0.14f;
         StateSetting(ENormalState.Attack, ConstValues.ChangeAttack, ConstValues.ChangeAttack);
-
+        
+        var delay1 = 0.14f;
         for (int i = 0; i < 3; i++)
         {
             SpawnAttack($"{ConstValues.Berserker}_{ConstValues.ChangeAttack}", changeAttackPos);
@@ -66,6 +65,17 @@ public class Player_Berserker : Player
                 return false;
         }
         return true;
+    }
+    private async void BerserkerChangeAttackNotMotion()
+    {
+        stateCancellation = new CancellationTokenSource();
+        var delay1 = 0.14f;
+        for (int i = 0; i < 3; i++)
+        {
+            SpawnAttack($"{ConstValues.Berserker}_{ConstValues.ChangeAttack}", changeAttackPos);
+            if (await AttackDelay(delay1).SuppressCancellationThrow())
+                return;
+        }
     }
     
     public override async UniTask<bool> Attack()
@@ -75,7 +85,7 @@ public class Player_Berserker : Player
         
         bool finishSuccess = true;
         string type = "지상";
-        
+
         switch (landingState)
         {
             // 지상공격

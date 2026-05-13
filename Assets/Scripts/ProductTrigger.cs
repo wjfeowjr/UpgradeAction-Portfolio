@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class ProductTrigger : MonoBehaviour
 {
-    [SerializeField] private BoxCollider2D triggerCollider;
+    [SerializeField] private Collider2D triggerCollider;
     
     private Action myAction;
     private Func<UniTask> myAsyncAction;
