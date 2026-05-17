@@ -303,9 +303,7 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Ground = "Ground";
     public const string Trap = "Trap";
-    public const string Stage = "Stage";
-    public const string Flip = "Flip";
-    public const string Stop = "Stop";
+    public const string Mark = "Mark";
     public const string StageWallLeft = "StageWallLeft";
     public const string StageWallRight = "StageWallRight";
     public const string Platform = "Platform";

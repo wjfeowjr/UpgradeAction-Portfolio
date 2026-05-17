@@ -97,7 +97,7 @@ public class Room : MonoBehaviour
     
     [SerializeField] protected List<Vector2> firstBossPosList = new List<Vector2>();
     [SerializeField] protected Npc[] npc;
-    [SerializeField] protected BoxCollider2D[] traps;
+    [SerializeField] protected List<Collider2D> trapList = new List<Collider2D>();
     [SerializeField] protected ShortcutObject[] shortCutObjects;
     
     [SerializeField] protected Transform monsterLimitLeft;
@@ -1126,7 +1126,7 @@ public class Room : MonoBehaviour
 
     private void SetTrap()
     {
-        foreach (var trap in traps)
+        foreach (var trap in trapList)
             GameManager.Instance.InputDataTrap(trap.name, trap);
     }
 
@@ -1369,6 +1369,9 @@ public class Room : MonoBehaviour
                 break;
             case 7:
                 Product7();
+                break;
+            case 8:
+                Product8();
                 break;
         }
     }
@@ -2257,34 +2260,9 @@ public class Room : MonoBehaviour
     }
     
     // 아레나 대전
-    private async void Product6()
+    private void Product6()
     {
-        GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitProductCancellation();
-        GameManager.Instance.StopPlayer();
-
-        await arenas[0].ReduceCameraLimitX(firstMaxLimit, firstMinLimit);
-        BgmManager.Instance.DelayStop(0.1f);
-        if (await GameManager.Instance.NormalDelay(1.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-            return;
-
-        arenas[0].CreateTile();
-        
-        if (await GameManager.Instance.NormalDelay(1.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-            return;
-
-        PlayBGM(ConstValues.BGMArena, true);
-        
-        GameManager.Instance.MovePlayer();
-        await arenas[0].RoundStart();
-        GameManager.Instance.StopPlayer();
-        await arenas[0].RoundEnd();
-        
-        SetBgm(true);
-        GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
-        
-        roomInfo.roomProduct[0].isFinish = true;
-        GameManager.Instance.SaveGame();
+        StartArena();
     }
     
     private async void Product7()
@@ -2330,6 +2308,42 @@ public class Room : MonoBehaviour
         roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
         UIOn();
+    }
+    
+    private void Product8()
+    {
+        StartArena();
+    }
+    
+    // 아레나 대전
+    private async void StartArena()
+    {
+        GameManager.Instance.CurPlayer.ForceProduct();
+        GameManager.Instance.InitProductCancellation();
+        GameManager.Instance.StopPlayer();
+
+        await arenas[0].ReduceCameraLimitX(firstMaxLimit, firstMinLimit);
+        BgmManager.Instance.DelayStop(0.1f);
+        if (await GameManager.Instance.NormalDelay(1.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        arenas[0].CreateTile();
+        
+        if (await GameManager.Instance.NormalDelay(1.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        PlayBGM(ConstValues.BGMArena, true);
+        
+        GameManager.Instance.MovePlayer();
+        await arenas[0].RoundStart();
+        GameManager.Instance.StopPlayer();
+        await arenas[0].RoundEnd();
+        
+        SetBgm(true);
+        GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
+        
+        roomInfo.roomProduct[0].isFinish = true;
+        GameManager.Instance.SaveGame();
     }
     
     // 스킬 획득 후 이벤트
@@ -2450,10 +2464,13 @@ public class Room : MonoBehaviour
                     downEntrance.Add(entrance);
             }
         }
-
-        Transform trapArray = roomGameObject.transform.Find(ConstValues.TrapArray);
-        if (trapArray != null)
-            traps = trapArray.GetComponentsInChildren<BoxCollider2D>();
+        
+        Transform[] allChildren = roomGameObject.GetComponentsInChildren<Transform>(true);
+        foreach (var child in allChildren)
+        {
+            if (child.CompareTag(ConstValues.Trap))
+                trapList.Add(child.GetComponent<Collider2D>());
+        }
 
         Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);
         if (playerPosArray != null)

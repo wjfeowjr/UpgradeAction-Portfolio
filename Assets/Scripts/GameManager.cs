@@ -1732,7 +1732,7 @@ public class GameManager : Singleton<GameManager>
         monsterList.Clear();
     }
     
-    public void InputDataTrap(string trapId, BoxCollider2D trapObject)
+    public void InputDataTrap(string trapId, Collider2D trapObject)
     {
         string originId = trapId.Split(' ')[0];
         var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == originId);
@@ -3001,5 +3001,37 @@ public class GameManager : Singleton<GameManager>
             default:
                 return "Non";
         }
+    }
+
+    public async void PlayerRespawn()
+    {
+        curPlayer.Immortal = true;
+        ControlStart = false;
+
+        float delay1 = 0.3f;
+        float delay2 = 0.1f;
+
+        InitWaitCancellation();
+        if(await NormalDelay(delay1, waitCancellation).SuppressCancellationThrow())
+            return;
+        
+        curPlayer.SpawnObject(ConstValues.BangEffect, curPlayer.CenterPos.position);
+        curPlayer.gameObject.SetActive(false);
+        if(await NormalDelay(delay1, waitCancellation).SuppressCancellationThrow())
+            return;
+        
+        // 이동기능 추가
+        curPlayer.transform.position = curPlayer.GetLastMarkerPosition();
+        if(await NormalDelay(delay1, waitCancellation).SuppressCancellationThrow())
+            return;
+        
+        curPlayer.SpawnObject(ConstValues.BangEffect, curPlayer.CenterPos.position);
+        curPlayer.gameObject.SetActive(true);
+        
+        if(await NormalDelay(delay2, waitCancellation).SuppressCancellationThrow())
+            return;
+        
+        curPlayer.Immortal = false;
+        ControlStart = true;
     }
 }

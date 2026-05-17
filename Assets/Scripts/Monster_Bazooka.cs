@@ -32,9 +32,9 @@ public class Monster_Bazooka : Monster
         if (GameManager.Instance.CurPlayer.CenterPos.position.x < transform.position.x)
             missileDir = -1;
         
-        var missileObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}_{ConstValues.Object}", attackPos, 0, missileDir).GetComponent<Missile>();
-        missileObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
-        missileObject.gameObject.SetActive(false);
+        // var missileObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}_{ConstValues.Object}", attackPos, 0, missileDir).GetComponent<Missile>();
+        // missileObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
+        // missileObject.gameObject.SetActive(false);
         
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return;
@@ -43,7 +43,11 @@ public class Monster_Bazooka : Monster
         
         GameObject effectObject = SpawnObject($"{basicStat.id}_{ConstValues.Attack}_{ConstValues.Effect}", effectPos);
         effectObject.transform.eulerAngles = transform.localScale.x > 0 ? new Vector3(-20, 90, 0) : new Vector3(-20, -90, 0);
-        missileObject.gameObject.SetActive(true);
+        
+        var missileObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}_{ConstValues.Object}", attackPos, 0, missileDir).GetComponent<Missile>();
+        missileObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
+        
+        //missileObject.gameObject.SetActive(true);
         
         SetTriggerAnimator(ConstValues.Pattern);
         if (await AttackDelay(delay2).SuppressCancellationThrow())

@@ -46,6 +46,7 @@ public class AttackData
     public string deBuffTime;
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
+    public bool respawnAttack;
     public bool destroyProjectile;
     public bool continuous;
     public float continuousDelay;

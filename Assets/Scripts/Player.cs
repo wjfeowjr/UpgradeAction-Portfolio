@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Tilemaps;
 
 [Serializable]
 public class PlayerAnimations
@@ -185,6 +186,9 @@ public abstract class Player : Character
     [SerializeField] private GameObject dashEffectUI;
     [SerializeField] private GameObject dashFrameUI;
     [SerializeField] private GameObject waitCharacterUI;
+    
+    [SerializeField] private bool hasLastMarker;
+    [SerializeField] private Vector2 lastMarkerPosition;
 
     protected float globalCoolTime;
     protected float curGlobalCoolTime;
@@ -1122,6 +1126,7 @@ public abstract class Player : Character
     {
         while (normalState != ENormalState.Idle)
         {
+            stateCancellation ??= new CancellationTokenSource();
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -1514,6 +1519,8 @@ public abstract class Player : Character
     public void ReceiveChangeData(Player player)
     {
         currentMovingPlatform = player.currentMovingPlatform;
+        hasLastMarker = player.hasLastMarker;
+        lastMarkerPosition = player.lastMarkerPosition;
         if (player.landingState == ELandingState.Ground)
             landingState = ELandingState.Ground;
     }
@@ -1576,6 +1583,19 @@ public abstract class Player : Character
         immortal = false;
         myBoxCollider.enabled = true;
         return chargeFinish;
+    }
+
+    // 마지막으로 밟은 마커의 중앙 월드 좌표를 반환
+    // 밟은 마커가 없으면 Debug.Log 후 현재 위치를 반환 (fallback)
+    public Vector2 GetLastMarkerPosition()
+    {
+        if (!hasLastMarker)
+        {
+            Debug.Log("[Player] 밟은 마커가 없습니다.");
+            return transform.position;
+        }
+
+        return lastMarkerPosition;
     }
 
     public async UniTask WaitIdle()
@@ -1651,6 +1671,28 @@ public abstract class Player : Character
                 npc.SpawnInteractionObject();
             }
         }
+    }
+    
+    // 플레이어가 Mark 태그 Tilemap 위에 있을 때, 발 밑 셀을 갱신
+    private void OnTriggerStay2D(Collider2D col)
+    {
+        if (!col.CompareTag(ConstValues.Mark))
+            return;
+
+        var tilemap = col.GetComponent<Tilemap>();
+        if (!tilemap)
+            return;
+
+        // 발 위치 기준으로 셀 좌표 산출
+        Vector3Int cell = tilemap.WorldToCell(transform.position);
+
+        // 해당 셀에 실제 마커 타일이 존재하는지 확인 (콜라이더 영역의 빈 칸 제외)
+        if (tilemap.GetTile(cell) == null)
+            return;
+
+        // 셀의 중앙 월드 좌표를 Vector2로 저장
+        lastMarkerPosition = tilemap.GetCellCenterWorld(cell);
+        hasLastMarker = true;
     }
 
     private void OnTriggerExit2D(Collider2D col)

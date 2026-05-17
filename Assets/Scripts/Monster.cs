@@ -611,10 +611,17 @@ public class Monster : Character
         RaycastHit2D upRay = Physics2D.Raycast(rayVector, Vector2.up, distance, groundLayerMask);
         Debug.DrawRay(rayVector, Vector2.up * distance, ConstValues.RedColor, 0.1f);
         if (upRay.collider == null)
+        {
             arriveHeight = transform.position.y + leapHeight;
+        }
         else
+        {
             arriveHeight = upRay.point.y - myBoxCollider.size.y * 0.5f - myBoxCollider.offset.y - 0.2f;
-
+            if (arriveHeight > startPos.y)
+                arriveHeight = startPos.y;
+        }
+        
+        // 시작지점과 차이가 별로 나지 않으면 씹는 코드 추가
         StateSetting(ENormalState.Leap, ConstValues.Leap, ConstValues.Leap);
         MoveStateSetting(EMoveState.Stopping);
         LandingStateSetting(ELandingState.Air);
@@ -712,7 +719,10 @@ public class Monster : Character
         StandHitBox();
         StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
         MoveStateSetting(EMoveState.Stopping);
-        LandingStateSetting(ELandingState.Ground);
+        if(myStat.hovering)
+            LandingStateSetting(ELandingState.Air);
+        else
+            LandingStateSetting(ELandingState.Ground);
 
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         immortal = false;

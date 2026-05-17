@@ -38,7 +38,16 @@ public class BgmManager : Singleton<BgmManager>
                 return;
 
             if (myAudioSource.resource == bgmDic[uniqueId])
-                return;
+            {
+                if (!myAudioSource.isPlaying)
+                {
+                    if(!immediately)
+                        await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
+                
+                    myAudioSource.Play();
+                    return;
+                }
+            }
 
             if (currentBgm == uniqueId)
                 return;

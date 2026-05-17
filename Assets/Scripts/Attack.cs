@@ -34,6 +34,7 @@ public class AttackInfo
     public List<DeBuffInfo> deBuffInfoList = new List<DeBuffInfo>();
     public bool ignoreSuperArmor;
     public bool ignoreImmortal;
+    public bool respawnAttack;
     public bool destroyProjectile;
     public bool continuous;
     public float continuousDelay;
@@ -111,6 +112,7 @@ public class Attack : MonoBehaviour
             }
             originInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
             originInfo.ignoreImmortal = attackData.ignoreImmortal;
+            originInfo.respawnAttack = attackData.respawnAttack;
             originInfo.destroyProjectile = attackData.destroyProjectile;
             originInfo.continuous = attackData.continuous;
             originInfo.continuousDelay = attackData.continuousDelay;
@@ -167,6 +169,7 @@ public class Attack : MonoBehaviour
 
         attackInfo.ignoreSuperArmor = attackData.ignoreSuperArmor;
         attackInfo.ignoreImmortal = attackData.ignoreImmortal;
+        attackInfo.respawnAttack = attackData.respawnAttack;
         attackInfo.destroyProjectile = attackData.destroyProjectile;
         attackInfo.continuous = attackData.continuous;
         attackInfo.continuousDelay = attackData.continuousDelay;
@@ -293,7 +296,7 @@ public class Attack : MonoBehaviour
     
     private void ColliderTimer()
     {
-        if (attackInfo.colliderTime == 0)
+        if (attackInfo == null || attackInfo.colliderTime == 0)
             return;
         
         leftColliderTime += Time.deltaTime;
@@ -411,253 +414,351 @@ public class Attack : MonoBehaviour
     }
 
     // 공격판정 적용
-    // if (col.GetComponent<Monster>() != null)
-    // hitTarget.LookAt(transform.position.x);
     private void OnTriggerEnter2D(Collider2D col)
     {
-        // 미사일 또는 수류탄 형식의 판정 파괴
-        if (attackInfo.destroyProjectile)
-        {
-            var projectile = col.GetComponent<IProjectile>();
+        // 1. 투사체 파괴 (미사일/수류탄 등) — 파괴됐다면 종료
+        if (attackInfo.destroyProjectile && TryDestroyProjectile(col))
+            return;
 
-            if (projectile != null)
-            {
-                if (castChar)
-                {
-                    // 플레이어의 공격이 몬스터의 투사체 소멸
-                    if (castChar.GetComponent<Player>())
-                    {
-                        var monsterName = col.name.Split('_')[0];
-                        if (monsterName == ConstValues.Monster)
-                        {
-                            // (보스의 투사체는 제외)
-                            if (!projectile.IsBoss())
-                            {
-                                projectile.Delete();
-                                return;
-                            }
-                        }
-                    }
-                    // 몬스터의 공격이 플레이어의 투사체 소멸
-                    if (castChar.GetComponent<Monster>())
-                    {
-                        var characterName = col.name.Split('_')[0];
-                        if (characterName is ConstValues.Berserker or ConstValues.Gunner or ConstValues.Fighter)
-                        {
-                            projectile.Delete();
-                            return;
-                        }
-                    }
-                }
-            }
+        // 2. Character 컴포넌트가 있어야만 피격 처리
+        var hitTarget = col.GetComponent<Character>();
+        if (hitTarget == null)
+            return;
+
+        // 3. 무적/사망 상태 필터링
+        if (!IsHittable(hitTarget))
+            return;
+
+        // 4. 캐스터-타깃 관계 유효성 검증 (트랩 여부 산출)
+        if (!IsValidTarget(col, hitTarget, out bool isTrapAttack))
+            return;
+
+        // 5. 카메라 셰이크
+        GameManager.Instance.CameraShake(attackInfo.hitShake[0], attackInfo.hitShake[1], attackInfo.shakeTime);
+
+        // 6. 카운터 처리 — 성공 시 데미지 들어가지 않고 종료
+        if (TryHandleCounter(hitTarget))
+            return;
+
+        // 7. 피격 이팩트
+        if (!string.IsNullOrWhiteSpace(attackInfo.hitEffectId))
+            hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
+
+        // 8. 기본 데미지 적용
+        bool critical = GetCritical();
+        int finalDamage = ApplyDamage(hitTarget, critical, isTrapAttack);
+
+        // 9. 감전 추가 피해
+        TryApplyShockBonus(hitTarget, finalDamage, critical, isTrapAttack);
+
+        // 10. 사망 체크
+        if (hitTarget.BasicStat.hp <= 0)
+        {
+            hitTarget.Die();
+            return;
         }
 
-        var hitTarget = col.GetComponent<Character>();
-        if (hitTarget != null)
+        // 11. 넉백/공중치 방향 계산
+        CalculateDirectionalForces(hitTarget, out float upperPowerX, out float knockBackX);
+
+        // 12. 중복 타격 방지 (다시 충돌하지 않도록 콜라이더 무시)
+        if (!attackInfo.duplicate)
+            IgnoreCol(col);
+
+        // 13. 스태거 누적 / 무력화 — 무력화 발생 시 종료
+        if (TryApplyStagger(hitTarget))
+            return;
+
+        // 14. 상태이상(디버프) 적용
+        ApplyDeBuffs(hitTarget, critical);
+
+        // 15. 피격 리액션 (Airborne / Damaged)
+        ApplyHitReaction(hitTarget, upperPowerX, knockBackX);
+
+        // 16. 리스폰 어택 (트랩 등) — 플레이어가 맞았을 때만 안전 위치로 복귀
+        TryRespawnPlayer(hitTarget);
+    }
+
+    // respawnAttack 옵션이 켜져 있고, 맞은 대상이 Player일 때 리스폰 수행
+    private void TryRespawnPlayer(Character hitTarget)
+    {
+        if (!attackInfo.respawnAttack)
+            return;
+
+        var player = hitTarget as Player;
+        if (player == null)
+            return;
+
+        GameManager.Instance.PlayerRespawn();
+    }
+
+    // 미사일/수류탄 등 투사체를 파괴할 수 있다면 파괴하고 true 반환
+    private bool TryDestroyProjectile(Collider2D col)
+    {
+        var projectile = col.GetComponent<IProjectile>();
+        if (projectile == null)
+            return false;
+
+        // 트랩 등 캐스터가 없는 공격은 투사체를 파괴하지 않는다
+        if (!castChar)
+            return false;
+
+        // 플레이어의 공격이 몬스터의 투사체 소멸 (보스 투사체는 제외)
+        if (castChar.GetComponent<Player>())
         {
-            if((hitTarget.Immortal && !attackInfo.ignoreImmortal) || hitTarget.IsDie || hitTarget.BasicStat.hp <= 0)
-                return;
-
-            bool isTrapAttack = false;
-            
-            if (castChar)
+            var monsterName = col.name.Split('_')[0];
+            if (monsterName == ConstValues.Monster && !projectile.IsBoss())
             {
-                // 플레이어의 공격
-                if (castChar.GetComponent<Player>())
+                projectile.Delete();
+                return true;
+            }
+        }
+        // 몬스터의 공격이 플레이어의 투사체 소멸
+        if (castChar.GetComponent<Monster>())
+        {
+            var characterName = col.name.Split('_')[0];
+            if (characterName is ConstValues.Berserker or ConstValues.Gunner or ConstValues.Fighter)
+            {
+                projectile.Delete();
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // 피격이 가능한 상태인지(무적/사망 필터)
+    private bool IsHittable(Character hitTarget)
+    {
+        if (hitTarget.Immortal && !attackInfo.ignoreImmortal)
+            return false;
+        if (hitTarget.IsDie)
+            return false;
+        if (hitTarget.BasicStat.hp <= 0)
+            return false;
+        return true;
+    }
+
+    // 캐스터-타깃 관계가 유효한지 + 트랩 여부 판정
+    // 트랩: castChar == null → Player/Monster만 타격
+    // 플레이어 공격: Monster/Npc만 타격 (+ 스프라이트 점멸)
+    // 몬스터 공격: Player/Npc만 타격
+    private bool IsValidTarget(Collider2D col, Character hitTarget, out bool isTrapAttack)
+    {
+        isTrapAttack = false;
+
+        // 트랩
+        if (!castChar)
+        {
+            if (col.GetComponent<Player>() == null && col.GetComponent<Monster>() == null)
+                return false;
+            isTrapAttack = true;
+            return true;
+        }
+
+        // 플레이어의 공격
+        if (castChar.GetComponent<Player>())
+        {
+            if (col.GetComponent<Monster>() == null && col.GetComponent<Npc>() == null)
+                return false;
+            // 스프라이트가 점멸한다
+            hitTarget.HitMaterial();
+            return true;
+        }
+
+        // 몬스터의 공격
+        if (castChar.GetComponent<Monster>())
+        {
+            if (col.GetComponent<Player>() == null && col.GetComponent<Npc>() == null)
+                return false;
+            return true;
+        }
+
+        return true;
+    }
+
+    // 카운터 가능 아머일 때 처리. 카운터 성공 시 true 반환
+    private bool TryHandleCounter(Character hitTarget)
+    {
+        if (hitTarget.BasicStat.bodyType != EBodyType.Counter)
+            return false;
+
+        if (IsCanCounter(hitTarget))
+        {
+            hitTarget.IsCounterAttack = true;
+            return true;
+        }
+
+        // 반격 실패 시 원래 아머타입으로 돌아옴
+        hitTarget.BasicStat.bodyType = hitTarget.OriginStat.bodyType;
+        return false;
+    }
+
+    // 기본 데미지 적용 (랜덤 변동, 최종 보정 포함)
+    private int ApplyDamage(Character hitTarget, bool critical, bool isTrapAttack)
+    {
+        int damage = GetDamage(critical);
+        float randDmg = Random.Range(0.95f, 1.05f);
+        damage = (int)(damage * randDmg);
+
+        int finalDamage = hitTarget.FinalDamage(damage);
+        hitTarget.TakeDamage(finalDamage, isTrapAttack);
+        hitTarget.SpawnDamageFont(finalDamage, critical, false, false);
+        return finalDamage;
+    }
+
+    // 감전 디버프가 있을 때 추가 피해 (트랩 공격은 제외)
+    private void TryApplyShockBonus(Character hitTarget, int finalDamage, bool critical, bool isTrapAttack)
+    {
+        if (isTrapAttack)
+            return;
+
+        var shockDeBuff = hitTarget.TargetBuff(EBuffType.Shock);
+        if (shockDeBuff == null)
+            return;
+
+        int additionalDamage = (int)(finalDamage * 0.1f);
+        int finalAdditionalDamage = hitTarget.FinalDamage(additionalDamage);
+
+        hitTarget.TakeDamage(finalAdditionalDamage, false);
+        hitTarget.SpawnDamageFont(finalAdditionalDamage, critical, true, false);
+        hitTarget.SpawnHitEffect(ConstValues.ShockHitEffect);
+    }
+
+    // 넉백/공중치의 X 방향 계산 (Fixed / Relative 분기)
+    private void CalculateDirectionalForces(Character hitTarget, out float upperPowerX, out float knockBackX)
+    {
+        upperPowerX = attackInfo.upperPower.x;
+        knockBackX = attackInfo.knockBack;
+
+        switch (attackInfo.directionType)
+        {
+            // 한 쪽으로만 밀어내는 판정
+            case EDirectionType.Fixed:
+                upperPowerX = dir * Math.Abs(upperPowerX);
+                knockBackX = dir * Math.Abs(knockBackX);
+                break;
+
+            // 내 위치 기준으로 양 옆으로 밀어내는 판정
+            case EDirectionType.Relative:
+                if (transform.position.x > hitTarget.transform.position.x)
                 {
-                    if (col.GetComponent<Monster>() == null && col.GetComponent<Npc>() == null)
-                        return;
-                
-                    // 스프라이트가 점멸한다
-                    hitTarget.HitMaterial();
+                    knockBackX = -Math.Abs(knockBackX);
+                    upperPowerX = upperPowerX > 0 ? -Math.Abs(upperPowerX) : Math.Abs(upperPowerX);
                 }
-                // 몬스터의 공격
-                if (castChar.GetComponent<Monster>())
+                else
                 {
-                    if (col.GetComponent<Player>() == null && col.GetComponent<Npc>() == null)
-                        return;
+                    knockBackX = Math.Abs(knockBackX);
+                    upperPowerX = upperPowerX > 0 ? Math.Abs(upperPowerX) : -Math.Abs(upperPowerX);
                 }
-            }
-            // 트랩
-            else
+                break;
+        }
+    }
+
+    // 스태거 누적 후 무력화 발생 여부 판정. 무력화 시 true 반환
+    // 트랩(castChar 없음)은 스태거 누적을 건너뜀
+    private bool TryApplyStagger(Character hitTarget)
+    {
+        if (!castChar)
+            return false;
+
+        int finalStagger = (int)(attackInfo.stagger + (attackInfo.stagger * castChar.BasicStat.staggerDamage * 0.01f));
+        hitTarget.TakeStagger(finalStagger);
+
+        if (!hitTarget.ImmuneStagger
+            && hitTarget.BasicStat.stagger <= 0
+            && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
+        {
+            hitTarget.Stagger();
+            return true;
+        }
+        return false;
+    }
+
+    // 디버프(상태이상) 적용
+    private void ApplyDeBuffs(Character hitTarget, bool critical)
+    {
+        foreach (var deBuffInfo in attackInfo.deBuffInfoList)
+        {
+            // 확률 계산
+            int rand = Random.Range(0, 100);
+            if (rand >= deBuffInfo.deBuffPercent)
+                continue;
+
+            switch (deBuffInfo.deBuff)
             {
-                if (col.GetComponent<Player>() == null && col.GetComponent<Monster>() == null)
-                    return;
-
-                isTrapAttack = true;
+                // 기절
+                case EBuffType.Stun:
+                    if (hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
+                        hitTarget.Stun(deBuffInfo.deBuffTime);
+                    break;
+                // 갑옷 파괴
+                case EBuffType.ArmorBreak:
+                    if (hitTarget.OriginStat.bodyType is EBodyType.SuperArmor)
+                        hitTarget.AddDeBuff(EBuffType.ArmorBreak, deBuffInfo.deBuffTime, 0);
+                    break;
+                // 빙결
+                case EBuffType.Frozen:
+                    if (hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
+                        hitTarget.Frozen(deBuffInfo.deBuffTime);
+                    break;
+                // 감전
+                case EBuffType.Shock:
+                    hitTarget.AddDeBuff(EBuffType.Shock, deBuffInfo.deBuffTime, 0);
+                    break;
+                // 화상
+                case EBuffType.Burn:
+                    ApplyBurnDeBuff(hitTarget, deBuffInfo.deBuffTime, critical);
+                    break;
             }
-            
-            GameManager.Instance.CameraShake(attackInfo.hitShake[0], attackInfo.hitShake[1], attackInfo.shakeTime);
-            
-            // 반격이 가능한지 확인!
-            if (hitTarget.BasicStat.bodyType == EBodyType.Counter)
-            {
-                bool isCanCounter = IsCanCounter(hitTarget);
-                if (isCanCounter)
-                {
-                    hitTarget.IsCounterAttack = true;
-                    return;
-                }
-                
-                // 반격 실패 시 다시 기본 아머타입으로 돌아옴
-                hitTarget.BasicStat.bodyType = hitTarget.OriginStat.bodyType;
-            }
+        }
+    }
 
-            // 피격이팩트 생성
-            if(!string.IsNullOrWhiteSpace(attackInfo.hitEffectId))
-                hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
-            
-            // 대상이 피해를 입는다(치명타 피해인지 확인)
-            bool critical = GetCritical();
-            int damage = GetDamage(critical);
-            float randDmg = Random.Range(0.95f, 1.05f);
-            damage = (int)(damage * randDmg);
+    // 화상 디버프 — 트랩의 경우 castChar가 없으므로 attackInfo.coefficient를 power 대용으로 사용
+    private void ApplyBurnDeBuff(Character hitTarget, float duration, bool critical)
+    {
+        Action burnAction = () =>
+        {
+            int burnBasePower = castChar ? castChar.BasicStat.power : attackInfo.coefficient;
+            int burnDamage = (int)(burnBasePower * 0.2f);
+            hitTarget.TakeDamage(burnDamage, false);
+            hitTarget.SpawnDamageFont(burnDamage, critical, false, true);
+            hitTarget.SpawnHitEffect(ConstValues.BurnHitEffect);
 
-            int finalDamage = hitTarget.FinalDamage(damage);
-            // 피해입기
-            hitTarget.TakeDamage(finalDamage, isTrapAttack);
-            // 폰트소환
-            hitTarget.SpawnDamageFont(finalDamage, critical, false, false);
-            
-            // 감전 추가피해
-            var shockDeBuff = hitTarget.TargetBuff(EBuffType.Shock);
-            if (!isTrapAttack && shockDeBuff != null)
-            {
-                var additionalDamage = (int)(finalDamage * 0.1f);
-                int finalAdditionalDamage = hitTarget.FinalDamage(additionalDamage);
-
-                hitTarget.TakeDamage(finalAdditionalDamage, false);
-                hitTarget.SpawnDamageFont(finalAdditionalDamage, critical, true, false);
-                // 여기 감전 추가피해 이팩트 넣기
-                hitTarget.SpawnHitEffect(ConstValues.ShockHitEffect);
-            }
-
-            // 피해를 입고, 체력이 0으로 떨어지면 죽는다
             if (hitTarget.BasicStat.hp <= 0)
-            {
                 hitTarget.Die();
-                return;
-            }
+        };
+        hitTarget.AddDeBuff(EBuffType.Burn, duration, 0, null, 0.5f, 0.5f, burnAction);
+    }
 
-            var upperPowerX = attackInfo.upperPower.x;
-            var knockBackX = attackInfo.knockBack;
-            
-            switch (attackInfo.directionType)
-            {
-                // 한 쪽으로만 밀어내는 판정
-                case EDirectionType.Fixed:
-                    upperPowerX = dir * Math.Abs(upperPowerX);
-                    knockBackX = dir * Math.Abs(knockBackX);
-                    break;
-                
-                // 내 위치 기준으로 양 옆으로 밀어내는 판정
-                case EDirectionType.Relative:
-                    if (transform.position.x > hitTarget.transform.position.x)
-                    {
-                        knockBackX = -Math.Abs(knockBackX);
-                        if (upperPowerX > 0)
-                            upperPowerX = -Math.Abs(upperPowerX);
-                        else
-                            upperPowerX = Math.Abs(upperPowerX);
-                    }
-                    else
-                    {
-                        knockBackX = Math.Abs(knockBackX);
-                        if (upperPowerX > 0)
-                            upperPowerX = Math.Abs(upperPowerX);
-                        else
-                            upperPowerX = -Math.Abs(upperPowerX);
-                    }
-                    break;
-            }
+    // 피격 리액션 (Airborne / Damaged)
+    private void ApplyHitReaction(Character hitTarget, float upperPowerX, float knockBackX)
+    {
+        // 노멀 또는 (슈퍼아머 + 슈퍼아머 무시 옵션) 일 때만 리액션이 적용된다
+        bool isReactable = hitTarget.BasicStat.bodyType == EBodyType.Normal
+                           || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor);
 
-            if (!attackInfo.duplicate)
-                IgnoreCol(col);
+        // 공중에 떠있는 상태(에어본/점프 중)면 effectType과 무관하게 Airborne 처리
+        if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
+        {
+            if (isReactable)
+                hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
+            return;
+        }
 
-            if (castChar)
-            {
-                int finalStagger = (int)(attackInfo.stagger + (attackInfo.stagger * castChar.BasicStat.staggerDamage * 0.01f));
-                hitTarget.TakeStagger(finalStagger);
-                if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
-                {
-                    // 무력화 효과 넣기
-                    hitTarget.Stagger();
-                    return;
-                }
-            }
-
-            // 상태이상을 먼저 추가
-            foreach (var debuffInfo in attackInfo.deBuffInfoList)
-            {
-                // 확률계산
-                int rand = Random.Range(0, 100);
-                if (rand < debuffInfo.deBuffPercent)
-                {
-                    switch (debuffInfo.deBuff)
-                    {
-                        // 기절
-                        case EBuffType.Stun:
-                            if (hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
-                                hitTarget.Stun(debuffInfo.deBuffTime);
-                            break;
-                        // 갑옷 파괴
-                        case EBuffType.ArmorBreak:
-                            if (hitTarget.OriginStat.bodyType is EBodyType.SuperArmor)
-                                hitTarget.AddDeBuff(EBuffType.ArmorBreak, debuffInfo.deBuffTime, 0);
-                            break;
-                        // 빙결
-                        case EBuffType.Frozen:
-                            if (hitTarget.OriginStat.bodyType is EBodyType.Normal or EBodyType.SuperArmor or EBodyType.HeavyArmor)
-                                hitTarget.Frozen(debuffInfo.deBuffTime);
-                            break;
-                        // 감전
-                        case EBuffType.Shock:
-                            hitTarget.AddDeBuff(EBuffType.Shock, debuffInfo.deBuffTime, 0);
-                            break;
-                        // 화상
-                        case EBuffType.Burn:
-                            Action burnAction = () =>
-                            {
-                                int burnDamage = (int)(castChar.BasicStat.power * 0.2f);
-                                hitTarget.TakeDamage(burnDamage, false);
-                                hitTarget.SpawnDamageFont(burnDamage, critical, false, true);
-                                // 여기에 화상 이팩트 추가
-                                hitTarget.SpawnHitEffect(ConstValues.BurnHitEffect);
-                                
-                                // 피해를 입고, 체력이 0으로 떨어지면 죽는다
-                                if (hitTarget.BasicStat.hp <= 0)
-                                    hitTarget.Die();
-                                
-                            };
-                            hitTarget.AddDeBuff(EBuffType.Burn, debuffInfo.deBuffTime, 0, null, 0.5f, 0.5f, burnAction);
-                            break;
-                    }
-                }
-            }
-            
-            if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
-            {
-                if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
+        switch (attackInfo.effectType)
+        {
+            case EEffectType.Airborne:
+                if (isReactable)
                     hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
-            }
-            else
-            {
-                switch (attackInfo.effectType)
-                {
-                    case EEffectType.Airborne:
-                        if(hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
-                            hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
-                        break;
+                break;
 
-                    case EEffectType.Damaged:
-                        if (hitTarget.BasicStat.bodyType == EBodyType.Normal || (hitTarget.BasicStat.bodyType == EBodyType.SuperArmor && attackInfo.ignoreSuperArmor))
-                        {
-                            hitTarget.Damaged(attackInfo.effectTime);
-                            hitTarget.KnockBack(knockBackX);
-                        }
-                        break;
+            case EEffectType.Damaged:
+                if (isReactable)
+                {
+                    hitTarget.Damaged(attackInfo.effectTime);
+                    hitTarget.KnockBack(knockBackX);
                 }
-            }
+                break;
         }
     }
 }
