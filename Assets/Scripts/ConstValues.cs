@@ -358,7 +358,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string WarningArea = "WarningArea";
     public const string PlatformFragments = "PlatformFragments";
     public const string PlatformExplosion = "PlatformExplosion";
+    public const string PlatformDestroyDust = "PlatformDestroyDust";
     public const string UI = "UI";
+    public const string PlatformDust = "PlatformDust";
 
     public const string BerserkerSlash = "Berserker_Slash";
     public const string BerserkerFlash = "Berserker_Flash";
@@ -568,10 +570,13 @@ public class ConstValues : Singleton<ConstValues>
     public const string ChickenCock = "ChickenCock";
     public const string PlayerFlash = "Player_Flash";
     public const string MonsterBigTreeLog = "Monster_BigTree_Log";
+    public const string MonsterBigTreeRootAttack = "Monster_BigTree_RootAttack";
     public const string Star3 = "Star_3";
     public const string Lever = "Lever";
     public const string ElevatorHiss = "ElevatorHiss";
     public const string Pickup = "Pickup";
     public const string DestroyDoor = "DestroyDoor";
     public const string ProductMailDelivery = "ProductMailDelivery";
+    public const string WallFragments = "Wall_Fragments";
+    public const string Fireimpact03 = "Fireimpact03";
 }

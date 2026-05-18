@@ -1684,14 +1684,16 @@ public abstract class Player : Character
             return;
 
         // 발 위치 기준으로 셀 좌표 산출
-        Vector3Int cell = tilemap.WorldToCell(transform.position);
+        Vector3 samplePos = transform.position;
+        samplePos.y -= 0.1f;
+        Vector3Int cell = tilemap.WorldToCell(samplePos);
 
         // 해당 셀에 실제 마커 타일이 존재하는지 확인 (콜라이더 영역의 빈 칸 제외)
         if (tilemap.GetTile(cell) == null)
             return;
 
         // 셀의 중앙 월드 좌표를 Vector2로 저장
-        lastMarkerPosition = tilemap.GetCellCenterWorld(cell);
+        lastMarkerPosition = new Vector2(tilemap.GetCellCenterWorld(cell).x, transform.position.y);
         hasLastMarker = true;
     }
 

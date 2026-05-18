@@ -305,6 +305,8 @@ public abstract class Character : InteractionController
 
     public EMoveState MoveState => moveState;
 
+    public ELandingState LandingState => landingState;
+
     // 상태 설정
     protected abstract void StateSetting(ENormalState changeNormalState, string triggerName, string animId);
 
@@ -957,7 +959,7 @@ public abstract class Character : InteractionController
         foreach (var ignorePlatform in ignorePlatformList)
             Physics2D.IgnoreCollision(physicsCollider, ignorePlatform.collider, true);
     }
-    
+
     private void IgnorePlatformCheck(Collider2D col, bool force = false)
     {
         var height = ColliderHeight(col);
@@ -1070,7 +1072,7 @@ public abstract class Character : InteractionController
         }
     }
 
-    protected void ClearIgnorePlatform()
+    public void ClearIgnorePlatform()
     {
         foreach (var ignorePlatform in ignorePlatformList)
         {

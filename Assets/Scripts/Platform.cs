@@ -8,12 +8,13 @@ public class Platform : MonoBehaviour
     [SerializeField] private Sprite[] spriteMiddle;
     [SerializeField] private Sprite[] spriteEnd;
     [SerializeField] private int idx;
-    private SpriteRenderer[] platformSpriteList;
     
-    private MovingPlatform movingPlatform;
+    protected BoxCollider2D myBoxCollider;
+    private SpriteRenderer[] platformSpriteList;
 
-    private void Awake()
+    protected virtual void Awake()
     {
+        myBoxCollider = GetComponent<BoxCollider2D>();
         platformSpriteList = GetComponentsInChildren<SpriteRenderer>();
         for (var i = 0; i < platformSpriteList.Length; i++)
         {
@@ -23,14 +24,6 @@ public class Platform : MonoBehaviour
                 platformSpriteList[i].sprite = spriteEnd[idx];
             else
                 platformSpriteList[i].sprite = spriteMiddle[idx];
-        }
-
-        movingPlatform = GetComponent<MovingPlatform>();
-        if (movingPlatform)
-        {
-            movingPlatform.IsMoving = true;
-            movingPlatform.IsRepeat = true;
-            movingPlatform.Delay = 2.5f;
         }
     }
 
@@ -57,7 +50,7 @@ public class Platform : MonoBehaviour
         gameObject.SetActive(false);
     }
 
-    private GameObject SpawnObject(string id, Vector2 pos)
+    protected GameObject SpawnObject(string id, Vector2 pos)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
         
@@ -101,11 +94,5 @@ public class Platform : MonoBehaviour
             
         spawnedObject.SetupData(objectData, 1);
         spawnedObject.EnableSetting();
-    }
-
-    private void OnTriggerEnter2D(Collider2D col)
-    {
-        if (col.CompareTag(ConstValues.DestroyPlatform))
-            DestroyBomb();
     }
 }

@@ -4,7 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-public class MovingPlatform : MonoBehaviour
+public class MovingPlatform : Platform
 {
     [SerializeField] private Transform[] points;
     [SerializeField] private bool isMoving;
@@ -17,7 +17,6 @@ public class MovingPlatform : MonoBehaviour
     
     private float curDelay;
     private Rigidbody2D myRigidbody;
-    private BoxCollider2D myBoxCollider;
     private int targetIdx;
     private Vector2 prevPos;
     private Vector2 segmentStartPos;
@@ -57,14 +56,18 @@ public class MovingPlatform : MonoBehaviour
     }
     public Vector2 Velocity => platformVelocity;  // 외부 제공용
     
-    private void Awake()
+    protected override void Awake()
     {
+        base.Awake();
+        
+        isMoving = true;
+        isRepeat = true;
+        delay = 2.5f;
+        
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.bodyType = RigidbodyType2D.Kinematic;
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
 
-        myBoxCollider = GetComponent<BoxCollider2D>();
-        
         prevPos = transform.position;
         segmentStartPos = prevPos;
         

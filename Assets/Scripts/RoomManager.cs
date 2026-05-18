@@ -66,6 +66,7 @@ public class RoomManager : Singleton<RoomManager>
         GameManager.Instance.SpawnPlayer(GameManager.Instance.PlayerList[0]);
         GameManager.Instance.RefreshPlayerHp();
         GameManager.Instance.RefreshGoods();
+        GameManager.Instance.RefreshPlayerIgnorePlatform();
 
         foreach (var room in totalRoom.RoomArray)
         {

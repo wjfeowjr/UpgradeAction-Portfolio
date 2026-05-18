@@ -2151,6 +2151,12 @@ public class GameManager : Singleton<GameManager>
         uiInterface.SetGoodsPresenter(goodsPresenter);
         goodsPresenter.SetGoldText();
     }
+    
+    public void RefreshPlayerIgnorePlatform()
+    {
+        foreach (var player in players)
+            player.ClearIgnorePlatform();
+    }
 
     public void RefreshPlaceName()
     {

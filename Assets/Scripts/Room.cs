@@ -2465,6 +2465,7 @@ public class Room : MonoBehaviour
             }
         }
         
+        trapList.Clear();
         Transform[] allChildren = roomGameObject.GetComponentsInChildren<Transform>(true);
         foreach (var child in allChildren)
         {
