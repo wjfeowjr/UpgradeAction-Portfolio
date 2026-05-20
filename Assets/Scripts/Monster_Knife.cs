@@ -428,7 +428,7 @@ public class Monster_Knife : Monster
     }
 
     // 등장(연출 포함)
-    public override async void Appear(Action<string> bossProduct)
+    public override async void Appear(Action<string, EMonsterType> bossProduct)
     {
         stateCancellation = new CancellationTokenSource();
         SoundManager.Instance.PlaySound(ConstValues.BerserkerAttack1);
@@ -452,7 +452,7 @@ public class Monster_Knife : Monster
         FirstCoolTimeReduce();
         IdleOrMove();
         immortal = false;
-        bossProduct?.Invoke(basicStat.name);
+        bossProduct?.Invoke(basicStat.name, monsterType);
     }
 
     public override async void Die()
@@ -489,7 +489,7 @@ public class Monster_Knife : Monster
         if (transform.localScale.x > 0)
             xVelocity = -6.0f;
         
-        Airborne(xVelocity, yVelocity);
+        Airborne(xVelocity, yVelocity, true);
         goldAction?.Invoke(myStat.gold, centerPos.position);
         
         isDie = true;

@@ -171,6 +171,7 @@ public class Grenade : MonoBehaviour, IProjectile
         
         // 발사
         myRigidbody.linearVelocity = CalculateVelocity(transform.position, target, throwForce.y);
+        myRigidbody.angularVelocity = (myRigidbody.linearVelocity.x >= 0) ? -angular : angular;
     }
     
     public void RandomForceThrow(float valueX, float valueY)

@@ -1675,46 +1675,39 @@ public class GameManager : Singleton<GameManager>
         mainCamera.Shake(amountX, amountY, time);
     }
 
-    public Monster SpawnMonster(string id, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false, Action<string> bossProduct = null)
+    public Monster SpawnMonster(string id, Vector3 monsterVector, bool isExplosion = true, EMonsterType monsterType = EMonsterType.Normal, Action<string, EMonsterType> bossProduct = null)
     {
         var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
-        monster.IsBoss = isBoss;
+        monster.MonsterType = monsterType;
         //monster.SpawnHpBar();
         monster.Appear(bossProduct);
         monsterList.Add(monster);
         return monster;
     }
 
-    public Monster ActiveAndHideMonster(string id, Vector3 monsterVector, bool isExplosion = true, bool isBoss = false)
+    public Monster ActiveAndHideMonster(string id, Vector3 monsterVector, bool isExplosion = true, EMonsterType monsterType = EMonsterType.Normal)
     {
         var monster = SpawnToPoolInstantiate(id, objectPool, monsterVector).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
-        monster.IsBoss = isBoss;
+        monster.MonsterType = monsterType;
         monster.gameObject.SetActive(false);
         monsterList.Add(monster);
         return monster;
     }
-    public Monster ActiveAndHideMonster(string id, Transform monsterTransform, Vector3 monsterVector, bool isActive, bool isExplosion = true, bool isBoss = false)
+    public Monster ActiveAndHideMonster(string id, Transform monsterTransform, Vector3 monsterVector, bool isActive, bool isExplosion = true, EMonsterType monsterType = EMonsterType.Normal)
     {
         var monster = SpawnToMonster(id, monsterTransform, monsterVector, isActive).GetComponent<Monster>();
         monster.IsExplosion = isExplosion;
-        monster.IsBoss = isBoss;
+        monster.MonsterType = monsterType;
         monster.gameObject.SetActive(false);
         monsterList.Add(monster);
         return monster;
     }
-    
-    public void ActiveMonster(Monster monster, Action<string> bossProduct = null)
+
+    public void SetMonster(Monster monster, EMonsterType monsterType, bool isExplosion)
     {
-        monster.gameObject.SetActive(true);
-        //monster.SpawnHpBar();
-        monster.Appear(bossProduct);
-    }
-    
-    public void SetMonster(Monster monster, bool isBoss, bool isExplosion)
-    {
-        monster.IsBoss = isBoss;
+        monster.MonsterType = monsterType;
         monster.IsExplosion = isExplosion;
         //monster.SpawnHpBar();
         monsterList.Add(monster);

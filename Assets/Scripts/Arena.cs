@@ -139,7 +139,7 @@ public class Arena : MonoBehaviour
 
     private void SpawnMonster(Monster monster, int value)
     {
-        monster.IsBoss = false;
+        monster.MonsterType = EMonsterType.Normal;
         monster.AlwaysAgro = true;
         monster.gameObject.SetActive(true);
         monster.Appear(null);

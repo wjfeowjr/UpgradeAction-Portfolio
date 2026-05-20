@@ -16,6 +16,15 @@ public enum EAgroState
     Return,
 }
 
+// 보스타입
+public enum EMonsterType
+{
+    Normal,
+    MiniBoss,
+    Boss,
+    HiddenBoss,
+}
+
 [Serializable]
 public class MonsterStat
 {
@@ -70,8 +79,8 @@ public class JumpAndDropClass
 public class Monster : Character
 {
     [SerializeField] protected EAgroState agroState;
-
-    [SerializeField] private bool isBoss; // 보스인가?
+    [SerializeField] protected EMonsterType monsterType; // 보스인가?
+    
     [SerializeField] private bool alwaysAgro; // 
     [SerializeField] protected bool isExplosion; // 죽을때 터지면서 죽는가?
     [SerializeField] protected MonsterStat myStat; // 내 스텟(변동되어야 함)
@@ -132,11 +141,13 @@ public class Monster : Character
         set => alwaysAgro = value;
     }
 
-    public bool IsBoss
+    public EMonsterType MonsterType
     {
-        get => isBoss;
-        set => isBoss = value;
+        get => monsterType;
+        set => monsterType = value;
     }
+
+    public bool IsBoss => monsterType is EMonsterType.MiniBoss or EMonsterType.Boss or EMonsterType.HiddenBoss;
 
     public float LimitLeft
     {
@@ -506,7 +517,7 @@ public class Monster : Character
 
     public async void SpawnHpBar()
     {
-        if (isBoss)
+        if (IsBoss)
         {
             await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
             
@@ -709,7 +720,7 @@ public class Monster : Character
     }
 
     // 등장(연출 포함)
-    public virtual async void Appear(Action<string> bossProduct)
+    public virtual async void Appear(Action<string, EMonsterType> bossProduct)
     {
         if (IsDamaged())
         {
@@ -751,7 +762,7 @@ public class Monster : Character
             IdleOrMove();
         }
 
-        bossProduct?.Invoke(basicStat.name);
+        bossProduct?.Invoke(basicStat.name, monsterType);
         FirstCoolTimeReduce();
     }
 
@@ -852,6 +863,19 @@ public class Monster : Character
                     currentTraceDelay = 0;
                     break;
             }
+            switch (MonsterCheckTrap())
+            {
+                case 0:
+                    Flip(-1);
+                    currentTraceDelay = 0;
+                    break;
+            
+                case 1:
+                    Flip(1);
+                    currentTraceDelay = 0;
+                    break;
+            }
+            
             if (!myStat.hovering)
             {
                 switch (MonsterCheckFall())
@@ -1090,7 +1114,7 @@ public class Monster : Character
             }
         }
 
-        if (isBoss)
+        if (IsBoss)
         {
             // 보스가 두 마리 이상일 때를 대비
             var bossHpModel = new UIBossHpModel()
@@ -1120,7 +1144,7 @@ public class Monster : Character
             return;
 
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
-        if (isBoss)
+        if (IsBoss)
         {
             // 보스가 두 마리 이상일 때를 대비
             var bossHpModel = new UIBossHpModel()
@@ -1150,7 +1174,7 @@ public class Monster : Character
 
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
 
-        if (isBoss)
+        if (IsBoss)
         {
             // 보스가 두 마리 이상일 때를 대비
             var bossHpModel = new UIBossHpModel()
@@ -1177,7 +1201,7 @@ public class Monster : Character
         {
             if (basicStat.bodyType == EBodyType.Normal)
             {
-                Airborne(0, 5);
+                Airborne(0, 5, false);
             }
         }
         else
@@ -1193,7 +1217,7 @@ public class Monster : Character
         base.Die();
         //removeAction?.Invoke();
         //GameManager.Instance.RemoveMonster(this);
-        if (!isBoss)
+        if (!IsBoss)
             goldAction?.Invoke(myStat.gold, centerPos.position);
 
         if (isExplosion)
@@ -1632,6 +1656,37 @@ public class Monster : Character
         }
         return -1;
     }
+    
+    // 몬스터 함정감지
+    private int MonsterCheckTrap()
+    {
+        var rayVector = new Vector2(transform.position.x, transform.position.y);
+
+        float distance = myBoxCollider.size.x + 1.0f;
+        RaycastHit2D trapRay;
+        if (transform.localScale.x > 0)
+        {
+            trapRay = Physics2D.Raycast(rayVector, Vector2.right, distance, trapLayerMask);
+            Debug.DrawRay(rayVector, Vector2.right * distance, ConstValues.CyanColor, 0.02f);
+        }
+        else
+        {
+            trapRay = Physics2D.Raycast(rayVector, Vector2.left, distance, trapLayerMask);
+            Debug.DrawRay(rayVector, Vector2.left * distance, ConstValues.CyanColor, 0.02f);
+        }
+
+        if (trapRay.collider != null)
+        {
+            switch (transform.localScale.x)
+            {
+                case > 0:
+                    return 0;
+                case < 0:
+                    return 1;
+            }
+        }
+        return -1;
+    }
 
     protected Vector2 CalculateLaunchVelocity(Vector2 start, Vector2 end, float t)
     {
@@ -1775,7 +1830,7 @@ public class Monster : Character
         float distance   = Vector2.Distance(from, to);
 
         int mask = agroLayerMask;
-        if(isBoss)
+        if(IsBoss)
             mask = bossLayerMask;
         
         var ray = Physics2D.Raycast(from, dir, distance, mask);

@@ -18,8 +18,6 @@ public class SpawnObjectInfo
     public Vector3 flipPosition;
     public Vector3 basicAngle;
     public Vector3 flipAngle;
-    public Vector3 laserAngle;
-    public Vector3 flipLaserAngle;
     public float objectTime;
     public List<string> soundList = new List<string>();
     public float soundVolume;
@@ -42,7 +40,7 @@ public class SpawnedObject : MonoBehaviour
     private Vector3 defaultScale;
     private Vector3 defaultAngle;
     
-    private float dir;
+    [SerializeField] private float dir;
     private float leftObjectTime;
     
     private CancellationTokenSource delayCancellation;
@@ -93,13 +91,7 @@ public class SpawnedObject : MonoBehaviour
         
         var flipAngle = objectData.flipAngle.Split(',');
         spawnObjectInfo.flipAngle = new Vector3(float.Parse(flipAngle[0]), float.Parse(flipAngle[1]), float.Parse(flipAngle[2]));
-        
-        var laserAngle = objectData.laserAngle.Split(',');
-        spawnObjectInfo.laserAngle = new Vector3(float.Parse(laserAngle[0]), float.Parse(laserAngle[1]), float.Parse(laserAngle[2]));
-        
-        var flipLaserAngle = objectData.flipLaserAngle.Split(',');
-        spawnObjectInfo.flipLaserAngle = new Vector3(float.Parse(flipLaserAngle[0]), float.Parse(flipLaserAngle[1]), float.Parse(flipLaserAngle[2]));
-        
+
         spawnObjectInfo.objectTime = objectData.objectTime;
 
         var soundArray = objectData.sound.Split(';');
@@ -135,44 +127,46 @@ public class SpawnedObject : MonoBehaviour
         
         if (spawnObjectInfo.zFlip && dir < 0)
             zScale = -defaultScale.z;
-
-        if (spawnObjectInfo.flipAngle != Vector3.zero)
+        
+        Transform firstChildTransform = transform.GetChild(0);
+        if (firstChildTransform != null)
         {
-            Transform firstChildTransform = transform.GetChild(0);
-
-            if (dir > 0)
+            if (spawnObjectInfo.flipPosition != Vector3.zero)
             {
-                firstChildTransform.eulerAngles = spawnObjectInfo.basicAngle;
-                if (boxCollider2D)
-                    boxCollider2D.offset = defaultBoxColOffset;
-                if (circleCollider2D)
-                    circleCollider2D.offset = defaultCircleColOffset;
-
-                if (spawnObjectInfo.basicPosition != Vector3.zero)
-                    firstChildTransform.localPosition = spawnObjectInfo.basicPosition;
+                if (dir > 0)
+                {
+                    if (spawnObjectInfo.basicPosition != Vector3.zero)
+                        firstChildTransform.localPosition = spawnObjectInfo.basicPosition;
+                }
+                else
+                {
+                    if (spawnObjectInfo.flipPosition != Vector3.zero)
+                        firstChildTransform.localPosition = spawnObjectInfo.flipPosition;
+                }
             }
-            else
+
+            if (spawnObjectInfo.flipAngle != Vector3.zero)
             {
-                firstChildTransform.eulerAngles = spawnObjectInfo.flipAngle;
-                if (boxCollider2D) 
-                    boxCollider2D.offset = reverseBoxColOffset;
-                if (circleCollider2D)
-                    circleCollider2D.offset = reverseCircleColOffset;
-                
-                if (spawnObjectInfo.flipPosition != Vector3.zero)
-                    firstChildTransform.localPosition = spawnObjectInfo.flipPosition;
+                if (dir > 0)
+                {
+                    firstChildTransform.eulerAngles = spawnObjectInfo.basicAngle;
+                    if (boxCollider2D)
+                        boxCollider2D.offset = defaultBoxColOffset;
+                    if (circleCollider2D)
+                        circleCollider2D.offset = defaultCircleColOffset;
+                }
+                else
+                {
+                    firstChildTransform.eulerAngles = spawnObjectInfo.flipAngle;
+                    if (boxCollider2D) 
+                        boxCollider2D.offset = reverseBoxColOffset;
+                    if (circleCollider2D)
+                        circleCollider2D.offset = reverseCircleColOffset;
+                }
             }
         }
-        
+
         transform.eulerAngles = defaultAngle;
-        
-        if (spawnObjectInfo.flipLaserAngle != Vector3.zero)
-        {
-            if (dir > 0)
-                transform.eulerAngles = spawnObjectInfo.laserAngle;
-            else
-                transform.eulerAngles = spawnObjectInfo.flipLaserAngle;
-        }
         transform.localScale = new Vector3(xScale, yScale, zScale);
         
         foreach (var sound  in spawnObjectInfo.soundList)

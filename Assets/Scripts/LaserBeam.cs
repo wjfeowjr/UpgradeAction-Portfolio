@@ -10,7 +10,8 @@ public class LaserBeam : MonoBehaviour
     private LineRenderer myLineRenderer;
     [SerializeField] private bool autoBoxCollider;
     [SerializeField] private BoxCollider2D myBoxCollider;
-
+    [SerializeField] private GameObject rangeObject;
+        
     [Header("Prefabs")]
     [SerializeField] private GameObject beamLineRendererPrefab; //Put a prefab with a line renderer onto here.
     [SerializeField] private GameObject beamStartPrefab; //This is a prefab that is put at the start of the beam.
@@ -40,7 +41,7 @@ public class LaserBeam : MonoBehaviour
     
     private void Start()
     {
-        //BeamShot(beamLength);
+        rangeObject.SetActive(false);
     }
 
     private void Update()

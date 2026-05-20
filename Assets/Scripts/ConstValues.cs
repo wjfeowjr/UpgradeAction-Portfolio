@@ -150,6 +150,10 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string Normal = "Normal";
     public const string Pattern = "Pattern";
+    public const string Pattern2 = "Pattern2";
+    public const string Pattern3 = "Pattern3";
+    public const string Pattern4 = "Pattern4";
+    
     public const string Appear = "Appear";
     public const string AppearEnd = "AppearEnd";
     
@@ -354,6 +358,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string LightningFlash = "LightningFlash";
     public const string IceFlash = "IceFlash";
     public const string GreenFlash = "GreenFlash";
+    public const string BlueFlash = "BlueFlash";
     public const string Warning = "Warning";
     public const string WarningArea = "WarningArea";
     public const string PlatformFragments = "PlatformFragments";
@@ -440,6 +445,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string FighterAttack1 = "Fighter_Attack1";
     public const string FighterAttack2 = "Fighter_Attack2";
     public const string FighterAttack3 = "Fighter_Attack3";
+    public const string FighterAttackHit = "Fighter_Attack_Hit";
     public const string FighterJumpAttack = "Fighter_JumpAttack";
     public const string FighterJumpAttackTrail = "Fighter_JumpAttack_Trail";
     
@@ -541,6 +547,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BGMEpisode2Battle = "BGM_Episode2Battle";
     public const string BGMArena = "BGM_Arena";
     public const string BGMBoss = "BGM_Boss";
+    public const string BGMMiniBoss = "BGM_MiniBoss";
     
     // 지역
     public const string SunHill = "SunHill";

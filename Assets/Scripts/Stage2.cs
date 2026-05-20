@@ -263,7 +263,7 @@ public class Stage2 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster);
+            //GameManager.Instance.ActiveMonster(monster);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -777,7 +777,7 @@ public class Stage2 : Stage
             await berserker.EventCrash();
             PlaySound(ConstValues.PlayerScream);
             gunner.SpawnObject(ConstValues.BerserkerCrashHitEffect, gunner.transform.position);
-            gunner.Airborne(0f, 12f);
+            gunner.Airborne(0f, 12f, false);
             if (await NormalDelay(3.0f, dialogCancellation).SuppressCancellationThrow())
                 return;
             berserker.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
@@ -872,7 +872,7 @@ public class Stage2 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster);
+            //GameManager.Instance.ActiveMonster(monster);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -912,7 +912,7 @@ public class Stage2 : Stage
             }
             foreach (var monster in monsterList)
             {
-                GameManager.Instance.ActiveMonster(monster);
+                //GameManager.Instance.ActiveMonster(monster);
                 if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                     return;
             }
@@ -1020,7 +1020,7 @@ public class Stage2 : Stage
             GameManager.Instance.SetCameraTarget(curPlayer.transform);
             
             // 게임 시작
-            GameManager.Instance.SetMonster(chargeMonster, false, false);
+            GameManager.Instance.SetMonster(chargeMonster, EMonsterType.Boss, false);
             GameManager.Instance.ControlStart = true;
             GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(true);
             DialogStepUp();
@@ -1108,7 +1108,7 @@ public class Stage2 : Stage
         Camera cam = GameManager.Instance.MainCamera.MyCamera;
         float startY = cam.ViewportToWorldPoint(new Vector3(1, 1, 0)).y;
         var bossPos = new Vector2(monsterPos[3].transform.position.x, startY + 5);
-        chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, bossPos, false, true, SpawnBossMessage);
+        chargeBoss = GameManager.Instance.SpawnMonster(ConstValues.MonsterBigCharge, bossPos, false, EMonsterType.Boss, SpawnBossMessage);
         monsterSpawning = false;
         
         if (episodeStep.dialogStep == 3)

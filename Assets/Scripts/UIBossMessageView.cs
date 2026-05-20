@@ -8,13 +8,14 @@ using UnityEngine.UI;
 
 public interface IUIBossMessageView
 {
-    void SetBossMessage(string bossName);
+    void SetBossMessage(string bossName, EMonsterType monsterType);
     void BossMessageProduct(Action soundAction);
 }
 
 public class UIBossMessageModel
 {
     public string bossName;
+    public EMonsterType monsterType;
 }
 
 public class UIBossMessagePresenter
@@ -30,7 +31,7 @@ public class UIBossMessagePresenter
     
     public void SetBossMessage()
     {
-        _bossMessageview.SetBossMessage(_model.bossName);
+        _bossMessageview.SetBossMessage(_model.bossName, _model.monsterType);
     }
 
     public void BossMessageProduct(Action soundAction)
@@ -49,6 +50,7 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
     private float finish = 1.0f;
 
     [SerializeField] private Transform bossMessageTransform;
+    [SerializeField] private TMP_Text bossTypeText;
     [SerializeField] private TMP_Text bossNameText;
     [SerializeField] private Transform startTransform;
     [SerializeField] private Transform stopTransform;
@@ -61,9 +63,19 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
         await UniTask.Delay(TimeSpan.FromSeconds(second), ignoreTimeScale: true, cancellationToken: bossMessageCancellation.Token);
     }
     
-    public void SetBossMessage(string bossName)
+    public void SetBossMessage(string bossName, EMonsterType monsterType)
     {
         bossMessageTransform.position = startTransform.transform.position;
+        switch (monsterType)
+        {
+            case EMonsterType.MiniBoss:
+                bossTypeText.text = "Mini";
+                break;
+            case EMonsterType.HiddenBoss:
+                bossTypeText.text = "Hidden";
+                break;
+        }
+        bossTypeText.gameObject.SetActive(monsterType is EMonsterType.MiniBoss or EMonsterType.HiddenBoss);
         bossNameText.text = bossName;
         fadeImage.color = new Color(fadeImage.color.r, fadeImage.color.g, fadeImage.color.b, 0);
     }

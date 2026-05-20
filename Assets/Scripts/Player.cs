@@ -836,7 +836,7 @@ public abstract class Player : Character
         ClearIgnorePlatform();
     }
     
-    public override async void Airborne(float xVelocity, float yVelocity)
+    public override async void Airborne(float xVelocity, float yVelocity, bool ignoreWeight)
     {
         // 가드절
         if (normalState is ENormalState.Grabbed or ENormalState.Frozen)
@@ -847,7 +847,7 @@ public abstract class Player : Character
         if(basicStat.hp > 0)
             PlaySound(ConstValues.PlayerDamaged1);
         
-        base.Airborne(xVelocity, yVelocity);
+        base.Airborne(xVelocity, yVelocity, false);
         
         curDashDelay = 0f;
         dashDelayCancellation = new CancellationTokenSource();
@@ -1054,7 +1054,7 @@ public abstract class Player : Character
         
         IgnorePlatformCheck(lastStandPlatform, true);
         GravityChange(myGravity);
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
+        //myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
         
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         LandingStateSetting(ELandingState.Air);
@@ -1062,13 +1062,13 @@ public abstract class Player : Character
         jumpCancellation = new CancellationTokenSource();
 
         // 짧은 시간동안 좌우 움직임 봉인
-        canMove = false;
-        if (await NormalDelay(0.1f, jumpCancellation).SuppressCancellationThrow())
-        {
-            canMove = true;
-            return;
-        }
-        canMove = true;
+        // canMove = false;
+        // if (await NormalDelay(0.1f, jumpCancellation).SuppressCancellationThrow())
+        // {
+        //     canMove = true;
+        //     return;
+        // }
+        // canMove = true;
         
         while (transform.position.y >= lastStandPlatform.height - 0.64f)
         {

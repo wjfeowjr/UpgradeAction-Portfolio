@@ -741,7 +741,7 @@ public class Attack : MonoBehaviour
         if (hitTarget.GetAirborneState() || hitTarget.GetJumpState())
         {
             if (isReactable)
-                hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
+                hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y, false);
             return;
         }
 
@@ -749,7 +749,7 @@ public class Attack : MonoBehaviour
         {
             case EEffectType.Airborne:
                 if (isReactable)
-                    hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y);
+                    hitTarget.Airborne(upperPowerX, attackInfo.upperPower.y, false);
                 break;
 
             case EEffectType.Damaged:

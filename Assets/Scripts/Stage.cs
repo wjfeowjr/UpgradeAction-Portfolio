@@ -247,7 +247,7 @@ public abstract class Stage : MonoBehaviour
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
     }
 
-    protected void SpawnBossMessage(string bossName)
+    protected void SpawnBossMessage(string bossName, EMonsterType monsterType)
     {
         var uiBase = GameManager.Instance.SpawnToUIPool(eUIType.UI_BossMessage, Vector3.zero).GetComponent<UIBase>();
         // 바인딩

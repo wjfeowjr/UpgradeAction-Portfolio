@@ -391,7 +391,7 @@ public class Stage1 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster);
+            //GameManager.Instance.ActiveMonster(monster);
             // if (await YieldDelay(dialogCancellation).SuppressCancellationThrow())
             //     return;
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
@@ -485,7 +485,7 @@ public class Stage1 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster);
+            //GameManager.Instance.ActiveMonster(monster);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
             // if (await YieldDelay(dialogCancellation).SuppressCancellationThrow())
@@ -541,7 +541,7 @@ public class Stage1 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster);
+            //GameManager.Instance.ActiveMonster(monster);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -555,7 +555,7 @@ public class Stage1 : Stage
         }
         foreach (var monster in monsterList)
         {
-            GameManager.Instance.ActiveMonster(monster);
+            //GameManager.Instance.ActiveMonster(monster);
             if (await NormalDelay(0.1f, dialogCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -585,7 +585,7 @@ public class Stage1 : Stage
         MonsterClearAction(Product9);
         
         var sunPos = new Vector2(bossPos[2].transform.position.x, bossPos[2].transform.position.y + 3.5f);
-        sunObject = GameManager.Instance.SpawnMonster(ConstValues.MonsterSun, sunPos, false, true, SpawnBossMessage);
+        sunObject = GameManager.Instance.SpawnMonster(ConstValues.MonsterSun, sunPos, false, EMonsterType.Boss, SpawnBossMessage);
 
         if (episodeStep.dialogStep == 5)
         {
@@ -726,7 +726,7 @@ public class Stage1 : Stage
         MonsterClearAction(Product10);
         
         var moonPos = new Vector2(bossPos[2].transform.position.x, bossPos[2].transform.position.y + 3.5f);
-        moonObject = GameManager.Instance.SpawnMonster(ConstValues.MonsterMoon, moonPos, false, true, SpawnBossMessage);
+        moonObject = GameManager.Instance.SpawnMonster(ConstValues.MonsterMoon, moonPos, false, EMonsterType.Boss, SpawnBossMessage);
 
         if (episodeStep.dialogStep == 6)
         {

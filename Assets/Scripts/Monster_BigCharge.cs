@@ -122,7 +122,7 @@ public class Monster_BigCharge : Monster
     }
     
     // 등장(연출 포함)
-    public override async void Appear(Action<string> bossProduct)
+    public override async void Appear(Action<string, EMonsterType> bossProduct)
     {
         if (true)
         {
@@ -162,7 +162,7 @@ public class Monster_BigCharge : Monster
             FirstCoolTimeReduce();
             IdleOrMove();
             immortal = false;
-            bossProduct?.Invoke(basicStat.name);
+            bossProduct?.Invoke(basicStat.name, monsterType);
         }
         else
         {
@@ -207,7 +207,7 @@ public class Monster_BigCharge : Monster
         Vector2 end = endPos;
         float travelTime = 0.6f;
         Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
-        Airborne(velocity.x, velocity.y);
+        Airborne(velocity.x, velocity.y, true);
         //myRigidbody.linearVelocity = velocity;
         goldAction?.Invoke(myStat.gold, centerPos.position);
     }

@@ -119,7 +119,7 @@ public class Monster_Sun : Monster
     }
     
     // 등장
-    public override async void Appear(Action<string> bossProduct)
+    public override async void Appear(Action<string, EMonsterType> bossProduct)
     {
         faceSpin.enabled = true;
         faceSpin.StopAndReset();
@@ -144,7 +144,7 @@ public class Monster_Sun : Monster
         IdleOrMove();
         FirstCoolTimeReduce();
         immortal = false;
-        bossProduct?.Invoke(basicStat.name);
+        bossProduct?.Invoke(basicStat.name, monsterType);
         startPos = transform.position;
     }
     
@@ -201,15 +201,15 @@ public class Monster_Sun : Monster
         GameManager.Instance.CameraShake(0.1f, 0.1f, 0.1f);
     }
 
-    public override void Airborne(float xVelocity, float yVelocity)
+    public override void Airborne(float xVelocity, float yVelocity, bool ignoreWeight)
     {
-        base.Airborne(xVelocity, yVelocity);
+        base.Airborne(xVelocity, yVelocity, ignoreWeight);
         PlaySound($"{ConstValues.Scream}7");
     }
 
-    protected override void AirborneBound(float xVelocity, float yVelocity)
+    protected override void AirborneBound(float xVelocity, float yVelocity, bool ignoreWeight)
     {
-        base.AirborneBound(xVelocity, yVelocity);
+        base.AirborneBound(xVelocity, yVelocity, ignoreWeight);
         faceSpin.SpinSwitchOn(true);
     }
 

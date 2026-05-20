@@ -206,12 +206,13 @@ public abstract class Character : InteractionController
     protected float myGravity;
     protected bool downJumping;
     protected bool isOnPlatform;   // 아랫점프, 이어지는 땅 처리에만 사용
-
+    [SerializeField] protected bool testing;
+    
     protected int airborneCount; // 에어본 카운트
     private int platformLayerMask;
     protected int groundLayerMask;
     protected int groundAndPlatformLayerMask;
-    protected int monsterWalkLayerMask;
+    protected int trapLayerMask;
     protected int agroLayerMask;
     protected int bossLayerMask;
     protected int wallBodyLayerMask;
@@ -262,11 +263,14 @@ public abstract class Character : InteractionController
     private Vector2 leftAirborneRayPos;
     private Vector2 rightAirborneRayPos;
     
-    private float groundRayDistance;
-    private float airborneRayDistance;
+    // 애니메이터 포지션
+    private Vector2 originAnimatorPos;
+    
     private float addGroundDistance;
     private float addAirborneDistance;
-    
+    private float groundRayDistance;
+    private float airborneRayDistance;
+
     public bool isWallLeft;
     public bool isWallRight;
     public bool isCeilingHit;
@@ -329,6 +333,7 @@ public abstract class Character : InteractionController
         addAirborneDistance = 0.05f;
         groundRayDistance = physicsColSize.y * 0.5f + addGroundDistance;
         airborneRayDistance = physicsColSize.y * 0.5f + addAirborneDistance; // 수정을 해야하나?
+        originAnimatorPos = myAnimator.transform.localPosition;
         
         upPlatformBoxSize = new Vector2(10, 10);
     }
@@ -423,8 +428,6 @@ public abstract class Character : InteractionController
     // 위쪽 플랫폼 체크
     private void UpPlatformCheck()
     {
-        // physicCenterPos.position.y + upPlatformBoxSize.y * 0.5f
-
         upPlatformBoxPos = new Vector2(transform.position.x, transform.position.y + upPlatformBoxSize.y * 0.5f + 0.1f);
         upPlatformHit = Physics2D.OverlapBoxAll(upPlatformBoxPos, upPlatformBoxSize, 0, platformLayerMask);
         foreach (var upPlatform in upPlatformHit)
@@ -438,8 +441,8 @@ public abstract class Character : InteractionController
         rightGroundRayPos = (Vector2)physicCenterPos.position + new Vector2(footOffset, 0);
         downLeftHit = Physics2D.Raycast(leftGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
         downRightHit = Physics2D.Raycast(rightGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
-
         isGrounded = downLeftHit || downRightHit;
+        
         // 그라운드 오브젝트
         if(downLeftHit.collider != null)
             groundObject = downLeftHit.collider.gameObject;
@@ -447,9 +450,12 @@ public abstract class Character : InteractionController
             groundObject = downRightHit.collider.gameObject;
 
         // 무시된 플랫폼 감지
-        if ((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) || 
-            (downRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == downRightHit.collider)))
-            isGrounded = false;
+        if (!testing)
+        {
+            if ((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) || 
+                (downRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == downRightHit.collider)))
+                isGrounded = false;
+        }
         
         if (isGrounded)
             SetGroundState();
@@ -466,23 +472,7 @@ public abstract class Character : InteractionController
         airborneRightHit = Physics2D.Raycast(rightAirborneRayPos, Vector2.down, airborneRayDistance, groundAndPlatformLayerMask);
 
         isAirborneGrounded = airborneLeftHit || airborneRightHit;
-        
-        // 에어본 도중 플랫폼 중간라인에 걸칠 때 예외처리
-        // if (myRigidbody.linearVelocityY < 0.01f && airborneLeftHit.collider != null && airborneLeftHit.collider.CompareTag(ConstValues.Platform))
-        // {
-        //     if (!ignorePlatformList.Exists(x => x.collider == airborneLeftHit.collider))
-        //     {
-        //         IgnorePlatformCheck(airborneLeftHit.collider);
-        //     }
-        // }
-        // if (myRigidbody.linearVelocityY < 0.01f && airborneRightHit.collider != null && airborneRightHit.collider.CompareTag(ConstValues.Platform))
-        // {
-        //     if (!ignorePlatformList.Exists(x => x.collider == airborneRightHit.collider))
-        //     {
-        //         IgnorePlatformCheck(airborneRightHit.collider);
-        //     }
-        // }
-        
+
         // 무시된 플랫폼 감지
         if ((airborneLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == airborneLeftHit.collider)) || 
             (airborneRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == airborneRightHit.collider)))
@@ -697,7 +687,7 @@ public abstract class Character : InteractionController
         platformLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Platform);
         groundLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Ground);
         groundAndPlatformLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform));
-        monsterWalkLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Trap));
+        trapLayerMask = 1 << LayerMask.NameToLayer(ConstValues.Trap);
         agroLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
         bossLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
         wallBodyLayerMask = 1 << LayerMask.NameToLayer(ConstValues.WallBody);
@@ -1462,7 +1452,7 @@ public abstract class Character : InteractionController
     {
         if (myAnimator)
         {
-            float randX = Random.Range(-range, range);
+            float randX = Random.Range(originAnimatorPos.x -range, originAnimatorPos.x + range);
             myAnimator.transform.localPosition = new Vector3(randX, 0, 0);
         }
     }
@@ -1470,7 +1460,7 @@ public abstract class Character : InteractionController
     protected void ResetSpritePos()
     {
         if(myAnimator)
-            myAnimator.transform.localPosition = Vector3.zero;
+            myAnimator.transform.localPosition = originAnimatorPos;
     }
 
     // 행동 캔슬
@@ -1876,10 +1866,10 @@ public abstract class Character : InteractionController
                 return;
         }
 
-        Airborne(grabBoundX, grabBoundY);
+        Airborne(grabBoundX, grabBoundY, false);
     }
 
-    public virtual void Airborne(float xVelocity, float yVelocity)
+    public virtual void Airborne(float xVelocity, float yVelocity, bool ignoreWeight)
     {
         if (normalState is ENormalState.Grabbed or ENormalState.Frozen)
         {
@@ -1899,17 +1889,25 @@ public abstract class Character : InteractionController
         ResetTriggerAnimator(ConstValues.Jump);
 
         stateCancellation = new CancellationTokenSource();
-        AirborneBound(xVelocity, yVelocity);
+        AirborneBound(xVelocity, yVelocity, ignoreWeight);
         DownHitBox();
     }
 
-    protected virtual void AirborneBound(float xVelocity, float yVelocity)
+    protected virtual void AirborneBound(float xVelocity, float yVelocity, bool ignoreWeight)
     {
         StateSetting(ENormalState.Airborne, ConstValues.Airborne, ConstValues.Airborne);
         LandingStateSetting(ELandingState.Air);
         // 공중몹도 떴다 떨어지기 때문에 기본 중력값으로 변환
         GravityChange(ConstValues.BasicGravity);
-        myRigidbody.linearVelocity = new Vector2(xVelocity, yVelocity);
+
+        float finalVelocity = yVelocity - basicStat.weight;
+        if (ignoreWeight)
+            finalVelocity = yVelocity;
+
+        if (finalVelocity < 3.0f)
+            finalVelocity = 3.0f;
+        
+        myRigidbody.linearVelocity = new Vector2(xVelocity, finalVelocity);
     }
 
     protected virtual async void DownAndStand()
@@ -1926,7 +1924,7 @@ public abstract class Character : InteractionController
             if (await NormalDelay(ConstValues.ReboundSecond, stateCancellation).SuppressCancellationThrow())
                 return;
 
-            AirborneBound(0, ConstValues.ReboundForce);
+            AirborneBound(0, ConstValues.ReboundForce, true);
         }
         // 이후에는 고정된 시간만큼 누워있다가 일어난다
         else
