@@ -17,7 +17,7 @@ public class Npc : Character
     [SerializeField] private NpcInfo npcInfo;
     [SerializeField] private Npc[] anotherNpc;
     
-    private NpcData npcData;
+    private NpcCopy npcData;
     private bool isFirstTalk;
 
     protected override void OnEnable()
@@ -37,7 +37,7 @@ public class Npc : Character
     private void DataSetting()
     {
         if(npcData == null)
-            npcData = TableManager.Instance.npcTable.Npc.Find(x => x.id == name);
+            npcData = GameManager.Instance.npcCopyList.Find(x => x.id == name);
     }
 
     public void SetInteractionAction()
@@ -160,6 +160,15 @@ public class Npc : Character
         }
         else
         {
+            // 미션 NPC: 모든 재료 충족 시 InteractionSelect 건너뛰고 클리어 연출 자동 진행
+            if (IsQuestReadyToClear())
+            {
+                await GameManager.Instance.NpcDialogue(npcData.questClearChoice, anotherNpc, npcInfo, SpawnInteractionObject);
+                // 클리어 후 선택지 재구성 (다음 상호작용부터 클리어 후 대사 노출)
+                SpawnInteractionSelect(npcData, npcInfo);
+                return;
+            }
+
             if (!isFirstTalk)
             {
                 await GameManager.Instance.NpcFirstTalk(npcData.startDialog, speechPos);
@@ -186,7 +195,30 @@ public class Npc : Character
     
     public void SetSelectAction()
     {
-        SpawnInteractionSelect(npcData);
+        SpawnInteractionSelect(npcData, npcInfo);
+    }
+
+    // 미션 NPC가 모든 재료를 충족했고, 아직 클리어 처리가 안 된 상태인지 확인
+    private bool IsQuestReadyToClear()
+    {
+        if (npcData == null || npcInfo == null)
+            return false;
+        if (npcData.questItemId == null || npcData.questItemId.Count == 0)
+            return false;
+        if (npcInfo.dialogKey.isUse)
+            return false;
+        if (string.IsNullOrWhiteSpace(npcData.questClearChoice))
+            return false;
+
+        for (int i = 0; i < npcData.questItemId.Count; i++)
+        {
+            var requireId = npcData.questItemId[i];
+            var requireCount = i < npcData.questItemCount.Count ? npcData.questItemCount[i] : 0;
+            var owned = GameManager.Instance.ItemList.Find(x => x.id == requireId);
+            if (owned == null || owned.count < requireCount)
+                return false;
+        }
+        return true;
     }
 
     // 커스텀

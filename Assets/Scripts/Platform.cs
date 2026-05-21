@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
@@ -10,17 +11,24 @@ public class Platform : MonoBehaviour
     [SerializeField] private int idx;
     
     protected BoxCollider2D myBoxCollider;
-    private SpriteRenderer[] platformSpriteList;
+    [SerializeField] private List<SpriteRenderer> platformSpriteList = new List<SpriteRenderer>();
 
     protected virtual void Awake()
     {
         myBoxCollider = GetComponent<BoxCollider2D>();
-        platformSpriteList = GetComponentsInChildren<SpriteRenderer>();
-        for (var i = 0; i < platformSpriteList.Length; i++)
+        var spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+        foreach (var spriteRenderer in spriteRenderers)
+        {
+            string split = spriteRenderer.name.Split(' ')[0];
+            if(split == ConstValues.Sprite)
+                platformSpriteList.Add(spriteRenderer);
+        }
+        
+        for (var i = 0; i < platformSpriteList.Count; i++)
         {
             if (i == 0)
                 platformSpriteList[i].sprite = spriteFirst[idx];
-            else if(i == platformSpriteList.Length - 1)
+            else if(i == platformSpriteList.Count - 1)
                 platformSpriteList[i].sprite = spriteEnd[idx];
             else
                 platformSpriteList[i].sprite = spriteMiddle[idx];

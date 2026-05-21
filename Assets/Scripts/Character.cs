@@ -220,7 +220,8 @@ public abstract class Character : InteractionController
     protected bool isCeilingHang;
     protected bool immortal;
     protected bool immuneStagger;
-    [SerializeField] protected bool isCounterAttack;
+    protected bool dodge;
+    protected bool isCounterAttack;
 
     // 프로퍼티
     public BasicStat OriginStat => originStat;
@@ -287,6 +288,12 @@ public abstract class Character : InteractionController
     {
         get => immuneStagger;
         set => immuneStagger = value;
+    }
+    
+    public bool Dodge
+    {
+        get => dodge;
+        set => dodge = value;
     }
 
     public bool IsDie
@@ -439,10 +446,16 @@ public abstract class Character : InteractionController
     {
         leftGroundRayPos = (Vector2)physicCenterPos.position + new Vector2(-footOffset, 0);
         rightGroundRayPos = (Vector2)physicCenterPos.position + new Vector2(footOffset, 0);
-        downLeftHit = Physics2D.Raycast(leftGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
-        downRightHit = Physics2D.Raycast(rightGroundRayPos, Vector2.down, groundRayDistance, groundAndPlatformLayerMask);
+
+        // 빠른 플랫폼이 내려가는 중이면 한 프레임 분리되지 않도록 ray 거리 확장
+        float dynamicRayDistance = groundRayDistance;
+        if (currentMovingPlatform != null && currentMovingPlatform.Velocity.y < 0f)
+            dynamicRayDistance += Mathf.Abs(currentMovingPlatform.Velocity.y) * Time.fixedDeltaTime;
+
+        downLeftHit = Physics2D.Raycast(leftGroundRayPos, Vector2.down, dynamicRayDistance, groundAndPlatformLayerMask);
+        downRightHit = Physics2D.Raycast(rightGroundRayPos, Vector2.down, dynamicRayDistance, groundAndPlatformLayerMask);
         isGrounded = downLeftHit || downRightHit;
-        
+
         // 그라운드 오브젝트
         if(downLeftHit.collider != null)
             groundObject = downLeftHit.collider.gameObject;
@@ -452,11 +465,11 @@ public abstract class Character : InteractionController
         // 무시된 플랫폼 감지
         if (!testing)
         {
-            if ((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) || 
+            if ((downLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == downLeftHit.collider)) ||
                 (downRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == downRightHit.collider)))
                 isGrounded = false;
         }
-        
+
         if (isGrounded)
             SetGroundState();
         else
@@ -1487,7 +1500,7 @@ public abstract class Character : InteractionController
         switch (normalState)
         {
             case ENormalState.Dash:
-                immortal = false;
+                dodge = false;
                 myBoxCollider.enabled = true;
                 myRigidbody.linearVelocity = Vector2.zero;
                 // 대시 캔슬 시점에도 발 밑 플랫폼이 있으면 landingState=Ground로 즉시 갱신
@@ -1929,14 +1942,6 @@ public abstract class Character : InteractionController
         // 이후에는 고정된 시간만큼 누워있다가 일어난다
         else
         {
-            if (isDie)
-            {
-                await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
-                // if (gameObject.activeSelf)
-                //     BlinkDelete();
-                return;
-            }
-
             if (await NormalDelay(ConstValues.DownSecond, stateCancellation).SuppressCancellationThrow())
                 return;
 

@@ -765,6 +765,15 @@ public class Monster : Character
         bossProduct?.Invoke(basicStat.name, monsterType);
         FirstCoolTimeReduce();
     }
+    
+    // 이벤트 등장
+    public void EventAppear(Action<string, EMonsterType> bossProduct)
+    {
+        FirstCoolTimeReduce();
+        IdleOrMove();
+        immortal = false;
+        bossProduct?.Invoke(basicStat.name, monsterType);
+    }
 
     public void MonsterAwake()
     {
@@ -1718,8 +1727,7 @@ public class Monster : Character
     }
 
     // 위험영역 표시(콜라이더) (위치, 각도, 콜라이더, 길이, 색깔)
-    protected async UniTask WarningAreaSpawnCollider(Vector2 pos, Vector3 angle, BoxCollider2D targetCollider,
-        float duration, Color color)
+    protected async UniTask WarningAreaSpawnCollider(Vector2 pos, Vector3 angle, BoxCollider2D targetCollider, float duration, Color color)
     {
         float scaleX = Mathf.Abs(targetCollider.gameObject.transform.localScale.x);
         float scaleY = Mathf.Abs(targetCollider.gameObject.transform.localScale.y);
@@ -1731,12 +1739,11 @@ public class Monster : Character
         Vector2 finalScale = new Vector2(scaleX * targetCollider.size.x, scaleY * targetCollider.size.y);
 
         FadeSystem warningArea = WarningAreaSpawn(duration, color, finalPos, angle, finalScale);
-        await warningArea.Fade();
+        await warningArea.Fade(false);
     }
 
     // 위험영역 표시(궤적) 좌표, x크기, y크기, x축 높이, y축 높이
-    protected async UniTask WarningAreaSpawnTrajectory(Vector2 startPos, Vector2 endPos, Vector3 angle, float duration,
-        Color color, float thickness, float addDistance = 0)
+    protected async UniTask WarningAreaSpawnTrajectory(Vector2 startPos, Vector2 endPos, Vector3 angle, float duration, Color color, float thickness, float addDistance = 0)
     {
         float distance = Vector2.Distance(startPos, endPos);
 
@@ -1745,7 +1752,7 @@ public class Monster : Character
         Vector2 spawnSize = new Vector2(distance + addDistance, thickness);
 
         FadeSystem warningArea = WarningAreaSpawn(duration, color, spawnPos, angle, spawnSize);
-        await warningArea.Fade();
+        await warningArea.Fade(false);
     }
 
     // 커스텀

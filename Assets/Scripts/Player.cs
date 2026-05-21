@@ -760,18 +760,22 @@ public abstract class Player : Character
         float inputSpeedX = dir.x * basicStat.moveSpeed * (moveRatio * 0.01f);
 
         float platformSpeedX = 0f;
+        float platformSpeedY = 0f;
         if (landingState == ELandingState.Ground && currentMovingPlatform != null)
+        {
             platformSpeedX = currentMovingPlatform.Velocity.x;
+            platformSpeedY = currentMovingPlatform.Velocity.y;
+        }
 
         float targetSpeedY = myRigidbody.linearVelocity.y;
 
         if (inputSpeedX < 0 && (isWallLeft || isWallBodyLeft))
             inputSpeedX = 0;
-        
+
         if (inputSpeedX > 0 && (isWallRight || isWallBodyRight))
             inputSpeedX = 0;
 
-        myRigidbody.linearVelocity = new Vector2(inputSpeedX + platformSpeedX, targetSpeedY);
+        myRigidbody.linearVelocity = new Vector2(inputSpeedX + platformSpeedX, targetSpeedY + platformSpeedY);
     }
     
     // 플레이어 공격
@@ -1041,6 +1045,10 @@ public abstract class Player : Character
             Debug.Log("글로벌 쿨타임이 지나지 않음");
             return;
         }
+
+        var movingPlatform = lastStandPlatform.collider.GetComponent<MovingPlatform>();
+        if (movingPlatform != null && movingPlatform.IsElevator)
+            return;
         
         // 플랫폼 위에서 '서있거나, 움직일때' 만 작동함
         if((normalState != ENormalState.Idle && normalState != ENormalState.Move) || downJumping || !isOnPlatform || IsDamaged() || normalState == ENormalState.JumpAttack)
@@ -1530,8 +1538,7 @@ public abstract class Player : Character
     {
         jumpCancellation?.Cancel();
         StateSetting(ENormalState.Dash, ConstValues.Dash, ConstValues.Dash);
-        immortal = true;
-        myBoxCollider.enabled = false;
+        dodge = true;
         StandHitBox();
         GravityChange(0);
         myRigidbody.linearVelocity = Vector2.zero;
@@ -1580,8 +1587,7 @@ public abstract class Player : Character
         ClearObjectList(normalObject, 0.3f);
         
         // 대시 끝
-        immortal = false;
-        myBoxCollider.enabled = true;
+        dodge = false;
         return chargeFinish;
     }
 

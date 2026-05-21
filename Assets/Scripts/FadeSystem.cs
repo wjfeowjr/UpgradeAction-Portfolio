@@ -46,7 +46,7 @@ public class FadeSystem : MonoBehaviour
             mySpriteRenderer.color = color;
     }
 
-    public async UniTask Fade()
+    public async UniTask Fade(bool ignoreTime)
     {
         foreach (var myImage in myImages)
         {
@@ -67,16 +67,16 @@ public class FadeSystem : MonoBehaviour
             mySpriteRenderer.color = spriteRendererColor;
         }
         
-        await UniTask.Delay(TimeSpan.FromSeconds(startDelay), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
+        await UniTask.Delay(TimeSpan.FromSeconds(startDelay), ignoreTimeScale: ignoreTime, cancellationToken: fadeCancellation.Token);
 
         if (loopCount == -1)
         {
             foreach (var myImage in myImages)
-                myImage.DOFade(endAlpha, duration).SetUpdate(true).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
+                myImage.DOFade(endAlpha, duration).SetUpdate(ignoreTime).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
             foreach (var myText in myTexts)
-                myText.DOFade(endAlpha, duration).SetUpdate(true).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
+                myText.DOFade(endAlpha, duration).SetUpdate(ignoreTime).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
             foreach (var mySpriteRenderer in mySpriteRenderers)
-                mySpriteRenderer.DOFade(endAlpha, duration).SetUpdate(true).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
+                mySpriteRenderer.DOFade(endAlpha, duration).SetUpdate(ignoreTime).SetLoops(loopCount, LoopType.Yoyo).SetEase(myEase);
         }
         else
         {
@@ -84,28 +84,28 @@ public class FadeSystem : MonoBehaviour
             while (true)
             {
                 foreach (var myImage in myImages)
-                    myImage.DOFade(endAlpha, duration).SetUpdate(true).SetEase(myEase);
+                    myImage.DOFade(endAlpha, duration).SetUpdate(ignoreTime).SetEase(myEase);
                 foreach (var myText in myTexts)
-                    myText.DOFade(endAlpha, duration).SetUpdate(true).SetEase(myEase);
+                    myText.DOFade(endAlpha, duration).SetUpdate(ignoreTime).SetEase(myEase);
                 foreach (var mySpriteRenderer in mySpriteRenderers)
-                    mySpriteRenderer.DOFade(endAlpha, duration).SetUpdate(true).SetEase(myEase);
+                    mySpriteRenderer.DOFade(endAlpha, duration).SetUpdate(ignoreTime).SetEase(myEase);
                 
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
-                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), ignoreTimeScale: ignoreTime, cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), ignoreTimeScale: ignoreTime, cancellationToken: fadeCancellation.Token);
                 // 반복횟수를 넘어가면 즉시 빠져나옴
                 currentLoop += 1;
                 if (currentLoop >= loopCount)
                     break;
                 
                 foreach (var myImage in myImages)
-                    myImage.DOFade(startAlpha, duration).SetUpdate(true).SetEase(myEase);
+                    myImage.DOFade(startAlpha, duration).SetUpdate(ignoreTime).SetEase(myEase);
                 foreach (var myText in myTexts)
-                    myText.DOFade(startAlpha, duration).SetUpdate(true).SetEase(myEase);
+                    myText.DOFade(startAlpha, duration).SetUpdate(ignoreTime).SetEase(myEase);
                 foreach (var mySpriteRenderer in mySpriteRenderers)
-                    mySpriteRenderer.DOFade(startAlpha, duration).SetUpdate(true).SetEase(myEase);
+                    mySpriteRenderer.DOFade(startAlpha, duration).SetUpdate(ignoreTime).SetEase(myEase);
                 
-                await UniTask.Delay(TimeSpan.FromSeconds(duration), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
-                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), ignoreTimeScale: true, cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(duration), ignoreTimeScale: ignoreTime, cancellationToken: fadeCancellation.Token);
+                await UniTask.Delay(TimeSpan.FromSeconds(endDelay), ignoreTimeScale: ignoreTime, cancellationToken: fadeCancellation.Token);
                 // 반복횟수를 넘어가면 즉시 빠져나옴
                 currentLoop += 1;
                 if (currentLoop >= loopCount)

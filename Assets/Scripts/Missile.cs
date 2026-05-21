@@ -362,21 +362,14 @@ public class Missile : MonoBehaviour, IProjectile
             if (string.IsNullOrEmpty(hitTag) || !col.gameObject.CompareTag(hitTag))
                 continue;
 
-            // 캐릭터들이 무적상태라면 무시한다
+            // 캐릭터들이 회피상태라면 무시한다
             if (hitTag is ConstValues.Player or ConstValues.Monster)
             {
                 var character = col.GetComponent<Character>();
                 if (character != null)
                 {
-                    if (character.Immortal || character.IsDie)
-                    {
-                        if (character.Immortal)
-                        {
-                            Explosion(true);
-                        }
-
+                    if (character.Dodge || character.IsDie)
                         return;
-                    }
                 }
 
                 // 이 부분 기억 (플레이어의 물리 판정)

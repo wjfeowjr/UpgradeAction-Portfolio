@@ -43,8 +43,9 @@ public class BgmManager : Singleton<BgmManager>
                 {
                     if(!immediately)
                         await UniTask.Delay(TimeSpan.FromSeconds(0.5f));
-                
+                    
                     myAudioSource.Play();
+                    currentBgm = uniqueId;
                     return;
                 }
             }

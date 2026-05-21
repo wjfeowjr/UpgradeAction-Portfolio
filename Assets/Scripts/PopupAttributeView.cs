@@ -90,7 +90,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     private List<SkillData> skillDataList = new List<SkillData>();
     private List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
 
-    private List<SkillAttributeInfo> attributeList;
+    private List<SkillAttributeCopy> attributeList;
 
     // 현재 스킬에서 사용 가능한 "특성 id"(중복 레벨 행 제거)
     private readonly List<string> attributeIdList = new List<string>();
@@ -700,39 +700,39 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         }
         
         // 이름/설명
-        SkillAttributeInfo skillAttributeInfo = attributeList.Find(x => x.id == id);
-        if (skillAttributeInfo == null)
+        SkillAttributeCopy skillAttributeCopy = attributeList.Find(x => x.id == id);
+        if (skillAttributeCopy == null)
             return;
         
-        attributeNameText.text = GameManager.Instance.GetTalk(skillAttributeInfo.talk);
+        attributeNameText.text = GameManager.Instance.GetTalk(skillAttributeCopy.talk);
         foreach (var infoObject in infoObjects)
             infoObject.SetActive(true);
         
-        if (skillAttributeInfo.upgradeValue.Count > 0 || skillAttributeInfo.buffTime > 0 || skillAttributeInfo.buffValue > 0 || skillAttributeInfo.objectCount > 1)
+        if (skillAttributeCopy.upgradeValue.Count > 0 || skillAttributeCopy.buffTime > 0 || skillAttributeCopy.buffValue > 0 || skillAttributeCopy.objectCount > 1)
         {
             List<object> timeAndValue = new List<object>();
-            if (skillAttributeInfo.upgradeValue.Count > 0)
+            if (skillAttributeCopy.upgradeValue.Count > 0)
             {
-                foreach (var value in skillAttributeInfo.upgradeValue)
+                foreach (var value in skillAttributeCopy.upgradeValue)
                 {
                     timeAndValue.Add(value);
                 }
             }
-            if(skillAttributeInfo.buffTime > 0)
-                timeAndValue.Add(skillAttributeInfo.buffTime);
-            if(skillAttributeInfo.buffValue > 0)
-                timeAndValue.Add(skillAttributeInfo.buffValue);
-            if(skillAttributeInfo.objectCount > 1)
-                timeAndValue.Add(skillAttributeInfo.objectCount);
+            if(skillAttributeCopy.buffTime > 0)
+                timeAndValue.Add(skillAttributeCopy.buffTime);
+            if(skillAttributeCopy.buffValue > 0)
+                timeAndValue.Add(skillAttributeCopy.buffValue);
+            if(skillAttributeCopy.objectCount > 1)
+                timeAndValue.Add(skillAttributeCopy.objectCount);
             
-            attributeExplainText.text = string.Format(GameManager.Instance.GetTalk(skillAttributeInfo.explainTalk), timeAndValue.ToArray());
+            attributeExplainText.text = string.Format(GameManager.Instance.GetTalk(skillAttributeCopy.explainTalk), timeAndValue.ToArray());
         }
         else
         {
-            attributeExplainText.text = GameManager.Instance.GetTalk(skillAttributeInfo.explainTalk);
+            attributeExplainText.text = GameManager.Instance.GetTalk(skillAttributeCopy.explainTalk);
         }
         
-        costText.text = skillAttributeInfo.cost.ToString();
+        costText.text = skillAttributeCopy.cost.ToString();
         explainObject.SetActive(true);
         CheckAdjust();
     }

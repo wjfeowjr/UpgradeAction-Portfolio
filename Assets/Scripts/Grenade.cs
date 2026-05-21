@@ -283,13 +283,13 @@ public class Grenade : MonoBehaviour, IProjectile
             if(hitTag is ConstValues.Ground or ConstValues.Platform && timer < 0.1f)
                 continue;
 
-            // 캐릭터들이 무적상태라면 무시한다
+            // 캐릭터들이 회피상태라면 무시한다
             if (hitTag is ConstValues.Player or ConstValues.Monster)
             {
                 var character = col.GetComponent<Character>();
                 if (character != null)
                 {
-                    if (character.Immortal || character.IsDie)
+                    if (character.Dodge || character.IsDie)
                         return;
                 }
                 

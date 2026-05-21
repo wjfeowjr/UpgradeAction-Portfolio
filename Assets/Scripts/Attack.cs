@@ -529,7 +529,7 @@ public class Attack : MonoBehaviour
     // 피격이 가능한 상태인지(무적/사망 필터)
     private bool IsHittable(Character hitTarget)
     {
-        if (hitTarget.Immortal && !attackInfo.ignoreImmortal)
+        if ((hitTarget.Immortal || hitTarget.Dodge) && !attackInfo.ignoreImmortal)
             return false;
         if (hitTarget.IsDie)
             return false;
@@ -664,9 +664,7 @@ public class Attack : MonoBehaviour
         int finalStagger = (int)(attackInfo.stagger + (attackInfo.stagger * castChar.BasicStat.staggerDamage * 0.01f));
         hitTarget.TakeStagger(finalStagger);
 
-        if (!hitTarget.ImmuneStagger
-            && hitTarget.BasicStat.stagger <= 0
-            && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
+        if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 && hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
         {
             hitTarget.Stagger();
             return true;

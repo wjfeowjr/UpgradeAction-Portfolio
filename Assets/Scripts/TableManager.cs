@@ -113,6 +113,8 @@ public class DialogueChoiceData
     public string id;
     public string npc;
     public int talk;
+    public string checkKey;
+    public bool checkKeyValue;
 }
 [Serializable]
 public class DialogueChoiceDataList
@@ -226,6 +228,9 @@ public class NpcData
     public string firstDialog;
     public string startDialog;
     public string dialogKey;
+    public string questItemId;
+    public string questItemCount;
+    public string questClearChoice;
 }
 [Serializable]
 public class NpcDataList

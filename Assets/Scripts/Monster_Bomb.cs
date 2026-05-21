@@ -299,6 +299,7 @@ public class Monster_Bomb : Monster
     public override async void Die()
     {
         base.Die();
+        PlaySound($"{basicStat.id}_{ConstValues.Die}");
         
         CancelMotion();
         ClearObjectList(buffObject);
@@ -309,7 +310,6 @@ public class Monster_Bomb : Monster
         MoveStateSetting(EMoveState.Stopping);
             
         dieCancellation = new CancellationTokenSource();
-
         for (int i = 0; i < count; i++)
         {
             SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
@@ -334,5 +334,41 @@ public class Monster_Bomb : Monster
         goldAction?.Invoke(myStat.gold, centerPos.position);
         
         isDie = true;
+    }
+    
+    // 패턴3.폭탄 던지기
+    public async void EventThrowBomb(Npc[] npc)
+    {
+        float delay1 = 0.2f;
+        float delay2 = 0.5f;
+        int bombCount = 5;
+        
+        SetTriggerAnimator(ConstValues.Attack_2);
+
+        PlaySound($"{basicStat.id}_laugh");
+        SpawnObject(ConstValues.BlueFlash, facePos);
+        if(await AttackDelay(delay2).SuppressCancellationThrow())
+            return;
+    
+        SetTriggerAnimator(ConstValues.Pattern);
+
+        for (int i = 0; i < bombCount; i++)
+        {
+            int randX = Random.Range(0, 2);
+            Vector2 bombVector = new Vector2(crazyBombPos[randX].position.x, crazyBombPos[randX].position.y);
+            int randIdx = Random.Range(0, npc.Length);
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}_Homing", bombVector, 0, npc[randIdx].CenterPos.position);
+
+            if(await AttackDelay(delay1).SuppressCancellationThrow())
+                return;
+        }
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        
+        SetTriggerAnimator(ConstValues.Pattern);
+        if(await AttackDelay(delay2).SuppressCancellationThrow())
+            return;
+        
+        SetTriggerAnimator(ConstValues.Idle);
     }
 }

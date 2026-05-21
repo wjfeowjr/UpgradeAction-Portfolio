@@ -127,10 +127,10 @@ public class SpawnedObject : MonoBehaviour
         
         if (spawnObjectInfo.zFlip && dir < 0)
             zScale = -defaultScale.z;
-        
-        Transform firstChildTransform = transform.GetChild(0);
-        if (firstChildTransform != null)
+
+        if (transform.childCount > 0)
         {
+            Transform firstChildTransform = transform.GetChild(0);
             if (spawnObjectInfo.flipPosition != Vector3.zero)
             {
                 if (dir > 0)

@@ -238,7 +238,7 @@ public class Skill
 }
 
 [Serializable]
-public class SkillAttributeInfo
+public class SkillAttributeCopy
 {
     public string id;
     public string skill;
@@ -280,7 +280,7 @@ public enum eItemStat
 }
 
 [Serializable]
-public class RelicInfo
+public class RelicCopy
 {
     public string id;
     public int name;
@@ -291,6 +291,19 @@ public class RelicInfo
     public string specialValue;
 }
 
+[Serializable]
+public class NpcCopy
+{
+    public string id;
+    public int talk;
+    public string firstDialog;
+    public string startDialog;
+    public string dialogKey;
+    public List<string> questItemId = new List<string>();
+    public List<int> questItemCount = new List<int>();
+    public string questClearChoice;
+}
+
 public enum eItemType
 {
     Normal,
@@ -298,7 +311,7 @@ public enum eItemType
 }
 
 [Serializable]
-public class ItemInfo
+public class ItemCopy
 {
     public string id;
     public int name;
@@ -601,9 +614,10 @@ public class GameManager : Singleton<GameManager>
     private SettingSkill changeSkill;
     
     // 복제체 데이터들
-    public List<SkillAttributeInfo> skillAttributeCopyList = new List<SkillAttributeInfo>();
-    public List<ItemInfo> itemCopyList = new List<ItemInfo>();
-    public List<RelicInfo> relicCopyList = new List<RelicInfo>();
+    public List<SkillAttributeCopy> skillAttributeCopyList = new List<SkillAttributeCopy>();
+    public List<ItemCopy> itemCopyList = new List<ItemCopy>();
+    public List<RelicCopy> relicCopyList = new List<RelicCopy>();
+    public List<NpcCopy> npcCopyList = new List<NpcCopy>();
     
     // 매니저들
     public TableManager tableManager;
@@ -1358,10 +1372,10 @@ public class GameManager : Singleton<GameManager>
         return playerInfo.relicList[idx];
     }
 
-    public string GetRelicStat(RelicInfo relicInfo, int idx)
+    public string GetRelicStat(RelicCopy relicCopy, int idx)
     {
         StringBuilder sb = new StringBuilder();
-        switch (relicInfo.statList[idx])
+        switch (relicCopy.statList[idx])
         {
             case eItemStat.Power:
                 sb.Append(GetTalk(50101));
@@ -1392,12 +1406,12 @@ public class GameManager : Singleton<GameManager>
                 break;
         }
                 
-        if(relicInfo.valueList[idx] > 0)
-            sb.Append($" +{relicInfo.valueList[idx]}");
+        if(relicCopy.valueList[idx] > 0)
+            sb.Append($" +{relicCopy.valueList[idx]}");
         else
-            sb.Append($" -{relicInfo.valueList[idx]}");
+            sb.Append($" -{relicCopy.valueList[idx]}");
                 
-        switch (relicInfo.statList[idx])
+        switch (relicCopy.statList[idx])
         {
             case eItemStat.MoveSpeed:
                 sb.Append('%');
@@ -1473,7 +1487,7 @@ public class GameManager : Singleton<GameManager>
     {
         foreach (var skillAttribute in tableManager.skillAttributeTable.SkillAttribute)
         {
-            var data = new SkillAttributeInfo();
+            var data = new SkillAttributeCopy();
             data.id = skillAttribute.id;
             data.skill = skillAttribute.skill;
             data.targetObject = skillAttribute.targetObject;
@@ -1517,7 +1531,7 @@ public class GameManager : Singleton<GameManager>
         
         foreach (var item in tableManager.itemTable.Item)
         {
-            var data = new ItemInfo();
+            var data = new ItemCopy();
             data.id = item.id;
             data.name = item.name;
             data.explain = item.explain;
@@ -1529,7 +1543,7 @@ public class GameManager : Singleton<GameManager>
 
         foreach (var relic in tableManager.relicTable.Relic)
         {
-            var data = new RelicInfo();
+            var data = new RelicCopy();
             data.id = relic.id;
             
             var itemData = itemCopyList.Find(x => x.id == relic.id);
@@ -1548,6 +1562,44 @@ public class GameManager : Singleton<GameManager>
             data.specialValue = relic.specialValue;
             
             relicCopyList.Add(data);
+        }
+
+        foreach (var npc in tableManager.npcTable.Npc)
+        {
+            var data = new NpcCopy();
+            data.id = npc.id;
+            data.talk = npc.talk;
+            data.firstDialog = npc.firstDialog;
+            data.startDialog = npc.startDialog;
+            data.dialogKey = npc.dialogKey;
+
+            if (!string.IsNullOrEmpty(npc.questItemId))
+            {
+                var questItemSplit = npc.questItemId.Split(';');
+                foreach (var questItem in questItemSplit)
+                {
+                    if (!string.IsNullOrWhiteSpace(questItem))
+                    {
+                        data.questItemId.Add(questItem);
+                    }
+                }
+            }
+
+            if (!string.IsNullOrEmpty(npc.questItemCount))
+            {
+                var itemCountSplit = npc.questItemCount.Split(';');
+                foreach (var itemCount in itemCountSplit)
+                {
+                    if (!string.IsNullOrWhiteSpace(itemCount))
+                    {
+                        data.questItemCount.Add(int.Parse(itemCount));
+                    }
+                }
+            }
+
+            data.questClearChoice = npc.questClearChoice;
+            
+            npcCopyList.Add(data);
         }
     }
 
@@ -1673,17 +1725,6 @@ public class GameManager : Singleton<GameManager>
             return;
         }
         mainCamera.Shake(amountX, amountY, time);
-    }
-
-    public Monster SpawnMonster(string id, Vector3 monsterVector, bool isExplosion = true, EMonsterType monsterType = EMonsterType.Normal, Action<string, EMonsterType> bossProduct = null)
-    {
-        var monster = SpawnToObjectPool(id, monsterVector).GetComponent<Monster>();
-        monster.IsExplosion = isExplosion;
-        monster.MonsterType = monsterType;
-        //monster.SpawnHpBar();
-        monster.Appear(bossProduct);
-        monsterList.Add(monster);
-        return monster;
     }
 
     public Monster ActiveAndHideMonster(string id, Vector3 monsterVector, bool isExplosion = true, EMonsterType monsterType = EMonsterType.Normal)
@@ -1844,24 +1885,6 @@ public class GameManager : Singleton<GameManager>
 
     private void FirstCashing()
     {
-        // foreach (var prefab in prefabList)
-        // {
-        //     GameObject go = Instantiate(prefab, objectPool);
-        //     Destroy(go);
-        // }
-
-        // for (int i = 0; i < 30; i++)
-        // {
-        //     var font = SpawnToUIObjectPoolInstantiate(ConstValues.TextFont, Vector2.zero);
-        //     font.SetActive(false);
-        // }
-        //
-        // var guide = SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero);
-        // guide.SetActive(false);
-        //
-        // var skillExplosion = SpawnToObjectPool(ConstValues.GetSkillExplosion, Vector2.zero);
-        // skillExplosion.SetActive(false);
-
         if (!fadeSystem)
         {
             fadeSystem = SpawnToHighestPool(ConstValues.FadeUI, Vector3.zero).GetComponent<FadeSystem>();
@@ -1870,13 +1893,13 @@ public class GameManager : Singleton<GameManager>
         fadeSystem.gameObject.SetActive(false);
     }
 
-    public async UniTask Fading(float start, float end, float duration, bool delete, Color color)
+    public async UniTask Fading(float start, float end, float duration, bool delete, Color color, bool ignoreTime = true)
     {
         fadeCancellation = new CancellationTokenSource();
         fadeSystem.ColorInput(color);
         fadeSystem.gameObject.SetActive(true);
         fadeSystem.SetParameter(start, end, duration, delete);
-        await fadeSystem.Fade();
+        await fadeSystem.Fade(ignoreTime);
     }
     
     public void PoolDisActive()
@@ -1980,8 +2003,15 @@ public class GameManager : Singleton<GameManager>
                 go = recycleObj;
             }
         }
-        
+
         go.transform.position = objVector;
+        
+        var particles = go.GetComponentsInChildren<ParticleSystem>();
+        foreach (var particle in particles)
+            particle.Clear(true);
+        foreach (var particle in particles)
+            particle.Play(true);
+        
         go.SetActive(true);
         if(isHightest)
             go.transform.SetAsLastSibling();
@@ -2831,8 +2861,9 @@ public class GameManager : Singleton<GameManager>
     // 대화 세팅 연출
     public async UniTask NpcDialogue(string choice, Npc[] npc, NpcInfo npcInfo, Action finishAction)
     {
+        string checkKey = npcInfo.dialogKey.id;
         bool checkKeyValue = npcInfo.dialogKey.isUse;
-        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice && x.checkKeyValue == checkKeyValue);
+        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice && (string.IsNullOrWhiteSpace(x.checkKey) || (x.checkKey == checkKey && x.checkKeyValue == checkKeyValue)));
 
         foreach (var talkData in talkDataList)
         {
@@ -2902,7 +2933,33 @@ public class GameManager : Singleton<GameManager>
                 npcInfo.dialogKey.isUse = true;
                 AddNewSkill(reward);
                 GetSkillProduct(reward, GetSkillDialogue);
+                SaveGame();
                 break;
+            case ConstValues.QuestClear:
+                npcInfo.dialogKey.isUse = true;
+                ConsumeQuestItems(npcInfo.id);
+                SaveGame();
+                break;
+        }
+    }
+
+    private void ConsumeQuestItems(string npcId)
+    {
+        var data = npcCopyList.Find(x => x.id == npcId);
+        if (data == null || data.questItemId == null)
+            return;
+
+        for (int i = 0; i < data.questItemId.Count; i++)
+        {
+            var itemId = data.questItemId[i];
+            var consumeCount = i < data.questItemCount.Count ? data.questItemCount[i] : 0;
+            var owned = ItemList.Find(x => x.id == itemId);
+            if (owned == null)
+                continue;
+
+            owned.count -= consumeCount;
+            if (owned.count <= 0)
+                ItemList.Remove(owned);
         }
     }
 

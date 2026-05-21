@@ -75,7 +75,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
     [SerializeField] private List<StoreItemData> storeItemTableData     = new List<StoreItemData>();
     [SerializeField] private List<StoreItemData> sortStoreItemTableData = new List<StoreItemData>();
 
-    [SerializeField] private List<ItemInfo> itemInfoList = new List<ItemInfo>();
+    [SerializeField] private List<ItemCopy> itemInfoList = new List<ItemCopy>();
 
     private CancellationTokenSource delayCancellation;
 

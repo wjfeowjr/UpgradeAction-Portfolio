@@ -31,6 +31,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string User = "user";
     public const string Foot = "foot";
     public const string Center = "center";
+    public const string Sprite = "Sprite";
     
     public const string PrefabFolder = "Assets/Prefab";
     public const string SoundFolder = "Assets/Sound";
@@ -127,27 +128,15 @@ public class ConstValues : Singleton<ConstValues>
     public const string JumpAttackEnd = "JumpAttack_End";
     public const string JumpAttack1 = "JumpAttack1";
     public const string JumpAttack2 = "JumpAttack2";
-    public const string JumpAttack3 = "JumpAttack3";
-    public const string JumpAttack2Start = "JumpAttack2_Start";
-    public const string JumpAttack2Drop = "JumpAttack2_Drop";
-    public const string JumpAttack2End = "JumpAttack2_End";
     public const string Event = "Event";
-    public const string PunchPose = "PunchPose";
-    public const string LandingPose = "LandingPose";
-    public const string JumpPose = "JumpPose";
     public const string Buff = "Buff";
-    public const string MonsterAttack = "MonsterAttack";
-    
+
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
     public const string DialogPose = "DialogPose";
-    public const string DialogShot = "DialogShot";
-    public const string DialogGround = "DialogGround";
-    public const string DialogGroundLaugh = "DialogGroundLaugh";
-    public const string Arrive = "Arrive";
-    public const string Thumbs = "Thumbs";
-    public const string Point = "Point";
-
+    public const string Afraid = "Afraid";
+    public const string Attack_2 = "Attack_2";
+    
     public const string Normal = "Normal";
     public const string Pattern = "Pattern";
     public const string Pattern2 = "Pattern2";
@@ -322,6 +311,7 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";
+    public const string QuestClear = "QuestClear";
     public const string ShortcutCrashEffect = "ShortcutCrashEffect";
     public const string ShortcutCrashExplosion = "ShortcutCrashExplosion";
     
@@ -563,6 +553,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Laugh = "Laugh";
     public const string Scream = "Scream";
     public const string GunnerLaugh = "Gunner_Laugh";
+    public const string PlayerDamaged = "Player_Damaged";
     public const string PlayerDamaged1 = "Player_Damaged1";
     public const string PlayerScream = "Player_Scream";
     public const string Upgrade = "Upgrade";

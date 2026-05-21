@@ -7,6 +7,7 @@ using UnityEngine;
 public class MovingPlatform : Platform
 {
     [SerializeField] private Transform[] points;
+    [SerializeField] private bool isElevator;
     [SerializeField] private bool isMoving;
     [SerializeField] private bool isRepeat;
     [SerializeField] private float delay;
@@ -32,6 +33,8 @@ public class MovingPlatform : Platform
         get => platformObject;
         set => platformObject = value;
     }
+
+    public bool IsElevator => isElevator;
 
     public bool IsMoving
     {
@@ -60,10 +63,6 @@ public class MovingPlatform : Platform
     {
         base.Awake();
         
-        isMoving = true;
-        isRepeat = true;
-        delay = 2.5f;
-        
         myRigidbody = GetComponent<Rigidbody2D>();
         myRigidbody.bodyType = RigidbodyType2D.Kinematic;
         myRigidbody.interpolation = RigidbodyInterpolation2D.Interpolate;
@@ -87,41 +86,49 @@ public class MovingPlatform : Platform
     {
         if (movePos.Count == 0 || !isMoving)
         {
+            myRigidbody.linearVelocity = Vector2.zero;
             platformVelocity = Vector2.zero;
             return;
         }
-        
+
         Vector2 cur = myRigidbody.position;
+        Vector2 target = movePos[targetIdx];
+        Vector2 toTarget = target - cur;
+        float distToTarget = toTarget.magnitude;
         float distFromStart = (cur - segmentStartPos).magnitude;
-        float distToTarget = (movePos[targetIdx] - cur).magnitude;
+
         float accelT = accelerateDistance > 0f ? Mathf.Clamp01(distFromStart / accelerateDistance) : 1f;
         float slowDownT = slowDownDistance > 0f ? Mathf.Clamp01(distToTarget / slowDownDistance) : 1f;
         float speedMultiplier = Mathf.Lerp(minSpeedMultiplier, 1f, Mathf.Min(accelT, slowDownT));
         float currentSpeed = speed * speedMultiplier;
-        Vector2 next = Vector2.MoveTowards(cur, movePos[targetIdx], currentSpeed * Time.fixedDeltaTime);
 
-        myRigidbody.MovePosition(next);
-        
-        platformVelocity = (next - cur) / Time.fixedDeltaTime;
-        
-        prevPos = next;
-
-        // 4) 목적지 도착하면 다음 포인트
-        if ((next - movePos[targetIdx]).sqrMagnitude < 0.0001f)
+        // 이번 프레임에 목적지 도달하면 정확히 스냅하고 정지
+        if (distToTarget <= currentSpeed * Time.fixedDeltaTime || distToTarget < 0.0001f)
         {
-            transform.position = movePos[targetIdx];
+            myRigidbody.linearVelocity = Vector2.zero;
+            myRigidbody.position = target;
+            platformVelocity = Vector2.zero;
+
             targetIdx = (targetIdx + 1) % movePos.Count;
-            segmentStartPos = next;
+            segmentStartPos = target;
+            prevPos = target;
             isMoving = false;
-            
-            platformVelocity = Vector2.zero; // 정지 시 속도 명확히 0
-            
+
             if (isRepeat && delay > 0)
                 curDelay = 0;
 
             if (arriveAction != null)
                 arriveAction();
+
+            return;
         }
+
+        Vector2 direction = toTarget / distToTarget;
+        Vector2 velocity = direction * currentSpeed;
+        myRigidbody.linearVelocity = velocity;
+
+        platformVelocity = velocity;
+        prevPos = cur;
     }
     
     private void UpdateDelay()
@@ -158,5 +165,6 @@ public class MovingPlatform : Platform
     public void SetSaveAction(Action action)
     {
         arriveAction = action;
+        platformVelocity = Vector2.zero;
     }
 }

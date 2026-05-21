@@ -110,25 +110,39 @@ public class InteractionController : MonoBehaviour
         interactionSelect.SetDelay();
     }
     
-    protected void SpawnInteractionSelect(NpcData npcData)
+    protected void SpawnInteractionSelect(NpcCopy npcCopy, NpcInfo npcInfo)
     {
-        var selectList = TableManager.Instance.dialogueChoiceTable.DialogueChoice.FindAll(x => x.npc == npcData.id);
-        
-        if (selectList.Count > 0 && interactionSelect == null)
+        string keyId = npcInfo?.dialogKey != null ? npcInfo.dialogKey.id : string.Empty;
+        bool keyValue = npcInfo?.dialogKey != null && npcInfo.dialogKey.isUse;
+
+        var selectList = TableManager.Instance.dialogueChoiceTable.DialogueChoice.FindAll(x =>
+        {
+            if (x.npc != npcCopy.id)
+                return false;
+            
+            // checkKey가 비어있는 선택지는 분기 없이 항상 노출
+            if (string.IsNullOrWhiteSpace(x.checkKey)) return true;
+            return x.checkKey == keyId && x.checkKeyValue == keyValue;
+        });
+
+        if (selectList.Count == 0)
+            return;
+
+        if (interactionSelect == null)
         {
             interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, selectPos).GetComponent<InteractionSelect>();
-            
-            List<int> choiceIdxList = new List<int>();
-            foreach (var select in selectList)
-                choiceIdxList.Add(select.talk);
-            
-            List<string> idList = new List<string>();
-            foreach (var select in selectList)
-                idList.Add(select.id);
-            
-            interactionSelect.StartSetting(choiceIdxList, idList);
             interactionSelect.gameObject.SetActive(false);
         }
+
+        List<int> choiceIdxList = new List<int>();
+        foreach (var select in selectList)
+            choiceIdxList.Add(select.talk);
+
+        List<string> idList = new List<string>();
+        foreach (var select in selectList)
+            idList.Add(select.id);
+
+        interactionSelect.StartSetting(choiceIdxList, idList);
     }
 
     protected void ActiveInteractionSelect(bool active)
