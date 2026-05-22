@@ -1,9 +1,37 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class Npc_Miner : Npc
+public class Npc_Miner : Npc, IQuestClearAction, IDialogueEndAction
 {
+    protected override void StartDialogue()
+    {
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+        base.StartDialogue();
+    }
+    
+    // 대화 끝나는 연출
+    public void DialogueEndAction()
+    {
+        var room = GetComponentInParent<Room>();
+        if (room == null)
+            return;
+
+        room.BossEvent_Bomb();
+    }
+
+    // 퀘스트 클리어 연출: 광부가 속한 Room의 Testing() 호출
+    public async UniTask QuestClearAction()
+    {
+        var room = GetComponentInParent<Room>();
+        if (room == null)
+            return;
+
+        await room.MinerQuestClearEvent();
+    }
+    
+    
     private void OnTriggerEnter2D(Collider2D col)
     {
         var attack = col.GetComponent<Attack>();

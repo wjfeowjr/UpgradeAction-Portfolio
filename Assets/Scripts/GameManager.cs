@@ -298,7 +298,7 @@ public class NpcCopy
     public int talk;
     public string firstDialog;
     public string startDialog;
-    public string dialogKey;
+    public List<string> dialogKey = new List<string>();
     public List<string> questItemId = new List<string>();
     public List<int> questItemCount = new List<int>();
     public string questClearChoice;
@@ -384,6 +384,14 @@ public class EventNpc
 }
 
 [Serializable]
+// 상황에 따라 껐다 켰다 하는 오브젝트
+public class EventCustomObject
+{
+    public string id;
+    public bool isActive;
+}
+
+[Serializable]
 // 숏컷
 public class ShortCut
 {
@@ -448,6 +456,7 @@ public class RoomInfo
     
     public List<RoomProduct> roomProduct = new List<RoomProduct>();
     public List<EventNpc> eventNpc = new List<EventNpc>();
+    public List<EventCustomObject> customObject = new List<EventCustomObject>();
     public List<ShortCut> shortCut = new List<ShortCut>();
     public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
     public List<TreasureBox> treasureBox = new List<TreasureBox>();
@@ -474,7 +483,7 @@ public class AttributeLockInfo
 public class NpcInfo
 {
     public string id;
-    public DialogKey dialogKey = new DialogKey();
+    public List<DialogKey> dialogKey = new List<DialogKey>();
     public bool isFirstDialogFinish;
 }
 
@@ -721,7 +730,7 @@ public class GameManager : Singleton<GameManager>
     public List<PlayerInfo> PlayerInfoList => saveData.playerInfoList;
 
     public List<RoomInfo> RoomInfoList => saveData.roomInfoList;
-    public List<NpcInfo> NpcInfoInfoList => saveData.npcInfoList;
+    public List<NpcInfo> NpcInfoList => saveData.npcInfoList;
 
     public SettingSkill ChangeSkill => changeSkill;
 
@@ -1099,7 +1108,7 @@ public class GameManager : Singleton<GameManager>
 
     private void DefaultNpcSetting()
     {
-        NpcInfoInfoList.Clear();
+        NpcInfoList.Clear();
     }
 
     private SkillKey SetSkillKey(string skillId, KeyCode keyCode)
@@ -1444,7 +1453,7 @@ public class GameManager : Singleton<GameManager>
         var itemData = itemCopyList.Find(x => x.id == storeItemData.id);
         if (Gold < storeItemData.cost)
         {
-            SpawnWarningPopup(GetTalk(30212));
+            SpawnWarningPopup(GetTalk(30212)).Forget();
             SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
             return;
         }
@@ -1571,17 +1580,22 @@ public class GameManager : Singleton<GameManager>
             data.talk = npc.talk;
             data.firstDialog = npc.firstDialog;
             data.startDialog = npc.startDialog;
-            data.dialogKey = npc.dialogKey;
+
+            if (!string.IsNullOrEmpty(npc.dialogKey))
+            {
+                var dialogKeySplit = npc.dialogKey.Split(';');
+                foreach (var dialogKey in dialogKeySplit)
+                {
+                    data.dialogKey.Add(dialogKey);
+                }
+            }
 
             if (!string.IsNullOrEmpty(npc.questItemId))
             {
                 var questItemSplit = npc.questItemId.Split(';');
                 foreach (var questItem in questItemSplit)
                 {
-                    if (!string.IsNullOrWhiteSpace(questItem))
-                    {
-                        data.questItemId.Add(questItem);
-                    }
+                    data.questItemId.Add(questItem);
                 }
             }
 
@@ -1590,15 +1604,11 @@ public class GameManager : Singleton<GameManager>
                 var itemCountSplit = npc.questItemCount.Split(';');
                 foreach (var itemCount in itemCountSplit)
                 {
-                    if (!string.IsNullOrWhiteSpace(itemCount))
-                    {
-                        data.questItemCount.Add(int.Parse(itemCount));
-                    }
+                    data.questItemCount.Add(int.Parse(itemCount));
                 }
             }
 
             data.questClearChoice = npc.questClearChoice;
-            
             npcCopyList.Add(data);
         }
     }
@@ -2421,7 +2431,7 @@ public class GameManager : Singleton<GameManager>
     public void GetItemProduct(string id)
     {
         string getMessage = string.Format(GetTalk(30207), GetItemTalk(id));
-        SpawnWarningPopup(getMessage);
+        SpawnWarningPopup(getMessage).Forget();
     }
 
     public string GetThousandCommaText(int data)
@@ -2556,9 +2566,8 @@ public class GameManager : Singleton<GameManager>
     {
         var attributeData = skillAttributeCopyList.FindAll(x => x.id == attributeId);
 
-        for (var i = 0; i < saveData.playerInfoList.Count; i++)
+        foreach (var playerInfo in saveData.playerInfoList)
         {
-            var playerInfo = saveData.playerInfoList[i];
             var skill = playerInfo.skillList.Find(x => x.skillId == skillId);
             if (skill == null)
                 continue;
@@ -2591,28 +2600,26 @@ public class GameManager : Singleton<GameManager>
         }
     }
     
-    public async void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
+    public void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
-        var attributeData = GameManager.Instance.skillAttributeCopyList.FindAll(x => x.id == attributeId);
+        var attributeData = skillAttributeCopyList.FindAll(x => x.id == attributeId);
 
         foreach (var playerInfo in saveData.playerInfoList)
         {
             var skill = playerInfo.skillList.Find(x => x.skillId == skillId);
-            if (skill != null)
-            {
-                var targetAttribute = skill.attributeList.Contains(attributeId);
-
-                if (targetAttribute)
-                {
-                    var attributeList = attributeData.FindAll(x => x.skill == skillId);
-                    var attribute = attributeList.Find(x => x.id == attributeId);
-                    playerInfo.attributePoint += attribute.cost;
-                    skill.attributeList.Remove(attributeId);
-                    // 내리는 연출 넣기
-                    GameManager.Instance.SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
-                }
-            }
-            break;
+            if (skill == null)
+                continue;
+            
+            var targetAttribute = skill.attributeList.Contains(attributeId);
+            if (!targetAttribute)
+                continue;
+            
+            var attributeList = attributeData.FindAll(x => x.skill == skillId);
+            var attribute = attributeList.Find(x => x.id == attributeId);
+            playerInfo.attributePoint += attribute.cost;
+            skill.attributeList.Remove(attributeId);
+            // 내리는 연출 넣기
+            SpawnHighestObject(ConstValues.AttributeDownEffect, effectPos);
         }
     }
 
@@ -2859,11 +2866,10 @@ public class GameManager : Singleton<GameManager>
     }
     
     // 대화 세팅 연출
-    public async UniTask NpcDialogue(string choice, Npc[] npc, NpcInfo npcInfo, Action finishAction)
+    public async UniTask NpcDialogue(string choice, Npc[] npc, NpcInfo npcInfo, Action finishAction, Action onEndEvent = null)
     {
-        string checkKey = npcInfo.dialogKey.id;
-        bool checkKeyValue = npcInfo.dialogKey.isUse;
-        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice && (string.IsNullOrWhiteSpace(x.checkKey) || (x.checkKey == checkKey && x.checkKeyValue == checkKeyValue)));
+        bool handedOffToRoom = false;
+        var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice && IsDialogKeyMatched(x.checkKey, x.checkKeyValue, npcInfo));
 
         foreach (var talkData in talkDataList)
         {
@@ -2915,32 +2921,62 @@ public class GameManager : Singleton<GameManager>
             
             string endEvent = talkData.endEvent;
             string eventReward = talkData.reward;
-            if(!string.IsNullOrWhiteSpace(endEvent))
-                PlayEndEvent(npcInfo, endEvent, eventReward);
-            
+            if (!string.IsNullOrWhiteSpace(endEvent))
+            {
+                if (PlayEndEvent(npcInfo, endEvent, eventReward, talkData.checkKey))
+                    handedOffToRoom = true;
+                onEndEvent?.Invoke();
+            }
+
             if (talkData.isEnd)
                 break;
         }
+
+        // Room 연출로 위임된 경우 컨트롤 복귀와 finishAction은 Room 측에서 책임짐
+        if (handedOffToRoom)
+            return;
+
         ControlStart = true;
-        finishAction();
+        finishAction?.Invoke();
     }
     
-    private void PlayEndEvent(NpcInfo npcInfo, string eventKey, string reward)
+    // Room 연출로 위임됐으면 true (호출자는 ControlStart/finishAction을 스킵해야 함)
+    private bool PlayEndEvent(NpcInfo npcInfo, string eventKey, string reward, string dialogKeyId)
     {
+        var targetKey = string.IsNullOrWhiteSpace(dialogKeyId) ? null : npcInfo?.dialogKey?.Find(k => k.id == dialogKeyId);
+
         switch (eventKey)
         {
             case ConstValues.GetSkill:
-                npcInfo.dialogKey.isUse = true;
+                if (targetKey != null)
+                    targetKey.isUse = true;
                 AddNewSkill(reward);
                 GetSkillProduct(reward, GetSkillDialogue);
                 SaveGame();
-                break;
+                return false;
             case ConstValues.QuestClear:
-                npcInfo.dialogKey.isUse = true;
+                if (targetKey != null)
+                    targetKey.isUse = true;
                 ConsumeQuestItems(npcInfo.id);
-                SaveGame();
-                break;
+                return false;
+            default:
+                // GameManager가 처리하지 않는 endEvent는 현재 Room에 위임
+                // (BossEvent 등 Room 연출은 Room.PlayRoomEndEvent에서 분기)
+                RoomManager.Instance.CurrentRoom.PlayRoomEndEvent(eventKey);
+                return true;
         }
+    }
+
+    // NpcInfo의 dialogKey 리스트에서 checkKey 매칭 여부 판단
+    private bool IsDialogKeyMatched(string checkKey, bool checkKeyValue, NpcInfo npcInfo)
+    {
+        if (string.IsNullOrWhiteSpace(checkKey))
+            return true;
+        if (npcInfo?.dialogKey == null)
+            return false;
+        
+        var key = npcInfo.dialogKey.Find(k => k.id == checkKey);
+        return key != null && key.isUse == checkKeyValue;
     }
 
     private void ConsumeQuestItems(string npcId)

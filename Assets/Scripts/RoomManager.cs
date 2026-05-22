@@ -422,7 +422,7 @@ public class RoomManager : Singleton<RoomManager>
                 imgName = model.imgName,
                 closeAction = () =>
                 {
-                    uiBase.ReductionClose(true, true);
+                    uiBase.ReductionClose(true, true).Forget();
                     PopupLayerReset();
                 }
             };

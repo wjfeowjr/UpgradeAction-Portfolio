@@ -72,7 +72,6 @@ public class TotalRoom : MonoBehaviour
 
     public void ActivePlaceName()
     {
-        bool newPlace = false;
         List<string> placeList = new List<string>();
         foreach (var room in roomArray)
         {

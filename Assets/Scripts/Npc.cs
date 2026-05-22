@@ -12,12 +12,22 @@ interface IFirstDialogAction
     public void DialogEndAction();
 }
 
+interface IQuestClearAction
+{
+    public UniTask QuestClearAction();
+}
+
+interface IDialogueEndAction
+{
+    public void DialogueEndAction();
+}
+
 public class Npc : Character
 {
     [SerializeField] private NpcInfo npcInfo;
     [SerializeField] private Npc[] anotherNpc;
     
-    private NpcCopy npcData;
+    private NpcCopy npcCopyData;
     private bool isFirstTalk;
 
     protected override void OnEnable()
@@ -36,8 +46,8 @@ public class Npc : Character
 
     private void DataSetting()
     {
-        if(npcData == null)
-            npcData = GameManager.Instance.npcCopyList.Find(x => x.id == name);
+        if(npcCopyData == null)
+            npcCopyData = GameManager.Instance.npcCopyList.Find(x => x.id == name);
     }
 
     public void SetInteractionAction()
@@ -57,20 +67,44 @@ public class Npc : Character
 
     public void AddData()
     {
-        var data = GameManager.Instance.NpcInfoInfoList.Find(x => x.id == name);
+        var data = GameManager.Instance.NpcInfoList.Find(x => x.id == name);
         if (data == null)
         {
             NpcInfo npc = new NpcInfo();
             npc.id = name;
-            npc.dialogKey.id = npcData.dialogKey;
-            npc.isFirstDialogFinish = string.IsNullOrWhiteSpace(npcData.firstDialog);
-            GameManager.Instance.NpcInfoInfoList.Add(npc);
-            npcInfo = GameManager.Instance.NpcInfoInfoList.Find(x => x.id == name);
+            foreach (var key in npcCopyData.dialogKey)
+            {
+                DialogKey dialogKey = new DialogKey
+                {
+                    id = key,
+                    isUse = false
+                };
+                npc.dialogKey.Add(dialogKey);
+            }
+            npc.isFirstDialogFinish = string.IsNullOrWhiteSpace(npcCopyData.firstDialog);
+            GameManager.Instance.NpcInfoList.Add(npc);
+            npcInfo = GameManager.Instance.NpcInfoList.Find(x => x.id == name);
         }
         else
         {
             npcInfo = data;
-            if (string.IsNullOrWhiteSpace(npcData.firstDialog))
+            if (npcInfo.dialogKey.Count < npcCopyData.dialogKey.Count)
+            {
+                foreach (var key in npcCopyData.dialogKey)
+                {
+                    if (npcInfo.dialogKey.Exists(x => x.id == key))
+                        continue;
+                    
+                    DialogKey dialogKey = new DialogKey
+                    {
+                        id = key,
+                        isUse = false
+                    };
+                    npcInfo.dialogKey.Add(dialogKey);
+                }
+            }
+            
+            if (string.IsNullOrWhiteSpace(npcCopyData.firstDialog))
                 npcInfo.isFirstDialogFinish = true;
         }
     }
@@ -120,15 +154,20 @@ public class Npc : Character
         }
         else
         {
-            await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject);
+            await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject, RefreshInteractionSelect);
         }
     }
-    
+
     private async UniTask SetFirstDialogueAction(string choice)
     {
         ActiveInteractionSelect(false);
-        await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject);
-        
+        await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject, RefreshInteractionSelect);
+    }
+
+    // endEvent 발생 시 선택지를 현재 dialogKey 상태 기준으로 재구성
+    private void RefreshInteractionSelect()
+    {
+        SpawnInteractionSelect(npcCopyData, npcInfo);
     }
     
     private void SetCloseAction()
@@ -163,15 +202,23 @@ public class Npc : Character
             // 미션 NPC: 모든 재료 충족 시 InteractionSelect 건너뛰고 클리어 연출 자동 진행
             if (IsQuestReadyToClear())
             {
-                await GameManager.Instance.NpcDialogue(npcData.questClearChoice, anotherNpc, npcInfo, SpawnInteractionObject);
-                // 클리어 후 선택지 재구성 (다음 상호작용부터 클리어 후 대사 노출)
-                SpawnInteractionSelect(npcData, npcInfo);
+                // SpawnInteractionObject
+                await GameManager.Instance.NpcDialogue(npcCopyData.questClearChoice, anotherNpc, npcInfo, SpawnInteractionObject, RefreshInteractionSelect);
+
+                // NPC별 클리어 후속 연출 (해당 인터페이스가 구현돼 있을 때만 실행)
+                var clearAction = GetComponent<IQuestClearAction>();
+                if (clearAction != null)
+                {
+                    ActiveInteractionObject(false);
+                    await clearAction.QuestClearAction();
+                    SpawnInteractionObject();
+                }
                 return;
             }
 
-            if (!isFirstTalk)
+            if (!string.IsNullOrWhiteSpace(npcCopyData.startDialog) && !isFirstTalk)
             {
-                await GameManager.Instance.NpcFirstTalk(npcData.startDialog, speechPos);
+                await GameManager.Instance.NpcFirstTalk(npcCopyData.startDialog, speechPos);
                 isFirstTalk = true;
             }
             SetActionInteractionSelect(SetDialogueAction, SetCloseAction);
@@ -195,25 +242,32 @@ public class Npc : Character
     
     public void SetSelectAction()
     {
-        SpawnInteractionSelect(npcData, npcInfo);
+        SpawnInteractionSelect(npcCopyData, npcInfo);
     }
 
     // 미션 NPC가 모든 재료를 충족했고, 아직 클리어 처리가 안 된 상태인지 확인
     private bool IsQuestReadyToClear()
     {
-        if (npcData == null || npcInfo == null)
+        if (npcCopyData == null || npcInfo == null)
             return false;
-        if (npcData.questItemId == null || npcData.questItemId.Count == 0)
+        if (npcCopyData.questItemId == null || npcCopyData.questItemId.Count == 0)
             return false;
-        if (npcInfo.dialogKey.isUse)
-            return false;
-        if (string.IsNullOrWhiteSpace(npcData.questClearChoice))
+        if (string.IsNullOrWhiteSpace(npcCopyData.questClearChoice))
             return false;
 
-        for (int i = 0; i < npcData.questItemId.Count; i++)
+        // 퀘스트 클리어 상태를 추적하는 키 = questClearChoice 라인의 checkKey
+        var clearLine = TableManager.Instance.dialogueTable.Dialogue.Find(x => x.choiceGroupId == npcCopyData.questClearChoice);
+        if (clearLine == null || string.IsNullOrWhiteSpace(clearLine.checkKey))
+            return false;
+
+        var questKey = npcInfo.dialogKey.Find(k => k.id == clearLine.checkKey);
+        if (questKey == null || questKey.isUse)
+            return false;
+
+        for (int i = 0; i < npcCopyData.questItemId.Count; i++)
         {
-            var requireId = npcData.questItemId[i];
-            var requireCount = i < npcData.questItemCount.Count ? npcData.questItemCount[i] : 0;
+            var requireId = npcCopyData.questItemId[i];
+            var requireCount = i < npcCopyData.questItemCount.Count ? npcCopyData.questItemCount[i] : 0;
             var owned = GameManager.Instance.ItemList.Find(x => x.id == requireId);
             if (owned == null || owned.count < requireCount)
                 return false;

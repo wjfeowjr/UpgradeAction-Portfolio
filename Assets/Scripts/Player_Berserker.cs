@@ -31,24 +31,25 @@ public class Player_Berserker : Player
     [SerializeField] private Transform chargeCrashSmashEffectPos;
     
     private int maxSword = 3;
-    
+
     public override async void ChangeAttack()
     {
         //Debug.Log("교체 공격 시작");
         CancelMotion();
 
         curGlobalCoolTime = 0;
-        
-        BodyTypeSetting(EBodyType.SuperArmor);
-         stateCancellation = new CancellationTokenSource();
-         var finishSuccess = await BerserkerChangeAttack();
-         ResetBodyType();
-         if (!finishSuccess)
-         {
-             Debug.Log($"교체 공격 캔슬");
-             return;
-         }
-         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+
+        //BodyTypeSetting(EBodyType.SuperArmor);
+        stateCancellation = new CancellationTokenSource();
+        var finishSuccess = await BerserkerChangeAttack();
+        ResetBodyType();
+        if (!finishSuccess)
+        {
+            Debug.Log($"교체 공격 캔슬");
+            return;
+        }
+
+        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
 
         // StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
         // BerserkerChangeAttackNotMotion();
@@ -847,7 +848,6 @@ public class Player_Berserker : Player
     {
         float delay1 = 0.5f;
         float delay2 = 0.05f;
-        float delay3 = 0.32f;
 
         SpawnAttack(ConstValues.BerserkerFlash, centerPos);
         StateSetting(ENormalState.Skill, ConstValues.BerserkerCrash, ConstValues.BerserkerCrash);

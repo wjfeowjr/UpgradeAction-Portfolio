@@ -144,7 +144,6 @@ public class SkillDragHandler : MonoBehaviour, IPointerMoveHandler, IBeginDragHa
                     
                     case false:
                         return view;
-                        break;
                 }
             }
         }

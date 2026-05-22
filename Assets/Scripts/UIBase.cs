@@ -22,7 +22,7 @@ public class UIBase : MonoBehaviour
     {
         gameObject.SetActive(false);
     }
-    public async void ExpansionOpen(bool timeStop, bool controlStop)
+    public void ExpansionOpen(bool timeStop, bool controlStop)
     {
         if (timeStop)
             Time.timeScale = 0;

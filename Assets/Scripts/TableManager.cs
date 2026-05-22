@@ -302,6 +302,7 @@ public class RoomsData
     public string id;
     public string productIdx;
     public string npc;
+    public string customObject;
     public string skill;
     public string treasureBox;
     public string item;

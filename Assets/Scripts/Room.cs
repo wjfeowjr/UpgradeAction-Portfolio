@@ -99,6 +99,7 @@ public class Room : MonoBehaviour
     
     [SerializeField] protected List<Vector2> firstBossPosList = new List<Vector2>();
     [SerializeField] protected Npc[] npc;
+    [SerializeField] protected CustomObject[] customObjects;
     [SerializeField] protected List<Collider2D> trapList = new List<Collider2D>();
     [SerializeField] protected ShortcutObject[] shortCutObjects;
     
@@ -188,14 +189,9 @@ public class Room : MonoBehaviour
             
             if (Input.GetKeyDown(KeyCode.L))
             {
-                Testing();
+                BossEvent_Bomb();
             }
         }
-    }
-
-    private void Testing()
-    {
-        leftRoom[0].BossEvent1(this);
     }
 
     private void OnApplicationQuit()
@@ -236,9 +232,9 @@ public class Room : MonoBehaviour
 
     public void AddNpcData()
     {
-        foreach (var character in npc)
+        foreach (var person in npc)
         {
-            character.AddData();
+            person.AddData();
         }
     }
     
@@ -367,7 +363,7 @@ public class Room : MonoBehaviour
         }
     }
 
-    public async void InfoSetting()
+    public void InfoSetting()
     {
         // 저장되는 룸만 불러온다
         roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
@@ -423,6 +419,29 @@ public class Room : MonoBehaviour
                         isActive = npcActive, 
                     };
                     roomInfo.eventNpc.Add(eventNpc);
+                }
+                GameManager.Instance.SaveGame();
+            }
+        }
+        
+        // 커스텀 오브젝트 세팅
+        var customObjectArray = roomsData.customObject.Split('ㅗ');
+        if (roomInfo.customObject.Count < customObjectArray.Length)
+        {
+            if (!string.IsNullOrWhiteSpace(customObjectArray[0]))
+            {
+                for (int i = 0; i < customObjectArray.Length; i++)
+                {
+                    var objectArray = customObjectArray[i].Split(';');
+                    var objectId = objectArray[0];
+                    var obejectActive = bool.Parse(objectArray[1]);
+                    
+                    var customObject = new EventCustomObject()
+                    {
+                        id = objectId,
+                        isActive = obejectActive, 
+                    };
+                    roomInfo.customObject.Add(customObject);
                 }
                 GameManager.Instance.SaveGame();
             }
@@ -502,10 +521,10 @@ public class Room : MonoBehaviour
         }
         
         // 맵에 널려있는 아이템 세팅
-        var itemArray = roomsData.item.Split('ㅗ');
-        if (roomInfo.item.Count < itemArray.Length)
+        if (!string.IsNullOrWhiteSpace(roomsData.item))
         {
-            if (!string.IsNullOrWhiteSpace(itemArray[0]))
+            var itemArray = roomsData.item.Split('ㅗ');
+            if (roomInfo.item.Count < itemArray.Length)
             {
                 for (int i = 0; i < itemArray.Length; i++)
                 {
@@ -523,11 +542,11 @@ public class Room : MonoBehaviour
                 }
                 GameManager.Instance.SaveGame();
             }
-        }
-        else if (itemArray.Length < roomInfo.item.Count)
-        {
-            roomInfo.item.Clear();
-            GameManager.Instance.SaveGame();
+            else if (itemArray.Length < roomInfo.item.Count)
+            {
+                roomInfo.item.Clear();
+                GameManager.Instance.SaveGame();
+            }
         }
 
         // 엘리베이터 설정
@@ -589,6 +608,14 @@ public class Room : MonoBehaviour
             person.SetSelectAction();
             person.SetStartTalkAction();
             person.SetAnotherNpc(npc);
+        }
+        
+        // 여기서 커스텀 오브젝트 활성화
+        foreach (var customObject in customObjects)
+        {
+            var targetObject = roomInfo.customObject.Find(x => x.id == customObject.name);
+            if (customObject != null)
+                customObject.gameObject.SetActive(targetObject.isActive);
         }
 
         // 스킬 및 패시브를 획득했으면, 나오지 않게 조정
@@ -2543,6 +2570,10 @@ public class Room : MonoBehaviour
         if (npcArray != null)
             npc = npcArray.GetComponentsInChildren<Npc>();
         
+        Transform customObjectArray = roomGameObject.transform.Find(ConstValues.CustomObjectArray);
+        if (customObjectArray != null)
+            customObjects = customObjectArray.GetComponentsInChildren<CustomObject>();
+
         Transform interactionArray = roomGameObject.transform.Find(ConstValues.InteractionArray);
         if (interactionArray != null)
         {
@@ -2773,7 +2804,7 @@ public class Room : MonoBehaviour
         roomInfo.eventNpc[0].isActive = false;
         GameManager.Instance.DialogueEnd();
 
-        GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30214));
+        GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30214)).Forget();
         UIOn();
     }
     
@@ -2788,6 +2819,7 @@ public class Room : MonoBehaviour
         
         await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor);
         GameManager.Instance.CurPlayer.RoomMoveState();
+        GameManager.Instance.CurPlayer.gameObject.SetActive(false);
 
         SetCameraLimit();
         pastRoom.ObjectActive(false);
@@ -2820,9 +2852,51 @@ public class Room : MonoBehaviour
         if(pastRoom.roomsData.place != roomsData.place)
             GameManager.Instance.RefreshPlaceName();
     }
+
+    public async UniTask MinerQuestClearEvent()
+    {
+        foreach (var custom in roomInfo.customObject)
+            custom.isActive = true;
+        
+        GameManager.Instance.SaveGame();
+        
+        GameManager.Instance.InitWaitCancellation();
+        GameManager.Instance.InitProductCancellation();
+
+        float delay = 2.0f;
+        
+        UIOff();
+        await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor);
+
+        foreach (var customObject in customObjects)
+            customObject.gameObject.SetActive(true);
+        
+        if (await GameManager.Instance.NormalDelay(delay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
+        UIOn();
+    }
+    
+    public void BossEvent_Bomb()
+    {
+        leftRoom[0].BossEvent_Bomb(this);
+    }
+
+    // Dialogue.endEvent 중 Room 연출에 해당하는 키를 분기 실행
+    // 새로운 Room 연출 endEvent를 추가할 때는 이 switch에만 case를 추가하면 됨
+    public void PlayRoomEndEvent(string eventKey)
+    {
+        switch (eventKey)
+        {
+            case ConstValues.BossEvent1:
+                BossEvent_Bomb();
+                break;
+        }
+    }
     
     // 폭탄전차를 만나는 이벤트
-    private async void BossEvent1(Room pastRoom)
+    private async void BossEvent_Bomb(Room pastRoom)
     {
         GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
@@ -2863,45 +2937,44 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(1.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        if (await GameManager.Instance.NormalDelay(1.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-            return;
-
         var bossPosition = bosses[0].transform.position;
+        GameManager.Instance.CurPlayer.gameObject.SetActive(true);
         GameManager.Instance.CurPlayer.transform.position = new Vector2(bossPosition.x + 3.0f, bossPosition.y);
         GameManager.Instance.CurPlayer.ForceIdle();
-        bosses[0].LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-        if (await GameManager.Instance.NormalDelay(1.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-            return;
         
-        BgmManager.Instance.DelayStop(0.1f);
-        float productDelay = 1.0f;
-        if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-            return;
-        
-        float productDelay2 = 1.5f;
-        if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-            return;
-
-        PlayBGM(ConstValues.BGMBoss, true);
-        GameManager.Instance.MainCamera.SetTarget(GameManager.Instance.CurPlayer.transform);
-        
-        GameManager.Instance.ControlStart = true;
-        bosses[0].EventAppear(SpawnBossMessage);
-        UIOn();
-
-        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
-            return;
-        
-        StopBGM();
-        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
-            return;
-
-        // 문 열기
-        PlayBGM(roomsData.bgm, true);
-        BossTileMapActive(false);
-        roomInfo.roomProduct[0].isFinish = true;
-        GameManager.Instance.SaveGame();
-        UIOn();
+        // bosses[0].LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+        // if (await GameManager.Instance.NormalDelay(1.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        //     return;
+        //
+        // BgmManager.Instance.DelayStop(0.1f);
+        // float productDelay = 1.0f;
+        // if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        //     return;
+        //
+        // float productDelay2 = 1.5f;
+        // if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        //     return;
+        //
+        // PlayBGM(ConstValues.BGMBoss, true);
+        // GameManager.Instance.MainCamera.SetTarget(GameManager.Instance.CurPlayer.transform);
+        //
+        // GameManager.Instance.ControlStart = true;
+        // bosses[0].EventAppear(SpawnBossMessage);
+        // UIOn();
+        //
+        // if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        //     return;
+        //
+        // StopBGM();
+        // if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        //     return;
+        //
+        // // 문 열기
+        // PlayBGM(roomsData.bgm, true);
+        // BossTileMapActive(false);
+        // roomInfo.roomProduct[0].isFinish = true;
+        // GameManager.Instance.SaveGame();
+        // UIOn();
     }
 
     // 캐싱

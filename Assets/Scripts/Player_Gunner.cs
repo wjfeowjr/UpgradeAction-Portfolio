@@ -26,24 +26,25 @@ public class Player_Gunner : Player
     {
         SoundManager.Instance.PlaySound(ConstValues.GunnerLaugh);
     }
-    
+
     public override async void ChangeAttack()
     {
         //Debug.Log("교체 공격 시작");
         CancelMotion();
-        
+
         curGlobalCoolTime = 0;
-        
-        BodyTypeSetting(EBodyType.SuperArmor);
-         stateCancellation = new CancellationTokenSource();
-         var finishSuccess = await GunnerChangeAttack();
-         ResetBodyType();
-         if (!finishSuccess)
-         {
-             Debug.Log($"교체 공격 캔슬");
-             return;
-         }
-         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
+
+        //BodyTypeSetting(EBodyType.SuperArmor);
+        stateCancellation = new CancellationTokenSource();
+        var finishSuccess = await GunnerChangeAttack();
+        ResetBodyType();
+        if (!finishSuccess)
+        {
+            Debug.Log($"교체 공격 캔슬");
+            return;
+        }
+
+        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
 
         // StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
         // GunnerChangeAttackNotMotion();

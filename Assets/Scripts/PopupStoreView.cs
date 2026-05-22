@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using Cysharp.Threading.Tasks;
 using TMPro;
 using Unity.VisualScripting;
 using UnityEngine;
@@ -173,7 +174,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
         if (isSoldOut)
         {
             popupCommonActions?.PlaySelectSound?.Invoke();
-            GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30211));
+            GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30211)).Forget();
             return;
         }
 

@@ -92,21 +92,7 @@ public abstract class Stage : MonoBehaviour
     {
         await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
     }
-    
-    // 맵에 있는 모든 몹을 잡았을 경우 발생하는 액션
-    protected async void MonsterClearAction(Action action)
-    {
-        // if (await WaitUntil(() => !monsterSpawning && GameManager.Instance.MonsterList.Count == 0, waitCancellation).SuppressCancellationThrow())
-        //     return;
-        action?.Invoke();
-    }
-    protected async void MonsterClearAction(Func<UniTask> asyncAction)
-    {
-        // if (await WaitUntil(() => !monsterSpawning && GameManager.Instance.MonsterList.Count == 0, waitCancellation).SuppressCancellationThrow())
-        //     return;
-        asyncAction?.Invoke();
-    }
-    
+
     private void CheckCurPlayer()
     {
         if (GameManager.Instance.CurPlayer != null && curPlayer != GameManager.Instance.CurPlayer)
@@ -266,26 +252,26 @@ public abstract class Stage : MonoBehaviour
         }
     }
 
-    protected void SpawnGuide(PopupGuideModel model)
-    {
-        var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero).GetComponent<UIBase>();
-        // 바인딩
-        if (uiBase is Popup_Guide guideView)
-        {
-            var guideInterface = guideView.GuideView.ConvertTo<IPopupGuideView>();
-            var guideModel = new PopupGuideModel()
-            {
-                guideMessage = model.guideMessage,
-                imgName = model.imgName,
-                closeAction = () => { uiBase.ReductionClose(true, true); }
-            };
-            var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
-            guideView.SetGuidePresenter(guidePresenter);
-            guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true, true); });
-            guidePresenter.SetModel();
-            guidePresenter.SetAction(guideModel.closeAction);
-        }
-    }
+    // protected void SpawnGuide(PopupGuideModel model)
+    // {
+    //     var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Guide, Vector3.zero).GetComponent<UIBase>();
+    //     // 바인딩
+    //     if (uiBase is Popup_Guide guideView)
+    //     {
+    //         var guideInterface = guideView.GuideView.ConvertTo<IPopupGuideView>();
+    //         var guideModel = new PopupGuideModel()
+    //         {
+    //             guideMessage = model.guideMessage,
+    //             imgName = model.imgName,
+    //             closeAction = () => { uiBase.ReductionClose(true, true); }
+    //         };
+    //         var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
+    //         guideView.SetGuidePresenter(guidePresenter);
+    //         guidePresenter.Expansion(() => { uiBase.ExpansionOpen(true, true); });
+    //         guidePresenter.SetModel();
+    //         guidePresenter.SetAction(guideModel.closeAction);
+    //     }
+    // }
     
     protected async void GameOverCycle()
     {

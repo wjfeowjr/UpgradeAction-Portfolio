@@ -47,7 +47,6 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
     private float fadeTime = 0.7f;
     private float moveSecond = 0.5f;
     private float delay = 2.0f;
-    private float finish = 1.0f;
 
     [SerializeField] private Transform bossMessageTransform;
     [SerializeField] private TMP_Text bossTypeText;

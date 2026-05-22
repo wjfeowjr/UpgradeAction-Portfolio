@@ -403,11 +403,16 @@ public class Player_Fighter : Player
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.FighterLightningPunchFinish);
         if (await AttackDelay(delay2).SuppressCancellationThrow()) 
             return false;
-        
+
         if (movingPunch)
+        {
             SpawnAttack(ConstValues.FighterLightningPunchFinishMissile, lightningPunchFinishPos);
+        }
         else
+        {
             SpawnAttack(ConstValues.FighterLightningPunchFinish, lightningPunchFinishPos);
+            SpawnObject(ConstValues.FighterLightningEffect, lightningPunchFinishPos);
+        }
         
         if (await AttackDelay(delay3).SuppressCancellationThrow()) 
             return false;
@@ -426,8 +431,8 @@ public class Player_Fighter : Player
         
         StateSetting(ENormalState.Skill, skillId, skillId);
         
-        float delay1 = 0.3f;
-        float delay2 = 0.4f;
+        float delay1 = 0.2f;
+        float delay2 = 0.3f;
         
         if(landingState == ELandingState.Ground)
             myRigidbody.linearVelocity = Vector2.zero;
@@ -439,8 +444,8 @@ public class Player_Fighter : Player
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, skillId);
         
         // 도움닫기
-        var leapHeight = 12.0f;
-        myRigidbody.linearVelocity = new Vector2(transform.localScale.x * leapHeight, leapHeight);
+        var leapHeight = 8.0f; // transform.localScale.x * leapHeight 12.0f;
+        myRigidbody.linearVelocity = new Vector2(0, leapHeight);
         var trailObject = SpawnObject(ConstValues.FighterLightningTrail, centerPos);
         SpawnObject(ConstValues.FighterLightningSmashWave, transform);
         if (await AttackDelay(delay2).SuppressCancellationThrow())
@@ -458,7 +463,7 @@ public class Player_Fighter : Player
         SpawnAttack(ConstValues.FighterLightningSmash, lightningSmashPos);
 
         if(lightningStrike)
-            LightningStrike( lightningSmashPos, ConstValues.FighterLightningSmashLightning,5);
+            LightningStrike( lightningSmashPos, ConstValues.FighterLightningSmashLightning,3);
         
         if(shockSmash)
             SpawnAttack(ConstValues.FighterLightningSmashLightningField, lightningSmashPos);
@@ -550,11 +555,11 @@ public class Player_Fighter : Player
     private async void LightningStrike(Transform pos, string id, int count)
     {
         delayCancellation = new CancellationTokenSource();
-        float delay = 0.1f;
+        float delay = 0.3f;
         var objectPos = pos.position;
         for (int i = 0; i < count; i++)
         {
-            float randX = Random.Range(-1, 1);
+            float randX = Random.Range(-1.0f, 1.0f);
             Vector2 lightningPos = new Vector2(objectPos.x + randX, objectPos.y);
             if (await NormalDelay(delay, delayCancellation).SuppressCancellationThrow())
                 return;

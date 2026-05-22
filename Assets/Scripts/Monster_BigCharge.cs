@@ -164,10 +164,6 @@ public class Monster_BigCharge : Monster
             immortal = false;
             bossProduct?.Invoke(basicStat.name, monsterType);
         }
-        else
-        {
-            base.Appear(bossProduct);
-        }
     }
     
     public override async void Die()

@@ -148,7 +148,7 @@ public class Monster_Sun : Monster
         startPos = transform.position;
     }
     
-    public override async void Die()
+    public override void Die()
     {
         base.Die();
         
@@ -213,7 +213,7 @@ public class Monster_Sun : Monster
         faceSpin.SpinSwitchOn(true);
     }
 
-    protected override async void DownAndStand()
+    protected override void DownAndStand()
     {
         base.DownAndStand();
         faceSpin.Stop();

@@ -49,7 +49,7 @@ public class Monster_Moon : Monster
     {
         float delay1 = 0.7f;
         float delay2 = 0.3f;
-        float fadeSpeed = 0.4f;
+        //float fadeSpeed = 0.4f;
         
         var playerPos = GameManager.Instance.CurPlayer.transform.position;
         var firePos = new Vector2(playerPos.x, RoomManager.Instance.GroundPosY + 9.0f);
@@ -223,7 +223,7 @@ public class Monster_Moon : Monster
         faceSpin.SpinSwitchOn(true);
     }
 
-    protected override async void DownAndStand()
+    protected override void DownAndStand()
     {
         base.DownAndStand();
         faceSpin.Stop();

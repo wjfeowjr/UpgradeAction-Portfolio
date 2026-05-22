@@ -207,7 +207,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterArray = "MonsterArray";
     public const string BossArray = "BossArray";
     public const string NpcArray = "NpcArray";
-    public const string TrapArray = "TrapArray";
+    public const string CustomObjectArray = "CustomObjectArray";
     public const string InteractionArray = "InteractionArray";
     public const string GoldObjectArray = "GoldObjectArray";
     public const string PlayerPosArray = "PlayerPosArray";
@@ -312,6 +312,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";
     public const string QuestClear = "QuestClear";
+    public const string BossEvent1 = "BossEvent1";
     public const string ShortcutCrashEffect = "ShortcutCrashEffect";
     public const string ShortcutCrashExplosion = "ShortcutCrashExplosion";
     

@@ -112,17 +112,21 @@ public class InteractionController : MonoBehaviour
     
     protected void SpawnInteractionSelect(NpcCopy npcCopy, NpcInfo npcInfo)
     {
-        string keyId = npcInfo?.dialogKey != null ? npcInfo.dialogKey.id : string.Empty;
-        bool keyValue = npcInfo?.dialogKey != null && npcInfo.dialogKey.isUse;
-
         var selectList = TableManager.Instance.dialogueChoiceTable.DialogueChoice.FindAll(x =>
         {
             if (x.npc != npcCopy.id)
                 return false;
-            
+
             // checkKey가 비어있는 선택지는 분기 없이 항상 노출
-            if (string.IsNullOrWhiteSpace(x.checkKey)) return true;
-            return x.checkKey == keyId && x.checkKeyValue == keyValue;
+            if (string.IsNullOrWhiteSpace(x.checkKey))
+                return true;
+
+            if (npcInfo?.dialogKey == null)
+                return false;
+
+            // NPC가 가진 키 중 ID가 일치하는 것을 찾아 isUse 값까지 매칭
+            var key = npcInfo.dialogKey.Find(k => k.id == x.checkKey);
+            return key != null && key.isUse == x.checkKeyValue;
         });
 
         if (selectList.Count == 0)
