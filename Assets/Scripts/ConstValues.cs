@@ -354,6 +354,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string WarningArea = "WarningArea";
     public const string PlatformFragments = "PlatformFragments";
     public const string PlatformExplosion = "PlatformExplosion";
+    public const string ObstacleExplosion = "ObstacleExplosion";
     public const string PlatformDestroyDust = "PlatformDestroyDust";
     public const string UI = "UI";
     public const string PlatformDust = "PlatformDust";

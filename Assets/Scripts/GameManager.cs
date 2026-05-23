@@ -304,6 +304,16 @@ public class NpcCopy
     public string questClearChoice;
 }
 
+[Serializable]
+public class DialogueChoiceCopy
+{
+    public string id;
+    public string npc;
+    public int talk;
+    public List<string> checkKey = new List<string>();
+    public List<bool> checkKeyValue = new List<bool>();
+}
+
 public enum eItemType
 {
     Normal,
@@ -627,6 +637,7 @@ public class GameManager : Singleton<GameManager>
     public List<ItemCopy> itemCopyList = new List<ItemCopy>();
     public List<RelicCopy> relicCopyList = new List<RelicCopy>();
     public List<NpcCopy> npcCopyList = new List<NpcCopy>();
+    public List<DialogueChoiceCopy> dialogueChoiceCopyList = new List<DialogueChoiceCopy>();
     
     // 매니저들
     public TableManager tableManager;
@@ -1610,6 +1621,34 @@ public class GameManager : Singleton<GameManager>
 
             data.questClearChoice = npc.questClearChoice;
             npcCopyList.Add(data);
+        }
+        
+        foreach (var dialogueChoice in tableManager.dialogueChoiceTable.DialogueChoice)
+        {
+            var data = new DialogueChoiceCopy();
+            data.id = dialogueChoice.id;
+            data.npc = dialogueChoice.npc;
+            data.talk = dialogueChoice.talk;
+
+            if (!string.IsNullOrEmpty(dialogueChoice.checkKey))
+            {
+                var checkKeySplit = dialogueChoice.checkKey.Split(';');
+                foreach (var checkKey in checkKeySplit)
+                {
+                    data.checkKey.Add(checkKey);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(dialogueChoice.checkKeyValue))
+            {
+                var checkKeyValueSplit = dialogueChoice.checkKeyValue.Split(';');
+                foreach (var checkKeyValue in checkKeyValueSplit)
+                {
+                    data.checkKeyValue.Add(bool.Parse(checkKeyValue));
+                }
+            }
+            
+            dialogueChoiceCopyList.Add(data);
         }
     }
 
@@ -2962,6 +3001,8 @@ public class GameManager : Singleton<GameManager>
             default:
                 // GameManager가 처리하지 않는 endEvent는 현재 Room에 위임
                 // (BossEvent 등 Room 연출은 Room.PlayRoomEndEvent에서 분기)
+                if (targetKey != null)
+                    targetKey.isUse = true;
                 RoomManager.Instance.CurrentRoom.PlayRoomEndEvent(eventKey);
                 return true;
         }

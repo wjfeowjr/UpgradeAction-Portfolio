@@ -12,7 +12,7 @@ public class InteractionSelect : MonoBehaviour
     [SerializeField] private TMP_Text[] selectTexts;
     
     private Vector3 basicScale = Vector3.one;
-    private Vector3 expansionScale = new Vector3(1.1f, 1.1f, 1.1f);
+    private Vector3 expansionScale = new Vector3(1.05f, 1.05f, 1.05f);
     private float delay = 0.2f;
     private float duration = 0.1f;
 

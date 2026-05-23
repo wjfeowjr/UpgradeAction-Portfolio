@@ -114,7 +114,7 @@ public class DialogueChoiceData
     public string npc;
     public int talk;
     public string checkKey;
-    public bool checkKeyValue;
+    public string checkKeyValue;
 }
 [Serializable]
 public class DialogueChoiceDataList

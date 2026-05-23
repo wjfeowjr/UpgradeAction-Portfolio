@@ -189,7 +189,16 @@ public class Room : MonoBehaviour
             
             if (Input.GetKeyDown(KeyCode.L))
             {
-                BossEvent_Bomb();
+                //BossEvent_Bomb();
+                foreach (var shortCutObject in shortCutObjects)
+                {
+                    var obstacle = shortCutObject.GetComponent<Shortcut_Obstacle>();
+                    if (obstacle != null)
+                    {
+                        obstacle.BreakAndOpen();
+                        break;
+                    }
+                }
             }
         }
     }
@@ -462,7 +471,15 @@ public class Room : MonoBehaviour
         }
         else if (shortCutObjects.Length < roomInfo.shortCut.Count)
         {
-            roomInfo.shortCut.Clear();
+            var newList = new List<ShortCut>();
+            foreach (var shortCut in shortCutObjects)
+            {
+                var shortClass = roomInfo.shortCut.Find(x => x.id == shortCut.name);
+                if(shortClass != null)
+                    newList.Add(shortClass);
+            }
+            roomInfo.shortCut = newList;
+
             GameManager.Instance.SaveGame();
         }
 
@@ -2784,6 +2801,8 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10150));
         await NextDialog(speechFrame1);
         
+        berserker.Flip(1);
+        gunner.Flip(1);
         SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10151));
         await NextDialog(speechFrame1);
         
@@ -2799,6 +2818,7 @@ public class Room : MonoBehaviour
         // 싸움꾼 합류 및 저장
         GameManager.Instance.AddPlayer(ConstValues.Fighter);
         GameManager.Instance.SetCharacterOrder();
+        GameManager.Instance.CurPlayer.Flip(-1);
 
         UIOn();
         roomInfo.eventNpc[0].isActive = false;

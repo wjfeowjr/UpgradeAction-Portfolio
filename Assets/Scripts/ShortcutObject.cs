@@ -9,7 +9,7 @@ public enum ShortcutType
     Crush,
     Wall,
     Lever,
-    Platform,
+    Obstacle,
 }
 
 public interface IHitProduct
@@ -26,6 +26,7 @@ public class ShortcutObject : Lever
     protected CancellationTokenSource delayCancellation;
     private Action<string> openAction;
     protected bool opened;
+    private int startHp;
     private int hp;
     
     public ShortcutType Type => type;
@@ -35,13 +36,14 @@ public class ShortcutObject : Lever
     {
         if (!isOpen)
         {
-            hp = 0;
+            startHp = 0;
             
             if (type == ShortcutType.Lever)
-                hp = 1;
+                startHp = 1;
             else if (type is ShortcutType.Crush)
-                hp = 3;
+                startHp = 3;
 
+            hp = startHp;
             openAction = action;
             return;
         }
@@ -50,16 +52,19 @@ public class ShortcutObject : Lever
     }
 
     // 숏컷이 열리는 연출
-    private void BreakAndOpen()
+    public void BreakAndOpen()
     {
-        hp -= 1;
-        if (hp > 0)
+        if (startHp > 0)
         {
-            if(GetComponent<IHitProduct>() != null)
-                GetComponent<IHitProduct>().HitProduct();
-            return;
+            hp -= 1;
+            if (hp > 0)
+            {
+                if(GetComponent<IHitProduct>() != null)
+                    GetComponent<IHitProduct>().HitProduct();
+                return;
+            }
         }
-        
+
         openAction(name);
         OpenProduct();
     }
@@ -94,7 +99,7 @@ public class ShortcutObject : Lever
     // 공격판정(Attack 오브젝트)와 충돌했을 때
     private void OnTriggerEnter2D(Collider2D other)
     {
-        if (opened || hp == 0)
+        if (opened || startHp == 0)
             return;
 
         // Attack 컴포넌트로 판정 (프로젝트 구조 기준)
