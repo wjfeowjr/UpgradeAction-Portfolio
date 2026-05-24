@@ -193,11 +193,14 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
             storeItemData.cost,
             yesAction: () =>
             {
-                // TODO: 아이템 구매
-                GameManager.Instance.BuyItem(storeItemData);
-                RefreshGold();
-                RefreshItemInfo(curStoreId);
-                DisplayItemInfo();
+                // 구매 성공 시에만 아이템 목록을 갱신 (실패 시 _cursor가 0으로 리셋되는 것 방지)
+                bool success = GameManager.Instance.BuyItem(storeItemData);
+                if (success)
+                {
+                    RefreshGold();
+                    RefreshItemInfo(curStoreId);
+                    DisplayItemInfo();
+                }
                 _isConfirmActive = false;
             },
             noAction: () =>
@@ -259,11 +262,13 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
         _cursor    = 0;
 
         // 프레임 활성화 및 SetData 처리
+        var curGold = GameManager.Instance.Gold;
         for (int i = 0; i < _itemCount && i < storeItemFrames.Length; i++)
         {
             bool isSoldOut = sold.Contains(sortStoreItemTableData[i]);
+            bool canAfford = curGold >= sortStoreItemTableData[i].cost;
             storeItemFrames[i].gameObject.SetActive(true);
-            storeItemFrames[i].SetData(sortStoreItemTableData[i], isSoldOut);
+            storeItemFrames[i].SetData(sortStoreItemTableData[i], isSoldOut, canAfford);
         }
 
         if (_itemCount > 0)

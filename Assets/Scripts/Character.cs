@@ -193,7 +193,9 @@ public abstract class Character : InteractionController
     [SerializeField] protected Transform fontPos;
     [SerializeField] protected Transform physicCenterPos;
     [SerializeField] protected Transform speechPos;
-
+    [SerializeField] protected Transform speechPos2;
+    [SerializeField] protected Transform speechPos3;
+    
     [SerializeField] protected Vector2 standHitBoxSize;
     [SerializeField] protected Vector2 downHitBoxSize;
     [SerializeField] protected Vector2 standOffset;
@@ -229,6 +231,8 @@ public abstract class Character : InteractionController
     public BoxCollider2D MyBoxCollider => myBoxCollider;
     public Transform CenterPos => centerPos;
     public Transform SpeechPos => speechPos;
+    public Transform SpeechPos2 => speechPos2;
+    public Transform SpeechPos3 => speechPos3;
 
     [Header("Box Sizes")]
     [SerializeField] private Vector2 horizontalBoxSize; // 좌우 (세로로 긴 박스)
@@ -1945,6 +1949,9 @@ public abstract class Character : InteractionController
             if (await NormalDelay(ConstValues.DownSecond, stateCancellation).SuppressCancellationThrow())
                 return;
 
+            if(GameManager.Instance.StandLock)
+                return;
+            
             StateRecovery();
         }
     }
@@ -2356,5 +2363,11 @@ public abstract class Character : InteractionController
             // myRigidbody.linearVelocity = Vector2.zero;
             StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         }
+    }
+    
+    public void EventStand()
+    {
+        StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        StandHitBox();
     }
 }

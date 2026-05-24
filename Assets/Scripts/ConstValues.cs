@@ -89,6 +89,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SkillTooltip = "SkillTooltip";
     public const string SpeechFrame1 = "SpeechFrame1";
     public const string SpeechFrame2 = "SpeechFrame2";
+    public const string SpeechFrame3 = "SpeechFrame3";
     public const string SpeechFrameStrong = "SpeechFrame_Strong";
     public const string SpeechFrameTitle = "SpeechFrame_Title";
 
@@ -135,6 +136,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string DialogJump = "DialogJump";
     public const string DialogPose = "DialogPose";
     public const string Afraid = "Afraid";
+    public const string Point = "Point";
+    public const string Good = "Good";
+    public const string Attack_0 = "Attack_0";
+    public const string Attack_1 = "Attack_1";
     public const string Attack_2 = "Attack_2";
     
     public const string Normal = "Normal";
@@ -145,6 +150,11 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string Appear = "Appear";
     public const string AppearEnd = "AppearEnd";
+
+    public const string Ride = "Ride";
+    public const string Ready = "Ready";
+    public const string Fail = "Fail";
+    public const string Start = "Start";
     
     // 하드코딩으로 적용되는 특성 ID
     public const string SwordBeam = "SwordBeam";
@@ -355,6 +365,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string PlatformFragments = "PlatformFragments";
     public const string PlatformExplosion = "PlatformExplosion";
     public const string ObstacleExplosion = "ObstacleExplosion";
+    public const string TrolleyExplosion = "TrolleyExplosion";
     public const string PlatformDestroyDust = "PlatformDestroyDust";
     public const string UI = "UI";
     public const string PlatformDust = "PlatformDust";
@@ -550,6 +561,9 @@ public class ConstValues : Singleton<ConstValues>
     // 아이템
     public const string KeyForest = "Key_Forest";
     public const string KeyMine = "Key_Mine";
+    public const string SteelPlate = "SteelPlate";
+    public const string IronWheel = "IronWheel";
+    public const string MiniBooster = "MiniBooster";
     
     // 사운드
     public const string Laugh = "Laugh";
@@ -579,4 +593,6 @@ public class ConstValues : Singleton<ConstValues>
     public const string ProductMailDelivery = "ProductMailDelivery";
     public const string WallFragments = "Wall_Fragments";
     public const string Fireimpact03 = "Fireimpact03";
+    public const string MonsterBigGhostEarthQuake = "Monster_BigGhost_EarthQuake";
+    public const string TrolleyStart = "Trolley_Start";
 }

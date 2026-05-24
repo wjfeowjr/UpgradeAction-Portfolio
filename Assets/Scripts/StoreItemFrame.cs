@@ -15,7 +15,7 @@ public class StoreItemFrame : ExpansionUiObject
         return GetComponent<RectTransform>().sizeDelta.y;
     }
     
-    public void SetData(StoreItemData storeItemData, bool soldOut)
+    public void SetData(StoreItemData storeItemData, bool soldOut, bool canAfford)
     {
         mainText.text = GameManager.Instance.GetItemTalk(storeItemData.id);
         itemImage.sprite = GameManager.Instance.GetAtlasSprite(storeItemData.id);
@@ -24,5 +24,9 @@ public class StoreItemFrame : ExpansionUiObject
 
         isSoldOut = soldOut;
         soldOutObject.SetActive(isSoldOut);
+
+        // 아이템명은 항상 흰색, 골드 부족 시 가격만 빨간색
+        // SoldOut일 땐 soldOutObject가 별도 표시하므로 가격 색상은 흰색으로 복원
+        cost.color = (!isSoldOut && !canAfford) ? ConstValues.RedColor : ConstValues.WhiteColor;
     }
 }

@@ -17,11 +17,6 @@ interface IQuestClearAction
     public UniTask QuestClearAction();
 }
 
-interface IDialogueEndAction
-{
-    public void DialogueEndAction();
-}
-
 public class Npc : Character
 {
     [SerializeField] private NpcInfo npcInfo;
@@ -42,6 +37,11 @@ public class Npc : Character
             return;
 
         base.Update();
+    }
+    
+    private void OnDisable()
+    {
+        stateCancellation?.Cancel();
     }
 
     private void DataSetting()
@@ -297,7 +297,9 @@ public class Npc : Character
                 StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
             
             CustomMoving_X(dir, speed);
-            await FixedYieldDelay(stateCancellation);
+            
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
         }
 
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);

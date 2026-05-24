@@ -3,22 +3,12 @@ using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
-public class Npc_Miner : Npc, IQuestClearAction, IDialogueEndAction
+public class Npc_Miner : Npc, IQuestClearAction
 {
     protected override void StartDialogue()
     {
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         base.StartDialogue();
-    }
-    
-    // 대화 끝나는 연출
-    public void DialogueEndAction()
-    {
-        var room = GetComponentInParent<Room>();
-        if (room == null)
-            return;
-
-        room.BossEvent_Bomb();
     }
 
     // 퀘스트 클리어 연출: 광부가 속한 Room의 Testing() 호출

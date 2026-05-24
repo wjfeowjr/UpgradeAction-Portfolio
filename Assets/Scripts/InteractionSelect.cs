@@ -17,7 +17,7 @@ public class InteractionSelect : MonoBehaviour
     private float duration = 0.1f;
 
     private bool choiceReady;
-    private int currentIdx;
+    [SerializeField] private int currentIdx;
     private List<int> talkIdxList = new List<int>();
     private List<string> choiceIdList = new List<string>();
 
@@ -43,13 +43,13 @@ public class InteractionSelect : MonoBehaviour
         
         if (Input.GetKeyDown(GameManager.Instance.upKey))
         {
-            CurrentIdxPlus();
+            CurrentIdxMinus();
             SelectChoice(currentIdx);
             SoundManager.Instance.PlaySound(ConstValues.Popup);
         }
         if (Input.GetKeyDown(GameManager.Instance.downKey))
         {
-            CurrentIdxMinus();
+            CurrentIdxPlus();
             SelectChoice(currentIdx);
             SoundManager.Instance.PlaySound(ConstValues.Popup);
         }

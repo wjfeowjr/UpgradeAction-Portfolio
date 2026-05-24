@@ -623,6 +623,7 @@ public class GameManager : Singleton<GameManager>
 
     [SerializeField] private bool inGame;
     [SerializeField] private bool controlStart;
+    private bool standLock;
     private bool bossProduct;
     private bool timeProduct;
     private int comboCount;
@@ -670,6 +671,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => controlStart;
         set => controlStart = value;
+    }
+
+    public bool StandLock
+    {
+        get => standLock;
+        set => standLock = value;
     }
 
     public bool BossProduct
@@ -1459,16 +1466,17 @@ public class GameManager : Singleton<GameManager>
         playerInfo.relicList.Add(default);
     }
 
-    public void BuyItem(StoreItemData storeItemData)
+    // 구매 성공 시 true, 골드 부족 등으로 실패 시 false 반환
+    public bool BuyItem(StoreItemData storeItemData)
     {
         var itemData = itemCopyList.Find(x => x.id == storeItemData.id);
         if (Gold < storeItemData.cost)
         {
             SpawnWarningPopup(GetTalk(30212)).Forget();
             SoundManager.Instance.PlaySound(ConstValues.NormalButton2, true);
-            return;
+            return false;
         }
-        
+
         switch (itemData.type)
         {
             case eItemType.Relic:
@@ -1477,6 +1485,9 @@ public class GameManager : Singleton<GameManager>
         }
         Gold -= storeItemData.cost;
         SoundManager.Instance.PlaySound(ConstValues.ProductMailDelivery, true);
+        SpawnWarningPopup(GetTalk(30216)).Forget();
+        SaveGame();
+        return true;
     }
     
     private void InitAtlas(SpriteAtlas spriteAtlas)
@@ -2918,6 +2929,9 @@ public class GameManager : Singleton<GameManager>
                 case ConstValues.SpeechFrame2:
                     speechFrame = GetSpeechFrame(ConstValues.SpeechFrame2);
                     break;
+                case ConstValues.SpeechFrame3:
+                    speechFrame = GetSpeechFrame(ConstValues.SpeechFrame3);
+                    break;
             }
 
             var speechCharacter = GetCharacter(talkData.speaker, npc);
@@ -3049,6 +3063,9 @@ public class GameManager : Singleton<GameManager>
             case ConstValues.SpeechFrame2:
                 speechFrame = GetSpeechFrame(ConstValues.SpeechFrame2);
                 break;
+            case ConstValues.SpeechFrame3:
+                speechFrame = GetSpeechFrame(ConstValues.SpeechFrame3);
+                break;
         }
             
         SpawnSpeechFrame(speechFrame, speechPos.position, GameManager.Instance.GetTalk(firstTalk.talk));
@@ -3082,36 +3099,91 @@ public class GameManager : Singleton<GameManager>
 
     public async UniTask DialogueMove(float xPos)
     {
-        // 항상 광전사가 플레이어의 위치에 있어야함
+        // 항상 광전사가 맨 앞에 있어야 함
         var berserker = GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
         var gunner = GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+        var fighter = GetPlayer(ConstValues.Fighter).GetComponent<Player_Fighter>();
 
         var berserkerPos = curPlayer.transform.position;
         var gunnerPos = new Vector2(berserkerPos.x + xPos, berserkerPos.y);
+        var fighterPos = new Vector2(gunnerPos.x + xPos, berserkerPos.y);
 
-        berserker.gameObject.SetActive(true);
-        berserker.transform.position = berserkerPos;
-        berserker.Flip(1);
+        if (saveData.playerList.Contains(ConstValues.Berserker))
+        {
+            berserker.gameObject.SetActive(true);
+            berserker.transform.position = berserkerPos;
+            if(xPos >= 0)
+                berserker.Flip(1);
+            else
+                berserker.Flip(-1);
+        }
 
-        gunner.gameObject.SetActive(true);
-        gunner.transform.position = berserkerPos;
-        await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, 1);
+        if (saveData.playerList.Contains(ConstValues.Gunner))
+        {
+            gunner.gameObject.SetActive(true);
+            gunner.transform.position = berserkerPos;
+            if(xPos >= 0)
+                gunner.Flip(1);
+            else
+                gunner.Flip(-1);
+        }
+
+        if (saveData.playerList.Contains(ConstValues.Fighter))
+        {
+            fighter.gameObject.SetActive(true);
+            fighter.transform.position = berserkerPos;
+            if(xPos >= 0)
+                fighter.Flip(1);
+            else
+                fighter.Flip(-1);
+        }
+
+        if (gunner.gameObject.activeSelf)
+        {
+            int finishDir = 1;
+            if (xPos < 0)
+                finishDir = -1;
+            await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, finishDir);
+        }
+
+        if (fighter.gameObject.activeSelf)
+        {
+            int finishDir = 1;
+            if (xPos < 0)
+                finishDir = -1;
+            await fighter.EpisodeMove(fighterPos, fighter.BasicStat.moveSpeed, finishDir);
+        }
     }
     
     public void DialogueEnd()
     {
         var berserker = GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
         var gunner = GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
-        
-        if (curPlayer == berserker)
+        var fighter = GetPlayer(ConstValues.Fighter).GetComponent<Player_Fighter>();
+
+        if (berserker.gameObject.activeSelf)
         {
-            gunner.SpawnObject(ConstValues.BangEffect, gunner.CenterPos.position);
-            gunner.gameObject.SetActive(false);
+            if (curPlayer != berserker)
+            { 
+                berserker.SpawnObject(ConstValues.BangEffect, berserker.CenterPos.position);
+                berserker.gameObject.SetActive(false);
+            }
         }
-        else if (curPlayer == gunner)
+        if (gunner.gameObject.activeSelf)
         {
-            berserker.SpawnObject(ConstValues.BangEffect, berserker.CenterPos.position);
-            berserker.gameObject.SetActive(false);
+            if (curPlayer != gunner)
+            { 
+                gunner.SpawnObject(ConstValues.BangEffect, gunner.CenterPos.position);
+                gunner.gameObject.SetActive(false);
+            }
+        }
+        if (fighter.gameObject.activeSelf)
+        {
+            if (curPlayer != fighter)
+            { 
+                fighter.SpawnObject(ConstValues.BangEffect, fighter.CenterPos.position);
+                fighter.gameObject.SetActive(false);
+            }
         }
     }
 

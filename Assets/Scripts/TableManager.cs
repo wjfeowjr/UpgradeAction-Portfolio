@@ -271,18 +271,6 @@ public class PlayerDataList
 }
 
 [Serializable]
-public class ProductDialogueData
-{
-    public string id;
-    public int talk;
-}
-[Serializable]
-public class ProductDialogueDataList
-{
-    public List<ProductDialogueData> ProductDialogue;
-}
-
-[Serializable]
 public class RelicData
 {
     public string id;
@@ -434,7 +422,6 @@ public class TableManager : SingletonMono<TableManager>
     public MonsterDataList monsterTable;
     public NpcDataList npcTable;
     public PlayerDataList playerTable;
-    public ProductDialogueDataList productDialogueTable;
     public RelicDataList relicTable;
     public RoomsDataList roomsTable;
     public SkillDataList skillTable;
@@ -457,7 +444,6 @@ public class TableManager : SingletonMono<TableManager>
         monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
         npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);
         playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
-        productDialogueTable = LoadDataFromJson<ProductDialogueDataList>(ConstValues.ProductDialogue);
         relicTable = LoadDataFromJson<RelicDataList>(ConstValues.Relic);
         roomsTable = LoadDataFromJson<RoomsDataList>(ConstValues.Rooms);
         skillTable = LoadDataFromJson<SkillDataList>(ConstValues.Skill);

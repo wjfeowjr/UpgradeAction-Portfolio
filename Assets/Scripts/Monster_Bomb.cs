@@ -320,28 +320,65 @@ public class Monster_Bomb : Monster
         DieAirborne();
     }
 
-    private void DieAirborne()
+    private async void DieAirborne()
     {
-        dieCancellation?.Cancel();
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-        float xVelocity = 6.0f;
-        float yVelocity = 8.0f;
+        float xVelocity = 0.0f;
+        float yVelocity = 30.0f;
 
-        if (transform.localScale.x > 0)
-            xVelocity = -6.0f;
-        
+        GravityChange(0);
         Airborne(xVelocity, yVelocity, true);
         goldAction?.Invoke(myStat.gold, centerPos.position);
         
+        if (await NormalDelay(1.0f, dieCancellation).SuppressCancellationThrow())
+            return;
+        
         isDie = true;
+        gameObject.SetActive(false);
+        dieCancellation?.Cancel();
     }
     
-    // 패턴3.폭탄 던지기
+    // 이벤트 쿵쿵
+    public async void EventSmashGround()
+    {
+        float delay1 = 0.2f;
+        float delay2 = 0.3f;
+        float delay3 = 0.2f;
+        
+        PlaySound($"{basicStat.id}_laugh");
+
+        for (int i = 0; i < 3; i++)
+        {
+            SetTriggerAnimator(ConstValues.Attack_0);
+            
+            if(await AttackDelay(delay1).SuppressCancellationThrow())
+                return;
+
+            SetTriggerAnimator(ConstValues.Pattern);
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 15);
+            if(await AttackDelay(delay2).SuppressCancellationThrow())
+                return;
+        
+            float dropForce = 30.0f;
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
+            if(await WaitUntilDelay(()=> myRigidbody.linearVelocityY == 0, stateCancellation).SuppressCancellationThrow())
+                return;
+
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}1", transform);
+            SetTriggerAnimator(ConstValues.Pattern);
+        
+            if(await AttackDelay(delay3).SuppressCancellationThrow())
+                return;
+        }
+        SetTriggerAnimator(ConstValues.Idle);
+    }
+    
+    // 이벤트 폭탄 던지기
     public async void EventThrowBomb(Npc[] npc)
     {
         float delay1 = 0.2f;
         float delay2 = 0.5f;
-        int bombCount = 5;
+        int bombCount = 15;
         
         SetTriggerAnimator(ConstValues.Attack_2);
 
@@ -370,5 +407,10 @@ public class Monster_Bomb : Monster
             return;
         
         SetTriggerAnimator(ConstValues.Idle);
+    }
+
+    public void EventExplosion()
+    {
+        SpawnObject($"{basicStat.id}_Explosion", centerPos);
     }
 }
