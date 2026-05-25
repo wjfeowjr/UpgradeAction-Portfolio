@@ -60,7 +60,7 @@ public class Monster_Golem : Monster
     // 골렘펀치
     private async void GolemPunch()
     {
-        float delay1 = 0.5f;
+        float delay1 = 1.0f;
         float delay2 = 0.3f;
         float delay3 = 0.5f;
         
@@ -328,7 +328,7 @@ public class Monster_Golem : Monster
     private void DieAirborne()
     {
         dieCancellation?.Cancel();
-        SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
+        SpawnObject($"{basicStat.id}_{ConstValues.Die}", centerPos);
         // float xVelocity = 6.0f;
         // float yVelocity = 8.0f;
         //

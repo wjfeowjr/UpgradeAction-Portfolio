@@ -761,13 +761,12 @@ public abstract class Player : Character
 
         float platformSpeedX = 0f;
         float platformSpeedY = 0f;
-        if (landingState == ELandingState.Ground && currentMovingPlatform != null)
+        bool onMovingPlatform = landingState == ELandingState.Ground && currentMovingPlatform != null;
+        if (onMovingPlatform)
         {
             platformSpeedX = currentMovingPlatform.Velocity.x;
             platformSpeedY = currentMovingPlatform.Velocity.y;
         }
-
-        float targetSpeedY = myRigidbody.linearVelocity.y;
 
         if (inputSpeedX < 0 && (isWallLeft || isWallBodyLeft))
             inputSpeedX = 0;
@@ -775,7 +774,10 @@ public abstract class Player : Character
         if (inputSpeedX > 0 && (isWallRight || isWallBodyRight))
             inputSpeedX = 0;
 
-        myRigidbody.linearVelocity = new Vector2(inputSpeedX + platformSpeedX, targetSpeedY + platformSpeedY);
+        // 플랫폼 위에서는 Y를 플랫폼 속도로 동기화(누적/반동 방지), 공중이면 기존 Y 유지
+        float finalY = onMovingPlatform ? platformSpeedY : myRigidbody.linearVelocity.y;
+
+        myRigidbody.linearVelocity = new Vector2(inputSpeedX + platformSpeedX, finalY);
     }
     
     // 플레이어 공격

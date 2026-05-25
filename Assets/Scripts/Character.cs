@@ -978,6 +978,8 @@ public abstract class Character : InteractionController
                 var movingPlatform = col.GetComponent<MovingPlatform>();
                 if (movingPlatform)
                 {
+                    if (movingPlatform.IsElevator)
+                        return;
                     ignorePlatformList.Add(movingPlatform.PlatformObject);
                     Physics2D.IgnoreCollision(physicsCollider, col, true);
                 }
@@ -1005,6 +1007,10 @@ public abstract class Character : InteractionController
     // 플랫폼 무시 오버로딩
     protected void IgnorePlatformCheck(PlatformObject platformObject, bool forceIgnore = false)
     {
+        var movingPlatform = platformObject.collider.GetComponent<MovingPlatform>();
+        if (movingPlatform != null && movingPlatform.IsElevator)
+            return;
+        
         var height = ColliderHeight(platformObject.collider);
         if (transform.position.y < height || forceIgnore)
         {

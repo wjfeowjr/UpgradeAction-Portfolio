@@ -100,6 +100,9 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
         if (!gameObject.activeSelf)
             return;
 
+        // 골드 표시는 _isConfirmActive 여부와 무관하게 항상 최신 상태로 동기화
+        RefreshGold();
+
         if (_isConfirmActive)
             return;
 
@@ -214,6 +217,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
     private void RefreshGold()
     {
         goldText.text = GameManager.Instance.GetThousandCommaText(GameManager.Instance.Gold);
+        GameManager.Instance.RefreshGoods();
     }
 
     // %% IPopupStoreView 구현 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

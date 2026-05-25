@@ -3336,6 +3336,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(delay10, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
+        GameManager.Instance.StandLock = false;
         PlayBGM(ConstValues.BGMBoss, true);
         GameManager.Instance.ControlStart = true;
         bosses[0].EventAppear(SpawnBossMessage);
