@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -531,9 +532,12 @@ public class SaveData
 {
     // 재화
     public int gold;
-    
+
     // 세이브 포인트
     public string savePoint;
+
+    // 마지막 저장 시각 (UTC, ISO 8601 round-trip 포맷)
+    public string lastSavedAt;
 
     public bool firstGetSkill;
     public bool firstGetAttribute;
@@ -803,6 +807,9 @@ public class GameManager : Singleton<GameManager>
     
     public void SaveGame()
     {
+        // 저장 시각 갱신 (UTC, 로케일 무관 round-trip 포맷)
+        saveData.lastSavedAt = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
+
         // json화
         SaveSystem.Save(curSaveFileName, saveData);
     }

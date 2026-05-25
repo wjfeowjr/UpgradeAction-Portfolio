@@ -1101,6 +1101,40 @@ public abstract class Character : InteractionController
             myRigidbody.linearVelocity = new Vector2(force, myRigidbody.linearVelocity.y);
     }
 
+    protected Vector2 RayCenterVector()
+    {
+        Vector2 origin = centerPos.position;
+
+        RaycastHit2D leftHit  = Physics2D.Raycast(origin, Vector2.left,  100, groundLayerMask);
+        RaycastHit2D rightHit = Physics2D.Raycast(origin, Vector2.right, 100, groundLayerMask);
+
+        // 양쪽 모두 충돌해야 중앙 계산이 의미 있음
+        if (!leftHit.collider || !rightHit.collider)
+        {
+            Debug.LogWarning($"[CenterFinder] 좌우 벽 미검출 - left:{leftHit.collider}, right:{rightHit.collider}");
+            return origin;
+        }
+
+        // x는 두 충돌 지점의 중간, y는 원점 높이 유지
+        float centerX = (leftHit.point.x + rightHit.point.x) * 0.5f;
+        return new Vector2(centerX, origin.y);
+    }
+    protected float RayRandomPosX(float halfBoxColSize)
+    {
+        Vector2 origin = centerPos.position;
+        RaycastHit2D leftHit  = Physics2D.Raycast(origin, Vector2.left,  100, groundLayerMask);
+        RaycastHit2D rightHit = Physics2D.Raycast(origin, Vector2.right, 100, groundLayerMask);
+
+        // 양쪽 모두 충돌해야 중앙 계산이 의미 있음
+        if (!leftHit.collider || !rightHit.collider)
+        {
+            Debug.LogWarning($"[CenterFinder] 좌우 벽 미검출 - left:{leftHit.collider}, right:{rightHit.collider}");
+            return 0;
+        }
+        
+        return Random.Range(leftHit.point.x + halfBoxColSize, rightHit.point.x - halfBoxColSize);
+    }
+
     public bool GetAirborneState()
     {
         return normalState == ENormalState.Airborne;
@@ -1949,7 +1983,7 @@ public abstract class Character : InteractionController
             if (await NormalDelay(ConstValues.DownSecond, stateCancellation).SuppressCancellationThrow())
                 return;
 
-            if(GameManager.Instance.StandLock)
+            if(GameManager.Instance.StandLock || isDie)
                 return;
             
             StateRecovery();

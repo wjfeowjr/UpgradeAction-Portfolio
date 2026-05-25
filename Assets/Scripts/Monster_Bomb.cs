@@ -4,17 +4,37 @@ using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Random = UnityEngine.Random;
 
 public class Monster_Bomb : Monster
 {
-    private int fallingBombCount;
-    public Transform facePos;
-    public Transform rockPunchPos;
+    [SerializeField] private GameObject auraObject;
+    [SerializeField] private Transform auraPos;
     
-    public Transform[] crazyBombPos;
-    public Transform[] blueFirePos;
+    [SerializeField] private Transform facePos;
+    [SerializeField] private Transform rocketPunchPos;
     
+    [SerializeField] private Transform[] crazyBombPos;
+    [SerializeField] private Transform[] blueFirePos;
+    
+    protected override void Update()
+    {
+        base.Update();
+
+        if (basicStat.hp <= basicStat.maxHp * 0.5f && !isDie)
+        {
+            if (auraObject)
+            {
+                if(!normalObject.Contains(auraObject))
+                    auraObject = SpawnObject($"{basicStat.id}_{ConstValues.Aura}", auraPos);
+            }
+            else
+            {
+                auraObject = SpawnObject($"{basicStat.id}_{ConstValues.Aura}", auraPos);
+            }
+        }
+    }
 
     protected override void MonsterPattern(int idx)
     {
@@ -41,6 +61,8 @@ public class Monster_Bomb : Monster
         float delay1 = 0.3f;
         float delay2 = 0.5f;
         float delay3 = 0.5f;
+
+        var halfHp = HalfHp();
         
         PlaySound($"{basicStat.id}_{ConstValues.Pattern}");
         if(await AttackDelay(delay1).SuppressCancellationThrow())
@@ -61,10 +83,18 @@ public class Monster_Bomb : Monster
         
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
+
+        if (halfHp)
+        {
+            Vector2 leftVector = new Vector2(transform.position.x - 4, transform.position.y);
+            Vector2 rightVector = new Vector2(transform.position.x + 4, transform.position.y);
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}2", leftVector);
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}2", rightVector);
+        }
         
         PatternEnd();
     }
-    
+
     // 패턴2.로켓 펀치
     private async void RocketPunch()
     {
@@ -72,6 +102,9 @@ public class Monster_Bomb : Monster
         float delay2 = 0.5f;
         
         int punchCount = 1;
+
+        if (HalfHp())
+            punchCount = 2;
     
         // 준비자세 취하기
         PlaySound($"{basicStat.id}_{ConstValues.Pattern}");
@@ -87,9 +120,10 @@ public class Monster_Bomb : Monster
         for (int i = 0; i < punchCount; i++)
         {
             SetTriggerAnimator(ConstValues.Pattern);
+            
             // 화면흔들기 + 폭발이팩트 + 주먹미사일 날리기
-            SpawnObject($"{basicStat.id}_Explosion", rockPunchPos);
-            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}3_{ConstValues.Object}", rockPunchPos);
+            SpawnObject($"{basicStat.id}_Explosion", rocketPunchPos);
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}3_{ConstValues.Object}", rocketPunchPos);
             
             if (i < punchCount - 1)
             {
@@ -118,6 +152,8 @@ public class Monster_Bomb : Monster
         float delay1 = 0.2f;
         float delay2 = 0.5f;
         int bombCount = 20;
+        if (HalfHp())
+            bombCount = 25;
 
         PlaySound($"{basicStat.id}_laugh");
         SpawnObject(ConstValues.BlueFlash, facePos);
@@ -131,7 +167,7 @@ public class Monster_Bomb : Monster
             int randX = Random.Range(0, 2);
             Vector2 bombVector = new Vector2(crazyBombPos[randX].position.x, crazyBombPos[randX].position.y);
 
-            if (i % 3 == 0)
+            if (HalfHp() && i % 3 == 0)
             {
                 var targetPos = GameManager.Instance.CurPlayer.CenterPos.position;
                 float randomX = Random.Range(-2.0f, 2.0f);
@@ -237,6 +273,13 @@ public class Monster_Bomb : Monster
             return;
         
         PatternEnd();
+    }
+
+    private bool HalfHp()
+    {
+        var isHalf = (float)basicStat.hp / originStat.hp < 0.5f;
+        Debug.Log($"{(float)basicStat.hp / originStat.hp}%");
+        return isHalf;
     }
     
     private async UniTask FireSpawn(int count)

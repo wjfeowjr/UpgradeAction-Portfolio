@@ -54,13 +54,13 @@ public class Monster_Bazooka : Monster
             if(targetPos.x > myPos.x)
                 missileObject.LookAtTarget(targetPos);
             else
-                missileObject.LookAtTarget(new Vector2(centerPos.position.x + 5.0f, centerPos.position.y));
+                missileObject.LookAtTarget(new Vector2(attackPos.position.x + 5.0f, attackPos.position.y));
         }
         // 왼쪽 보고있음
         else
         {
             if(targetPos.x > myPos.x)
-                missileObject.LookAtTarget(new Vector2(centerPos.position.x - 5.0f, centerPos.position.y));
+                missileObject.LookAtTarget(new Vector2(attackPos.position.x - 5.0f, attackPos.position.y));
             else
                 missileObject.LookAtTarget(targetPos);
         }
