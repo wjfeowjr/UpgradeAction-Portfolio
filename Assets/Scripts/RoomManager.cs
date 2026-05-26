@@ -43,7 +43,11 @@ public class RoomManager : Singleton<RoomManager>
         set => currentRoom = value;
     }
 
-    public int PopupLayer => popupLayer;
+    public int PopupLayer
+    {
+        get => popupLayer;
+        set => popupLayer = value;
+    }
 
     protected override void Awake()
     {
@@ -114,13 +118,6 @@ public class RoomManager : Singleton<RoomManager>
     {
         GameManager.Instance.ReduceSkillPlayer();
         
-        // 테스트 용도
-        // if (Input.GetKeyDown(KeyCode.F3))
-        // {
-        //     GameManager.Instance.UnLockAttributeSlot("HeavySlash");
-        //     GameManager.Instance.UnLockRelicSlot(ConstValues.Berserker);
-        // }
-
         if (GameManager.Instance.ControlStart && !GameManager.Instance.BossProduct && !GameManager.Instance.TimeProduct)
         {
             if (popupLayer == 0)
@@ -416,14 +413,18 @@ public class RoomManager : Singleton<RoomManager>
         if (uiBase is Popup_Guide popupGuide)
         {
             var guideInterface = popupGuide.GuideView.ConvertTo<IPopupGuideView>();
+            // 닫기 연타 시 중복 호출 및 닫는 도중 다른 팝업이 열리는 것을 막기 위한 플래그
+            var isClosing = false;
             var guideModel = new PopupGuideModel()
             {
                 guideMessage = model.guideMessage,
                 imgName = model.imgName,
                 closeAction = () =>
                 {
-                    uiBase.ReductionClose(true, true).Forget();
-                    PopupLayerReset();
+                    if (isClosing)
+                        return;
+                    isClosing = true;
+                    CloseGuideAsync(uiBase).Forget();
                 }
             };
             var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
@@ -436,6 +437,14 @@ public class RoomManager : Singleton<RoomManager>
             guidePresenter.SetAction(guideModel.closeAction);
             PopupLayerOn();
         }
+    }
+
+    // 가이드 팝업의 닫기 트윈이 끝난 뒤에 popupLayer를 해제해야
+    // 닫는 도중 ESC 연타로 PausePopup이 함께 뜨는 문제를 막을 수 있다.
+    private async UniTaskVoid CloseGuideAsync(UIBase uiBase)
+    {
+        await uiBase.ReductionClose(true, true);
+        PopupLayerReset();
     }
     public void Guide(int idx)
     {
@@ -467,7 +476,6 @@ public class RoomManager : Singleton<RoomManager>
             guideMessage = guideMessage,
             imgName = imgName,
         };
-        
         SpawnGuide(guideModel);
     }
 

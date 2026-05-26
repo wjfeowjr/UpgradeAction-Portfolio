@@ -165,7 +165,7 @@ public class Player_Berserker : Player
                 var delay4 = 0.2f;
                 var checkDelay2 = delay3 + delay4 + afterDelay;
                 
-                MotionFlip();
+                AttackMotionFlip();
                 StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
                 AttackAdvance(2.0f);
 
@@ -185,7 +185,7 @@ public class Player_Berserker : Player
                 var delay5 = 0.16f;
                 var delay6 = 0.5f;
                 
-                MotionFlip();
+                AttackMotionFlip();
                 StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack3);
                 AttackAdvance(3.0f);
 
@@ -213,7 +213,7 @@ public class Player_Berserker : Player
         float jumpAttackDelay1 = 0.16f;
         float jumpAttackDelay2 = 0.25f;
         
-        MotionFlip();
+        //AttackMotionFlip();
         StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack, ConstValues.JumpAttack);
         if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow()) 
             return false;
@@ -238,6 +238,7 @@ public class Player_Berserker : Player
         }
         
         canAttack = true;
+        didJumpAttack = true;
         return true;
         
         // ResetTriggerAnimator(ConstValues.JumpDown);
@@ -483,7 +484,8 @@ public class Player_Berserker : Player
         if (chargingFlame)
         {
             float addTime = 0;
-            float chargeTime = 1.0f - Mathf.Abs(1.0f - basicStat.attackSpeed);
+            float originChargeTime = 0.75f;
+            float chargeTime = originChargeTime - Mathf.Abs(originChargeTime - basicStat.attackSpeed);
 
             bool isSpawnedEffect = false;
             while (addTime < chargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))

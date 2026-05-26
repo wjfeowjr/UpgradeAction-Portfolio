@@ -180,6 +180,7 @@ public abstract class Player : Character
     [SerializeField] protected List<PlayerAnimations> animationList = new List<PlayerAnimations>();
     
     [SerializeField] protected bool canAttack;
+    [SerializeField] protected bool didJumpAttack;
     [SerializeField] private bool canFlip;
     [SerializeField] private bool canMove;
     [SerializeField] private float moveRatio;
@@ -220,7 +221,7 @@ public abstract class Player : Character
         var colSize = physicsCollider.size;
         wallBodyDownRayDistance = colSize.y * 0.5f + 0.05f;
 
-        globalCoolTime = 0.1f;
+        globalCoolTime = 0.02f;
         dashDelay = 0.2f;
         changeGlobalCoolTime = 0.1f;
         skillGlobalCoolTime = 0.02f;
@@ -251,32 +252,32 @@ public abstract class Player : Character
         UpdateBuff();
         UpdateJumpAssist();
 
-        // 스킬 추가 테스트
-        if (Input.GetKeyDown(KeyCode.P))
-        {
-            GameManager.Instance.AddNewSkill(ConstValues.BerserkerCrash);
-            GameManager.Instance.AddNewSkill(ConstValues.GunnerGrenade);
-            GameManager.Instance.AddNewSkill(ConstValues.GunnerKnockBackShot);
-            GameManager.Instance.AddNewSkill(ConstValues.GunnerCrazyShot);
-            GameManager.Instance.AddNewSkill(ConstValues.GunnerElementalInfusion);
-            GameManager.Instance.AddNewSkill(ConstValues.FighterLightningKick);
-            GameManager.Instance.AddNewSkill(ConstValues.FighterLightningPunch);
-            GameManager.Instance.AddNewSkill(ConstValues.FighterLightningSmash);
-            GameManager.Instance.AddNewSkill(ConstValues.FighterStrongPunch);
-        }
-
-        if (Input.GetKeyDown(KeyCode.O))
-        {
-            GameManager.Instance.RemoveSkill(ConstValues.BerserkerChargeCrash);
-            GameManager.Instance.RemoveSkill(ConstValues.GunnerGrenade);
-            GameManager.Instance.RemoveSkill(ConstValues.GunnerKnockBackShot);
-            GameManager.Instance.RemoveSkill(ConstValues.GunnerCrazyShot);
-            GameManager.Instance.RemoveSkill(ConstValues.GunnerElementalInfusion);
-            GameManager.Instance.RemoveSkill(ConstValues.FighterLightningKick);
-            GameManager.Instance.RemoveSkill(ConstValues.FighterLightningPunch);
-            GameManager.Instance.RemoveSkill(ConstValues.FighterLightningSmash);
-            GameManager.Instance.RemoveSkill(ConstValues.FighterStrongPunch);
-        }
+        // // 스킬 추가 테스트
+        // if (Input.GetKeyDown(KeyCode.P))
+        // {
+        //     GameManager.Instance.AddNewSkill(ConstValues.BerserkerCrash);
+        //     GameManager.Instance.AddNewSkill(ConstValues.GunnerGrenade);
+        //     GameManager.Instance.AddNewSkill(ConstValues.GunnerKnockBackShot);
+        //     GameManager.Instance.AddNewSkill(ConstValues.GunnerCrazyShot);
+        //     GameManager.Instance.AddNewSkill(ConstValues.GunnerElementalInfusion);
+        //     GameManager.Instance.AddNewSkill(ConstValues.FighterLightningKick);
+        //     GameManager.Instance.AddNewSkill(ConstValues.FighterLightningPunch);
+        //     GameManager.Instance.AddNewSkill(ConstValues.FighterLightningSmash);
+        //     GameManager.Instance.AddNewSkill(ConstValues.FighterStrongPunch);
+        // }
+        //
+        // if (Input.GetKeyDown(KeyCode.O))
+        // {
+        //     GameManager.Instance.RemoveSkill(ConstValues.BerserkerChargeCrash);
+        //     GameManager.Instance.RemoveSkill(ConstValues.GunnerGrenade);
+        //     GameManager.Instance.RemoveSkill(ConstValues.GunnerKnockBackShot);
+        //     GameManager.Instance.RemoveSkill(ConstValues.GunnerCrazyShot);
+        //     GameManager.Instance.RemoveSkill(ConstValues.GunnerElementalInfusion);
+        //     GameManager.Instance.RemoveSkill(ConstValues.FighterLightningKick);
+        //     GameManager.Instance.RemoveSkill(ConstValues.FighterLightningPunch);
+        //     GameManager.Instance.RemoveSkill(ConstValues.FighterLightningSmash);
+        //     GameManager.Instance.RemoveSkill(ConstValues.FighterStrongPunch);
+        // }
     }
 
     protected override void FixedUpdate()
@@ -494,7 +495,15 @@ public abstract class Player : Character
         if (animationsInfo != null)
         {
             // 애니메이션 테이블을 체크하여, 해당 애니메이션 도중 전환, 이동이 가능한지 판단
-            canFlip = animationsInfo.canFlip;
+            if (animId == ConstValues.JumpDown && didJumpAttack)
+            {
+                canFlip = false;
+                didJumpAttack = false;
+            }
+            else
+            {
+                canFlip = animationsInfo.canFlip;
+            }
             canMove = animationsInfo.canMove;
             moveRatio = animationsInfo.moveRatio;
         }
@@ -536,6 +545,22 @@ public abstract class Player : Character
     }
 
     protected void MotionFlip()
+    {
+        if(GameManager.Instance.CurPlayer != this)
+            return;
+        
+        switch (transform.localScale.x)
+        {
+            case > 0 when Controller.Instance.IsLeftMove:
+                Flip(-1);
+                break;
+            case < 0 when Controller.Instance.IsRightMove:
+                Flip(1);
+                break;
+        }
+    }
+    
+    protected void AttackMotionFlip()
     {
         if(GameManager.Instance.CurPlayer != this)
             return;

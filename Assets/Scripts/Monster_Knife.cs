@@ -65,30 +65,30 @@ public class Monster_Knife : Monster
         float delay4 = 0.5f;
 
         // 준비자세 취하기
-        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-        if(await AttackDelay(delay1).SuppressCancellationThrow())
-            return;
-
-        int attackCount = 4;
-        for (int i = 0; i < attackCount; i++)
-        {
-            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}1", knifeStabPos);
-            SetTriggerAnimator(ConstValues.Pattern);
-            
-            float chargeLength1 = 0.35f;
-            float chargeSpeed1 = 3.5f;
-            if(transform.localScale.x > 0)
-                chargeVector = new Vector2(transform.position.x + chargeLength1, transform.position.y);
-            else
-                chargeVector = new Vector2(transform.position.x - chargeLength1, transform.position.y);
-            if (await Charge(chargeSpeed1, 0.5f, chargeLength1, 0.5f) == false)
-                return;
-            
-            LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-            SetTriggerAnimator($"{ConstValues.Attack}_0");
-            if(await AttackDelay(delay2).SuppressCancellationThrow())
-                return;
-        }
+        // LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+        // if(await AttackDelay(delay1).SuppressCancellationThrow())
+        //     return;
+        //
+        // int attackCount = 4;
+        // for (int i = 0; i < attackCount; i++)
+        // {
+        //     SpawnAttack($"{basicStat.id}_{ConstValues.Attack}1", knifeStabPos);
+        //     SetTriggerAnimator(ConstValues.Pattern);
+        //     
+        //     float chargeLength1 = 0.35f;
+        //     float chargeSpeed1 = 3.5f;
+        //     if(transform.localScale.x > 0)
+        //         chargeVector = new Vector2(transform.position.x + chargeLength1, transform.position.y);
+        //     else
+        //         chargeVector = new Vector2(transform.position.x - chargeLength1, transform.position.y);
+        //     if (await Charge(chargeSpeed1, 0.5f, chargeLength1, 0.5f) == false)
+        //         return;
+        //     
+        //     LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+        //     SetTriggerAnimator($"{ConstValues.Attack}_0");
+        //     if(await AttackDelay(delay2).SuppressCancellationThrow())
+        //         return;
+        // }
 
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         if(await AttackDelay(delay3).SuppressCancellationThrow())
@@ -430,8 +430,8 @@ public class Monster_Knife : Monster
     // 등장(연출 포함)
     public override async void Appear(Action<string, EMonsterType> bossProduct)
     {
+        transform.position = new Vector2(transform.position.x, transform.position.y + 10f);
         stateCancellation = new CancellationTokenSource();
-        SoundManager.Instance.PlaySound(ConstValues.BerserkerAttack1);
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         StandHitBox();
         StateSetting(ENormalState.Appear, ConstValues.Jump, ConstValues.Jump);
@@ -439,15 +439,13 @@ public class Monster_Knife : Monster
         LandingStateSetting(ELandingState.Air);
         immortal = true;
         GravityChange(myGravity);
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 15);
+        SoundManager.Instance.PlaySound(ConstValues.BerserkerAttack1);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -7);
         await UniTask.WaitUntil(() => isGrounded);
         
+        // 착지
         SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
         StateSetting(ENormalState.AppearEnd, ConstValues.Landing, ConstValues.Landing);
-        if (await NormalDelay(1.0f, stateCancellation).SuppressCancellationThrow())
-            return;
-
-        CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
         FirstCoolTimeReduce();
         IdleOrMove();
@@ -461,6 +459,7 @@ public class Monster_Knife : Monster
         
         CancelMotion();
         ClearObjectList(buffObject);
+        mySpriteRenderers[0].color = ConstValues.WhiteColor;
 
         int count = 15;
         var delay = 0.12f;
@@ -491,7 +490,27 @@ public class Monster_Knife : Monster
         
         Airborne(xVelocity, yVelocity, true);
         goldAction?.Invoke(myStat.gold, centerPos.position);
-        
         isDie = true;
+    }
+
+    public async UniTask EventExit()
+    {
+        float delay1 = 0.5f;
+        
+        StateSetting(ENormalState.AppearEnd, ConstValues.AppearEnd, ConstValues.AppearEnd);
+        stateCancellation = new CancellationTokenSource();
+        
+        if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        
+        StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
+        GravityChange(0);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 20);
+        SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
+        
+        if (await NormalDelay(1.0f, dieCancellation).SuppressCancellationThrow())
+            return;
+        
+        gameObject.SetActive(false);
     }
 }

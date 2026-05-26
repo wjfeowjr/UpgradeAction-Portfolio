@@ -162,7 +162,7 @@ public class Player_Gunner : Player
                 AttackChecker(0.1f, (delay1 + delay2) * cycle + afterDelay);
                 for (int i = 0; i < cycle; i++)
                 {
-                    MotionFlip();
+                    AttackMotionFlip();
                     bullet += 1;
                     if(bullet == 1)
                         StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
@@ -188,7 +188,7 @@ public class Player_Gunner : Player
                 AttackChecker(0.1f, (delay1 + delay2) * cycle + afterDelay);
                 for (int i = 0; i < cycle; i++)
                 {
-                    MotionFlip();
+                    AttackMotionFlip();
                     bullet += 1;
                     if(bullet == 1)
                         StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
@@ -214,7 +214,7 @@ public class Player_Gunner : Player
                 float delay3 = 0.1f;
                 float delay4 = 0.3f;
                 
-                MotionFlip();
+                AttackMotionFlip();
                 StateSetting(ENormalState.Attack, ConstValues.FinalAttack, ConstValues.Attack3Ready);
                 if (await AttackDelay(delay4).SuppressCancellationThrow())
                     return false;
@@ -283,6 +283,7 @@ public class Player_Gunner : Player
                 return false;
         }
         canAttack = true;
+        didJumpAttack = true;
         return true;
 
         // 총알이 1개 남을 때 까지 난사

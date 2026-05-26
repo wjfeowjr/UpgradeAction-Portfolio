@@ -895,11 +895,11 @@ public class Room : MonoBehaviour
         RoomManager.Instance.CurrentRoom.SetGroundVector();
 
         GameManager.Instance.CurPlayer.transform.position = targetRoom.portalObject.PlayerPos.position;
-        
+
         GameManager.Instance.InitFadeCancellation();
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
             return;
-        
+
         await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
         
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
@@ -907,12 +907,12 @@ public class Room : MonoBehaviour
         
         GameManager.Instance.CurPlayer.SpawnObject(ConstValues.BangEffect, GameManager.Instance.CurPlayer.CenterPos.position);
         GameManager.Instance.CurPlayer.gameObject.SetActive(true);
+        GameManager.Instance.CurPlayer.ForceIdle();
         
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
             return;
         
         targetRoom.PortalSoundActive(true);
-        
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
         GameManager.Instance.MovePlayer();
         GameManager.Instance.CurPlayer.ClearLastPlatform();
@@ -920,9 +920,7 @@ public class Room : MonoBehaviour
         RoomManager.Instance.ActivePlaceName();
         GameManager.Instance.HidePlaceName();
         if(roomsData.place != targetRoom.roomsData.place)
-        {
             GameManager.Instance.RefreshPlaceName();
-        }
     }
 
     private async void SettingRoom(int idx, EntranceDir dir, Room pastRoom)
@@ -1914,7 +1912,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.InitProductCancellation();
 
         UIOff();
-            
+
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
@@ -2332,18 +2330,85 @@ public class Room : MonoBehaviour
         
         // 암살자 보스 소환
         SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.Boss);
+        // 대화하는 주체들
+        Vector2 berserkerSpeechPos;
+        Vector2 gunnerSpeechPos;
+        Vector2 knifeSpeechPos;
         
-        if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-            return;
-        
+        var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+        var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+        var knife = bosses[0].GetComponent<Monster_Knife>();
+
+        var speechFrame1 = SpeechFrame1();
+        speechFrame1.gameObject.SetActive(false);
+
+        if (roomInfo.roomProduct[0].count == 0)
+        {
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+
+            await GameManager.Instance.DialogueMove(-1.5f);
+            gunner.Flip(1);
+            
+            berserkerSpeechPos = berserker.SpeechPos.position;
+            gunnerSpeechPos = gunner.SpeechPos.position;
+            knifeSpeechPos = bosses[0].SpeechPos.position;
+            
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+                return;
+
+            SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10143));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10144));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10145));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10146));
+            await NextDialog(speechFrame1);
+            
+            bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+            SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10147));
+            await NextDialog(speechFrame1);
+
+            // 게임 시작
+            GameManager.Instance.DialogueEnd();
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+            
+            roomInfo.roomProduct[0].count += 1;
+            GameManager.Instance.SaveGame();
+        }
+        else
+        {
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+        }
         UIOn();
         
+        // 보스 죽음
         if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
             return;
-        
+
+        GameManager.Instance.ControlStart = false;
         StopBGM();
         GameManager.Instance.InitWaitCancellation();
         if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+            return;
+        
+        bosses[0].EventStand();
+        knifeSpeechPos = bosses[0].SpeechPos.position;
+        bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+        SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10148));
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10149));
+        await NextDialog(speechFrame1);
+        await knife.EventExit();
+        
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
             return;
 
         // 문 열기

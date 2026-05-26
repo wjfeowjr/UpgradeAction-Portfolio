@@ -1007,7 +1007,8 @@ public class GameManager : Singleton<GameManager>
     {
         FirstGetSkill = false;
         FirstGetAttribute = false;
-
+        saveData.playerInfoList = new List<PlayerInfo>();
+        
         // 캐릭터가 3마리니까 이것도 3개
         for (int i = 0; i < 3; i++)
         {
@@ -1700,9 +1701,39 @@ public class GameManager : Singleton<GameManager>
             player.BasicStat.hp = hp;
     }
     
+    // 고정 로테이션: Berserker → Gunner → Fighter → Berserker → ...
+    private static readonly string[] PlayerRotation =
+    {
+        ConstValues.Berserker,
+        ConstValues.Gunner,
+        ConstValues.Fighter,
+    };
+
     public void AddPlayer(string player)
     {
+        // 이미 추가된 캐릭터면 무시
+        if (saveData.playerList.Contains(player))
+            return;
+
+        // 빈 리스트면 그대로 추가
+        if (saveData.playerList.Count == 0)
+        {
+            saveData.playerList.Add(player);
+            return;
+        }
+
+        // 첫 번째 요소를 앵커로 삼아 로테이션 상의 상대 위치 기준으로 정렬한다.
+        // 예) [Gunner, Berserker]에 Fighter 추가 시 → [Gunner, Fighter, Berserker]
+        int anchorIdx = Array.IndexOf(PlayerRotation, saveData.playerList[0]);
+        int cycleLen = PlayerRotation.Length;
+
         saveData.playerList.Add(player);
+        saveData.playerList.Sort((a, b) =>
+        {
+            int ra = (Array.IndexOf(PlayerRotation, a) - anchorIdx + cycleLen) % cycleLen;
+            int rb = (Array.IndexOf(PlayerRotation, b) - anchorIdx + cycleLen) % cycleLen;
+            return ra.CompareTo(rb);
+        });
     }
     // 어떤 타입이든 받을 수 있는 회전 메서드
     private void RotatePlayerList()
@@ -3119,7 +3150,7 @@ public class GameManager : Singleton<GameManager>
         {
             berserker.gameObject.SetActive(true);
             berserker.transform.position = berserkerPos;
-            if(xPos >= 0)
+            if(curPlayer.transform.localScale.x >= 0)
                 berserker.Flip(1);
             else
                 berserker.Flip(-1);

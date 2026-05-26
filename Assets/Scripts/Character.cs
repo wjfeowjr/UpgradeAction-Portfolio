@@ -218,11 +218,12 @@ public abstract class Character : InteractionController
     protected int agroLayerMask;
     protected int bossLayerMask;
     protected int wallBodyLayerMask;
-
     protected bool isCeilingHang;
-    protected bool immortal;
+    
+    [SerializeField] protected bool immortal;
+    [SerializeField] protected bool dodge;
+
     protected bool immuneStagger;
-    protected bool dodge;
     protected bool isCounterAttack;
 
     // 프로퍼티

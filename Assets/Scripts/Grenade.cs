@@ -12,6 +12,7 @@ public class GrenadeInfo
     public string id;
     public Vector2 minForce;
     public Vector2 maxForce;
+    public bool spinGrenade;
     public bool dirObject;
     public List<string> hitTagList;
     public List<string> spawnObjectList;
@@ -103,6 +104,8 @@ public class Grenade : MonoBehaviour, IProjectile
         var maxForceSplit = grenadeData.maxForce.Split(';');
         grenadeInfo.maxForce = new Vector2(float.Parse(maxForceSplit[0]), float.Parse(maxForceSplit[1]));
 
+        grenadeInfo.spinGrenade = grenadeData.spinGrenade;
+
         grenadeInfo.dirObject = grenadeData.dirObject;
 
         grenadeInfo.hitTagList = new List<string>();
@@ -159,7 +162,9 @@ public class Grenade : MonoBehaviour, IProjectile
 
         // 발사
         myRigidbody.linearVelocity = new Vector2(throwForce.x, throwForce.y);
-        myRigidbody.angularVelocity = (myRigidbody.linearVelocity.x >= 0) ? -angular : angular;
+        
+        if(grenadeInfo.spinGrenade)
+            myRigidbody.angularVelocity = (myRigidbody.linearVelocity.x >= 0) ? -angular : angular;
     }
 
     public void TargetThrow(Vector2 target)
@@ -171,7 +176,9 @@ public class Grenade : MonoBehaviour, IProjectile
         
         // 발사
         myRigidbody.linearVelocity = CalculateVelocity(transform.position, target, throwForce.y);
-        myRigidbody.angularVelocity = (myRigidbody.linearVelocity.x >= 0) ? -angular : angular;
+        
+        if(grenadeInfo.spinGrenade)
+            myRigidbody.angularVelocity = (myRigidbody.linearVelocity.x >= 0) ? -angular : angular;
     }
     
     public void RandomForceThrow(float valueX, float valueY)

@@ -59,7 +59,9 @@ public class Attack : MonoBehaviour
     private Transform traceTransform;
     private Collider2D myCollider;
     private List<Collider2D> targetColliders = new List<Collider2D>();
-    
+    // 지속형(duplicate) 공격에서 무적 상태로 진입한 타겟. 무적이 풀리는 즉시 myCollider를 다시 켜기 위해 추적.
+    private Character immortalWaitTarget;
+
     [SerializeField] private int dir;
     private float leftColliderTime;
     
@@ -74,11 +76,31 @@ public class Attack : MonoBehaviour
     private void Update()
     {
         ColliderTimer();
+        CheckImmortalWait();
     }
 
     private void OnDisable()
     {
         TargetColReset();
+        immortalWaitTarget = null;
+    }
+
+    // 듀플리케이트 공격이 무적 타겟 때문에 콜라이더를 꺼둔 상태에서,
+    // 무적이 풀리거나 대상이 파괴되면 콜라이더를 다시 켜서 재판정이 일어나게 한다.
+    private void CheckImmortalWait()
+    {
+        if (!immortalWaitTarget)
+        {
+            immortalWaitTarget = null;
+            return;
+        }
+
+        if (!immortalWaitTarget.Immortal && !immortalWaitTarget.Dodge)
+        {
+            immortalWaitTarget = null;
+            if (myCollider)
+                myCollider.enabled = true;
+        }
     }
 
     public void SetupCastChar(Character character)
@@ -329,8 +351,14 @@ public class Attack : MonoBehaviour
     // 무시한 콜라이더 리셋
     private void TargetColReset()
     {
-        foreach (var targetCollider in targetColliders)
-            Physics2D.IgnoreCollision(myCollider, targetCollider, false);
+        if (myCollider)
+        {
+            foreach (var targetCollider in targetColliders)
+            {
+                if (targetCollider)
+                    Physics2D.IgnoreCollision(myCollider, targetCollider, false);
+            }
+        }
 
         targetColliders.Clear();
     }
@@ -427,7 +455,18 @@ public class Attack : MonoBehaviour
 
         // 3. 무적/사망 상태 필터링
         if (!IsHittable(hitTarget))
+        {
+            // 지속형(duplicate) 공격에서 무적/회피 타겟이 안으로 들어온 경우,
+            // 무적/회피가 풀릴 때까지 myCollider를 비활성화해 두고 CheckImmortalWait에서 재활성화한다.
+            // (무적 돌진 등으로 레이저 내부에 안착했을 때 무적/회피 해제 후에도 피격 갱신이 가능하도록)
+            if (attackInfo.duplicate && !attackInfo.ignoreImmortal && (hitTarget.Immortal || hitTarget.Dodge))
+            {
+                immortalWaitTarget = hitTarget;
+                if (myCollider)
+                    myCollider.enabled = false;
+            }
             return;
+        }
 
         // 4. 캐스터-타깃 관계 유효성 검증 (트랩 여부 산출)
         if (!IsValidTarget(col, hitTarget, out bool isTrapAttack))

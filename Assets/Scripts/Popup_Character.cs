@@ -30,8 +30,9 @@ public class Popup_Character : UIBase
     [SerializeField] private TMP_Text popupText;
     [SerializeField] private TMP_Text selectText;
     [SerializeField] private TMP_Text backText;
-    [SerializeField] private TMP_Text changeText;
-
+    [SerializeField] private TMP_Text leftKeyText;
+    [SerializeField] private TMP_Text rightKeyText;
+    
     [SerializeField] private GameObject[] playerObjects;
     [SerializeField] private GameObject berserkerObject;
     [SerializeField] private GameObject gunnerObject;
@@ -57,7 +58,8 @@ public class Popup_Character : UIBase
         curPlayerId = initialPlayerId;
         selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
         backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
-        changeText.text = string.Format(GameManager.Instance.GetTalk(30105), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterLeftKey), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterRightKey));
+        leftKeyText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterLeftKey);
+        rightKeyText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterRightKey);
 
         berserkerFrame.SetText(GameManager.Instance.GetTalk(50000));
         gunnerFrame.SetText(GameManager.Instance.GetTalk(50001));

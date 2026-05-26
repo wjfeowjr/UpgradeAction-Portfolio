@@ -129,6 +129,7 @@ public class GrenadeData
     public bool isTarget;
     public string minForce;
     public string maxForce;
+    public bool spinGrenade;
     public bool dirObject;
     public string hitTag;
     public string spawnObject;

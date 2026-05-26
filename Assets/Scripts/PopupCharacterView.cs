@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using TMPro;
 using UnityEngine;
- 
+using UnityEngine.Serialization;
+
 public interface IPopupCharacterView
 {
     void SetModel(string playerId);
@@ -42,11 +43,13 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
     private PopupCommonActions commonActions;
     private string curPlayerId;
  
+    [SerializeField] private TMP_Text selectKeyUpText;
+    [SerializeField] private TMP_Text selectKeyDownText;
     [SerializeField] private TMP_Text curPlayerText;
     [SerializeField] private TMP_Text[] statNameTexts;
     [SerializeField] private TMP_Text[] statTexts;
     
-    [SerializeField] private ExpansionUiObject[] expansionObjects;
+    [SerializeField] private ChoiceFrameUI[] choiceFrameObjects;
  
     // 팝업 선택 순서: Attribute → Relic → Item
     private readonly ePopupState[] _popupStateOrder = { ePopupState.Attribute, ePopupState.Relic, ePopupState.Item };
@@ -67,14 +70,16 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
  
     public void SetPlayerInfo()
     {
+        selectKeyUpText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.upKey);
+        selectKeyDownText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.downKey);
         curPlayerText.text = GameManager.Instance.GetCharacterTalk(curPlayerId);
         
-        if(expansionObjects.Length > 0)
-            expansionObjects[0].SetText(GameManager.Instance.GetTalk(30057));
-        if(expansionObjects.Length > 1)
-            expansionObjects[1].SetText(GameManager.Instance.GetTalk(30058));
-        if(expansionObjects.Length > 2)
-            expansionObjects[2].SetText(GameManager.Instance.GetTalk(30063));
+        if(choiceFrameObjects.Length > 0)
+            choiceFrameObjects[0].SetText(GameManager.Instance.GetTalk(30057));
+        if(choiceFrameObjects.Length > 1)
+            choiceFrameObjects[1].SetText(GameManager.Instance.GetTalk(30058));
+        if(choiceFrameObjects.Length > 2)
+            choiceFrameObjects[2].SetText(GameManager.Instance.GetTalk(30063));
         
         var curPlayer = GameManager.Instance.GetPlayer(curPlayerId);
         int txtIdx = 50100;
@@ -119,13 +124,13 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
  
     private void Update()
     {
-        if (expansionObjects == null || expansionObjects.Length == 0)
+        if (choiceFrameObjects == null || choiceFrameObjects.Length == 0)
             return;
  
         // 위 방향키: 이전 항목 선택 (사이클)
         if (Input.GetKeyDown(GameManager.Instance.upKey))
         {
-            _selectedIndex = (_selectedIndex - 1 + expansionObjects.Length) % expansionObjects.Length;
+            _selectedIndex = (_selectedIndex - 1 + choiceFrameObjects.Length) % choiceFrameObjects.Length;
             RefreshExpansionSelection();
             commonActions?.PlayMoveSound?.Invoke();
         }
@@ -133,7 +138,7 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
         // 아래 방향키: 다음 항목 선택 (사이클)
         if (Input.GetKeyDown(GameManager.Instance.downKey))
         {
-            _selectedIndex = (_selectedIndex + 1) % expansionObjects.Length;
+            _selectedIndex = (_selectedIndex + 1) % choiceFrameObjects.Length;
             RefreshExpansionSelection();
             commonActions?.PlayMoveSound?.Invoke();
         }
@@ -150,17 +155,17 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
     // 선택 인덱스 기준으로 전체 expansionObjects 선택/비선택 상태 갱신
     private void RefreshExpansionSelection()
     {
-        for (int i = 0; i < expansionObjects.Length; i++)
+        for (int i = 0; i < choiceFrameObjects.Length; i++)
         {
             if (i == _selectedIndex)
             {
-                expansionObjects[i].Expansion(1.1f);
-                expansionObjects[i].SelectObjectActive(true);
+                choiceFrameObjects[i].Expansion(1.1f);
+                choiceFrameObjects[i].SelectObjectActive(true);
             }
             else
             {
-                expansionObjects[i].Reduction();
-                expansionObjects[i].SelectObjectActive(false);
+                choiceFrameObjects[i].Reduction();
+                choiceFrameObjects[i].SelectObjectActive(false);
             }
         }
     }

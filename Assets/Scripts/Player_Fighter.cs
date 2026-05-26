@@ -139,7 +139,7 @@ public class Player_Fighter : Player
                 var delay4 = 0.2f;
                 var checkDelay2 = delay3 + delay4 + afterDelay;
                 
-                MotionFlip();
+                AttackMotionFlip();
                 StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
                 AttackAdvance(2.0f);
 
@@ -160,7 +160,7 @@ public class Player_Fighter : Player
                 var delay5 = 0.22f;
                 var delay6 = 0.5f;
                 
-                MotionFlip();
+                AttackMotionFlip();
                 StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack3);
                 AttackAdvance(3.0f);
                 
@@ -230,6 +230,7 @@ public class Player_Fighter : Player
         jumpAttackObject.gameObject.SetActive(false);
         trailObject.gameObject.SetActive(false);
         canAttack = true;
+        didJumpAttack = true;
         return true;
     }
 
