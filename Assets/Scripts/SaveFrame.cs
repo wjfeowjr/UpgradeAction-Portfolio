@@ -13,6 +13,7 @@ public class SaveFrame : ExpansionUiObject
     [SerializeField] private TMP_Text numText;
     [SerializeField] private Image[] characterImages;
 
+    // ReSharper disable Unity.PerformanceAnalysis
     public void SetData(string fileName, int idx)
     {
         var isNewGame = string.IsNullOrWhiteSpace(fileName);

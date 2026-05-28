@@ -27,7 +27,7 @@ public  class Shortcut_Crush : ShortcutObject, IHitProduct
     {
         base.OpenImmediate();
         if(targetRoom)
-            targetRoom.ShortcutOpen(targetRoom.GetWallShortCutName(targetIdx));
+            targetRoom.ShortcutOpen(targetRoom.GetWallShortCutName(targetIdx), false);
     }
 
     public void HitProduct()

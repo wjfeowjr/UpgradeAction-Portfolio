@@ -93,23 +93,23 @@ public class Grenade : MonoBehaviour, IProjectile
         grenadeInfo.blockAction?.Invoke(ConstValues.ProjectileDestroyEffect, transform.position);
     }
     
-    public void SetupData(GrenadeData grenadeData, Vector2 grenadeDir, Action<string, Transform, int, Vector2> action, Action<string, Vector2> blockAction = null)
+    public void SetupData(GrenadeCopy grenadeCopy, Vector2 grenadeDir, Action<string, Transform, int, Vector2> action, Action<string, Vector2> blockAction = null)
     {
         grenadeInfo = new GrenadeInfo();
-        grenadeInfo.id = grenadeData.id;
+        grenadeInfo.id = grenadeCopy.id;
 
-        var minForceSplit = grenadeData.minForce.Split(';');
+        var minForceSplit = grenadeCopy.minForce.Split(';');
         grenadeInfo.minForce = new Vector2(float.Parse(minForceSplit[0]), float.Parse(minForceSplit[1]));
             
-        var maxForceSplit = grenadeData.maxForce.Split(';');
+        var maxForceSplit = grenadeCopy.maxForce.Split(';');
         grenadeInfo.maxForce = new Vector2(float.Parse(maxForceSplit[0]), float.Parse(maxForceSplit[1]));
 
-        grenadeInfo.spinGrenade = grenadeData.spinGrenade;
+        grenadeInfo.spinGrenade = grenadeCopy.spinGrenade;
 
-        grenadeInfo.dirObject = grenadeData.dirObject;
+        grenadeInfo.dirObject = grenadeCopy.dirObject;
 
         grenadeInfo.hitTagList = new List<string>();
-        var hitTagSplit = grenadeData.hitTag.Split(',');
+        var hitTagSplit = grenadeCopy.hitTag.Split(',');
         foreach (var hitTag in hitTagSplit)
         {
             if (!string.IsNullOrWhiteSpace(hitTag))
@@ -118,7 +118,7 @@ public class Grenade : MonoBehaviour, IProjectile
             }
         }
         grenadeInfo.spawnObjectList = new List<string>();
-        var spawnObjectSplit = grenadeData.spawnObject.Split(',');
+        var spawnObjectSplit = grenadeCopy.spawnObject.Split(',');
         foreach (var spawnObject in spawnObjectSplit)
         {
             if (!string.IsNullOrWhiteSpace(spawnObject))
@@ -134,6 +134,14 @@ public class Grenade : MonoBehaviour, IProjectile
         dir = grenadeDir;
         SetThrowPos();
     }
+
+    public void ThrowForceChange(Vector2 min, Vector2 max)
+    {
+        grenadeInfo.minForce = min;
+        grenadeInfo.maxForce = max;
+        SetThrowPos();
+    }
+
     public void BossCheck(bool isBoss)
     {
         grenadeInfo.isBossProjectile = isBoss;

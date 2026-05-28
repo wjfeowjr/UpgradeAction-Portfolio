@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using Random = UnityEngine.Random;
@@ -10,12 +11,24 @@ public class Arena : MonoBehaviour
     [SerializeField] private Transform[] monsterPos;
     [SerializeField] private Transform[] limitPos;
     [SerializeField] private TileFactory tileFactory;
+    private CancellationTokenSource arenaCancellation;
     
     private List<List<Monster>> roundList = new List<List<Monster>>();
+
+    private void Awake()
+    {
+        arenaCancellation = new CancellationTokenSource();
+    }
 
     private void Start()
     {
         SettingData();
+    }
+    
+    private void OnDestroy()
+    {
+        arenaCancellation?.Cancel();
+        arenaCancellation?.Dispose();
     }
 
     private void SettingData()
@@ -64,7 +77,7 @@ public class Arena : MonoBehaviour
                 targetMinLimit = new Vector2(targetMinLimit.x += Time.deltaTime * speed, targetMinLimit.y);
             
             GameManager.Instance.MainCamera.SetCameraLimit(targetMaxLimit, targetMinLimit);
-            if (await GameManager.Instance.YieldDelay(GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            if (await YieldDelay().SuppressCancellationThrow())
                 return;
         }
         
@@ -90,19 +103,18 @@ public class Arena : MonoBehaviour
             for (var i = 0; i < round.Count; i++)
             {
                 SpawnMonster(round[i], -2 - i);
-                if (await GameManager.Instance.NormalDelay(monsterDelay, GameManager.Instance.ProductCancellation)
-                        .SuppressCancellationThrow())
+                if (await NormalDelay(monsterDelay).SuppressCancellationThrow())
                     return;
             }
 
-            if (await GameManager.Instance.WaitUntilDelay(()=> RoundMonsterAllDead(round), GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            if (await WaitUntilDelay(()=> RoundMonsterAllDead(round)).SuppressCancellationThrow())
                 return;
 
             count += 1;
             if (count == roundList.Count)
                 break;
             
-            if (await GameManager.Instance.NormalDelay(roundDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            if (await NormalDelay(roundDelay).SuppressCancellationThrow())
                 return;
         }
     }
@@ -119,16 +131,17 @@ public class Arena : MonoBehaviour
         var productDelay = 2.0f;
         
         BgmManager.Instance.DelayStop(0.1f);
-        if (await GameManager.Instance.NormalDelay(finishDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        if (await NormalDelay(finishDelay).SuppressCancellationThrow())
             return;
         
         Time.timeScale = 1.0f;
-        if (await GameManager.Instance.NormalDelay(endDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        GameManager.Instance.CurPlayer.ForceProduct();
+        if (await NormalDelay(endDelay).SuppressCancellationThrow())
             return;
         
         SoundManager.Instance.PlaySound(ConstValues.Star3);
         
-        if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        if (await NormalDelay(productDelay).SuppressCancellationThrow())
             return;
 
         tileFactory.Crash();
@@ -159,5 +172,20 @@ public class Arena : MonoBehaviour
         }
 
         return allDead;
+    }
+    
+    private async UniTask NormalDelay(float second)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: arenaCancellation.Token);
+    }
+
+    private async UniTask YieldDelay()
+    {
+        await UniTask.Yield(cancellationToken: arenaCancellation.Token);
+    }
+    
+    private async UniTask WaitUntilDelay(Func<bool> condition)
+    {
+        await UniTask.WaitUntil(condition, cancellationToken: arenaCancellation.Token);
     }
 }

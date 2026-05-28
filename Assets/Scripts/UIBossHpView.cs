@@ -87,8 +87,6 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
 
     public void HideHp()
     {
-        // nameText.gameObject.SetActive(false);
-        // hpGauge.gameObject.SetActive(false);
         staggerGauge.gameObject.SetActive(false);
         gameObject.SetActive(false);
     }

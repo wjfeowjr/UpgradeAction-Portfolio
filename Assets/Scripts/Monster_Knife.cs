@@ -59,8 +59,8 @@ public class Monster_Knife : Monster
     // 패턴 1. 연속 찌르기
     private async void KnifeStab()
     {
-        float delay1 = 0.4f;
-        float delay2 = 0.3f;
+        //float delay1 = 0.4f;
+        //float delay2 = 0.3f;
         float delay3 = 0.4f;
         float delay4 = 0.5f;
 
@@ -371,7 +371,6 @@ public class Monster_Knife : Monster
             return;
 
         SetTriggerAnimator(ConstValues.Pattern);
-        
         for (int i = 0; i < 3; i++)
         {
             var targetVector = GameManager.Instance.CurPlayer.CenterPos.position;
@@ -380,9 +379,12 @@ public class Monster_Knife : Monster
                 return;
         }
         
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+        SetTriggerAnimator(ConstValues.Pattern2);
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
         
+        SetTriggerAnimator(ConstValues.Pattern);
         for (int i = 0; i < 3; i++)
         {
             var targetVector = GameManager.Instance.CurPlayer.CenterPos.position;
@@ -399,7 +401,7 @@ public class Monster_Knife : Monster
     
     private async UniTask FadeOut()
     {
-        if (stateCancellation == null)
+        if (stateCancellation == null || stateCancellation.IsCancellationRequested)
             stateCancellation = new CancellationTokenSource();
 
         float speed = 3.0f;
@@ -414,7 +416,7 @@ public class Monster_Knife : Monster
     
     private async UniTask FadeIn()
     {
-        if (stateCancellation == null)
+        if (stateCancellation == null || stateCancellation.IsCancellationRequested)
             stateCancellation = new CancellationTokenSource();
 
         float speed = 3.0f;

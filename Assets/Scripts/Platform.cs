@@ -73,7 +73,7 @@ public class Platform : MonoBehaviour
         spawnedObject.SetupData(objectData, transform.localScale.x);
         spawnedObject.EnableSetting();
 
-        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
+        var grenadeData = GameManager.Instance.grenadeCopyList.Find(x => x.id == id);
         if (grenadeData != null)
         {
             var grenade = obj.GetComponent<Grenade>();

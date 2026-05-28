@@ -466,6 +466,7 @@ public class Player_Gunner : Player
         var objectId = ConstValues.GunnerGrenadeObject;
         var skill = GetSkill(skillId);
         
+        bool unstoppableThrow = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.UnstoppableThrow);
         bool madBomber = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.MadBomber);
         
         StateSetting(ENormalState.Skill, ConstValues.GunnerGrenade, ConstValues.GunnerGrenade);
@@ -528,6 +529,14 @@ public class Player_Gunner : Player
                             grenadeObject.AddSpawnObject(fragmentsId);
                         break;
                 }
+            }
+
+            if (unstoppableThrow)
+            {
+                Vector2 min = new Vector2(10, 8);
+                Vector2 max = new Vector2(10, 8);
+                grenadeObject.ThrowForceChange(min, max);
+                grenadeObject.Throw();
             }
             
             if (madBomber && count > 1 && i > 1)

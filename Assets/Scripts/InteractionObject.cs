@@ -61,7 +61,10 @@ public class InteractionObject : MonoBehaviour
     public async void FadeOut()
     {
         isFading = true;
-        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.WhiteColor);
+        
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.WhiteColor).SuppressCancellationThrow())
+            return;
+        
         isFading = false;
     }
 

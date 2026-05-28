@@ -171,8 +171,8 @@ public abstract class Character : InteractionController
     protected CancellationTokenSource jumpCancellation;
     protected CancellationTokenSource anotherCancellation; // 우선 넉백에만사용되고 있음
     protected CancellationTokenSource delayCancellation;
+    protected CancellationTokenSource dieCancellation;
     
-    //[SerializeField] protected Collider2D footTrigger;
     [SerializeField] protected PlatformObject lastStandPlatform;
     [SerializeField] protected List<PlatformObject> ignorePlatformList = new List<PlatformObject>();
     [SerializeField] protected MovingPlatform currentMovingPlatform;
@@ -352,6 +352,7 @@ public abstract class Character : InteractionController
 
     protected virtual void OnEnable()
     {
+        InitToken();
         isDie = false;
         StandHitBox();
         SetIgnorePlatform();
@@ -373,9 +374,10 @@ public abstract class Character : InteractionController
         UpdateMovingPlatform();
     }
 
-    private void OnDisable()
+    protected virtual void OnDisable()
     {
         ClearIgnorePlatform();
+        ClearToken();
     }
 
     protected virtual void CheckCollisions()
@@ -1099,6 +1101,25 @@ public abstract class Character : InteractionController
         ignorePlatformList.Clear();
     }
 
+    private void ClearToken()
+    {
+        stateCancellation?.Cancel();
+        jumpCancellation?.Cancel();
+        anotherCancellation?.Cancel();
+        delayCancellation?.Cancel();
+        dieCancellation?.Cancel();
+    }
+
+    // 풀에서 재사용될 때 취소 상태로 남은 토큰을 새로 발급 (재사용 시 즉시 취소 방지)
+    private void InitToken()
+    {
+        stateCancellation = new CancellationTokenSource();
+        jumpCancellation = new CancellationTokenSource();
+        anotherCancellation = new CancellationTokenSource();
+        delayCancellation = new CancellationTokenSource();
+        dieCancellation = new CancellationTokenSource();
+    }
+
     // 반동
     protected void Rebound(float force)
     {
@@ -1378,8 +1399,8 @@ public abstract class Character : InteractionController
     }
     private void SetGrenadeData(string id, GameObject obj, Vector2 targetVector = default)
     {
-        var grenadeData = TableManager.Instance.grenadeTable.Grenade.Find(x => x.id == id);
-        if (grenadeData != null)
+        var grenadeCopy = GameManager.Instance.grenadeCopyList.Find(x => x.id == id);
+        if (grenadeCopy != null)
         {
             var grenade = obj.GetComponent<Grenade>();
             if (!grenade)
@@ -1388,7 +1409,7 @@ public abstract class Character : InteractionController
             var dir = Vector2.right;
             if (transform.localScale.x < 0)
                 dir = Vector2.left;
-            grenade.SetupData(grenadeData, dir, SpawnAttack, SpawnObjectAction);
+            grenade.SetupData(grenadeCopy, dir, SpawnAttack, SpawnObjectAction);
 
             if (targetVector == default)
                 grenade.Throw();
@@ -2245,6 +2266,7 @@ public abstract class Character : InteractionController
         // 넉백 시작—바로 초기 속도 설정
         myRigidbody.linearVelocity = constantVelocity;
 
+        anotherCancellation?.Cancel();
         anotherCancellation = new CancellationTokenSource();
         int steps = Mathf.CeilToInt(duration / Time.fixedDeltaTime);
         for (int i = 0; i < steps; i++)
@@ -2366,18 +2388,38 @@ public abstract class Character : InteractionController
     
     public async void ForceIdle()
     {
-        stateCancellation = new CancellationTokenSource();
         if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
             return;
         
         MoveStateSetting(EMoveState.Stopping);
         CancelMotion();
+        stateCancellation = new CancellationTokenSource();
         StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
     }
 
+    public void ForceJump()
+    {
+        CancelMotion();
+        stateCancellation = new CancellationTokenSource();
+        StateSetting(ENormalState.Idle, ConstValues.Jump, ConstValues.Jump);
+    }
+
+    public void ForceProduct()
+    {
+        if (landingState == ELandingState.Air)
+        {
+            ForceJump();
+        }
+        else
+        {
+            ForceIdle();
+        }
+    }
+    
     // 깜빡이며 사라지기
     public virtual async void BlinkDelete()
     {
+        stateCancellation?.Cancel();
         stateCancellation = new CancellationTokenSource();
         for (int i = 0; i < 7; i++)
         {

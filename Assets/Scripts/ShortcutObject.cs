@@ -24,7 +24,7 @@ public class ShortcutObject : Lever
     [SerializeField] private GameObject[] shortcutBlockers;// 막고 있는 문/벽(콜라이더 포함)
 
     protected CancellationTokenSource delayCancellation;
-    private Action<string> openAction;
+    private Action<string, bool> openAction;
     protected bool opened;
     private int startHp;
     private int hp;
@@ -32,7 +32,7 @@ public class ShortcutObject : Lever
     public ShortcutType Type => type;
     public string TypeString => type.ToString();
 
-    public void OpenSetting(bool isOpen, Action<string> action)
+    public void OpenSetting(bool isOpen, Action<string, bool> action)
     {
         if (!isOpen)
         {
@@ -65,7 +65,7 @@ public class ShortcutObject : Lever
             }
         }
 
-        openAction(name);
+        openAction(name, true);
         OpenProduct();
     }
 

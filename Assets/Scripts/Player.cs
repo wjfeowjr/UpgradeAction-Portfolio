@@ -287,11 +287,6 @@ public abstract class Player : Character
         UpdateJumpDown();
     }
 
-    private void OnDisable()
-    {
-        stateCancellation?.Cancel();
-    }
-
     protected override void CheckCollisions()
     {
         base.CheckCollisions();
@@ -744,24 +739,6 @@ public abstract class Player : Character
         myRigidbody.linearVelocity = vel;
     }
 
-    public void ForceJump()
-    {
-        CancelMotion();
-        StateSetting(ENormalState.Idle, ConstValues.Jump, ConstValues.Jump);
-    }
-
-    public void ForceProduct()
-    {
-        if (landingState == ELandingState.Air)
-        {
-            ForceJump();
-        }
-        else
-        {
-            ForceIdle();
-        }
-    }
-
     public void MoveSetting(Vector2 dir)
     {
         if (!canMove)
@@ -1161,7 +1138,8 @@ public abstract class Player : Character
     {
         while (normalState != ENormalState.Idle)
         {
-            stateCancellation ??= new CancellationTokenSource();
+            if (stateCancellation == null || stateCancellation.IsCancellationRequested)
+                stateCancellation = new CancellationTokenSource();
             if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;
         }
@@ -1630,20 +1608,18 @@ public abstract class Player : Character
 
         return lastMarkerPosition;
     }
-
-    public async UniTask WaitIdle()
-    {
-        await UniTask.WaitUntil(() => normalState == ENormalState.Idle);
-    }
+    
     // 커스텀
     public async UniTask EpisodeMove(Vector2 movePos, float speed, int finishDir)
     {
         Controller.Instance.IsLeftMove = false;
         Controller.Instance.IsRightMove = false;
-
-        Stop();
-        await UniTask.WaitUntil(() => normalState == ENormalState.Idle);
+        stateCancellation = new CancellationTokenSource();
         
+        Stop();
+        if (await WaitUntilDelay(()=> normalState == ENormalState.Idle, stateCancellation).SuppressCancellationThrow())
+            return;
+
         StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
         
         Vector2 dir = Vector2.left;
@@ -1653,8 +1629,7 @@ public abstract class Player : Character
             dir = Vector2.right;
             transform.localScale = defaultScale;
         }
-
-        stateCancellation = new CancellationTokenSource();
+        
         while (Math.Abs(transform.position.x - movePos.x) > 0.1f)
         {
             // basicStat.moveSpeed
@@ -1662,9 +1637,11 @@ public abstract class Player : Character
                 StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
             
             CustomMoving_X(dir, speed);
-            await FixedYieldDelay(stateCancellation);
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
         }
-        await FixedYieldDelay(stateCancellation);
+        if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+            return;
         
         switch (finishDir)
         {

@@ -167,6 +167,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string MagmaEruption = "MagmaEruption";
     public const string FuriousStrike = "FuriousStrike";
     public const string SecondaryExplosion = "SecondaryExplosion";
+    public const string UnstoppableThrow = "UnstoppableThrow";
     public const string MadBomber = "MadBomber";
     public const string PowerfulGunpowder = "PowerfulGunpowder";
     public const string LongShot = "LongShot";

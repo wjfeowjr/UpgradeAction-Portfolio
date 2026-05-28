@@ -99,7 +99,6 @@ public class Monster : Character
     [SerializeField] private SpriteRenderer[] appearMotions; // 등장 연출 이미지
     private SortingGroup sortingGroup;
     
-    protected CancellationTokenSource dieCancellation;
     protected Action<int, Vector2> goldAction;
 
     [SerializeField] protected Vector2 startPos;
@@ -245,11 +244,10 @@ public class Monster : Character
         UpdateRoomLimit();
     }
 
-    private void OnDisable()
+    protected override void OnDisable()
     {
-        dieCancellation?.Cancel();
-        stateCancellation?.Cancel();
-
+        base.OnDisable();
+        
         ClearObjectList(attackObject);
         ClearObjectList(controlAttackObject);
         ClearObjectList(normalObject);
@@ -519,8 +517,10 @@ public class Monster : Character
     {
         if (IsBoss)
         {
-            await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
-            
+            delayCancellation = new CancellationTokenSource();
+            if(await GameManager.Instance.WaitUntilDelay(() => GameManager.Instance.ControlStart, delayCancellation).SuppressCancellationThrow())
+                return;
+
             var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
             if (uiInterfaceObj == null)
                 return;
@@ -692,32 +692,32 @@ public class Monster : Character
     }
 
     // 아랫점프
-    private async void DownJump()
-    {
-        // 플랫폼 위에서만 작동함
-        if (downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged())
-            return;
-
-        PlaySound(ConstValues.Jump2, 2.0f);
-        CancelMotion();
-
-        downJumping = true;
-
-        IgnorePlatformCheck(lastStandPlatform);
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
-
-        StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
-        LandingStateSetting(ELandingState.Air);
-
-        stateCancellation = new CancellationTokenSource();
-        while (transform.position.y >= groundObject.transform.position.y)
-        {
-            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-                return;
-        }
-
-        downJumping = false;
-    }
+    // private async void DownJump()
+    // {
+    //     // 플랫폼 위에서만 작동함
+    //     if (downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged())
+    //         return;
+    //
+    //     PlaySound(ConstValues.Jump2, 2.0f);
+    //     CancelMotion();
+    //
+    //     downJumping = true;
+    //
+    //     IgnorePlatformCheck(lastStandPlatform);
+    //     myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
+    //
+    //     StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
+    //     LandingStateSetting(ELandingState.Air);
+    //
+    //     stateCancellation = new CancellationTokenSource();
+    //     while (transform.position.y >= groundObject.transform.position.y)
+    //     {
+    //         if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+    //             return;
+    //     }
+    //
+    //     downJumping = false;
+    // }
 
     // 등장(연출 포함)
     public virtual async void Appear(Action<string, EMonsterType> bossProduct)
@@ -755,10 +755,7 @@ public class Monster : Character
 
             if (!GameManager.Instance.ControlStart)
                 StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-
-            await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
-            // Hovering();
-            // AppearShake();
+            
             IdleOrMove();
         }
 
@@ -1261,7 +1258,7 @@ public class Monster : Character
     // 공격 딜레이
     protected async UniTask AttackDelay(float attackDelay, bool lookAtPlayer = false)
     {
-        if (stateCancellation == null)
+        if (stateCancellation == null || stateCancellation.IsCancellationRequested)
             stateCancellation = new CancellationTokenSource();
 
         float delay = 0;
@@ -1511,7 +1508,7 @@ public class Monster : Character
                 return;
             
             // 특정 행동이 끝나는 즉시 행동하면 애니메이션 갭이 일어나서 1프레임 뒤에 실행
-            if (stateCancellation == null)
+            if (stateCancellation == null || stateCancellation.IsCancellationRequested)
                 stateCancellation = new CancellationTokenSource();
             if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
                 return;

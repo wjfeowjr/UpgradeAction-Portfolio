@@ -315,6 +315,18 @@ public class DialogueChoiceCopy
     public List<bool> checkKeyValue = new List<bool>();
 }
 
+[Serializable]
+public class GrenadeCopy
+{
+    public string id;
+    public string minForce;
+    public string maxForce;
+    public bool spinGrenade;
+    public bool dirObject;
+    public string hitTag;
+    public string spawnObject;
+}
+
 public enum eItemType
 {
     Normal,
@@ -643,6 +655,7 @@ public class GameManager : Singleton<GameManager>
     public List<RelicCopy> relicCopyList = new List<RelicCopy>();
     public List<NpcCopy> npcCopyList = new List<NpcCopy>();
     public List<DialogueChoiceCopy> dialogueChoiceCopyList = new List<DialogueChoiceCopy>();
+    public List<GrenadeCopy> grenadeCopyList = new List<GrenadeCopy>();
     
     // 매니저들
     public TableManager tableManager;
@@ -653,8 +666,6 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private Canvas uiObjectCanvas;
 
     private CancellationTokenSource productCancellation;
-    private CancellationTokenSource fadeCancellation;
-    private CancellationTokenSource waitCancellation;
 
     // 프로퍼티
     public Player CurPlayer
@@ -671,10 +682,21 @@ public class GameManager : Singleton<GameManager>
         set => inGame = value;
     }
     
-    public bool ControlStart 
+    public bool ControlStart
     {
         get => controlStart;
-        set => controlStart = value;
+        set
+        {
+            controlStart = value;
+            // 연출 진입(false 전환) 시 누른 채였던 Move 상태/잔여 속도만 정리.
+            // 입력 플래그(isLeftMove/isRightMove)는 유지 → 방 이동 후 ControlStart가 다시 true가 되면
+            // 키를 다시 누르지 않아도 홀드 중인 방향으로 이동이 이어진다.
+            if (!value && CurPlayer)
+            {
+                CurPlayer.Stop();
+                CurPlayer.StopVelocity_X();
+            }
+        }
     }
 
     public bool StandLock
@@ -775,9 +797,7 @@ public class GameManager : Singleton<GameManager>
     }
 
     public CancellationTokenSource ProductCancellation => productCancellation;
-    public CancellationTokenSource FadeCancellation => fadeCancellation;
-    public CancellationTokenSource WaitCancellation => waitCancellation;
-    
+
     protected override void Awake()
     {
         base.Awake();
@@ -821,7 +841,27 @@ public class GameManager : Singleton<GameManager>
         if(SaveSystem.TryLoad(fileName, out SaveData loadData))
             data = loadData;
 
-        // saveData = loadData;
+        // 패치 필요 여부 확인 (마지막 저장 시각이 패치 기준 시각보다 이전이면 패치 필요)
+        if (data != null && DateTime.TryParse(data.lastSavedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime lastSavedAt))
+        {
+            // 기준 시각: 한국 시간(KST, UTC+9) 2026년 5월 29일 00시
+            DateTime patchTime = new DateTimeOffset(2026, 5, 29, 0, 0, 0, TimeSpan.FromHours(9)).UtcDateTime;
+            if (lastSavedAt.ToUniversalTime() < patchTime)
+            {
+                Debug.Log("패치 필요");
+                foreach (var playerInfo in data.playerInfoList)
+                {
+                    playerInfo.attributePoint = data.totalAttributePoint;
+                    foreach (var skill in playerInfo.skillList)
+                        skill.attributeList.Clear();
+                }
+            }
+            else
+            {
+                Debug.Log("패치 불필요");
+            }
+        }
+
         return data;
     }
     
@@ -865,7 +905,9 @@ public class GameManager : Singleton<GameManager>
         
         BgmManager.Instance.Stop();
         SoundManager.Instance.PlaySound(ConstValues.Upgrade, true);
-        await Fading(0, 1, 0.75f, false, ConstValues.BlackColor);
+        if (await Fading(0, 1, 0.75f, false, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
+        
         GoScene(ConstValues.BattleScene);
     }
 
@@ -901,9 +943,13 @@ public class GameManager : Singleton<GameManager>
     private void GameStartSetting()
     {
         if (SaveSystem.Exists(curSaveFileName))
+        {
             saveData = LoadGame(curSaveFileName);
+        }
         else
+        {
             FirstStart(); 
+        }
         
         LockAttributeSetting();
         curPlayer = GetPlayer(saveData.playerList[0]);
@@ -1669,6 +1715,20 @@ public class GameManager : Singleton<GameManager>
             
             dialogueChoiceCopyList.Add(data);
         }
+        
+        foreach (var grenade in tableManager.grenadeTable.Grenade)
+        {
+            var data = new GrenadeCopy();
+            data.id = grenade.id;
+            data.minForce = grenade.minForce;
+            data.maxForce = grenade.maxForce;
+            data.spinGrenade = grenade.spinGrenade;
+            data.dirObject = grenade.dirObject;
+            data.hitTag = grenade.hitTag;
+            data.spawnObject = grenade.spawnObject;
+
+            grenadeCopyList.Add(data);
+        }
     }
 
     // 플레이어
@@ -1688,6 +1748,7 @@ public class GameManager : Singleton<GameManager>
     {
         ControlStart = true;
         CurPlayer.Immortal = false;
+        curPlayer.Dodge = false;
     }
     public void StopPlayer()
     {
@@ -1789,16 +1850,6 @@ public class GameManager : Singleton<GameManager>
             player.gameObject.SetActive(player.name == playerName);
             if (player.name == playerName)
                 player.Flip(1);
-        }
-    }
-
-    public void ArrivePlayer()
-    {
-        foreach (var player in players)
-        {
-            player.MyBoxCollider.enabled = true;
-            player.Immortal = false;
-            player.IsDie = false;
         }
     }
 
@@ -1993,11 +2044,11 @@ public class GameManager : Singleton<GameManager>
 
     public async UniTask Fading(float start, float end, float duration, bool delete, Color color, bool ignoreTime = true)
     {
-        fadeCancellation = new CancellationTokenSource();
         fadeSystem.ColorInput(color);
         fadeSystem.gameObject.SetActive(true);
         fadeSystem.SetParameter(start, end, duration, delete);
-        await fadeSystem.Fade(ignoreTime);
+        if(await fadeSystem.Fade(ignoreTime).SuppressCancellationThrow())
+            return;
     }
     
     public void PoolDisActive()
@@ -2073,8 +2124,10 @@ public class GameManager : Singleton<GameManager>
         
         go.transform.position = objTransform.position;
         go.SetActive(true);
+        ResetParticles(go);
         return go;
     }
+
     private GameObject SpawnToPool(string id, Transform pool, Vector3 objVector, bool isHightest = false)
     { 
         var objectName = $"{id}(Clone)";
@@ -2103,19 +2156,27 @@ public class GameManager : Singleton<GameManager>
         }
 
         go.transform.position = objVector;
-        
-        var particles = go.GetComponentsInChildren<ParticleSystem>();
-        foreach (var particle in particles)
-            particle.Clear(true);
-        foreach (var particle in particles)
-            particle.Play(true);
-        
         go.SetActive(true);
+        ResetParticles(go);
+
         if(isHightest)
             go.transform.SetAsLastSibling();
-        
+
         return go;
     }
+    
+    // 풀링 재사용 시 파티클 상태/이전 위치 추적값을 새 위치 기준으로 리셋해 텔레포트 잔상 제거
+    private void ResetParticles(GameObject go)
+    {
+        var particles = go.GetComponentsInChildren<ParticleSystem>(true);
+        foreach (var particle in particles)
+        {
+            particle.Clear(true);
+            particle.Simulate(0f, true, true);
+            particle.Play(true);
+        }
+    }
+    
     public GameObject SpawnToMonster(string id, Transform pool, Vector3 objVector, bool isActive)
     {
         GameObject go = Instantiate(prefabList.Find(x => x.name == id).gameObject, pool);
@@ -2467,15 +2528,7 @@ public class GameManager : Singleton<GameManager>
     {
         productCancellation = new CancellationTokenSource();
     }
-    public void InitFadeCancellation()
-    {
-        fadeCancellation = new CancellationTokenSource();
-    }
-    public void InitWaitCancellation()
-    {
-        waitCancellation = new CancellationTokenSource();
-    }
-    
+
     public async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
@@ -2724,10 +2777,10 @@ public class GameManager : Singleton<GameManager>
         await SpawnWarningPopup(GameManager.Instance.GetTalk(30205));
     }
     
-    // 해당 스킬의 패시브 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    // 해당 스킬의 Id찾기(내가 해당 특성을 가지고 있어야 함)
     public List<string> GetAttributePassive(string id)
     {
-        List<string> passiveList = new List<string>();
+        List<string> idList = new List<string>();
         string[] idSplit = id.Split('_');
         
         string skillId = id;
@@ -2749,7 +2802,7 @@ public class GameManager : Singleton<GameManager>
                 
                 foreach (var passive in attribute.passiveId)
                 {
-                    passiveList.Add(passive);
+                    idList.Add(passive);
                 }
             }
         }
@@ -2763,11 +2816,12 @@ public class GameManager : Singleton<GameManager>
                 
             foreach (var passive in attribute.passiveId)
             {
-                passiveList.Add(passive);
+                idList.Add(passive);
             }
         }
-        return passiveList;
+        return idList;
     }
+    
     // 해당 스킬의 추가 생성 리스트(내가 해당 특성을 가지고 있어야 함)
     public List<SkillAttributeAddObjectInfo> GetAttributeAddObject(string id)
     {
@@ -2899,7 +2953,7 @@ public class GameManager : Singleton<GameManager>
         return buffList;
     }
     
-    // 해당 스킬의 버프 특성 리스트(내가 해당 특성을 가지고 있어야 함)
+    // 해당 스킬의 디버프 특성 리스트(내가 해당 특성을 가지고 있어야 함)
     public List<SkillAttributeBuffInfo> GetAttributeDeBuff(string id)
     {
         var buffList = new List<SkillAttributeBuffInfo>();
@@ -3181,7 +3235,9 @@ public class GameManager : Singleton<GameManager>
             int finishDir = 1;
             if (xPos < 0)
                 finishDir = -1;
-            await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, finishDir);
+
+            if (await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, finishDir).SuppressCancellationThrow())
+                return;
         }
 
         if (fighter.gameObject.activeSelf)
@@ -3189,7 +3245,9 @@ public class GameManager : Singleton<GameManager>
             int finishDir = 1;
             if (xPos < 0)
                 finishDir = -1;
-            await fighter.EpisodeMove(fighterPos, fighter.BasicStat.moveSpeed, finishDir);
+
+            if (await fighter.EpisodeMove(fighterPos, fighter.BasicStat.moveSpeed, finishDir).SuppressCancellationThrow())
+                return;
         }
     }
     
@@ -3254,27 +3312,28 @@ public class GameManager : Singleton<GameManager>
         float delay1 = 0.3f;
         float delay2 = 0.1f;
 
-        InitWaitCancellation();
-        if(await NormalDelay(delay1, waitCancellation).SuppressCancellationThrow())
+        InitProductCancellation();
+        if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
             return;
         
         curPlayer.SpawnObject(ConstValues.BangEffect, curPlayer.CenterPos.position);
         curPlayer.gameObject.SetActive(false);
-        if(await NormalDelay(delay1, waitCancellation).SuppressCancellationThrow())
+        if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
             return;
         
         // 이동기능 추가
         curPlayer.transform.position = curPlayer.GetLastMarkerPosition();
-        if(await NormalDelay(delay1, waitCancellation).SuppressCancellationThrow())
+        if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
             return;
         
         curPlayer.SpawnObject(ConstValues.BangEffect, curPlayer.CenterPos.position);
         curPlayer.gameObject.SetActive(true);
         
-        if(await NormalDelay(delay2, waitCancellation).SuppressCancellationThrow())
+        if(await NormalDelay(delay2, productCancellation).SuppressCancellationThrow())
             return;
         
         curPlayer.Immortal = false;
+        curPlayer.Dodge = false;
         ControlStart = true;
     }
 }

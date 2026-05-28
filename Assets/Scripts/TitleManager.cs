@@ -42,7 +42,9 @@ public class TitleManager : MonoBehaviour
 
         StartSetting();
 
-        await GameManager.Instance.Fading(1, 0, 0.5f, true, ConstValues.BlackColor);
+        if (await GameManager.Instance.Fading(1, 0, 0.5f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
+        
         StartBGM();
     }
 

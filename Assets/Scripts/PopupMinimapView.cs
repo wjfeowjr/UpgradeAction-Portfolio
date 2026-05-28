@@ -112,8 +112,9 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
         miniMapObject.SetActive(true);
         miniMapLayout.SetActive(true);
         isClosing = false;
-        
-        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
+
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
     }
     
     public async void CloseAction()
@@ -124,8 +125,10 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
         isClosing = true;
         miniMapObject.SetActive(false);
         miniMapLayout.SetActive(false);
+
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
         
-        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
         gameObject.SetActive(false);
         Time.timeScale = 1.0f;
         closeAction?.Invoke();

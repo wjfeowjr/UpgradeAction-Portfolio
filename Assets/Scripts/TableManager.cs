@@ -126,7 +126,6 @@ public class DialogueChoiceDataList
 public class GrenadeData
 {
     public string id;
-    public bool isTarget;
     public string minForce;
     public string maxForce;
     public bool spinGrenade;

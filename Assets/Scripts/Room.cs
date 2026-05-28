@@ -873,15 +873,16 @@ public class Room : MonoBehaviour
         var targetRoom = RoomManager.Instance.TargetRoom(roomId);
         GameManager.Instance.StopPlayer();
 
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         GameManager.Instance.CurPlayer.SpawnObject(ConstValues.BangEffect, GameManager.Instance.CurPlayer.CenterPos.position);
         GameManager.Instance.CurPlayer.gameObject.SetActive(false);
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor);
+        if(await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
 
         ObjectActive(false);
         GameManager.Instance.CurPlayer.RoomMoveState();
@@ -896,20 +897,21 @@ public class Room : MonoBehaviour
 
         GameManager.Instance.CurPlayer.transform.position = targetRoom.portalObject.PlayerPos.position;
 
-        GameManager.Instance.InitFadeCancellation();
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+        GameManager.Instance.InitProductCancellation();
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
         
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         GameManager.Instance.CurPlayer.SpawnObject(ConstValues.BangEffect, GameManager.Instance.CurPlayer.CenterPos.position);
         GameManager.Instance.CurPlayer.gameObject.SetActive(true);
         GameManager.Instance.CurPlayer.ForceIdle();
         
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         targetRoom.PortalSoundActive(true);
@@ -927,14 +929,14 @@ public class Room : MonoBehaviour
     {
         GameManager.Instance.StopPlayer();
         GameManager.Instance.RoomMoveSetting();
-        GameManager.Instance.InitWaitCancellation();
+        GameManager.Instance.InitProductCancellation();
         
         // 모든 몬스터들의 행동 정지
         foreach (var monster in monsters)
             monster.CancelMotion();
-        
-        //Debug.Log("꽥");
-        await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor, false);
+
+        if (await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor, false).SuppressCancellationThrow())
+            return;
 
         switch (dir)
         {
@@ -980,10 +982,12 @@ public class Room : MonoBehaviour
         // 골드오브젝트 초기화
         RefreshGoldObject();
         
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor, false);
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor, false).SuppressCancellationThrow())
+            return;
+        
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
 
         switch (dir)
@@ -1123,7 +1127,7 @@ public class Room : MonoBehaviour
     }
 
     // 숏컷정보 저장
-    public void ShortcutOpen(string id)
+    public void ShortcutOpen(string id, bool isSave)
     {
         var targetShortcut = roomInfo.shortCut.Find(x => x.id == id);
         
@@ -1131,7 +1135,10 @@ public class Room : MonoBehaviour
             return;
         
         targetShortcut.isOpened = true;
-        GameManager.Instance.SaveGame();
+        
+        if(isSave)
+            GameManager.Instance.SaveGame();
+        
         foreach (var shortCut in shortCutObjects)
         {
             if (shortCut.name == id)
@@ -1340,20 +1347,7 @@ public class Room : MonoBehaviour
         }
         return dieCount;
     }
-
-    // 맵에 있는 모든 몹을 잡았을 경우 발생하는 액션
-    protected async void MonsterClearAction(Action action)
-    {
-        if (await WaitUntil(() => DieMonsterCount() == 0, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
-            return;
-        action?.Invoke();
-    }
-    protected async void MonsterClearAction(Func<UniTask> asyncAction)
-    {
-        if (await WaitUntil(() => DieMonsterCount() == 0, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
-            return;
-        asyncAction?.Invoke();
-    }
+    
 
     private void SpawnSpeechFrame(SpeechFrame speechFrame, Vector2 speechPos, string dialog)
     {
@@ -1908,7 +1902,6 @@ public class Room : MonoBehaviour
     private async void Product2()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
 
         UIOff();
@@ -1938,7 +1931,6 @@ public class Room : MonoBehaviour
     private async void Product3()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
 
         UIOff();
@@ -1963,7 +1955,6 @@ public class Room : MonoBehaviour
     private async void Product4()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         
         UIOff();
@@ -2038,7 +2029,9 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             bosses[0].Flip(-1);
-            await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
+            
+            if(await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1).SuppressCancellationThrow())
+                return;
 
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
@@ -2250,7 +2243,6 @@ public class Room : MonoBehaviour
     private async void Product5()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         UIOff();
 
@@ -2310,7 +2302,6 @@ public class Room : MonoBehaviour
     private async void Product7()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         
         UIOff();
@@ -2347,14 +2338,15 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
-            await GameManager.Instance.DialogueMove(-1.5f);
-            gunner.Flip(1);
+            if (await GameManager.Instance.DialogueMove(-1.5f).SuppressCancellationThrow())
+                return; 
             
+            gunner.Flip(1);
             berserkerSpeechPos = berserker.SpeechPos.position;
             gunnerSpeechPos = gunner.SpeechPos.position;
             knifeSpeechPos = bosses[0].SpeechPos.position;
             
-            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
             SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10143));
@@ -2389,13 +2381,12 @@ public class Room : MonoBehaviour
         UIOn();
         
         // 보스 죽음
-        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         GameManager.Instance.ControlStart = false;
         StopBGM();
-        GameManager.Instance.InitWaitCancellation();
-        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         bosses[0].EventStand();
@@ -2408,7 +2399,7 @@ public class Room : MonoBehaviour
         await NextDialog(speechFrame1);
         await knife.EventExit();
         
-        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         // 문 열기
@@ -2422,7 +2413,6 @@ public class Room : MonoBehaviour
     // 광부를 만남
     private async void Product8()
     {
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         UIOff();
         GameManager.Instance.CurPlayer.ForceProduct();
@@ -2430,10 +2420,12 @@ public class Room : MonoBehaviour
         float productDelay1 = 2.0f;
         float productDelay2 = 1.5f;
         
-        if(await GameManager.Instance.WaitUntilDelay(() => GameManager.Instance.CurPlayer.LandingState == ELandingState.Ground, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if(await GameManager.Instance.WaitUntilDelay(() => GameManager.Instance.CurPlayer.LandingState == ELandingState.Ground, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        await GameManager.Instance.DialogueMove(1.5f);
+        if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
+            return; 
+        
         var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker);
         var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner);
         var fighter = GameManager.Instance.GetPlayer(ConstValues.Fighter);
@@ -2530,7 +2522,6 @@ public class Room : MonoBehaviour
     private async void Product10()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         
         UIOff();
@@ -2556,12 +2547,11 @@ public class Room : MonoBehaviour
         
         UIOn();
         
-        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         StopBGM();
-        GameManager.Instance.InitWaitCancellation();
-        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         // 문 열기
@@ -2575,7 +2565,6 @@ public class Room : MonoBehaviour
     private async void Product11()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         
         UIOff();
@@ -2601,12 +2590,11 @@ public class Room : MonoBehaviour
         
         UIOn();
         
-        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         StopBGM();
-        GameManager.Instance.InitWaitCancellation();
-        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         // 문 열기
@@ -2843,12 +2831,14 @@ public class Room : MonoBehaviour
 
     private async UniTask OpenDoorProduct1(Func<UniTask> openAction)
     {
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         
         UIOff();
         GameManager.Instance.CurPlayer.ForceProduct();
-        await GameManager.Instance.DialogueMove(1.5f);
+        
+        if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
+            return; 
+        
         var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker);
         var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner);
         
@@ -2890,12 +2880,14 @@ public class Room : MonoBehaviour
     
     private async UniTask OpenDoorProduct2(Func<UniTask> openAction)
     {
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
         
         UIOff();
         GameManager.Instance.CurPlayer.ForceProduct();
-        await GameManager.Instance.DialogueMove(1.5f);
+        
+        if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
+            return; 
+        
         var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker);
         var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner);
 
@@ -2997,8 +2989,8 @@ public class Room : MonoBehaviour
         // 골드오브젝트 초기화
         RefreshGoldObject();
 
-        GameManager.Instance.InitFadeCancellation();
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.FadeCancellation).SuppressCancellationThrow())
+        GameManager.Instance.InitProductCancellation();
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         GameManager.Instance.CurPlayer.ClearLastPlatform();
@@ -3015,15 +3007,14 @@ public class Room : MonoBehaviour
             custom.isActive = true;
         
         GameManager.Instance.SaveGame();
-        
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
 
         float delay1 = 2.0f;
         float delay2 = 1.0f;
         
         UIOff();
-        await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor);
+        if (await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
 
         foreach (var customObject in customObjects)
             customObject.gameObject.SetActive(true);
@@ -3031,8 +3022,9 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(delay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
-        
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
+
         if (await GameManager.Instance.NormalDelay(delay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
@@ -3058,7 +3050,6 @@ public class Room : MonoBehaviour
     
     public async void BossEvent_Bomb()
     {
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
 
         float delay1 = 1.0f;
@@ -3076,7 +3067,9 @@ public class Room : MonoBehaviour
         var trolley = customObjects[0];
 
         UIOff();
-        await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor);
+        
+        if (await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
 
         // 카메라 위치 조정
         GameManager.Instance.MainCamera.SetTarget(eventCameraPos[0].transform);
@@ -3089,8 +3082,9 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(delay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
-        
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
+
         if (await GameManager.Instance.NormalDelay(delay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
@@ -3138,7 +3132,7 @@ public class Room : MonoBehaviour
         var trolleyArrivePos = new Vector2(obstacle.DestroyPos.position.x - 10.0f, trolley.transform.position.y);
         Tween moveTween = trolley.transform.DOMove(trolleyArrivePos, 0.3f).SetEase(Ease.Linear);
         miner.CustomAnimTrigger(ENormalState.Idle, ConstValues.Afraid);
-        if(await GameManager.Instance.WaitUntilDelay(() => trolley.transform.position.x < obstacle.DestroyPos.position.x, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if(await GameManager.Instance.WaitUntilDelay(() => trolley.transform.position.x < obstacle.DestroyPos.position.x, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         // 여기서 저장, 광차 삭제, 숏컷 삭제, Npc대화 변경
@@ -3155,7 +3149,9 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(delay4, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor);
+        if (await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
+        
         speechFrame1.SpeechEnd();
         miner.transform.position = minerFirstPos;
         moveTween.Kill();
@@ -3178,7 +3174,6 @@ public class Room : MonoBehaviour
     // 폭탄전차를 만나는 이벤트
     private async void BossEvent_Bomb_Next(Room pastRoom)
     {
-        GameManager.Instance.InitWaitCancellation();
         GameManager.Instance.InitProductCancellation();
 
         float delay1 = 1.0f;
@@ -3217,7 +3212,8 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(delay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor);
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
 
         if (await GameManager.Instance.NormalDelay(delay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
@@ -3407,11 +3403,11 @@ public class Room : MonoBehaviour
         bosses[0].EventAppear(SpawnBossMessage);
         UIOn();
         
-        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         StopBGM();
-        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.WaitCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         // 문 열기

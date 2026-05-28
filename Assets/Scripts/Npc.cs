@@ -38,11 +38,6 @@ public class Npc : Character
 
         base.Update();
     }
-    
-    private void OnDisable()
-    {
-        stateCancellation?.Cancel();
-    }
 
     private void DataSetting()
     {

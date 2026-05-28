@@ -109,8 +109,10 @@ public class RoomManager : Singleton<RoomManager>
 
         // 세팅
         GameOverCycle();
+
+        if (await GameManager.Instance.Fading(1, 0, 0.75f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
         
-        await GameManager.Instance.Fading(1, 0, 0.75f, true, ConstValues.BlackColor);
         GameManager.Instance.InGame = true;
     }
     
@@ -250,7 +252,9 @@ public class RoomManager : Singleton<RoomManager>
     {
         BgmManager.Instance.Stop();
         SoundManager.Instance.PlaySound(ConstValues.Upgrade, true);
-        await GameManager.Instance.Fading(0, 1, 0.5f, false, ConstValues.BlackColor);
+        
+        if (await GameManager.Instance.Fading(0, 1, 0.5f, false, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
 
         GameManager.Instance.PoolDisActive();
         GameManager.Instance.GoScene(ConstValues.TitleScene);
