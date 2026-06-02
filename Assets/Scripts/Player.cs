@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.Tilemaps;
 
 [Serializable]
@@ -171,7 +172,7 @@ public abstract class Player : Character
     private CancellationTokenSource dashDelayCancellation;
     private CancellationTokenSource attackDelayCancellation;
 
-    [SerializeField] protected PlayerStat myStat;  // 내 스텟(변동되어야 함)
+    [SerializeField] protected PlayerStat playerStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected List<PlayerSkill> originSkillList = new List<PlayerSkill>();
     [SerializeField] protected List<PlayerSkill> skillList = new List<PlayerSkill>();
     [SerializeField] protected List<PlayerAnimations> originAnimationList = new List<PlayerAnimations>();
@@ -207,6 +208,8 @@ public abstract class Player : Character
         get => jumpAttackCount;
         set => jumpAttackCount = value;
     }
+
+    public PlayerStat PlayerStat => playerStat;
 
     // 스킬
     public abstract void Skill(KeyCode skillKey);
@@ -382,7 +385,7 @@ public abstract class Player : Character
             stagger = targetStat.stagger,
             staggerTime = targetStat.staggerTime,
         };
-        myStat = new PlayerStat()
+        playerStat = new PlayerStat()
         {
             passive = targetStat.passive,
             resource = 0,
@@ -418,14 +421,25 @@ public abstract class Player : Character
     // 패시브 적용
     public void ApplyPassive()
     {
-        var myName = name.Split('(')[0];
-        var targetStat = TableManager.Instance.playerTable.Player.Find(x => x.id == myName);
-        
-        if (targetStat.passive == ConstValues.IronMan)
+        if (playerStat.passive == ConstValues.IronMan)
         {
             originStat.bodyType = EBodyType.SuperArmor;
             basicStat.bodyType = EBodyType.SuperArmor;
         }
+    }
+
+    // 공격으로 피해를 줬을 때 자원 획득 (맞춘 적의 수와 무관하게 공격당 1회만 호출됨)
+    public virtual void GainResource(int gainResource)
+    {
+        if (gainResource <= 0)
+            return;
+
+        playerStat.resource += gainResource;
+        if (playerStat.resource > playerStat.maxResource)
+            playerStat.resource = playerStat.maxResource;
+
+        // 게이지 실시간 갱신
+        GameManager.Instance.RefreshPlayerResource();
     }
 
     public void ResetSkillCoolTime()
@@ -831,7 +845,6 @@ public abstract class Player : Character
             return;
         
         GameManager.Instance.SetPlayerHp(basicStat.hp);
-        
         var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
         if (uiInterfaceObj == null)
             return;
@@ -1007,7 +1020,7 @@ public abstract class Player : Character
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         LandingStateSetting(ELandingState.Air);
 
-        jumpLimitY = transform.position.y + myStat.jumpHeight;
+        jumpLimitY = transform.position.y + playerStat.jumpHeight;
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 17.5f);
 
         // 코요테/버퍼 소비

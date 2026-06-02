@@ -254,7 +254,7 @@ public class Popup_Character : UIBase
         gunnerFrame.Reduction();
         fighterFrame.Reduction();
 
-        float expansionScale = 1.1f;
+        float expansionScale = 1.05f;
         switch (curPlayerId)
         {
             case ConstValues.Berserker:

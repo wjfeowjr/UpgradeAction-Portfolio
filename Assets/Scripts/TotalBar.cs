@@ -62,7 +62,7 @@ public class TotalBar : MonoBehaviour
         }
         if (castCharacter.GetComponent<Monster>())
         {
-            hpBar.DisplayValue(castCharacter);
+            hpBar.DisplayHp(castCharacter);
             return;
         }
     }

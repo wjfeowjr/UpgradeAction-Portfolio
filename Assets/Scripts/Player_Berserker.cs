@@ -79,6 +79,17 @@ public class Player_Berserker : Player
         }
     }
     
+    // 공격으로 피해를 줬을 때 자원 획득 (맞춘 적의 수와 무관하게 공격당 1회만 호출됨)
+    public override void GainResource(int gainResource)
+    {
+        base.GainResource(gainResource);
+        if (playerStat.resource >= playerStat.maxResource)
+        {
+            var passiveData = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+            Debug.Log($"분노 폭발!!! 공격속도{passiveData.buffValue[0]}% 증가!!!");
+        }
+    }
+    
     public override async UniTask<bool> Attack()
     {
         if (!await base.Attack())

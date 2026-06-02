@@ -55,6 +55,7 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
 
     [Header("Image")]
     [SerializeField] private Image currentSkillImage;
+    [SerializeField] private Image passiveImage;
     
     [Header("Object")]
     [SerializeField] private GameObject skillObject;
@@ -299,11 +300,32 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
         if (playerData == null)
             return;
 
-        // passiveComment: 패시브 설명 talk id
-        // if (passiveName)
-        //     passiveName.text = GameManager.Instance.GetTalk(playerData.passiveComment);
-        // if (passiveExplain)
-        //     passiveExplain.text = GameManager.Instance.GetTalk(playerData.passiveComment);
+        var passiveData = GameManager.Instance.passiveCopyList.Find(x => x.id == playerData.passive);
+        if(passiveData == null)
+            return;
+
+        if (passiveImage)
+            passiveImage.sprite = GameManager.Instance.GetAtlasSprite(passiveData.id);
+        
+        if (passiveName)
+            passiveName.text = string.Format(GameManager.Instance.GetTalk(30113), GameManager.Instance.GetTalk(passiveData.passiveName));
+        
+        if (passiveExplain)
+        {
+            List<object> valueList = new List<object>();
+            
+            if(passiveData.buffTime > 0)
+                valueList.Add(passiveData.buffTime);
+
+            foreach (var buffValue in passiveData.buffValue)
+                valueList.Add(buffValue);
+
+            if(passiveData.penaltyValue > 0)
+                valueList.Add(passiveData.penaltyValue);
+
+            object[] valueArray = valueList.ToArray();
+            passiveExplain.text = string.Format(GameManager.Instance.GetTalk(passiveData.passiveExplain), valueArray);
+        }
     }
 
     #endregion

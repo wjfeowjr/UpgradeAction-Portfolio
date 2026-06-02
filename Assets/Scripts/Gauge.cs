@@ -8,9 +8,10 @@ using UnityEngine.UI;
 public class Gauge : MonoBehaviour
 {
     private CancellationTokenSource cancellationToken;
-    [SerializeField] protected Slider mainGauge;
-    [SerializeField] protected Slider reduceGauge;
-    [SerializeField] protected TextMeshProUGUI gaugeText;
+    [SerializeField] private Slider mainGauge;
+    [SerializeField] private Slider reduceGauge;
+    [SerializeField] private TextMeshProUGUI gaugeText;
+    [SerializeField] private Image gaugeImage;
 
     // 딜레이
     private async UniTask GaugeDelay(float second)
@@ -45,13 +46,21 @@ public class Gauge : MonoBehaviour
                 GaugeTextInput("1%");
         }
     }
-    public void DisplayValue(Character character)
+    public void DisplayHp(Character character)
     {
         if (!gaugeText)
             return;
         
         if (character)
             GaugeTextInput($"{character.BasicStat.hp}/{character.BasicStat.maxHp}");
+    }
+    public void DisplayResource(Player player)
+    {
+        if (!gaugeText)
+            return;
+        
+        if (player)
+            GaugeTextInput($"{player.PlayerStat.resource}/{player.PlayerStat.maxResource}");
     }
 
     // 게이치 풀로 채우기
@@ -129,5 +138,11 @@ public class Gauge : MonoBehaviour
                 return;
         }
         reduceGauge.value = mainGauge.value;
+    }
+
+    public void SetGaugeSprite(Sprite sprite)
+    {
+        if (gaugeImage)
+            gaugeImage.sprite = sprite;
     }
 }

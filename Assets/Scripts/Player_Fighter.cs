@@ -52,6 +52,19 @@ public class Player_Fighter : Player
         SpawnAttack($"{ConstValues.Fighter}_{ConstValues.ChangeAttack}", centerPos);
     }
     
+    public override void TakeDamage(int damage, bool isTrapAttack)
+    {
+        int finalDamage = damage;
+        if (playerStat.resource >= playerStat.maxResource)
+        {
+            var passiveData = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+            Debug.Log($"피해 {passiveData.buffValue[0]} 감소!!!");
+            // if (passiveData != null)
+            //     finalDamage -= passiveData.buffValue[0];
+        }
+        base.TakeDamage(finalDamage, isTrapAttack);
+    }
+    
     public override async UniTask<bool> Attack()
     {
         if (!await base.Attack())

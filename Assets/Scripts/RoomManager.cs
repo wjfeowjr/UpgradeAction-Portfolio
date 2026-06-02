@@ -69,6 +69,7 @@ public class RoomManager : Singleton<RoomManager>
         GameManager.Instance.InitPlayerStat();
         GameManager.Instance.SpawnPlayer(GameManager.Instance.PlayerList[0]);
         GameManager.Instance.RefreshPlayerHp();
+        GameManager.Instance.RefreshPlayerResource();
         GameManager.Instance.RefreshGoods();
         GameManager.Instance.RefreshPlayerIgnorePlatform();
 

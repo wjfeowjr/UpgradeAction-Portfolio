@@ -115,7 +115,7 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
     }
     public void SetHpText(Character character)
     {
-        hpGauge.DisplayValue(character);
+        hpGauge.DisplayHp(character);
     }
     public void HpReduce(Character character, float speed)
     {
@@ -147,7 +147,7 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
         if (character.BasicStat.bodyType != EBodyType.StrongArmor && character.BasicStat.bodyType != EBodyType.HyperArmor)
             return;
         
-        staggerGauge.DisplayValue(character);
+        staggerGauge.DisplayHp(character);
     }
     public void StaggerReduce(Character character, float speed)
     {

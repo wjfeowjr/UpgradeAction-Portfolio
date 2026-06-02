@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HUD 목업 — 자원 게이지 + 물약 개수 추가</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{
+    background:#2f3d2a url('') ;
+    background:linear-gradient(180deg,#3a5a7a 0%,#6aa0a8 55%,#4a7a3a 56%,#3a5a2a 100%);
+    font-family:"Malgun Gothic","맑은 고딕","Noto Sans KR",sans-serif;
+    min-height:100vh;display:flex;flex-direction:column;justify-content:flex-end;
+    padding:0;color:#fff;overflow:hidden;
+  }
+  .ground{height:70px;background:linear-gradient(180deg,#7a4a22,#5a3416);
+    border-top:6px solid #4a8a2a;}
+  .caption{position:fixed;top:14px;left:0;right:0;text-align:center;color:#fff;
+    font-size:13px;text-shadow:0 1px 3px #000;line-height:1.7;}
+  .caption b{color:#ffd24a;}
+  .new-tag{background:#ffd24a;color:#1a1a1a;font-weight:700;border-radius:4px;
+    padding:1px 6px;font-size:11px;}
+
+  /* ── HUD (왼쪽 하단) ── */
+  .hud{position:fixed;left:14px;bottom:10px;display:flex;align-items:flex-end;gap:10px;z-index:5;}
+
+  /* 초상화 */
+  .portrait-wrap{position:relative;z-index:3;margin-right:-26px;}
+  .portrait{width:84px;height:84px;border-radius:50%;
+    background:radial-gradient(circle at 50% 40%,#fff 0 46%,#d8d8d8 47% 60%,transparent 61%);
+    border:7px solid #c8201a;box-shadow:0 0 0 3px #2a2a2a, 0 3px 8px rgba(0,0,0,.5);
+    display:flex;align-items:center;justify-content:center;position:relative;}
+  .face{font-size:34px;}
+  .mini-char{position:absolute;left:-4px;bottom:-8px;width:34px;height:34px;border-radius:50%;
+    background:#5a6a7a;border:2px solid #2a2a2a;display:flex;align-items:center;justify-content:center;font-size:15px;}
+
+  /* 스킬 + 바 묶음 */
+  .stack{display:flex;flex-direction:column;gap:5px;padding-left:30px;}
+
+  /* 스킬 슬롯 줄 */
+  .skill-row{display:flex;gap:6px;}
+  .slot{position:relative;width:54px;height:54px;border-radius:9px;
+    background:linear-gradient(160deg,#1e2a3a,#0d1320);border:2px solid #3a4a5a;
+    display:flex;align-items:center;justify-content:center;font-size:24px;
+    box-shadow:inset 0 0 8px rgba(0,0,0,.6);}
+  .slot .key{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+    background:#cfcfcf;color:#1a1a1a;font-weight:700;font-size:12px;border-radius:6px;
+    padding:1px 7px;border:1px solid #888;box-shadow:0 1px 2px rgba(0,0,0,.5);}
+  .slot.fire{background:radial-gradient(circle at 40% 35%,#ff7a2a,#7a1500);}
+  .slot.burst{background:radial-gradient(circle at 50% 45%,#ffb34a,#a03000);}
+  .slot.sword{background:radial-gradient(circle at 40% 40%,#cfd6e0,#3a4452);}
+  .slot.empty{background:linear-gradient(160deg,#141a24,#0a0e16);}
+
+  /* HP + 자원 게이지 묶음 (높이 고정 = y축 증가 없음) */
+  .bar-block{width:330px;height:42px;border-radius:9px;overflow:hidden;
+    border:2px solid #2a2a2a;display:flex;flex-direction:column;
+    box-shadow:0 2px 6px rgba(0,0,0,.5);background:#1a1a1a;}
+  .hp-bar{flex:0 0 62%;position:relative;background:#3a1212;}
+  .hp-fill{position:absolute;inset:0;width:100%;
+    background:linear-gradient(180deg,#ff4a3a,#c01a12);
+    box-shadow:inset 0 2px 0 rgba(255,255,255,.25);}
+  .hp-text{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:17px;text-shadow:0 1px 2px #000;z-index:2;letter-spacing:1px;}
+
+  /* ▼ 추가 1: 자원(분노) 게이지 — HP 아래 얇은 바 */
+  .res-bar{flex:1;position:relative;background:#2a1a08;border-top:1px solid #000;}
+  .res-fill{position:absolute;inset:0;width:64%;
+    background:linear-gradient(180deg,#ffb02e,#e0640a);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.3);}
+  .res-label{position:absolute;left:8px;top:50%;transform:translateY(-50%);
+    font-size:10px;font-weight:700;text-shadow:0 1px 2px #000;z-index:2;letter-spacing:1px;}
+
+  /* Z 대시 버튼 */
+  .dash{width:62px;height:62px;border-radius:10px;background:linear-gradient(160deg,#e23b2e,#a01810);
+    border:2px solid #2a2a2a;display:flex;align-items:center;justify-content:center;
+    position:relative;font-size:26px;color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.5);}
+  .dash .key{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+    background:#cfcfcf;color:#1a1a1a;font-weight:700;font-size:12px;border-radius:6px;
+    padding:1px 7px;border:1px solid #888;}
+
+  /* ▼ 추가 2: 물약 개수 요소 */
+  .potion{position:relative;width:62px;height:62px;border-radius:10px;
+    background:linear-gradient(160deg,#1e2a3a,#0d1320);border:2px solid #3a4a5a;
+    display:flex;align-items:center;justify-content:center;font-size:30px;
+    box-shadow:inset 0 0 8px rgba(0,0,0,.6);}
+  .potion .key{position:absolute;top:-11px;left:50%;transform:translateX(-50%);
+    background:#cfcfcf;color:#1a1a1a;font-weight:700;font-size:12px;border-radius:6px;
+    padding:1px 7px;border:1px solid #888;}
+  .potion .count{position:absolute;right:-6px;bottom:-6px;min-width:24px;height:24px;
+    border-radius:12px;background:#1a1a1a;border:2px solid #ffd24a;color:#ffd24a;
+    font-size:13px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 5px;}
+
+  /* 콜아웃 라벨 */
+  .callout{position:absolute;font-size:11px;font-weight:700;color:#ffd24a;white-space:nowrap;
+    text-shadow:0 1px 3px #000;}
+  .callout::after{content:"";position:absolute;}
+  .c-res{left:36px;top:-18px;}
+  .c-potion{left:50%;transform:translateX(-50%);top:-34px;}
+</style>
+</head>
+<body>
+
+  <div class="caption">
+    인게임 좌하단 HUD — <span class="new-tag">추가 1</span> HP 아래 <b>자원(분노) 게이지</b> (높이 분할 → 세로 증가 0)
+    &nbsp;·&nbsp; <span class="new-tag">추가 2</span> <b>물약 개수</b> 슬롯
+  </div>
+
+  <div class="ground"></div>
+
+  <div class="hud">
+    <!-- 초상화 -->
+    <div class="portrait-wrap">
+      <div class="portrait"><span class="face">😠</span></div>
+      <div class="mini-char">🙂</div>
+    </div>
+
+    <!-- 스킬 + 바 -->
+    <div class="stack">
+      <div class="skill-row">
+        <div class="slot fire"><span class="key">A</span>🗡️</div>
+        <div class="slot burst"><span class="key">S</span>🔥</div>
+        <div class="slot sword"><span class="key">D</span>⚔️</div>
+        <div class="slot empty"><span class="key">F</span></div>
+      </div>
+
+      <!-- HP + 자원 게이지 (높이 고정) -->
+      <div class="bar-block" style="position:relative;">
+        <div class="callout c-res">▼ 추가① 자원(분노) 게이지</div>
+        <div class="hp-bar">
+          <div class="hp-fill"></div>
+          <div class="hp-text">300 / 300</div>
+        </div>
+        <div class="res-bar">
+          <div class="res-fill"></div>
+          <div class="res-label">분노 64%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Z 대시 -->
+    <div class="dash"><span class="key">Z</span>»</div>
+
+    <!-- 물약 개수 -->
+    <div class="potion" style="position:relative;">
+      <div class="callout c-potion">▼ 추가② 물약</div>
+      <span class="key">R</span>🧪
+      <span class="count">×3</span>
+    </div>
+  </div>
+
+</body>
+</html>

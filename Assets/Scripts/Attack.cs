@@ -43,6 +43,7 @@ public class AttackInfo
     public int coefficient;
     public int criticalChance;
     public int stagger;
+    public int gainResource;
     public float knockBack;
     public Vector2 upperPower;
     public int customDir;
@@ -64,6 +65,8 @@ public class Attack : MonoBehaviour
 
     [SerializeField] private int dir;
     private float leftColliderTime;
+    // 한 번의 공격(콜라이더 활성화)에서 자원을 이미 획득했는지 여부 (맞춘 적 수와 무관하게 1회만 획득)
+    private bool gainedResource;
     
     public Character CastChar => castChar;
     public AttackInfo AttackInfo => attackInfo;
@@ -143,6 +146,7 @@ public class Attack : MonoBehaviour
             originInfo.coefficient = attackData.coefficient;
             originInfo.criticalChance = attackData.criticalChance;
             originInfo.stagger = attackData.stagger;
+            originInfo.gainResource = attackData.gainResource;
             originInfo.knockBack = attackData.knockBack;
             if (string.IsNullOrEmpty(attackData.upperPower))
             {
@@ -200,6 +204,7 @@ public class Attack : MonoBehaviour
         attackInfo.coefficient = attackData.coefficient;
         attackInfo.criticalChance = attackData.criticalChance;
         attackInfo.stagger = attackData.stagger;
+        attackInfo.gainResource = attackData.gainResource;
         attackInfo.knockBack = attackData.knockBack;
 
         if (string.IsNullOrEmpty(attackData.upperPower))
@@ -361,6 +366,7 @@ public class Attack : MonoBehaviour
         }
 
         targetColliders.Clear();
+        gainedResource = false;
     }
 
     private bool GetCritical()
@@ -489,6 +495,9 @@ public class Attack : MonoBehaviour
 
         // 9. 감전 추가 피해
         TryApplyShockBonus(hitTarget, finalDamage, critical, isTrapAttack);
+
+        // 9-1. 자원 획득 (플레이어 공격이 피해를 줬을 때, 공격당 1회)
+        TryGainResource();
 
         // 10. 사망 체크
         if (hitTarget.BasicStat.hp <= 0)
@@ -643,6 +652,25 @@ public class Attack : MonoBehaviour
         hitTarget.TakeDamage(finalDamage, isTrapAttack);
         hitTarget.SpawnDamageFont(finalDamage, critical, false, false);
         return finalDamage;
+    }
+
+    // 플레이어 공격이 피해를 줬을 때 자원 획득
+    // 맞춘 적의 수와 무관하게 공격당 1회만 gainResource만큼 상승시킨다
+    private void TryGainResource()
+    {
+        if (gainedResource)
+            return;
+
+        if (attackInfo.gainResource <= 0)
+            return;
+
+        // Player.cs를 가진 캐릭터의 공격일 때만 호출
+        var player = castChar as Player;
+        if (player == null)
+            return;
+
+        gainedResource = true;
+        player.GainResource(attackInfo.gainResource);
     }
 
     // 감전 디버프가 있을 때 추가 피해 (트랩 공격은 제외)

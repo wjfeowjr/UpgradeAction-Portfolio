@@ -182,6 +182,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string CounterPunch = "CounterPunch";
     
     // 캐릭터 패시브
+    public const string Passive = "Passive";
     public const string Fury = "Fury";
     public const string SmileShot = "SmileShot";
     public const string IronMan = "IronMan";

@@ -327,6 +327,18 @@ public class GrenadeCopy
     public string spawnObject;
 }
 
+[Serializable]
+public class PassiveCopy
+{
+    public string id;
+    public float buffTime;
+    public string buffType;
+    public List<int> buffValue = new List<int>();
+    public int penaltyValue;
+    public int passiveName;
+    public int passiveExplain;
+}
+
 public enum eItemType
 {
     Normal,
@@ -656,6 +668,7 @@ public class GameManager : Singleton<GameManager>
     public List<NpcCopy> npcCopyList = new List<NpcCopy>();
     public List<DialogueChoiceCopy> dialogueChoiceCopyList = new List<DialogueChoiceCopy>();
     public List<GrenadeCopy> grenadeCopyList = new List<GrenadeCopy>();
+    public List<PassiveCopy> passiveCopyList = new List<PassiveCopy>();
     
     // 매니저들
     public TableManager tableManager;
@@ -1771,6 +1784,28 @@ public class GameManager : Singleton<GameManager>
 
             grenadeCopyList.Add(data);
         }
+
+        foreach (var passive in tableManager.passiveTable.Passive)
+        {
+            var data = new PassiveCopy();
+            data.id = passive.id;
+            data.buffTime = passive.buffTime;
+            data.buffType = passive.buffType;
+            
+            if (!string.IsNullOrEmpty(passive.buffValue))
+            {
+                var buffValueSplit = passive.buffValue.Split(';');
+                foreach (var buffValue in buffValueSplit)
+                {
+                    data.buffValue.Add(int.Parse(buffValue));
+                }
+            }
+            
+            data.penaltyValue = passive.penaltyValue;
+            data.passiveName = passive.passiveName;
+            data.passiveExplain = passive.passiveExplain;
+            passiveCopyList.Add(data);
+        }
     }
 
     // 플레이어
@@ -2269,6 +2304,7 @@ public class GameManager : Singleton<GameManager>
 
         RefreshFace();
         RefreshPlayerHp();
+        RefreshPlayerResource();
                     
         var bossHpInterface = uiInterface.BossHpView.ConvertTo<IUIBossHpView>();
         var bossHpPresenter = new UIBossHpPresenter(bossHpInterface);
@@ -2334,7 +2370,7 @@ public class GameManager : Singleton<GameManager>
         var hpInterface = uiInterface.HpView.ConvertTo<IUIHpView>();
         var hpModel = new UIHpModel()
         {
-            character = CurPlayer
+            player = CurPlayer
         };
         var hpPresenter = new UIHpPresenter(hpInterface, hpModel);
         uiInterface.SetHpPresenter(hpPresenter);
@@ -2348,6 +2384,20 @@ public class GameManager : Singleton<GameManager>
             player.BasicStat.hp = player.BasicStat.maxHp;
 
         RefreshPlayerHp();
+    }
+
+    // 캐릭 변경할때, 때릴때
+    public void RefreshPlayerResource()
+    {
+        var hpInterface = uiInterface.HpView.ConvertTo<IUIHpView>();
+        var hpModel = new UIHpModel()
+        {
+            player = CurPlayer
+        };
+        var hpPresenter = new UIHpPresenter(hpInterface, hpModel);
+        uiInterface.SetHpPresenter(hpPresenter);
+        hpPresenter.SetResource();
+        hpPresenter.SetResourceText();
     }
 
     public void GetGold(int getGold, int totalGold)
@@ -2485,6 +2535,7 @@ public class GameManager : Singleton<GameManager>
         
         RotatePlayerList();
         RefreshFace();
+        RefreshPlayerResource();
         
         if (changeAttack)
             curPlayer.ChangeAttack();

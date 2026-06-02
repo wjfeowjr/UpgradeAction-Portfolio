@@ -55,6 +55,7 @@ public class AttackData
     public int coefficient;
     public int criticalChance;
     public int stagger;
+    public int gainResource;
     public float knockBack;
     public string upperPower;
     public int customDir;
@@ -239,6 +240,23 @@ public class NpcDataList
 }
 
 [Serializable]
+public class PassiveData
+{
+    public string id;
+    public float buffTime;
+    public string buffType;
+    public string buffValue;
+    public int penaltyValue;
+    public int passiveName;
+    public int passiveExplain;
+}
+[Serializable]
+public class PassiveDataList
+{
+    public List<PassiveData> Passive;
+}
+
+[Serializable]
 public class PlayerData
 {
     // 공통 데이터
@@ -418,6 +436,7 @@ public class TableManager : SingletonMono<TableManager>
     public MissileDataList missileTable;
     public MonsterDataList monsterTable;
     public NpcDataList npcTable;
+    public PassiveDataList passiveTable;
     public PlayerDataList playerTable;
     public RelicDataList relicTable;
     public RoomsDataList roomsTable;
@@ -440,6 +459,7 @@ public class TableManager : SingletonMono<TableManager>
         missileTable = LoadDataFromJson<MissileDataList>(ConstValues.Missile);
         monsterTable = LoadDataFromJson<MonsterDataList>(ConstValues.Monster);
         npcTable = LoadDataFromJson<NpcDataList>(ConstValues.Npc);
+        passiveTable = LoadDataFromJson<PassiveDataList>(ConstValues.Passive);
         playerTable = LoadDataFromJson<PlayerDataList>(ConstValues.Player);
         relicTable = LoadDataFromJson<RelicDataList>(ConstValues.Relic);
         roomsTable = LoadDataFromJson<RoomsDataList>(ConstValues.Rooms);
