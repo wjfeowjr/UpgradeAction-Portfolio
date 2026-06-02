@@ -841,16 +841,37 @@ public class GameManager : Singleton<GameManager>
         if(SaveSystem.TryLoad(fileName, out SaveData loadData))
             data = loadData;
 
+        return data;
+    }
+
+    public void DataPatch(SaveData data)
+    {
         // 패치 필요 여부 확인 (마지막 저장 시각이 패치 기준 시각보다 이전이면 패치 필요)
         if (data != null && DateTime.TryParse(data.lastSavedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime lastSavedAt))
         {
             // 기준 시각: 한국 시간(KST, UTC+9) 2026년 5월 29일 00시
-            DateTime patchTime = new DateTimeOffset(2026, 5, 29, 0, 0, 0, TimeSpan.FromHours(9)).UtcDateTime;
+            DateTime patchTime = new DateTime(2026, 6, 1, 7, 0, 0);
             if (lastSavedAt.ToUniversalTime() < patchTime)
             {
                 Debug.Log("패치 필요");
+                // 특성 초기화
                 foreach (var playerInfo in data.playerInfoList)
                 {
+                    switch (playerInfo.playerId)
+                    {
+                        case ConstValues.Berserker:
+                            AddDashSkill(ConstValues.BerserkerDash, playerInfo);
+                            break;
+                
+                        case ConstValues.Gunner:
+                            AddDashSkill(ConstValues.GunnerDash, playerInfo);
+                            break;
+                
+                        case ConstValues.Fighter:
+                            AddDashSkill(ConstValues.FighterDash, playerInfo);
+                            break;
+                    }
+
                     playerInfo.attributePoint = data.totalAttributePoint;
                     foreach (var skill in playerInfo.skillList)
                         skill.attributeList.Clear();
@@ -861,8 +882,6 @@ public class GameManager : Singleton<GameManager>
                 Debug.Log("패치 불필요");
             }
         }
-
-        return data;
     }
     
     public void DeleteData()
@@ -945,6 +964,7 @@ public class GameManager : Singleton<GameManager>
         if (SaveSystem.Exists(curSaveFileName))
         {
             saveData = LoadGame(curSaveFileName);
+            DataPatch(saveData);
         }
         else
         {
@@ -1067,16 +1087,19 @@ public class GameManager : Singleton<GameManager>
             {
                 case 0:
                     playerInfo.playerId = ConstValues.Berserker;
+                    AddDashSkill(ConstValues.BerserkerDash, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
                     break;
                 
                 case 1:
                     playerInfo.playerId = ConstValues.Gunner;
+                    AddDashSkill(ConstValues.GunnerDash, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.GunnerDash, dashKey));
                     break;
                 
                 case 2:
                     playerInfo.playerId = ConstValues.Fighter;
+                    AddDashSkill(ConstValues.FighterDash, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterDash, dashKey));
                     break;
             }
@@ -1209,7 +1232,26 @@ public class GameManager : Singleton<GameManager>
         
         return keyCode;
     }
-   
+
+    private void AddDashSkill(string id, PlayerInfo playerInfo)
+    {
+        // 이미 가지고 있는 스킬이라면 무시해버린다
+        if (playerInfo.skillList.Exists(x => x.skillId == id))
+            return;
+
+        Skill newSkill = new Skill();
+        newSkill.skillId = id;
+        newSkill.attributeList = new List<string>();
+        playerInfo.skillList.Add(newSkill);
+        
+        var dashSkill = playerInfo.skillList[^1];
+        playerInfo.skillList.RemoveAt(playerInfo.skillList.Count - 1);
+        playerInfo.skillList.Insert(0, dashSkill);
+        
+        RefreshSkill();
+        // 게임 저장
+        SaveGame();
+    }
 
     public void AddNewSkill(string id)
     {
@@ -1741,6 +1783,7 @@ public class GameManager : Singleton<GameManager>
             player.InitSkill();
             player.InitAnimation();
             player.SkillAttributeCheck();
+            player.ApplyPassive();
         }
     }
 

@@ -30,7 +30,7 @@ public class StageManager : Singleton<StageManager>
 
         //GameManager.Instance.SpawnToUIPool(eUIType.UI_Interface, Vector2.zero);
         //GameManager.Instance.SetGroundVector();
-        GameManager.Instance.InitPlayerStat();
+        //GameManager.Instance.InitPlayerStat();
     }
     
     protected virtual void Update()

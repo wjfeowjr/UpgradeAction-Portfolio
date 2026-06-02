@@ -833,10 +833,11 @@ public abstract class Character : InteractionController
 
     protected void SetAttackSpeed(float skillSpeed)
     {
-        var equipAttackSpeed = originStat.attackSpeed + equipStat.attackSpeed;
-        var finalAttackSpeed = (equipAttackSpeed + equipAttackSpeed * (buffStat.attackSpeed * 0.01f)) * skillSpeed;
-        var attackAnimSpeed = finalAttackSpeed / originStat.attackSpeed;
-        basicStat.attackSpeed = finalAttackSpeed;
+        var skillAttackSpeed = skillSpeed - originStat.attackSpeed;
+        var buffAttackSpeed = buffStat.attackSpeed * 0.01f;
+        var equipAttackSpeed = originStat.attackSpeed + equipStat.attackSpeed + skillAttackSpeed + buffAttackSpeed;
+        var attackAnimSpeed = equipAttackSpeed / originStat.attackSpeed;
+        basicStat.attackSpeed = equipAttackSpeed;
         if(myAnimator)
             myAnimator.SetFloat(ConstValues.AttackSpeed, attackAnimSpeed);
     }

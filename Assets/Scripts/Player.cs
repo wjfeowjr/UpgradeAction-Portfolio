@@ -132,12 +132,10 @@ public class PlayerSkill
 [Serializable]
 public class PlayerStat
 {
-    public int passiveComment;
     public string passive;
-    public float jumpForce;
+    public int resource;
+    public int maxResource;
     public float jumpHeight;
-    public int jumpAttackCount;
-    public float jumpAttackForce;
 }
 
 public abstract class Player : Character
@@ -222,7 +220,7 @@ public abstract class Player : Character
         wallBodyDownRayDistance = colSize.y * 0.5f + 0.05f;
 
         globalCoolTime = 0.02f;
-        dashDelay = 0.2f;
+        dashDelay = 0.1f;
         changeGlobalCoolTime = 0.1f;
         skillGlobalCoolTime = 0.02f;
     }
@@ -386,12 +384,10 @@ public abstract class Player : Character
         };
         myStat = new PlayerStat()
         {
-            passiveComment = targetStat.passiveComment,
             passive = targetStat.passive,
-            jumpForce = targetStat.jumpForce,
+            resource = 0,
+            maxResource = targetStat.resource,
             jumpHeight = targetStat.jumpHeight,
-            jumpAttackCount = targetStat.jumpAttackCount,
-            jumpAttackForce = targetStat.jumpAttackForce,
         };
         
         if (string.IsNullOrEmpty(originStat.id))
@@ -417,6 +413,19 @@ public abstract class Player : Character
         
         if(myAnimator)
             myAnimator.SetFloat(ConstValues.IgnoreTime, Time.unscaledDeltaTime / Time.deltaTime);
+    }
+
+    // 패시브 적용
+    public void ApplyPassive()
+    {
+        var myName = name.Split('(')[0];
+        var targetStat = TableManager.Instance.playerTable.Player.Find(x => x.id == myName);
+        
+        if (targetStat.passive == ConstValues.IronMan)
+        {
+            originStat.bodyType = EBodyType.SuperArmor;
+            basicStat.bodyType = EBodyType.SuperArmor;
+        }
     }
 
     public void ResetSkillCoolTime()

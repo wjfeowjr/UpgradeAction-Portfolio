@@ -51,8 +51,8 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
     
     [SerializeField] private ChoiceFrameUI[] choiceFrameObjects;
  
-    // 팝업 선택 순서: Attribute → Relic → Item
-    private readonly ePopupState[] _popupStateOrder = { ePopupState.Attribute, ePopupState.Relic, ePopupState.Item };
+    // 팝업 선택 순서: SkillInfo → Attribute → Relic → Item
+    private readonly ePopupState[] _popupStateOrder = { ePopupState.SkillInfo, ePopupState.Attribute, ePopupState.Relic, ePopupState.Item };
     private int _selectedIndex = 0;
  
     // 엔터 입력 시 Popup_Character로 선택된 상태를 전달하는 콜백
@@ -74,12 +74,15 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
         selectKeyDownText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.downKey);
         curPlayerText.text = GameManager.Instance.GetCharacterTalk(curPlayerId);
         
+        // 순서: SkillInfo → Attribute → Relic → Item
         if(choiceFrameObjects.Length > 0)
-            choiceFrameObjects[0].SetText(GameManager.Instance.GetTalk(30057));
+            choiceFrameObjects[0].SetText("보유 스킬·패시브"); // TODO: Talk.json id 추가 후 GetTalk으로 교체
         if(choiceFrameObjects.Length > 1)
-            choiceFrameObjects[1].SetText(GameManager.Instance.GetTalk(30058));
+            choiceFrameObjects[1].SetText(GameManager.Instance.GetTalk(30057));
         if(choiceFrameObjects.Length > 2)
-            choiceFrameObjects[2].SetText(GameManager.Instance.GetTalk(30063));
+            choiceFrameObjects[2].SetText(GameManager.Instance.GetTalk(30058));
+        if(choiceFrameObjects.Length > 3)
+            choiceFrameObjects[3].SetText(GameManager.Instance.GetTalk(30063));
         
         var curPlayer = GameManager.Instance.GetPlayer(curPlayerId);
         int txtIdx = 50100;

@@ -180,6 +180,11 @@ public class ConstValues : Singleton<ConstValues>
     public const string ShockSmash = "ShockSmash";
     public const string LightningIron = "LightningIron";
     public const string CounterPunch = "CounterPunch";
+    
+    // 캐릭터 패시브
+    public const string Fury = "Fury";
+    public const string SmileShot = "SmileShot";
+    public const string IronMan = "IronMan";
 
     // 스킬 특성 패시브
     public const string SuperArmor = "SuperArmor";

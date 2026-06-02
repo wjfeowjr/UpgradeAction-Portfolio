@@ -73,7 +73,7 @@ public abstract class Stage : MonoBehaviour
 
     protected virtual void Start()
     {
-        GameManager.Instance.InitPlayerStat();
+        //GameManager.Instance.InitPlayerStat();
     }
 
     protected virtual void Update()

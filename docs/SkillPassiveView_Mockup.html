@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>보유 스킬·패시브 — UI 목업 (1차→2차 흐름)</title>
+<style>
+  :root{
+    --bg:#1c1d22; --panel:#26272e; --panel-dark:#1f2026; --line:#3a3c45;
+    --blue-grad1:#4a90e2; --blue-grad2:#2f6fc0; --orange:#f0921e;
+    --text:#e8e9ec; --text-dim:#9a9da6; --gold:#ffd24a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0d0e11;font-family:"Malgun Gothic","맑은 고딕","Noto Sans KR",sans-serif;
+    color:var(--text);display:flex;flex-direction:column;align-items:center;
+    min-height:100vh;padding:24px;gap:10px;}
+  .caption{color:var(--text-dim);font-size:13px;text-align:center;line-height:1.6;max-width:880px;}
+  .caption b{color:var(--gold);}
+  .flow{color:var(--text-dim);font-size:14px;display:flex;align-items:center;gap:12px;margin:6px 0 2px;}
+  .flow .step{color:#fff;font-weight:700;}
+  .flow .arr{color:var(--orange);font-size:20px;}
+  .screens{display:flex;gap:28px;flex-wrap:wrap;justify-content:center;align-items:flex-start;}
+
+  .stagewrap{display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .stage-label{font-size:13px;color:var(--text-dim);}
+  .stage-label b{color:var(--gold);}
+
+  /* ── 팝업 프레임 ── */
+  .popup{position:relative;width:640px;height:360px;background:var(--bg);
+    border-left:4px solid #46d07a;border-radius:6px;
+    box-shadow:0 12px 40px rgba(0,0,0,.6);overflow:hidden;padding:14px 18px;}
+
+  .topbar{display:flex;flex-direction:column;gap:8px;}
+  .title{font-size:18px;font-weight:700;letter-spacing:.5px;}
+  .char-tabs{display:flex;align-items:center;gap:6px;align-self:flex-start;}
+  .arrow{color:#fff;font-size:16px;font-weight:700;}
+  .keycap{color:#fff;font-weight:700;font-size:13px;width:16px;text-align:center;}
+  .tab{padding:3px 10px;border-radius:5px;font-size:12px;font-weight:700;color:#fff;
+    border:2px solid transparent;opacity:.55;}
+  .tab.red{background:#b23b3b;} .tab.yellow{background:#caa12a;} .tab.blue{background:#3a6fb0;}
+  .tab.active{opacity:1;border-color:var(--orange);box-shadow:0 0 6px rgba(240,146,30,.5);}
+
+  .footer{position:absolute;left:18px;bottom:10px;color:var(--text-dim);font-size:12px;}
+  .footer .k{color:#fff;font-weight:700;}
+  .char-art{position:absolute;right:-20px;bottom:-14px;width:150px;height:190px;
+    background:radial-gradient(ellipse at center,rgba(120,130,150,.16),transparent 70%);
+    display:flex;align-items:flex-end;justify-content:center;pointer-events:none;
+    font-size:78px;opacity:.22;}
+
+  /* ── 1차: 캐릭터 정보 (스탯 + 메뉴) ── */
+  .p1-body{display:grid;grid-template-columns:210px 1fr;gap:14px;margin-top:10px;}
+  .menu{display:flex;flex-direction:column;gap:7px;padding-left:30px;position:relative;}
+  .menu-item{padding:7px 10px;border-radius:6px;font-size:13px;font-weight:700;color:#dfe7f5;
+    background:linear-gradient(180deg,var(--blue-grad1),var(--blue-grad2));
+    border:2px solid transparent;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.18);}
+  .menu-item.active{border-color:var(--orange);box-shadow:0 0 9px rgba(240,146,30,.45);}
+  .navkeys{position:absolute;left:0;top:6px;display:flex;flex-direction:column;gap:30px;}
+  .arrowkey{width:22px;height:22px;border:1px solid var(--line);border-radius:4px;
+    display:flex;align-items:center;justify-content:center;background:var(--panel);font-size:12px;}
+  .stats{display:flex;flex-direction:column;gap:6px;padding-right:6px;}
+  .stat-class{font-size:20px;font-weight:700;text-align:right;margin-bottom:4px;}
+  .stat-row{display:flex;justify-content:space-between;font-size:13px;}
+  .stat-row .n{color:var(--text-dim);} .stat-row .v{font-weight:700;}
+
+  /* ── 2차: 보유 스킬·패시브 (전체 화면, 메뉴 없음) ── */
+  .p2-body{display:flex;flex-direction:column;gap:10px;margin-top:10px;height:230px;}
+  .skill-detail-row{display:grid;grid-template-columns:170px 1fr;gap:12px;flex:1;min-height:0;}
+  .panel-label{font-size:11px;color:var(--text-dim);margin-bottom:5px;letter-spacing:.5px;}
+  .skill-list{background:var(--panel-dark);border:1px solid var(--line);border-radius:7px;
+    padding:8px;display:flex;flex-direction:column;gap:5px;overflow:auto;}
+  .skill-row{display:flex;align-items:center;gap:8px;padding:6px 7px;border-radius:6px;border:2px solid transparent;}
+  .skill-row.sel{background:rgba(58,123,213,.16);border-color:var(--blue-grad1);}
+  .skill-icon{width:30px;height:30px;border-radius:6px;flex:none;display:flex;align-items:center;
+    justify-content:center;font-size:16px;background:radial-gradient(circle at 35% 30%,#444,#222);border:1px solid #555;}
+  .skill-icon.fire{background:radial-gradient(circle at 35% 30%,#ff8a3c,#9c2b00);}
+  .skill-icon.slash{background:radial-gradient(circle at 35% 30%,#ffd76b,#b06a00);}
+  .skill-icon.counter{background:radial-gradient(circle at 35% 30%,#7fd0ff,#1f5d8c);}
+  .skill-name{font-size:13px;font-weight:600;}
+  .skill-row.sel .skill-name{color:#fff;}
+  .detail{background:var(--panel-dark);border:1px solid var(--line);border-radius:7px;
+    padding:12px 14px;display:flex;flex-direction:column;gap:9px;}
+  .detail-head{display:flex;align-items:center;gap:10px;}
+  .detail-icon{width:42px;height:42px;border-radius:8px;
+    background:radial-gradient(circle at 35% 30%,#ffd76b,#b06a00);border:1px solid #765400;
+    display:flex;align-items:center;justify-content:center;font-size:21px;}
+  .detail-title{font-size:17px;font-weight:700;color:var(--gold);}
+  .detail-sep{height:2px;background:linear-gradient(90deg,var(--orange),transparent);}
+  .detail-desc{font-size:13px;line-height:1.7;color:#d4d6dc;}
+  .tag{display:inline-block;font-size:10px;color:var(--text-dim);border:1px solid var(--line);
+    border-radius:4px;padding:2px 6px;margin-top:auto;width:max-content;}
+  .passive-panel{background:linear-gradient(90deg,rgba(176,106,0,.18),var(--panel-dark));
+    border:1px solid #6a4e1a;border-radius:7px;padding:9px 13px;display:flex;align-items:center;gap:11px;}
+  .passive-badge{font-size:10px;font-weight:700;color:#1c1d22;background:var(--gold);
+    border-radius:4px;padding:2px 7px;flex:none;}
+  .passive-icon{width:34px;height:34px;border-radius:50%;flex:none;
+    background:radial-gradient(circle at 35% 30%,#ff5a5a,#7a1010);border:2px solid #ff8a8a;
+    display:flex;align-items:center;justify-content:center;font-size:17px;}
+  .passive-name{font-size:13px;font-weight:700;color:#ffb3b3;}
+  .passive-desc{font-size:12px;color:#cfc6c0;line-height:1.4;}
+</style>
+</head>
+<body>
+
+  <div class="caption">
+    실제 흐름에 맞춘 목업 — <b>1차(캐릭터 정보=스탯+메뉴)</b>에서 메뉴를 고르면
+    스킬 특성처럼 <b>전체 화면 2차 페이지</b>로 전환됩니다. (메뉴 목록은 2차에서 사라짐)
+  </div>
+
+  <div class="flow">
+    <span class="step">① 1차: 캐릭터 정보</span>
+    <span class="arr">— Enter →</span>
+    <span class="step">② 2차: 보유 스킬·패시브</span>
+    <span class="arr">— Esc →</span>
+    <span>① 복귀</span>
+  </div>
+
+  <div class="screens">
+
+    <!-- ① 1차 -->
+    <div class="stagewrap">
+      <div class="stage-label"><b>① 1차</b> — 메뉴 첫 항목에 "보유 스킬·패시브" 추가 (SkillInfo=1)</div>
+      <div class="popup">
+        <div class="topbar">
+          <div class="title">캐릭터 정보</div>
+          <div class="char-tabs">
+            <span class="arrow">◀</span><span class="keycap">Q</span>
+            <span class="tab red active">광전사</span>
+            <span class="tab yellow">총잡이</span>
+            <span class="tab blue">싸움꾼</span>
+            <span class="keycap">E</span><span class="arrow">▶</span>
+          </div>
+        </div>
+        <div class="p1-body">
+          <div class="menu">
+            <div class="navkeys"><span class="arrowkey">↑</span><span class="arrowkey">↓</span></div>
+            <div class="menu-item active">보유 스킬·패시브</div>
+            <div class="menu-item">스킬 특성</div>
+            <div class="menu-item">유물 장착</div>
+            <div class="menu-item">아이템 가방</div>
+          </div>
+          <div class="stats">
+            <div class="stat-class">광전사</div>
+            <div class="stat-row"><span class="n">체력</span><span class="v">300 / 300</span></div>
+            <div class="stat-row"><span class="n">공격력</span><span class="v">30</span></div>
+            <div class="stat-row"><span class="n">방어력</span><span class="v">6</span></div>
+            <div class="stat-row"><span class="n">이동속도</span><span class="v">5</span></div>
+            <div class="stat-row"><span class="n">공격속도</span><span class="v">1</span></div>
+            <div class="stat-row"><span class="n">치명타 확률</span><span class="v">10%</span></div>
+            <div class="stat-row"><span class="n">치명타 피해</span><span class="v">150%</span></div>
+          </div>
+        </div>
+        <div class="footer">선택: <span class="k">Enter</span> &nbsp;·&nbsp; 뒤로가기: <span class="k">Esc</span></div>
+      </div>
+    </div>
+
+    <!-- ② 2차 -->
+    <div class="stagewrap">
+      <div class="stage-label"><b>② 2차</b> — 전체 화면 (메뉴 없음, 스킬 특성과 동일한 결)</div>
+      <div class="popup">
+        <div class="topbar">
+          <div class="title">보유 스킬 · 패시브</div>
+          <div class="char-tabs">
+            <span class="arrow">◀</span><span class="keycap">Q</span>
+            <span class="tab red active">광전사</span>
+            <span class="tab yellow">총잡이</span>
+            <span class="tab blue">싸움꾼</span>
+            <span class="keycap">E</span><span class="arrow">▶</span>
+          </div>
+        </div>
+        <div class="p2-body">
+          <div class="skill-detail-row">
+            <div class="skill-list">
+              <div class="panel-label">보유 스킬</div>
+              <div class="skill-row sel"><div class="skill-icon slash">🌀</div><div class="skill-name">올려베기</div></div>
+              <div class="skill-row"><div class="skill-icon fire">🔥</div><div class="skill-name">불덩이 날리기</div></div>
+              <div class="skill-row"><div class="skill-icon counter">🐂</div><div class="skill-name">황소 반격</div></div>
+            </div>
+            <div class="detail">
+              <div class="detail-head"><div class="detail-icon">🌀</div><div class="detail-title">올려베기</div></div>
+              <div class="detail-sep"></div>
+              <div class="detail-desc">검을 위로 크게 휘둘러 전방의 적을 베어 올린다. 적중한 적은 잠시 공중에 띄워진다.</div>
+              <span class="tag">스킬 기본 설명 · GetTalk(skill.explainTalk)</span>
+            </div>
+          </div>
+          <div class="passive-panel">
+            <span class="passive-badge">클래스 패시브</span>
+            <div class="passive-icon">🔴</div>
+            <div>
+              <div class="passive-name">광폭화 (Rage)</div>
+              <div class="passive-desc">체력이 낮을수록 공격력이 증가한다. · GetTalk(passiveComment)</div>
+            </div>
+          </div>
+        </div>
+        <div class="footer">선택 이동: <span class="k">↑↓</span> &nbsp;·&nbsp; 뒤로가기: <span class="k">Esc</span></div>
+        <div class="char-art">🤖</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="caption" style="max-width:820px;margin-top:8px;">
+    <b>효과 겹침 방지</b> — 2차 화면 설명은 <code>skill.explainTalk</code>(스킬 본체),
+    스킬 특성 화면 설명은 <code>skillAttributeCopy.explainTalk</code>(개별 특성 강화)로 서로 다른 텍스트를 사용.
+  </div>
+
+</body>
+</html>

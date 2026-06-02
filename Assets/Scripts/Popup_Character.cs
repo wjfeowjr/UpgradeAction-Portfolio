@@ -14,15 +14,17 @@ public class PopupCommonActions
 public enum ePopupState
 {
     Character = 0,
-    Attribute = 1,
-    Relic = 2,
-    Item = 3,
+    SkillInfo = 1,   // 보유 스킬·패시브 열람
+    Attribute = 2,
+    Relic = 3,
+    Item = 4,
 }
 
 public class Popup_Character : UIBase
 {
     [SerializeField] private ePopupState popupState;
     [SerializeField] private PopupCharacterView characterView;
+    [SerializeField] private PopupSkillView skillView;
     [SerializeField] private PopupAttributeView attributeView;
     [SerializeField] private PopupRelicView relicView;
     [SerializeField] private PopupItemView itemView;
@@ -37,6 +39,7 @@ public class Popup_Character : UIBase
     [SerializeField] private GameObject berserkerObject;
     [SerializeField] private GameObject gunnerObject;
     [SerializeField] private GameObject fighterObject;
+    [SerializeField] private GameObject[] playerOrderObjects;
     
     [SerializeField] private ExpansionUiObject berserkerFrame;
     [SerializeField] private ExpansionUiObject gunnerFrame;
@@ -45,6 +48,8 @@ public class Popup_Character : UIBase
     protected List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
 
     private PopupCharacterPresenter _characterPresenter;
+    private PopupSkillPresenter     _skillPresenter;
+    private PopupSkillModel         _skillModel;
     private PopupAttributePresenter _attributePresenter;
     private PopupRelicPresenter     _relicPresenter;
     private PopupItemPresenter      _itemPresenter;
@@ -87,6 +92,16 @@ public class Popup_Character : UIBase
             commonActions = common
         };
         _characterPresenter = new PopupCharacterPresenter(characterView, charModel);
+
+        _skillModel = new PopupSkillModel
+        {
+            playerId        = curPlayerId,
+            skillTableList = TableManager.Instance.skillTable.Skill,
+            playerInfoList  = GameManager.Instance.PlayerInfoList,
+            commonActions   = common,
+            closeAction     = () => SetState(ePopupState.Character),
+        };
+        _skillPresenter = new PopupSkillPresenter(skillView, _skillModel);
 
         var attrModel = new PopupAttributeModel
         {
@@ -159,6 +174,9 @@ public class Popup_Character : UIBase
     {
         switch (selectedState)
         {
+            case ePopupState.SkillInfo:
+                SetState(ePopupState.SkillInfo);
+                break;
             case ePopupState.Attribute:
                 SetState(ePopupState.Attribute);
                 break;
@@ -181,6 +199,9 @@ public class Popup_Character : UIBase
                 popupText.text = GameManager.Instance.GetTalk(30020);
                 //_characterPresenter.UpdatePlayerInfo(curPlayerId);
                 break;
+            case ePopupState.SkillInfo:
+                popupText.text = "보유 스킬·패시브_"; // TODO: Talk.json id 추가 후 GetTalk으로 교체
+                break;
             case ePopupState.Attribute:
                 popupText.text = GameManager.Instance.GetTalk(30021);
                 break;
@@ -193,6 +214,7 @@ public class Popup_Character : UIBase
         }
 
         characterView.gameObject.SetActive(popupState == ePopupState.Character);
+        skillView.gameObject.SetActive(popupState == ePopupState.SkillInfo);
         attributeView.gameObject.SetActive(popupState == ePopupState.Attribute);
         relicView.gameObject.SetActive(popupState == ePopupState.Relic);
         itemView.gameObject.SetActive(popupState == ePopupState.Item);
@@ -215,12 +237,16 @@ public class Popup_Character : UIBase
     {
         UpdateCommonUI(curPlayerId);
         _characterPresenter.UpdatePlayerInfo(curPlayerId);
+
+        // 캐릭터 전환(Q/E)에 맞춰 현재 캐릭터의 PlayerSkill 목록 갱신
+        _skillPresenter.UpdatePlayerInfo(curPlayerId);
+
         _attributePresenter.UpdatePlayerInfo(curPlayerId);
         _relicPresenter.UpdatePlayerInfo(curPlayerId);
         _itemPresenter.UpdateItemInfo();
     }
 
-    public void UpdateCommonUI(string playerId)
+    private void UpdateCommonUI(string playerId)
     {
         curPlayerId = playerId;
 
@@ -249,5 +275,8 @@ public class Popup_Character : UIBase
         berserkerObject.SetActive(curPlayerId == ConstValues.Berserker);
         gunnerObject.SetActive(curPlayerId == ConstValues.Gunner);
         fighterObject.SetActive(curPlayerId == ConstValues.Fighter);
+
+        foreach (var playerOrderObject in playerOrderObjects)
+            playerOrderObject.SetActive(GameManager.Instance.PlayerList.Count > 1);
     }
 }

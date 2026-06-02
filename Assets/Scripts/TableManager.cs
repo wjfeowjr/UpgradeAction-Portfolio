@@ -257,12 +257,9 @@ public class PlayerData
     public float staggerTime;
     
     // 독립 데이터
-    public int passiveComment;
     public string passive;
-    public float jumpForce;
+    public int resource;
     public float jumpHeight;
-    public int jumpAttackCount;
-    public float jumpAttackForce;
 }
 [Serializable]
 public class PlayerDataList

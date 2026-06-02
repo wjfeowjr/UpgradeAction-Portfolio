@@ -485,7 +485,8 @@ public class Player_Berserker : Player
         {
             float addTime = 0;
             float originChargeTime = 0.75f;
-            float chargeTime = originChargeTime - Mathf.Abs(originChargeTime - basicStat.attackSpeed);
+            float plusAttackSpeed = basicStat.attackSpeed - originStat.attackSpeed;
+            float chargeTime = originChargeTime - (originChargeTime * plusAttackSpeed);
 
             bool isSpawnedEffect = false;
             while (addTime < chargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))

@@ -163,8 +163,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private void SetSkillList()
     {
-        //var showCount = Mathf.Min(skillDataList.Count, skillArray.Length);
-
         List<SkillData> playerSkillList = new List<SkillData>();
         foreach (var skillTable in skillTableList)
         {
