@@ -314,11 +314,26 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
         {
             List<object> valueList = new List<object>();
             
+            if(passiveData.valueResource > 0)
+                valueList.Add(passiveData.valueResource);
+
+            if (!string.IsNullOrWhiteSpace(passiveData.resourceStat))
+                valueList.Add(GameManager.Instance.GetStatName(passiveData.resourceStat));
+            
+            if(passiveData.resourceValue > 0)
+                valueList.Add(passiveData.resourceValue);
+            
+            if(!string.IsNullOrWhiteSpace(passiveData.resourceUnit))
+                valueList.Add(passiveData.resourceUnit);
+            
+            if(passiveData.getBuffResource > 0)
+                valueList.Add(passiveData.getBuffResource);
+            
             if(passiveData.buffTime > 0)
                 valueList.Add(passiveData.buffTime);
-
-            foreach (var buffValue in passiveData.buffValue)
-                valueList.Add(buffValue);
+            
+            if(passiveData.buffValue > 0)
+                valueList.Add(passiveData.buffValue);
 
             if(passiveData.penaltyValue > 0)
                 valueList.Add(passiveData.penaltyValue);

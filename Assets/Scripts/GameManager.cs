@@ -331,9 +331,14 @@ public class GrenadeCopy
 public class PassiveCopy
 {
     public string id;
+    public int valueResource;
+    public string resourceStat;
+    public int resourceValue;
+    public string resourceUnit;
+    public int getBuffResource;
     public float buffTime;
-    public string buffType;
-    public List<int> buffValue = new List<int>();
+    public string buffId;
+    public int buffValue;
     public int penaltyValue;
     public int passiveName;
     public int passiveExplain;
@@ -1053,6 +1058,18 @@ public class GameManager : Singleton<GameManager>
     {
         int itemExplain = TableManager.Instance.itemTable.Item.Find(x => x.id == id).explain;
         return GetTalk(itemExplain);
+    }
+
+    public string GetStatName(string statId)
+    {
+        string value = "Null!";
+        switch (statId)
+        {
+            case ConstValues.CritPercent:
+                return GetTalk(50105);
+        }
+
+        return value;
     }
     
     public string GetKeyCode(KeyCode keycode)
@@ -1789,18 +1806,14 @@ public class GameManager : Singleton<GameManager>
         {
             var data = new PassiveCopy();
             data.id = passive.id;
+            data.valueResource = passive.valueResource;
+            data.resourceStat = passive.resourceStat;
+            data.resourceValue = passive.resourceValue;
+            data.resourceUnit = passive.resourceUnit;
+            data.getBuffResource = passive.getBuffResource;
             data.buffTime = passive.buffTime;
-            data.buffType = passive.buffType;
-            
-            if (!string.IsNullOrEmpty(passive.buffValue))
-            {
-                var buffValueSplit = passive.buffValue.Split(';');
-                foreach (var buffValue in buffValueSplit)
-                {
-                    data.buffValue.Add(int.Parse(buffValue));
-                }
-            }
-            
+            data.buffId = passive.buffId;
+            data.buffValue = passive.buffValue;
             data.penaltyValue = passive.penaltyValue;
             data.passiveName = passive.passiveName;
             data.passiveExplain = passive.passiveExplain;

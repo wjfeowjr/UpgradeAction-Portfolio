@@ -429,7 +429,7 @@ public abstract class Player : Character
     }
 
     // 공격으로 피해를 줬을 때 자원 획득 (맞춘 적의 수와 무관하게 공격당 1회만 호출됨)
-    public virtual void GainResource(int gainResource)
+    public void GainResource(int gainResource)
     {
         if (gainResource <= 0)
             return;
@@ -440,6 +440,22 @@ public abstract class Player : Character
 
         // 게이지 실시간 갱신
         GameManager.Instance.RefreshPlayerResource();
+
+        // 패시브
+        switch (playerStat.passive)
+        {
+            // 분노
+            case ConstValues.Fury:
+                if (playerStat.resource >= playerStat.maxResource)
+                {
+                    SpawnAttack(ConstValues.BerserkerFuryExplosion, centerPos);
+                    var passiveData = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                    AddBuff(passiveData.buffId, passiveData.buffValue, passiveData.buffTime, 0);
+                    playerStat.resource = 0;
+                    GameManager.Instance.RefreshPlayerResource();
+                }
+                break;
+        }
     }
 
     public void ResetSkillCoolTime()

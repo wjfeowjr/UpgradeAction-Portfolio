@@ -181,6 +181,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string LightningIron = "LightningIron";
     public const string CounterPunch = "CounterPunch";
     
+    // 스텟
+    public const string CritPercent = "CritPercent";
+
     // 캐릭터 패시브
     public const string Passive = "Passive";
     public const string Fury = "Fury";
@@ -379,6 +382,8 @@ public class ConstValues : Singleton<ConstValues>
 
     public const string BerserkerSlash = "Berserker_Slash";
     public const string BerserkerFlash = "Berserker_Flash";
+    
+    public const string BerserkerFuryExplosion = "Berserker_FuryExplosion";
     public const string BerserkerAttack1 = "Berserker_Attack1";
     public const string BerserkerAttack2 = "Berserker_Attack2";
     public const string BerserkerAttack3 = "Berserker_Attack3";

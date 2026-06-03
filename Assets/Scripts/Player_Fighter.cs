@@ -58,7 +58,7 @@ public class Player_Fighter : Player
         if (playerStat.resource >= playerStat.maxResource)
         {
             var passiveData = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
-            Debug.Log($"피해 {passiveData.buffValue[0]} 감소!!!");
+            Debug.Log($"피해 {passiveData.buffValue} 감소!!!");
             // if (passiveData != null)
             //     finalDamage -= passiveData.buffValue[0];
         }

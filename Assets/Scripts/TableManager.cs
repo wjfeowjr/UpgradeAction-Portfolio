@@ -243,9 +243,14 @@ public class NpcDataList
 public class PassiveData
 {
     public string id;
+    public int valueResource;
+    public string resourceStat;
+    public int resourceValue;
+    public string resourceUnit;
+    public int getBuffResource;
     public float buffTime;
-    public string buffType;
-    public string buffValue;
+    public string buffId;
+    public int buffValue;
     public int penaltyValue;
     public int passiveName;
     public int passiveExplain;

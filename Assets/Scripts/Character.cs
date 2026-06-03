@@ -88,6 +88,10 @@ public enum EBuffType
     Shock,
     Burn,
     
+    AttackSpeedUpPercent,
+    MoveSpeedUp,
+    Shield,
+    
     PowerUpPercent,
     ElementalIce,
     ElementalLightning,
@@ -804,6 +808,14 @@ public abstract class Character : InteractionController
                 case EBuffType.PowerUpPercent:
                     buffStat.power += Mathf.RoundToInt(originStat.power * (buff.buffValue * 0.01f));
                     break;
+                
+                case EBuffType.AttackSpeedUpPercent:
+                    buffStat.attackSpeed += originStat.attackSpeed * (buff.buffValue * 0.01f);
+                    break;
+                
+                case EBuffType.MoveSpeedUp:
+                    buffStat.moveSpeed += originStat.moveSpeed;
+                    break;
             }
         }
         
@@ -834,7 +846,7 @@ public abstract class Character : InteractionController
     protected void SetAttackSpeed(float skillSpeed)
     {
         var skillAttackSpeed = skillSpeed - originStat.attackSpeed;
-        var buffAttackSpeed = buffStat.attackSpeed * 0.01f;
+        var buffAttackSpeed = buffStat.attackSpeed;
         var equipAttackSpeed = originStat.attackSpeed + equipStat.attackSpeed + skillAttackSpeed + buffAttackSpeed;
         var attackAnimSpeed = equipAttackSpeed / originStat.attackSpeed;
         basicStat.attackSpeed = equipAttackSpeed;
@@ -2061,7 +2073,7 @@ public abstract class Character : InteractionController
                 Debug.Log("버프가 테이블 시트에 등록되지 않았음");
             }
         }
-        // 해당 디버프가 적용되어 있음
+        // 해당 버프가 적용되어 있음
         else
         {
             var leftTime = findDeBuff.currentTime;
