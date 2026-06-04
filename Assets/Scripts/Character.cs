@@ -27,6 +27,18 @@ public class Buff
     public Action tickAction; // 틱 당 보여주는 액션
 }
 
+[Serializable]
+public class Shield
+{
+    public string sourceId;     // 출처(스킬/유물 id) - 식별/디버깅용
+    public int amount;          // 남은 실드량 (피격으로 감소)
+    public float duration;      // 총 지속시간 (0 이하 = 무한)
+    public float currentTime;   // 남은 시간
+    public int priority;        // 소비 우선순위 (작을수록 먼저 소비)
+
+    public Action endAction;    // 만료/소진 시 콜백
+}
+
 // 기본 상태 모션
 public enum ENormalState
 {
@@ -89,7 +101,7 @@ public enum EBuffType
     Burn,
     
     AttackSpeedUpPercent,
-    MoveSpeedUp,
+    MoveSpeedUpPercent,
     Shield,
     
     PowerUpPercent,
@@ -113,7 +125,8 @@ public class BasicStat
     public float criticalChance;
     public float criticalDamage;
     public float staggerDamage;
-    
+
+    public int shield;
     public float weight;
     public int stagger;
     public int maxStagger;
@@ -146,6 +159,12 @@ public class BuffStat
 }
 
 [Serializable]
+public class PassiveStat
+{
+    public float criticalChance;
+}
+
+[Serializable]
 public class PlatformObject
 {
     public Collider2D collider;
@@ -158,6 +177,7 @@ public abstract class Character : InteractionController
     [SerializeField] protected BasicStat basicStat;  // 내 스텟(변동되어야 함)
     [SerializeField] protected EquipStat equipStat;  // 유물로 얻는 추가 스텟
     [SerializeField] protected BuffStat buffStat;    // 버프로 얻는 추가 스텟
+    [SerializeField] protected PassiveStat passiveStat;    // 패시브로 얻는 추가 스텟
 
     protected Rigidbody2D myRigidbody;
     protected BoxCollider2D myBoxCollider;
@@ -190,6 +210,8 @@ public abstract class Character : InteractionController
     [SerializeField] protected EMoveState moveState;
     [SerializeField] protected ELandingState landingState;
     [SerializeField] protected List<Buff> buffList = new List<Buff>();
+    [SerializeField] protected List<Shield> shieldList = new List<Shield>();
+    private GameObject shieldEffectObject; // 현재 활성화된 실드 이펙트(집계형, 1개)
 
     [SerializeField] protected Transform diePos;
     [SerializeField] protected Transform buffEffectPos;
@@ -813,8 +835,8 @@ public abstract class Character : InteractionController
                     buffStat.attackSpeed += originStat.attackSpeed * (buff.buffValue * 0.01f);
                     break;
                 
-                case EBuffType.MoveSpeedUp:
-                    buffStat.moveSpeed += originStat.moveSpeed;
+                case EBuffType.MoveSpeedUpPercent:
+                    buffStat.moveSpeed += originStat.moveSpeed * (buff.buffValue * 0.01f);
                     break;
             }
         }
@@ -829,7 +851,8 @@ public abstract class Character : InteractionController
         
         // 이동속도
         var equipMoveSpeed = originStat.moveSpeed + equipStat.moveSpeed;
-        var finalMoveSpeed = equipMoveSpeed + (equipMoveSpeed * (buffStat.moveSpeed * 0.01f));
+        var buffMoveSpeed = buffStat.moveSpeed;
+        var finalMoveSpeed = equipMoveSpeed + buffMoveSpeed;
         var finalMoveAnimSpeed = finalMoveSpeed / originStat.moveSpeed;
         basicStat.moveSpeed = finalMoveSpeed;
         if(myAnimator)
@@ -838,7 +861,8 @@ public abstract class Character : InteractionController
         // 공격속도
         SetAttackSpeed(1);
         
-        basicStat.criticalChance = originStat.criticalChance + equipStat.criticalChance + buffStat.criticalChance;
+        // 치명타 및 무력화
+        basicStat.criticalChance = originStat.criticalChance + equipStat.criticalChance + buffStat.criticalChance + passiveStat.criticalChance;
         basicStat.criticalDamage = originStat.criticalDamage + equipStat.criticalDamage + buffStat.criticalDamage;
         basicStat.staggerDamage = originStat.staggerDamage + equipStat.staggerDamage;
     }
@@ -892,9 +916,12 @@ public abstract class Character : InteractionController
 
     protected void UpdateBuff()
     {
+        UpdateShield();
+
         int expiredCount = 0;
         foreach (var deBuff in buffList)
         {
+            // 시간이 있는 버프
             if (deBuff.buffTime > 0)
             {
                 if (deBuff.currentTime > 0)
@@ -918,9 +945,10 @@ public abstract class Character : InteractionController
                     expiredCount += 1;
                 }
             }
+            // 시간이 없는 버프
             else
             {
-                if (deBuff.currentCount == 0)
+                if (deBuff.buffCount > 0 && deBuff.currentCount == 0)
                     expiredCount += 1;
             }
         }
@@ -964,8 +992,14 @@ public abstract class Character : InteractionController
         buffList.Clear();
         foreach (var buff in buffObject)
             buff.SetActive(false);
-        
+
         buffObject.Clear();
+
+        // 실드도 함께 초기화 (이펙트는 buffObject에서 이미 비활성화됨)
+        shieldList.Clear();
+        shieldEffectObject = null;
+        basicStat.shield = 0;
+
         InitBonusStat();
     }
 
@@ -1236,13 +1270,68 @@ public abstract class Character : InteractionController
     }
     public virtual void TakeDamage(int damage, bool isTrapAttack)
     {
-        if (damage == 0)
+        if (damage <= 0)
+            return;
+
+        // 실드로 먼저 흡수, 흡수 후 남은 데미지만 체력에 적용
+        int leftDamage = ConsumeShield(damage);
+        if (leftDamage <= 0)
             return;
 
         // 체력 다는 알고리즘 삽입
-        basicStat.hp -= damage;
+        basicStat.hp -= leftDamage;
         if (basicStat.hp < 0)
             basicStat.hp = 0;
+    }
+
+    // 실드로 데미지를 흡수하고, 흡수 후 남은 데미지를 반환
+    // 소비 순서: priority 오름차순 -> 같으면 남은시간 짧은 것 우선(곧 사라질 실드부터 소비)
+    public int ConsumeShield(int damage)
+    {
+        if (damage <= 0 || shieldList.Count == 0)
+            return damage;
+
+        shieldList.Sort((a, b) =>
+        {
+            int p = a.priority.CompareTo(b.priority);
+            if (p != 0)
+                return p;
+
+            // 무한(duration <= 0) 실드는 가장 나중에 소비
+            float at = a.duration > 0 ? a.currentTime : float.MaxValue;
+            float bt = b.duration > 0 ? b.currentTime : float.MaxValue;
+            return at.CompareTo(bt);
+        });
+
+        for (int i = 0; i < shieldList.Count && damage > 0; i++)
+        {
+            var s = shieldList[i];
+            if (s.amount >= damage)
+            {
+                s.amount -= damage;
+                damage = 0;
+            }
+            else
+            {
+                damage -= s.amount;
+                s.amount = 0;
+            }
+        }
+
+        // 소진된 실드 제거 (+ 소진 콜백)
+        for (int i = shieldList.Count - 1; i >= 0; i--)
+        {
+            if (shieldList[i].amount <= 0)
+            {
+                var s = shieldList[i];
+                shieldList.RemoveAt(i);
+                s.endAction?.Invoke();
+            }
+        }
+
+        // 캐시 갱신
+        basicStat.shield = TotalShield();
+        return damage;
     }
     public void SpawnDamageFont(int damage, bool critical, bool additional, bool dot)
     {
@@ -1598,7 +1687,7 @@ public abstract class Character : InteractionController
             list.Add(obj);
     }
 
-    protected void RemoveObjectList(List<GameObject> list, GameObject obj)
+    private void RemoveObjectList(List<GameObject> list, GameObject obj)
     {
         var removeObj = list.Find(x => x == obj);
 
@@ -2042,7 +2131,7 @@ public abstract class Character : InteractionController
             if (buffData != null)
             {
                 var buffType = (EBuffType)Enum.Parse(typeof(EBuffType), buffData.buffType);
-                var newDeBuff = new Buff()
+                var newBuff = new Buff()
                 {
                     buffId = buffId,
                     buffType = buffType,
@@ -2057,7 +2146,7 @@ public abstract class Character : InteractionController
                     nextTickTime = nextTickTime,
                     tickAction = tickAction,
                 };
-                buffList.Add(newDeBuff);
+                buffList.Add(newBuff);
 
                 Transform posTransform = transform;
                 switch (buffData.buffPos)
@@ -2160,6 +2249,18 @@ public abstract class Character : InteractionController
             }
         }
     }
+
+    protected void RemoveBuff(string buffId)
+    {
+        Buff findBuff = TargetBuff(buffId);
+        buffList.Remove(findBuff);
+        var removeEffect = buffObject.Find(x => x.name == $"{findBuff.buffType}{ConstValues.Effect}(Clone)");
+        if (removeEffect != null)
+            RemoveObjectList(buffObject, removeEffect);
+        
+        InitBonusStat();
+    }
+    
     // 버프를 가지고 있는가(id로 찾기)
     private Buff TargetBuff(string buffId)
     {
@@ -2170,7 +2271,101 @@ public abstract class Character : InteractionController
     {
         return buffList.Find(x => x.buffType == buffType);
     }
-    
+
+    // 현재 활성화된 모든 실드의 합산량
+    public int TotalShield()
+    {
+        int sum = 0;
+        foreach (var s in shieldList)
+            sum += s.amount;
+        return sum;
+    }
+
+    // 실드 추가
+    // 같은 출처(sourceId)의 실드는 새로 덮어써서 갱신, 다른 출처는 별도로 쌓임(다중 실드)
+    // duration <= 0 이면 무한 지속
+    protected void AddShield(string sourceId, int amount, float duration, int priority = 0, Action endAction = null)
+    {
+        if (amount <= 0)
+            return;
+
+        var exist = shieldList.Find(x => x.sourceId == sourceId);
+        if (exist != null)
+        {
+            exist.amount = amount;
+            exist.duration = duration;
+            exist.currentTime = duration;
+            exist.priority = priority;
+            exist.endAction = endAction;
+        }
+        else
+        {
+            shieldList.Add(new Shield
+            {
+                sourceId = sourceId,
+                amount = amount,
+                duration = duration,
+                currentTime = duration,
+                priority = priority,
+                endAction = endAction,
+            });
+        }
+
+        basicStat.shield = TotalShield();
+    }
+
+    // 실드 타이머/만료 처리 (UpdateBuff에서 매 프레임 호출)
+    private void UpdateShield()
+    {
+        // 뒤에서부터 순회해서 안전하게 제거
+        for (int i = shieldList.Count - 1; i >= 0; i--)
+        {
+            var s = shieldList[i];
+
+            // 소진된 실드 제거
+            if (s.amount <= 0)
+            {
+                shieldList.RemoveAt(i);
+                s.endAction?.Invoke();
+                continue;
+            }
+
+            // 시간이 있는 실드만 카운트다운 (duration <= 0 은 무한)
+            if (s.duration > 0)
+            {
+                s.currentTime -= Time.deltaTime;
+                if (s.currentTime <= 0)
+                {
+                    shieldList.RemoveAt(i);
+                    s.endAction?.Invoke();
+                }
+            }
+        }
+
+        // 캐시 갱신 (기존 basicStat.shield 참조/인스펙터/UI 호환용)
+        basicStat.shield = TotalShield();
+
+        // 총 실드 유무에 따라 본체 이펙트 on/off (집계형, 1개만 표시)
+        UpdateShieldEffect();
+    }
+
+    // 총 실드 유무에 따라 실드 이펙트를 켜고 끈다
+    private void UpdateShieldEffect()
+    {
+        bool hasShield = basicStat.shield > 0;
+
+        if (hasShield && shieldEffectObject == null)
+        {
+            shieldEffectObject = SpawnObject(ConstValues.ShieldEffect, centerPos, 0, true);
+        }
+        else if (!hasShield && shieldEffectObject != null)
+        {
+            RemoveObjectList(buffObject, shieldEffectObject);
+            shieldEffectObject = null;
+            GameManager.Instance.SetPlayerHp(basicStat.hp);
+        }
+    }
+
     // 상태이상
     // 스턴
     public void Stun(float stunTime)

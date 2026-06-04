@@ -88,7 +88,8 @@ public class Gauge : MonoBehaviour
         if (text != default)
             GaugeTextInput(text);
     }
-    protected void GaugeTextInput(string text)
+
+    private void GaugeTextInput(string text)
     {
         if (gaugeText)
             gaugeText.text = text;

@@ -421,11 +421,35 @@ public abstract class Player : Character
     // 패시브 적용
     public void ApplyPassive()
     {
-        if (playerStat.passive == ConstValues.IronMan)
+        switch (playerStat.passive)
         {
-            originStat.bodyType = EBodyType.SuperArmor;
-            basicStat.bodyType = EBodyType.SuperArmor;
+            case ConstValues.IronMan:
+                if (playerStat.passive == ConstValues.IronMan)
+                {
+                    originStat.bodyType = EBodyType.SuperArmor;
+                    basicStat.bodyType = EBodyType.SuperArmor;
+                }
+                break;
         }
+    }
+
+    public void ChangeApplyPassive()
+    {
+        switch (playerStat.passive)
+        {
+            case ConstValues.SmileShot:
+                var smilePassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                // 이동속도 버프 추가
+                if(playerStat.resource >= smilePassive.getBuffResource)
+                    AddBuff(smilePassive.buffId, smilePassive.buffValue, smilePassive.buffTime, 0);
+                
+                // 치명타 확률 조정
+                RefreshPassiveStat(smilePassive.resourceStat, smilePassive.valueResource, smilePassive.resourceValue, playerStat.resource);
+                break;
+        }
+
+        InitBonusStat();
+        GameManager.Instance.RefreshPlayerHp();
     }
 
     // 공격으로 피해를 줬을 때 자원 획득 (맞춘 적의 수와 무관하게 공격당 1회만 호출됨)
@@ -449,13 +473,38 @@ public abstract class Player : Character
                 if (playerStat.resource >= playerStat.maxResource)
                 {
                     SpawnAttack(ConstValues.BerserkerFuryExplosion, centerPos);
-                    var passiveData = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
-                    AddBuff(passiveData.buffId, passiveData.buffValue, passiveData.buffTime, 0);
+                    var furyPassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                    AddBuff(furyPassive.buffId, furyPassive.buffValue, furyPassive.buffTime, 0);
                     playerStat.resource = 0;
                     GameManager.Instance.RefreshPlayerResource();
                 }
                 break;
+            
+            case ConstValues.SmileShot:
+                var smilePassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                // 이동속도 버프 추가
+                if(playerStat.resource >= smilePassive.getBuffResource)
+                    AddBuff(smilePassive.buffId, smilePassive.buffValue, smilePassive.buffTime, 0);
+                // 치명타 확률 조정
+                RefreshPassiveStat(smilePassive.resourceStat, smilePassive.valueResource, smilePassive.resourceValue, playerStat.resource);
+                break;
         }
+    }
+    
+    private void RefreshPassiveStat(string resourceStat, int valueResource, int resourceValue, int currentResource)
+    {
+        int cycle = currentResource / valueResource;
+
+        if (cycle <= 0)
+            return;
+        
+        switch (resourceStat)
+        {
+            case ConstValues.CritPercent:
+                passiveStat.criticalChance = resourceValue * cycle;
+                break;
+        }
+        InitBonusStat();
     }
 
     public void ResetSkillCoolTime()
@@ -855,10 +904,38 @@ public abstract class Player : Character
 
     public override void TakeDamage(int damage, bool isTrapAttack)
     {
+        // 패시브
+        switch (playerStat.passive)
+        {
+            case ConstValues.IronMan:
+                if (playerStat.resource >= playerStat.maxResource)
+                {
+                    var ironPassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                    AddShield(ironPassive.buffId, ironPassive.buffValue, ironPassive.buffTime);
+                    playerStat.resource = 0;
+                    GameManager.Instance.RefreshPlayerResource();
+                }
+                break;
+        }
+        
         base.TakeDamage(damage, isTrapAttack);
 
         if (damage == 0)
             return;
+        
+        // 패시브
+        switch (playerStat.passive)
+        {
+            case ConstValues.SmileShot:
+                var smilePassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                // 패널티 게이지 감소
+                playerStat.resource -= smilePassive.penaltyValue;
+                if(playerStat.resource < smilePassive.getBuffResource)
+                    RemoveBuff(smilePassive.buffId);
+                // 치명타 확률 조정
+                RefreshPassiveStat(smilePassive.resourceStat, smilePassive.valueResource, smilePassive.resourceValue, playerStat.resource);
+                break;
+        }
         
         GameManager.Instance.SetPlayerHp(basicStat.hp);
         var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);

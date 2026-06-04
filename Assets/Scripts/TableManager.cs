@@ -251,6 +251,7 @@ public class PassiveData
     public float buffTime;
     public string buffId;
     public int buffValue;
+    public string buffUnit;
     public int penaltyValue;
     public int passiveName;
     public int passiveExplain;

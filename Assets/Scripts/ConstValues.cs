@@ -484,7 +484,10 @@ public class ConstValues : Singleton<ConstValues>
     public const string FighterStrongPunchLightning = "Fighter_StrongPunch_Lightning";
     public const string FighterStrongPunchJust = "Fighter_StrongPunch_Just";
     public const string FighterPunchTrail = "Fighter_PunchTrail";
-    
+
+    public const string ShieldEffect = "ShieldEffect";
+    public const string ShieldAppearEffect = "ShieldAppearEffect";
+
     public const string UIPool = "UIPool";
     public const string PopupPool = "PopupPool";
     public const string Prefab = ".prefab";

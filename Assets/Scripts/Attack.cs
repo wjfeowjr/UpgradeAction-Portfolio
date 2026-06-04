@@ -485,18 +485,25 @@ public class Attack : MonoBehaviour
         if (TryHandleCounter(hitTarget))
             return;
 
-        // 7. 피격 이팩트
-        if (!string.IsNullOrWhiteSpace(attackInfo.hitEffectId))
-            hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
-
-        // 8. 기본 데미지 적용
+        // 7. 기본 데미지 적용
         bool critical = GetCritical();
         int finalDamage = ApplyDamage(hitTarget, critical, isTrapAttack);
 
-        // 9. 감전 추가 피해
+        // 8. 감전 추가 피해
         TryApplyShockBonus(hitTarget, finalDamage, critical, isTrapAttack);
-
-        // 9-1. 자원 획득 (플레이어 공격이 피해를 줬을 때, 공격당 1회)
+        
+        // 9. 피격 이팩트
+        if (hitTarget.BasicStat.shield > 0)
+        {
+            hitTarget.SpawnHitEffect(ConstValues.ShieldAppearEffect, 0.5f);
+        }
+        else
+        {
+            if (!string.IsNullOrWhiteSpace(attackInfo.hitEffectId))
+                hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
+        }
+        
+        // 10. 자원 획득 (플레이어 공격이 피해를 줬을 때, 공격당 1회)
         TryGainResource();
 
         // 10. 사망 체크

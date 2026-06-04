@@ -335,6 +335,9 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
             if(passiveData.buffValue > 0)
                 valueList.Add(passiveData.buffValue);
 
+            if(!string.IsNullOrWhiteSpace(passiveData.buffUnit))
+                valueList.Add(passiveData.buffUnit);
+            
             if(passiveData.penaltyValue > 0)
                 valueList.Add(passiveData.penaltyValue);
 

@@ -56,12 +56,20 @@ public class UIHpPresenter
 public class UIHpView : MonoBehaviour, IUIHpView
 {
     [SerializeField] private Gauge hpGauge;
+    [SerializeField] private Gauge shieldGauge;
     [SerializeField] private Gauge resourceGauge;
     [SerializeField] private Sprite[] resourceSprite;
     
     public void SetHp(Player player)
     {
-        hpGauge.GaugeSetting(player.BasicStat.hp, player.BasicStat.maxHp);
+        var hp = player.BasicStat.hp;
+        var shield = player.BasicStat.shield;
+        // 총량이 최대체력을 넘을 때만 게이지가 확장된다
+        var finalHp = Mathf.Max(player.BasicStat.maxHp, hp + shield);
+
+        // shieldGauge(흰색)는 hpGauge 뒤에 두고 (hp+shield)까지 채워, 체력 오른쪽 구간만 보이게 함
+        shieldGauge.GaugeSetting(hp + shield, finalHp);
+        hpGauge.GaugeSetting(hp, finalHp);
         SetHpText(player);
     }
     
@@ -72,7 +80,12 @@ public class UIHpView : MonoBehaviour, IUIHpView
     
     public void HpReduce(Player player, float speed)
     {
-        hpGauge.GaugeReduce(player.BasicStat.hp, player.BasicStat.maxHp, speed);
+        var hp = player.BasicStat.hp;
+        var shield = player.BasicStat.shield;
+        var finalHp = Mathf.Max(player.BasicStat.maxHp, hp + shield);
+
+        shieldGauge.GaugeSetting(hp + shield, finalHp);
+        hpGauge.GaugeReduce(hp, finalHp, speed);
     }
     
     public void SetResource(Player player)

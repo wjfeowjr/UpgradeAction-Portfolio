@@ -339,6 +339,7 @@ public class PassiveCopy
     public float buffTime;
     public string buffId;
     public int buffValue;
+    public string buffUnit;
     public int penaltyValue;
     public int passiveName;
     public int passiveExplain;
@@ -1814,6 +1815,7 @@ public class GameManager : Singleton<GameManager>
             data.buffTime = passive.buffTime;
             data.buffId = passive.buffId;
             data.buffValue = passive.buffValue;
+            data.buffUnit = passive.buffUnit;
             data.penaltyValue = passive.penaltyValue;
             data.passiveName = passive.passiveName;
             data.passiveExplain = passive.passiveExplain;
@@ -2549,10 +2551,11 @@ public class GameManager : Singleton<GameManager>
         RotatePlayerList();
         RefreshFace();
         RefreshPlayerResource();
-        
+        curPlayer.ChangeApplyPassive();
+
         if (changeAttack)
             curPlayer.ChangeAttack();
-
+        
         RefreshSkill();
         SetCameraTarget(curPlayer.transform);
     }
