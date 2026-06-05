@@ -43,14 +43,6 @@ public class Elevator : InteractionController
         
         movingPlatform.transform.position = movingPlatform.Points[idx].position;
     }
-    
-    public override void SpawnInteractionObject()
-    {
-        if (movingPlatform.IsMoving)
-            return;
-
-        base.SpawnInteractionObject();
-    }
 
     public void SetInteractionAction()
     {
@@ -89,9 +81,9 @@ public class Elevator : InteractionController
         myAudioSource.Stop();
         SoundManager.Instance.PlaySound(ConstValues.ElevatorHiss);
         await UniTask.Delay(TimeSpan.FromSeconds(1.0f));
-        if (isPlayerTouch)
-            SpawnInteractionObject();
-        
+
+        isPlayerTouch = false;
+        GameManager.Instance.CurPlayer.MyRigidbody.WakeUp();
         GameManager.Instance.ControlStart = true;
         GameManager.Instance.SaveGame();
     }

@@ -255,7 +255,7 @@ public abstract class Character : InteractionController
     // 프로퍼티
     public BasicStat OriginStat => originStat;
     public BasicStat BasicStat => basicStat;
-    public BoxCollider2D MyBoxCollider => myBoxCollider;
+    public Rigidbody2D MyRigidbody => myRigidbody;
     public Transform CenterPos => centerPos;
     public Transform SpeechPos => speechPos;
     public Transform SpeechPos2 => speechPos2;

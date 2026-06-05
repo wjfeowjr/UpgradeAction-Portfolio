@@ -110,6 +110,22 @@ public class InteractionController : MonoBehaviour
         interactionSelect.SetDelay();
     }
     
+    protected void SetActionInteractionSelect(Action<int> action, Action closeAction)
+    {
+        ActiveInteractionSelect(true);
+        interactionSelect.SetAction(action, closeAction);
+        interactionSelect.SetDelay();
+    }
+    
+    protected void SetInteractionSelectCloseAction()
+    {
+        ActiveInteractionSelect(false);
+        GameManager.Instance.ControlStart = true;
+        GameManager.Instance.CurPlayer.MyRigidbody.WakeUp();
+        isPlayerTouch = false;
+        SoundManager.Instance.PlaySound(ConstValues.Popup);
+    }
+    
     protected void SpawnInteractionSelect(NpcCopy npcCopy, NpcInfo npcInfo)
     {
         var selectList = GameManager.Instance.dialogueChoiceCopyList.FindAll(x =>
@@ -159,6 +175,17 @@ public class InteractionController : MonoBehaviour
             idList.Add(select.id);
 
         interactionSelect.StartSetting(choiceIdxList, idList);
+    }
+    
+    protected void SpawnInteractionSelect(List<int> choiceIdxList)
+    {
+        if (interactionSelect == null)
+        {
+            interactionSelect = SpawnInteraction(ConstValues.InteractionSelectUI, selectPos).GetComponent<InteractionSelect>();
+            interactionSelect.gameObject.SetActive(false);
+        }
+
+        interactionSelect.StartSetting(choiceIdxList, null);
     }
 
     protected void ActiveInteractionSelect(bool active)

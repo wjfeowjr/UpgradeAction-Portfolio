@@ -22,7 +22,8 @@ public class InteractionSelect : MonoBehaviour
     private List<string> choiceIdList = new List<string>();
 
     private Tween[] expansionTween;
-    private Action<string> interactionAction;
+    private Action<string> dialogueAction;
+    private Action<int> normalAction;
     private Action closeAction;
     private CancellationTokenSource waitCancellation;
 
@@ -45,18 +46,19 @@ public class InteractionSelect : MonoBehaviour
         {
             CurrentIdxMinus();
             SelectChoice(currentIdx);
-            SoundManager.Instance.PlaySound(ConstValues.Popup);
+            SoundManager.Instance.PlaySound(ConstValues.Jump2);
         }
         if (Input.GetKeyDown(GameManager.Instance.downKey))
         {
             CurrentIdxPlus();
             SelectChoice(currentIdx);
-            SoundManager.Instance.PlaySound(ConstValues.Popup);
+            SoundManager.Instance.PlaySound(ConstValues.Jump2);
         }
         
         if (Input.GetKeyDown(KeyCode.Space))
         {
-            interactionAction.Invoke(choiceIdList[currentIdx]);
+            dialogueAction?.Invoke(choiceIdList[currentIdx]);
+            normalAction?.Invoke(currentIdx);
         }
         
         if (Input.GetKeyDown(KeyCode.Escape))
@@ -102,7 +104,12 @@ public class InteractionSelect : MonoBehaviour
 
     public void SetAction(Action<string> interaction, Action close)
     {
-        interactionAction = interaction;
+        dialogueAction = interaction;
+        closeAction = close;
+    }
+    public void SetAction(Action<int> interaction, Action close)
+    {
+        normalAction = interaction;
         closeAction = close;
     }
     

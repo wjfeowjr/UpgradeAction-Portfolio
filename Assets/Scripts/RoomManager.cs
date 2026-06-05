@@ -318,10 +318,10 @@ public class RoomManager : Singleton<RoomManager>
         var boolArray = new bool[4];
         var minimapCameraPos = GameManager.Instance.MiniMapCamera.position;
         
-        float leftLimit = -100;
+        float leftLimit = -350;
         float rightLimit = 350;
-        float upLimit = 50;
-        float downLimit = -50;
+        float upLimit = 100;
+        float downLimit = -100;
         
         if(Input.GetKey(GameManager.Instance.leftKey) && minimapCameraPos.x > leftLimit)
             GameManager.Instance.MiniMapCamera.Translate(Vector2.left * (speed * Time.unscaledDeltaTime));

@@ -1777,49 +1777,66 @@ public abstract class Player : Character
             return;
 
         // 상호작용
-        if (col.CompareTag(ConstValues.Interaction))
-        {
-            if (col.GetComponent<InteractionController>())
-            {
-                var controller = col.GetComponent<InteractionController>();
-                controller.SpawnInteractionObject();
-                controller.IsPlayerTouch = true;
-            }
-        }
+        // if (col.CompareTag(ConstValues.Interaction))
+        // {
+        //     if (col.GetComponent<InteractionController>())
+        //     {
+        //         var controller = col.GetComponent<InteractionController>();
+        //         controller.SpawnInteractionObject();
+        //         controller.IsPlayerTouch = true;
+        //     }
+        // }
 
         // Npc 상호작용
-        if (col.CompareTag(ConstValues.Npc))
-        {
-            if (col.GetComponent<Npc>())
-            {
-                var npc = col.GetComponent<Npc>();
-                npc.SpawnInteractionObject();
-            }
-        }
+        
     }
     
-    // 플레이어가 Mark 태그 Tilemap 위에 있을 때, 발 밑 셀을 갱신
+    
     private void OnTriggerStay2D(Collider2D col)
     {
-        if (!col.CompareTag(ConstValues.Mark))
-            return;
+        // 상호작용
+        if (GameManager.Instance.ControlStart)
+        {
+            if (col.CompareTag(ConstValues.Interaction))
+            {
+                var controller = col.GetComponent<InteractionController>();
+                if (controller && !controller.IsPlayerTouch)
+                {
+                    controller.SpawnInteractionObject();
+                    controller.IsPlayerTouch = true;
+                }
+            }
+            if (col.CompareTag(ConstValues.Npc))
+            {
+                var npc = col.GetComponent<Npc>();
+                if (npc && !npc.IsPlayerTouch)
+                {
+                    npc.SpawnInteractionObject();
+                    npc.IsPlayerTouch = true;
+                }
+            }
+        }
 
-        var tilemap = col.GetComponent<Tilemap>();
-        if (!tilemap)
-            return;
+        // 플레이어가 Mark 태그 Tilemap 위에 있을 때, 발 밑 셀을 갱신
+        if (col.CompareTag(ConstValues.Mark))
+        {
+            var tilemap = col.GetComponent<Tilemap>();
+            if (tilemap)
+            {
+                // 발 위치 기준으로 셀 좌표 산출
+                Vector3 samplePos = transform.position;
+                samplePos.y -= 0.1f;
+                Vector3Int cell = tilemap.WorldToCell(samplePos);
 
-        // 발 위치 기준으로 셀 좌표 산출
-        Vector3 samplePos = transform.position;
-        samplePos.y -= 0.1f;
-        Vector3Int cell = tilemap.WorldToCell(samplePos);
-
-        // 해당 셀에 실제 마커 타일이 존재하는지 확인 (콜라이더 영역의 빈 칸 제외)
-        if (tilemap.GetTile(cell) == null)
-            return;
-
-        // 셀의 중앙 월드 좌표를 Vector2로 저장
-        lastMarkerPosition = new Vector2(tilemap.GetCellCenterWorld(cell).x, transform.position.y);
-        hasLastMarker = true;
+                // 해당 셀에 실제 마커 타일이 존재하는지 확인 (콜라이더 영역의 빈 칸 제외)
+                if (tilemap.GetTile(cell) != null)
+                {
+                    // 셀의 중앙 월드 좌표를 Vector2로 저장
+                    lastMarkerPosition = new Vector2(tilemap.GetCellCenterWorld(cell).x, transform.position.y);
+                    hasLastMarker = true;
+                }
+            }
+        }
     }
 
     private void OnTriggerExit2D(Collider2D col)
@@ -1845,6 +1862,7 @@ public abstract class Player : Character
             {
                 var npc = col.GetComponent<Npc>();
                 npc.ReduceInteractionObject();
+                npc.IsPlayerTouch = false;
             }
         }
     }

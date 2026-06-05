@@ -1245,7 +1245,8 @@ public class Monster : Character
         {
             var randPos = Random.Range(-0.05f, 0.05f);
             transform.position = new Vector2(myVector.x + randPos, myVector.y + randPos);
-            await YieldDelay(anotherCancellation);
+            if (await YieldDelay(anotherCancellation).SuppressCancellationThrow())
+                return;
         }
     }
 

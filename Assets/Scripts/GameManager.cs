@@ -3118,7 +3118,7 @@ public class GameManager : Singleton<GameManager>
     }
     
     // 대화 세팅 연출
-    public async UniTask NpcDialogue(string choice, Npc[] npc, NpcInfo npcInfo, Action finishAction, Action onEndEvent = null)
+    public async UniTask NpcDialogue(string choice, Npc[] npc, NpcInfo npcInfo, Action onEndEvent = null)
     {
         bool handedOffToRoom = false;
         var talkDataList = TableManager.Instance.dialogueTable.Dialogue.FindAll(x => x.choiceGroupId == choice && IsDialogKeyMatched(x.checkKey, x.checkKeyValue, npcInfo));
@@ -3192,7 +3192,9 @@ public class GameManager : Singleton<GameManager>
             return;
 
         ControlStart = true;
-        finishAction?.Invoke();
+        foreach (var person in npc)
+            person.IsPlayerTouch = false;
+        curPlayer.MyRigidbody.WakeUp();
     }
     
     // Room 연출로 위임됐으면 true (호출자는 ControlStart/finishAction을 스킵해야 함)

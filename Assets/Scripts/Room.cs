@@ -187,11 +187,84 @@ public class Room : MonoBehaviour
         {
             RevealCellsInView();
             
-            // if (Input.GetKeyDown(KeyCode.L))
-            // {
-            //     
-            // }
+            if (Input.GetKeyDown(KeyCode.O))
+            {
+                Test("Room_BaseCamp");
+            }
+            if (Input.GetKeyDown(KeyCode.P))
+            {
+                Test("Room_3_4");
+            }
         }
+    }
+
+    private async void Test(string roomId)
+    {
+       var targetRoom = RoomManager.Instance.TargetRoom(roomId);
+        GameManager.Instance.StopPlayer();
+        
+        StopBGM();
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        GameManager.Instance.CurPlayer.SpawnObject(ConstValues.BangEffect, GameManager.Instance.CurPlayer.CenterPos.position);
+        GameManager.Instance.CurPlayer.gameObject.SetActive(false);
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        if(await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
+
+        ObjectActive(false);
+        GameManager.Instance.CurPlayer.RoomMoveState();
+        
+        targetRoom.ObjectActive(true);
+        targetRoom.SetCameraLimit();
+        targetRoom.SetPortal();
+        targetRoom.PortalSoundActive(false);
+        // 여기서 몹 소환
+        targetRoom.SpawnMonster();
+        // 여기서 트랩 데이터 넣기
+        targetRoom.SetTrap();
+        // 여기서 세이브포인트 데이터 넣기
+        targetRoom.SetSavePoint();
+        // 여기서 골드오브젝트 액션 넣기
+        targetRoom.SetActionGoldObject();
+        // 골드오브젝트 초기화
+        targetRoom.RefreshGoldObject();
+
+        RoomManager.Instance.CurrentRoom = targetRoom;
+        RoomManager.Instance.CurrentRoom.SetGroundVector();
+
+        GameManager.Instance.CurPlayer.transform.position = targetRoom.saveObject.SavePointPos.position;
+        
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
+            return;
+        
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        GameManager.Instance.CurPlayer.SpawnObject(ConstValues.BangEffect, GameManager.Instance.CurPlayer.CenterPos.position);
+        GameManager.Instance.CurPlayer.gameObject.SetActive(true);
+        GameManager.Instance.CurPlayer.ForceIdle();
+        
+        targetRoom.SetBgm(false);
+        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        targetRoom.PortalSoundActive(true);
+        GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
+        GameManager.Instance.MovePlayer();
+        GameManager.Instance.CurPlayer.ClearLastPlatform();
+        GameManager.Instance.CurPlayer.MyRigidbody.WakeUp();
+        
+        RoomManager.Instance.ActivePlaceName();
+        GameManager.Instance.HidePlaceName();
+        if(roomsData.place != targetRoom.roomsData.place)
+            GameManager.Instance.RefreshPlaceName();
     }
 
     private void OnApplicationQuit()
@@ -285,6 +358,7 @@ public class Room : MonoBehaviour
         
         GameManager.Instance.ControlStart = true;
         GameManager.Instance.RefreshPlaceName();
+        GameManager.Instance.CurPlayer.MyRigidbody.WakeUp();
     }
 
     public void SetGroundVector()
@@ -1248,6 +1322,8 @@ public class Room : MonoBehaviour
     {
         if (!saveObject)
             return;
+
+        saveObject.SetSelectAction();
         
         saveObject.SetSaveAction(() =>
         {
@@ -1258,6 +1334,10 @@ public class Room : MonoBehaviour
             saveObject.InteractionObject.FadeOut();
             SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
             GameManager.Instance.SaveGame();
+            
+            // 이곳
+            GameManager.Instance.ControlStart = false;
+            saveObject.SetFastTravelAction();
         });
     }
     

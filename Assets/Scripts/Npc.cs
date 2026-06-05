@@ -136,7 +136,8 @@ public class Npc : Character
                     closeAction = () =>
                     {
                         uiBase.ReductionClose(true, true).Forget();
-                        SpawnInteractionObject();
+                        isPlayerTouch = false;
+                        GameManager.Instance.CurPlayer.MyRigidbody.WakeUp();
                     }
                 };
                 
@@ -149,27 +150,20 @@ public class Npc : Character
         }
         else
         {
-            await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject, RefreshInteractionSelect);
+            await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, RefreshInteractionSelect);
         }
     }
 
     private async UniTask SetFirstDialogueAction(string choice)
     {
         ActiveInteractionSelect(false);
-        await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, SpawnInteractionObject, RefreshInteractionSelect);
+        await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, RefreshInteractionSelect);
     }
 
     // endEvent 발생 시 선택지를 현재 dialogKey 상태 기준으로 재구성
     private void RefreshInteractionSelect()
     {
         SpawnInteractionSelect(npcCopyData, npcInfo);
-    }
-    
-    private void SetCloseAction()
-    {
-        ActiveInteractionSelect(false);
-        GameManager.Instance.ControlStart = true;
-        SpawnInteractionObject();
     }
 
     protected virtual async void StartDialogue()
@@ -198,16 +192,13 @@ public class Npc : Character
             if (IsQuestReadyToClear())
             {
                 // SpawnInteractionObject
-                await GameManager.Instance.NpcDialogue(npcCopyData.questClearChoice, anotherNpc, npcInfo, SpawnInteractionObject, RefreshInteractionSelect);
+                await GameManager.Instance.NpcDialogue(npcCopyData.questClearChoice, anotherNpc, npcInfo, RefreshInteractionSelect);
 
                 // NPC별 클리어 후속 연출 (해당 인터페이스가 구현돼 있을 때만 실행)
                 var clearAction = GetComponent<IQuestClearAction>();
                 if (clearAction != null)
-                {
-                    ActiveInteractionObject(false);
                     await clearAction.QuestClearAction();
-                    SpawnInteractionObject();
-                }
+                
                 return;
             }
 
@@ -216,7 +207,7 @@ public class Npc : Character
                 await GameManager.Instance.NpcFirstTalk(npcCopyData.startDialog, speechPos);
                 isFirstTalk = true;
             }
-            SetActionInteractionSelect(SetDialogueAction, SetCloseAction);
+            SetActionInteractionSelect(SetDialogueAction, SetInteractionSelectCloseAction);
         }
     }
 
