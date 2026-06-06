@@ -4,6 +4,7 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using DG.Tweening;
 using TMPro;
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class SaveObject : InteractionController
@@ -31,13 +32,72 @@ public class SaveObject : InteractionController
         switch (idx)
         {
             case 0:
-                Debug.Log("미니맵 소환");
+                SpawnFastTravel();
                 break;
-            
+
             case 1:
                 SetInteractionSelectCloseAction();
                 break;
         }
+    }
+
+    private void SpawnFastTravel()
+    {
+        // 세이브 포인트가 활성화된 방들을 RoomArray(idx) 순서대로 수집
+        var savePointRooms = RoomManager.Instance.GetSavePointRooms();
+        var targetPositions = new List<Vector3>();
+        var placeNames = new List<string>();
+        var startIndex = 0;
+        for (int i = 0; i < savePointRooms.Count; i++)
+        {
+            targetPositions.Add(savePointRooms[i].SaveObject.transform.position);
+            placeNames.Add(savePointRooms[i].Place);
+
+            // 현재 상호작용 중인 세이브 포인트(this)에서 시작
+            if (savePointRooms[i].SaveObject == this)
+                startIndex = i;
+        }
+
+        // 선택지를 숨기고 패스트 트래블 팝업을 띄운다
+        ActiveInteractionSelect(false);
+
+        var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_FastTravel, Vector3.zero).GetComponent<UIBase>();
+        // 바인딩
+        if (uiBase is Popup_FastTravel popupFastTravel)
+        {
+            var fastTravelInterface = popupFastTravel.FastTravelView.ConvertTo<IPopupFastTravelView>();
+            // 닫기 연타 시 중복 호출을 막기 위한 플래그
+            var isClosing = false;
+            var fastTravelModel = new PopupFastTravelModel()
+            {
+                targetPositions = targetPositions,
+                placeNames = placeNames,
+                startIndex = startIndex,
+                miniMapCamera = GameManager.Instance.MiniMapCamera,
+                closeAction = () =>
+                {
+                    if (isClosing)
+                        return;
+                    isClosing = true;
+                    CloseFastTravelAsync(uiBase).Forget();
+                }
+            };
+            var fastTravelPresenter = new PopupFastTravelPresenter(fastTravelInterface, fastTravelModel);
+            popupFastTravel.SetFastTravelPresenter(fastTravelPresenter);
+            fastTravelPresenter.Expansion(() =>
+            {
+                uiBase.ExpansionOpen(true, true);
+            });
+            // 시작 위치(현재 방)로 카메라 이동 및 place 표시
+            fastTravelPresenter.Open();
+        }
+    }
+
+    private async UniTaskVoid CloseFastTravelAsync(UIBase uiBase)
+    {
+        await uiBase.ReductionClose(true, true);
+        // 팝업 닫힘 트윈이 끝난 뒤에 선택지 상태와 조작을 복구한다
+        SetInteractionSelectCloseAction();
     }
 
     public void SetSelectAction()

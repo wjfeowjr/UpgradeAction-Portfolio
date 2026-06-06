@@ -123,7 +123,11 @@ public class Room : MonoBehaviour
 
     public string Id    => roomInfo.roomId;
     public string Place => GameManager.Instance.GetPlaceName(roomsData.place);
-    
+
+    // 패스트 트래블용: 세이브 포인트 활성화 여부와 세이브 오브젝트 접근자
+    public bool SavePointCheck => roomInfo != null && roomInfo.savePointCheck;
+    public SaveObject SaveObject => saveObject;
+
     private void Awake()
     {
         if (!RoomManager.Instance.MainCamera)

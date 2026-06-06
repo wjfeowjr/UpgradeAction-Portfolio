@@ -555,6 +555,7 @@ public enum eUIType
     Popup_Store,
     Popup_Pause,
     Popup_Setting,
+    Popup_FastTravel,
 }
 
 [Serializable]

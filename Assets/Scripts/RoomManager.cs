@@ -142,6 +142,18 @@ public class RoomManager : Singleton<RoomManager>
         return totalRoom.TargetRoom(id);
     }
 
+    // 세이브 포인트가 활성화된 방을 RoomArray(idx) 순서대로 반환 (패스트 트래블용)
+    public List<Room> GetSavePointRooms()
+    {
+        var list = new List<Room>();
+        foreach (var room in totalRoom.RoomArray)
+        {
+            if (room.SavePointCheck && room.SaveObject)
+                list.Add(room);
+        }
+        return list;
+    }
+
     public void AllMonsterArrive()
     {
         foreach (var room in totalRoom.RoomArray)

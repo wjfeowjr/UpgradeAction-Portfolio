@@ -1,16 +1,21 @@
 using UnityEngine;
 
-public class Popup_FastTravel : MonoBehaviour
+public class Popup_FastTravel : UIBase
 {
-    // Start is called once before the first execution of Update after the MonoBehaviour is created
-    void Start()
+    // 패스트 트래블(세이브 포인트 이동) 팝업
+    public IPopupFastTravelView FastTravelView => fastTravelView;
+
+    [SerializeField] private PopupFastTravelView fastTravelView;
+    private PopupFastTravelPresenter popupFastTravelPresenter;
+    public PopupFastTravelPresenter PopupFastTravelPresenter => popupFastTravelPresenter;
+
+    public void SetFastTravelPresenter(PopupFastTravelPresenter presenter)
     {
-        
+        popupFastTravelPresenter = presenter;
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        
+        popupFastTravelPresenter?.Tick();
     }
 }
