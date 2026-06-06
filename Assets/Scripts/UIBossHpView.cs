@@ -120,8 +120,11 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
     public void HpReduce(Character character, float speed)
     {
         hpGauge.GaugeReduce(character.BasicStat.hp, character.BasicStat.maxHp, speed);
-        if(character.BasicStat.hp <= 0)
+        if (character.BasicStat.hp <= 0)
+        {
             gameObject.SetActive(false);
+            staggerGauge.gameObject.SetActive(false);
+        }
     }
     
     // 무력화
@@ -130,16 +133,16 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
         if (character.BasicStat.bodyType != EBodyType.StrongArmor && character.BasicStat.bodyType != EBodyType.HyperArmor)
             return;
 
-        if (!staggerGauge.gameObject.activeSelf) // 
+        if (!staggerGauge.gameObject.activeSelf)
         {
             staggerGauge.gameObject.SetActive(true);
             staggerGauge.GaugeSetting(character.BasicStat.stagger, character.BasicStat.maxStagger);
         }
-
+        
         character.ImmuneStagger = false;
         
         SetStaggerText(character);
-        if (character.BasicStat.hp <= 0 || character.BasicStat.stagger <= 0)
+        if (character.BasicStat.stagger <= 0)
             staggerGauge.gameObject.SetActive(false);
     }
     public void SetStaggerText(Character character)

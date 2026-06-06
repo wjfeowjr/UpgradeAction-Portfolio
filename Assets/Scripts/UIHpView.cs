@@ -85,7 +85,10 @@ public class UIHpView : MonoBehaviour, IUIHpView
         var finalHp = Mathf.Max(player.BasicStat.maxHp, hp + shield);
 
         shieldGauge.GaugeSetting(hp + shield, finalHp);
-        hpGauge.GaugeReduce(hp, finalHp, speed);
+        if(finalHp > player.BasicStat.maxHp)
+            hpGauge.GaugeSetting(hp, finalHp);
+        else
+            hpGauge.GaugeReduce(hp, finalHp, speed);
     }
     
     public void SetResource(Player player)

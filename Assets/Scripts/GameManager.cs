@@ -1913,6 +1913,7 @@ public class GameManager : Singleton<GameManager>
             player.InitBasicStat();
             player.InitBonusStat();
             player.ResetSkillCoolTime();
+            player.ApplyPassive();
         }
     }
 

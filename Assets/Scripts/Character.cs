@@ -602,7 +602,7 @@ public abstract class Character : InteractionController
 
         if (normalState is ENormalState.Idle or ENormalState.Move)
         {
-            if (lastStandPlatform.collider != null)
+            if (lastStandPlatform.collider)
             {
                 IgnorePlatformCheck(lastStandPlatform, true);
                 //downJumping = true;
@@ -1057,6 +1057,10 @@ public abstract class Character : InteractionController
     // 플랫폼 무시 오버로딩
     protected void IgnorePlatformCheck(PlatformObject platformObject, bool forceIgnore = false)
     {
+        // 파괴되었거나 null인 콜라이더 방어 (빌드/IL2CPP에서 NRE로 표면화됨)
+        if (platformObject == null || !platformObject.collider)
+            return;
+
         var movingPlatform = platformObject.collider.GetComponent<MovingPlatform>();
         if (movingPlatform != null && movingPlatform.IsElevator)
             return;
@@ -1075,35 +1079,43 @@ public abstract class Character : InteractionController
     // 플랫폼의 무시 취소 높이
     private float ColliderHeight(Collider2D col)
     {
+        // 파괴되었거나 null인 콜라이더 방어 (빌드/IL2CPP에서 NRE로 표면화됨)
+        if (!col)
+            return 0;
+
         float height = 0;
-        if (col.GetComponent<BoxCollider2D>())
+        var box = col.GetComponent<BoxCollider2D>();
+        if (box)
         {
-            height = col.transform.position.y + col.GetComponent<BoxCollider2D>().size.y * 0.5f + col.offset.y - 0.2f;
+            height = col.transform.position.y + box.size.y * 0.5f + col.offset.y - 0.2f;
         }
 
         if (col.GetComponent<TilemapCollider2D>())
         {
             Tilemap tilemap = col.GetComponent<Tilemap>();
-    
-            BoundsInt bounds = tilemap.cellBounds;
-            float halfHeight = tilemap.layoutGrid.cellSize.y / 2f;
-            
-            // 2. 해당 영역 안의 모든 칸(Cell)을 순회합니다.
-            foreach (Vector3Int pos in bounds.allPositionsWithin)
+            // Tilemap 또는 부모 Grid(layoutGrid)가 없으면 cellBounds/cellSize 접근 시 NRE
+            if (tilemap && tilemap.layoutGrid)
             {
-                // 3. 해당 칸에 타일이 존재하는지 확인
-                if (!tilemap.HasTile(pos))
-                    continue;
-                
-                // 4. 타일의 중앙 좌표를 구하고 윗면 좌표를 계산
-                Vector3 center = tilemap.GetCellCenterWorld(pos);
-                Vector3 topPos = new Vector3(center.x, center.y + halfHeight, center.z);
-                height = topPos.y - 0.2f;
-                break;
+                BoundsInt bounds = tilemap.cellBounds;
+                float halfHeight = tilemap.layoutGrid.cellSize.y / 2f;
+
+                // 2. 해당 영역 안의 모든 칸(Cell)을 순회합니다.
+                foreach (Vector3Int pos in bounds.allPositionsWithin)
+                {
+                    // 3. 해당 칸에 타일이 존재하는지 확인
+                    if (!tilemap.HasTile(pos))
+                        continue;
+
+                    // 4. 타일의 중앙 좌표를 구하고 윗면 좌표를 계산
+                    Vector3 center = tilemap.GetCellCenterWorld(pos);
+                    Vector3 topPos = new Vector3(center.x, center.y + halfHeight, center.z);
+                    height = topPos.y - 0.2f;
+                    break;
+                }
             }
         }
 
-        return (float)Math.Round(height, 2);;
+        return (float)Math.Round(height, 2);
     }
 
     private void AddIgnorePlatform()
@@ -2317,6 +2329,8 @@ public abstract class Character : InteractionController
     // 실드 타이머/만료 처리 (UpdateBuff에서 매 프레임 호출)
     private void UpdateShield()
     {
+        bool expiredByTime = false; // 시간 만료로 사라진 실드가 있는지
+
         // 뒤에서부터 순회해서 안전하게 제거
         for (int i = shieldList.Count - 1; i >= 0; i--)
         {
@@ -2338,15 +2352,19 @@ public abstract class Character : InteractionController
                 {
                     shieldList.RemoveAt(i);
                     s.endAction?.Invoke();
+                    expiredByTime = true;
                 }
             }
         }
 
         // 캐시 갱신 (기존 basicStat.shield 참조/인스펙터/UI 호환용)
         basicStat.shield = TotalShield();
-
         // 총 실드 유무에 따라 본체 이펙트 on/off (집계형, 1개만 표시)
         UpdateShieldEffect();
+
+        // 시간 만료로 실드가 사라지면 데미지 이벤트가 없으므로, 플레이어 HP UI를 직접 갱신
+        if (expiredByTime && this is Player)
+            GameManager.Instance.RefreshPlayerHp();
     }
 
     // 총 실드 유무에 따라 실드 이펙트를 켜고 끈다

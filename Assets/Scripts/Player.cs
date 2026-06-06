@@ -930,10 +930,14 @@ public abstract class Player : Character
                 var smilePassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
                 // 패널티 게이지 감소
                 playerStat.resource -= smilePassive.penaltyValue;
+                if (playerStat.resource < 0)
+                    playerStat.resource = 0;
                 if(playerStat.resource < smilePassive.getBuffResource)
                     RemoveBuff(smilePassive.buffId);
+                
                 // 치명타 확률 조정
                 RefreshPassiveStat(smilePassive.resourceStat, smilePassive.valueResource, smilePassive.resourceValue, playerStat.resource);
+                GameManager.Instance.RefreshPlayerResource();
                 break;
         }
         
