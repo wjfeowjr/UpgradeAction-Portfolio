@@ -14,9 +14,11 @@ public class PopupFastTravelModel
 {
     public List<Vector3> targetPositions = new List<Vector3>();   // 각 세이브 포인트의 SaveObject 위치
     public List<string> placeNames = new List<string>();          // 각 세이브 포인트의 place 이름
+    public List<string> roomIds = new List<string>();             // 각 세이브 포인트의 roomId
     public int startIndex;                                        // 시작 인덱스(현재 방)
     public Transform miniMapCamera;                               // 이동시킬 미니맵 카메라
-    public Action closeAction;
+    public Action closeAction;                                    // ESC 닫기
+    public Action<int> selectAction;                             // Enter 확정(선택 인덱스 전달)
 }
 
 public class PopupFastTravelPresenter
@@ -67,6 +69,14 @@ public class PopupFastTravelPresenter
         }
 
         NavigateAction();
+
+        // Enter 입력 시 선택한 세이브 포인트로 확정(이동)
+        if (Input.GetKeyDown(KeyCode.Return) && _model.targetPositions.Count > 0)
+        {
+            _moveTween?.Kill();
+            _model.selectAction?.Invoke(_index);
+            return;
+        }
 
         // ESC 입력 시 닫기
         if (Input.GetKeyDown(GameManager.Instance.escKey))

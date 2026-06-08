@@ -5,13 +5,10 @@ public class RoomSkillAndPassive : MonoBehaviour
 {
     [SerializeField] private SpriteRenderer mySpriteRenderer;
     private Action action;
-    private string skillId;
 
     public void SetSprite(string id, bool alreadyGet)
     {
         mySpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(id);
-        skillId = id;
-        
         gameObject.SetActive(!alreadyGet);
     }
 

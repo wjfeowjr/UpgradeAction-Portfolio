@@ -56,6 +56,7 @@ public class Room : MonoBehaviour
     [SerializeField] protected RoomSkillAndPassive[] roomSkillAndPassive;
     [SerializeField] protected RoomItem[] roomItem;
     [SerializeField] protected RoomTreasureBox[] roomTreasureBox;
+    [SerializeField] protected RoomAttributePoint[] roomAttributePoint;
     [SerializeField] protected Elevator[] elevators;
     [SerializeField] protected LockDoor[] lockDoors;
     [SerializeField] protected Arena[] arenas;
@@ -71,7 +72,7 @@ public class Room : MonoBehaviour
     [SerializeField] private SaveObject saveObject;
     [SerializeField] private PortalObject portalObject;
     [SerializeField] private MerchantObject merchantObject;
-    
+
     [Header("플레이어 도착위치")]
     [SerializeField] private List<Transform> leftPlayerPos;
     [SerializeField] private List<Transform> rightPlayerPos;
@@ -190,19 +191,11 @@ public class Room : MonoBehaviour
         if (roomGameObject.activeSelf)
         {
             RevealCellsInView();
-            
-            if (Input.GetKeyDown(KeyCode.O))
-            {
-                Test("Room_BaseCamp");
-            }
-            if (Input.GetKeyDown(KeyCode.P))
-            {
-                Test("Room_3_4");
-            }
         }
     }
 
-    private async void Test(string roomId)
+    // 빠른 세이브 이동
+    public async void FastTravelMove(string roomId)
     {
        var targetRoom = RoomManager.Instance.TargetRoom(roomId);
         GameManager.Instance.StopPlayer();
@@ -269,6 +262,9 @@ public class Room : MonoBehaviour
         GameManager.Instance.HidePlaceName();
         if(roomsData.place != targetRoom.roomsData.place)
             GameManager.Instance.RefreshPlaceName();
+        
+        GameManager.Instance.SavePoint = name;
+        GameManager.Instance.SaveGame();
     }
 
     private void OnApplicationQuit()
@@ -606,6 +602,26 @@ public class Room : MonoBehaviour
             GameManager.Instance.SaveGame();
         }
         
+        // 맵에 널려있는 특성 포인트 세팅
+        if (roomInfo.attributePoint.Count < roomAttributePoint.Length)
+        {
+            for (int i = 0; i < roomAttributePoint.Length; i++)
+            {
+                var attributePoint = new AttributePoint()
+                {
+                    count = roomInfo.attributePoint[i].count,
+                    alreadyGet = false, 
+                };
+                roomInfo.attributePoint.Add(attributePoint);
+            }
+            GameManager.Instance.SaveGame();
+        }
+        else if (roomAttributePoint.Length < roomInfo.treasureBox.Count)
+        {
+            roomInfo.attributePoint.Clear();
+            GameManager.Instance.SaveGame();
+        }
+
         // 맵에 널려있는 아이템 세팅
         if (!string.IsNullOrWhiteSpace(roomsData.item))
         {
@@ -628,11 +644,41 @@ public class Room : MonoBehaviour
                 }
                 GameManager.Instance.SaveGame();
             }
-            else if (itemArray.Length < roomInfo.item.Count)
+            else if (roomInfo.item.Count > itemArray.Length)
             {
                 roomInfo.item.Clear();
                 GameManager.Instance.SaveGame();
             }
+            // 수가 같을 때
+            else  if (roomInfo.item.Count == itemArray.Length)
+            {
+                if (roomInfo.item.Count > 0 && itemArray.Length > 0)
+                {
+                    var itemInfoArray = itemArray[0].Split(';');
+                    if (roomInfo.item[0].id != itemInfoArray[0])
+                    {
+                        roomInfo.item[0].id = itemInfoArray[0];
+                        roomInfo.item[0].alreadyGet = false;
+                        GameManager.Instance.SaveGame();
+                    }
+                }
+            }
+            
+            // 해당 아이템을 이미 가지고 있을 때는 비활성화
+            bool isHaveItem = false;
+            foreach (var haveItem in GameManager.Instance.ItemList)
+            {
+                foreach (var item in roomInfo.item)
+                {
+                    if (haveItem.id != item.id)
+                        continue;
+                    
+                    item.alreadyGet = true;
+                    isHaveItem = true;
+                }
+            }
+            if(isHaveItem)
+                GameManager.Instance.SaveGame();
         }
 
         // 엘리베이터 설정
@@ -739,7 +785,7 @@ public class Room : MonoBehaviour
                     roomItem[idx].IsGet = true;
                     roomInfo.item[idx].alreadyGet = true;
                     roomItem[idx].ReduceInteractionObject();
-                    GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
+                    GameManager.Instance.GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
                     SoundManager.Instance.PlaySound(ConstValues.Pickup);
                     GameManager.Instance.GetItemProduct(roomInfo.item[idx].id);
                     GameManager.Instance.SaveGame();
@@ -768,9 +814,6 @@ public class Room : MonoBehaviour
                     
                     switch (roomInfo.treasureBox[idx].id)
                     {
-                        case ConstValues.AttributePoint:
-                            GameManager.Instance.GetAttributeProduct(roomInfo.treasureBox[idx].count, GetAttributeEvent);
-                            break;
                         case ConstValues.Gold:
                             GameManager.Instance.GetGoldProduct(roomInfo.treasureBox[idx].count, roomTreasureBox[idx].transform.position, GetGoldEvent);
                             break;
@@ -779,6 +822,30 @@ public class Room : MonoBehaviour
                     GameManager.Instance.SaveGame();
                 });
             }
+        }
+        
+        // 특성 포인트를 얻었다면, 비활성화
+        for (var i = 0; i < roomAttributePoint.Length; i++)
+        {
+            int idx = i;
+
+            if (roomInfo.attributePoint[idx].alreadyGet)
+            {
+                roomAttributePoint[idx].gameObject.SetActive(false);
+            }
+            else
+            {
+                roomAttributePoint[idx].SetAction(() =>
+                {
+                    roomAttributePoint[idx].gameObject.SetActive(false);
+                    roomInfo.attributePoint[idx].alreadyGet = true;
+                    PlusAttributePoint(roomInfo.attributePoint[idx].count);
+                    GameManager.Instance.GetAttributeProduct(roomInfo.attributePoint[idx].count, GetAttributeEvent);
+                    SoundManager.Instance.PlaySound(ConstValues.Pickup);
+                    GameManager.Instance.SaveGame();
+                });
+            }
+            roomAttributePoint[idx].AlreadyGet = roomInfo.attributePoint[idx].alreadyGet;
         }
         
         // 엘리베이터
@@ -1162,25 +1229,12 @@ public class Room : MonoBehaviour
         await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
     }
 
-    private void GetItem(string id, int count)
-    {
-        var itemInfo = new HaveItemInfo()
-        {
-            id = id,
-            count = count,
-        };
-        GameManager.Instance.ItemList.Add(itemInfo);
-    }
-
     private void GetTreasureBoxItem(string id, int count, Vector2 itemVector)
     {
         switch (id)
         {
             case ConstValues.Gold:
                 PlusGold(count, itemVector);
-                break;
-            case ConstValues.AttributePoint:
-                PlusAttributePoint(count);
                 break;
         }
     }
@@ -1306,6 +1360,15 @@ public class Room : MonoBehaviour
             // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
             merchantObject.MinimapObject.SetActive(roomInfo.merchantCheck);
         }
+
+        if (roomAttributePoint.Length > 0)
+        {
+            foreach (var attributePoint in roomAttributePoint)
+            {
+                attributePoint.SetParents(tilemapObject);
+                attributePoint.MinimapObject.SetActive(roomInfo.attributePointCheck);
+            }
+        }
     }
 
     public string GetWallShortCutName(int idx)
@@ -1333,15 +1396,18 @@ public class Room : MonoBehaviour
         {
             RoomManager.Instance.AllMonsterArrive();
             GameManager.Instance.SavePoint = name;
-            GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30206)).Forget();
+            //GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30206)).Forget();
             GameManager.Instance.RefillPlayerHp();
             saveObject.InteractionObject.FadeOut();
             SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
             GameManager.Instance.SaveGame();
             
             // 이곳
-            GameManager.Instance.ControlStart = false;
-            saveObject.SetFastTravelAction();
+            if (GameManager.Instance.IsHaveItem(ConstValues.SaveTravel))
+            {
+                GameManager.Instance.ControlStart = false;
+                saveObject.SetFastTravelAction();
+            }
         });
     }
     
@@ -1720,6 +1786,29 @@ public class Room : MonoBehaviour
         if (merchantNew)
             SaveMerchantObject();
         
+        if(roomAttributePoint.Length > 0)
+        {
+            for (var i = 0; i < roomAttributePoint.Length; i++)
+            {
+                bool attributeNew = false;
+
+                Vector2 attributePointPos = roomAttributePoint[i].transform.position;
+                Vector2 saveSize = new Vector2(3.5f, 3.5f);
+
+                Vector2 min = new Vector2(attributePointPos.x - saveSize.x, attributePointPos.y - saveSize.y);
+                Vector2 max = new Vector2(attributePointPos.x + saveSize.x, attributePointPos.y + saveSize.y);
+                // 타일이 카메라 뷰와 조금이라도 겹치면 활성화
+                if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
+                    max.y >= viewRect.yMin && min.y <= viewRect.yMax)
+                {
+                    attributeNew = true;
+                }
+
+                if (attributeNew)
+                    SaveAttributePointCheck(i);
+            }
+        }
+
         bool shortcutNew = false;
         foreach (var shortcutCell in allshortcutCells)
         {
@@ -1861,6 +1950,12 @@ public class Room : MonoBehaviour
     {
         merchantObject.MinimapObject.SetActive(true);
         roomInfo.merchantCheck = true;
+    }
+    
+    private void SaveAttributePointCheck(int idx)
+    {
+        roomAttributePoint[idx].MinimapObject.SetActive(!roomAttributePoint[idx].AlreadyGet);
+        roomInfo.attributePointCheck = true;
     }
 
     /// <summary>
@@ -2806,6 +2901,7 @@ public class Room : MonoBehaviour
         {
             roomSkillAndPassive = interactionArray.GetComponentsInChildren<RoomSkillAndPassive>();
             roomTreasureBox = interactionArray.GetComponentsInChildren<RoomTreasureBox>();
+            roomAttributePoint = interactionArray.GetComponentsInChildren<RoomAttributePoint>();
             roomItem = interactionArray.GetComponentsInChildren<RoomItem>();
             elevators = interactionArray.GetComponentsInChildren<Elevator>();
             arenas = interactionArray.GetComponentsInChildren<Arena>();

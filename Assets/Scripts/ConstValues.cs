@@ -259,6 +259,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Interaction = "Interaction";
     public const string InteractionUI = "InteractionUI";
     public const string InteractionSelectUI = "InteractionSelectUI";
+    public const string RoomBoss2 = "Room_Boss_2";
     
     public const string Npc = "Npc";
     public const string Dialogue = "Dialogue";
@@ -579,6 +580,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SteelPlate = "SteelPlate";
     public const string IronWheel = "IronWheel";
     public const string MiniBooster = "MiniBooster";
+    public const string SaveTravel = "SaveTravel";
     
     // 사운드
     public const string Laugh = "Laugh";

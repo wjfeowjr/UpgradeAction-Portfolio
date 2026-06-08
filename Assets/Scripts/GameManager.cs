@@ -1,22 +1,14 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Unity.VisualScripting;
-using UnityEditor;
 using UnityEngine;
-using UnityEngine.AddressableAssets;
-using UnityEngine.EventSystems;
-using UnityEngine.ResourceManagement.AsyncOperations;
 using UnityEngine.SceneManagement;
-using UnityEngine.Serialization;
 using UnityEngine.U2D;
-using UnityEngine.UI;
 
 public static class SaveSystem
 {
@@ -459,6 +451,22 @@ public class TreasureBox
 }
 
 [Serializable]
+// 특성 포인트
+public class AttributePoint
+{
+    public int count;
+    public bool alreadyGet;
+}
+
+[Serializable]
+// 유물
+public class Relic
+{
+    public string id;
+    public bool alreadyGet;
+}
+
+[Serializable]
 // 아이템(보물상자)
 public class Item
 {
@@ -494,13 +502,16 @@ public class RoomInfo
     public bool savePointCheck;                                      // 세이브 포인트
     public bool portalCheck;                                         // 포탈
     public bool merchantCheck;                                       // 상인
-    
+    public bool attributePointCheck;                                 // 특성 포인트
+
     public List<RoomProduct> roomProduct = new List<RoomProduct>();
     public List<EventNpc> eventNpc = new List<EventNpc>();
     public List<EventCustomObject> customObject = new List<EventCustomObject>();
     public List<ShortCut> shortCut = new List<ShortCut>();
     public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
     public List<TreasureBox> treasureBox = new List<TreasureBox>();
+    public List<AttributePoint> attributePoint = new List<AttributePoint>();
+    public List<Relic> relic = new List<Relic>();
     public List<Item> item = new List<Item>();
     public List<ElevatorData> elevators = new List<ElevatorData>();
     public List<LockDoorData> lockDoors = new List<LockDoorData>();
@@ -864,16 +875,16 @@ public class GameManager : Singleton<GameManager>
         return data;
     }
 
-    public void DataPatch(SaveData data)
+    private void DataPatch(SaveData data)
     {
         // 패치 필요 여부 확인 (마지막 저장 시각이 패치 기준 시각보다 이전이면 패치 필요)
         if (data != null && DateTime.TryParse(data.lastSavedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime lastSavedAt))
         {
             // 기준 시각: 한국 시간(KST, UTC+9) 2026년 5월 29일 00시
-            DateTime patchTime = new DateTime(2026, 6, 1, 7, 0, 0);
-            if (lastSavedAt.ToUniversalTime() < patchTime)
+            DateTime patchTime1 = new DateTime(2026, 6, 1, 7, 0, 0);
+            if (lastSavedAt.ToUniversalTime() < patchTime1)
             {
-                Debug.Log("패치 필요");
+                Debug.Log("1차 패치 필요");
                 // 특성 초기화
                 foreach (var playerInfo in data.playerInfoList)
                 {
@@ -897,9 +908,44 @@ public class GameManager : Singleton<GameManager>
                         skill.attributeList.Clear();
                 }
             }
-            else
+            
+            DateTime patchTime2 = new DateTime(2026, 6, 8, 5, 20, 0);
+            if (lastSavedAt.ToUniversalTime() < patchTime2)
             {
-                Debug.Log("패치 불필요");
+                Debug.Log("2차 패치 필요");
+                // 세이브 이동 아이템 추가
+                var bossRoom2 = saveData.roomInfoList.Find(x => x.roomId == ConstValues.RoomBoss2);
+                if (bossRoom2 != null && bossRoom2.roomProduct[0].isFinish)
+                    GetItem(ConstValues.SaveTravel, 1);
+            }
+            
+            DateTime patchTime3 = new DateTime(2026, 6, 8, 19, 55, 0);
+            if (lastSavedAt.ToUniversalTime() < patchTime3)
+            {
+                Debug.Log("3차 패치 필요");
+                // 기존 보물상자의 데이터와 새로운 특성포인트를 동기화 시키기
+                foreach (var roomInfo in data.roomInfoList)
+                {
+                    List<TreasureBox> removingTreasureBoxList = new List<TreasureBox>();
+                    foreach (var treasureBox in roomInfo.treasureBox)
+                    {
+                        if (treasureBox.id != ConstValues.AttributePoint)
+                            continue;
+                        
+                        removingTreasureBoxList.Add(treasureBox);
+                        roomInfo.attributePoint.Clear();
+                        AttributePoint attributePoint = new AttributePoint
+                        {
+                            count = treasureBox.count,
+                            alreadyGet = treasureBox.alreadyGet
+                        };
+                        roomInfo.attributePoint.Add(attributePoint);
+                    }
+
+                    foreach (var removingTreasureBox in removingTreasureBoxList)
+                        roomInfo.treasureBox.Remove(removingTreasureBox);
+                    
+                }
             }
         }
     }
@@ -3395,6 +3441,18 @@ public class GameManager : Singleton<GameManager>
                 fighter.gameObject.SetActive(false);
             }
         }
+    }
+    
+    public void GetItem(string id, int count)
+    {
+        var itemInfo = new HaveItemInfo()
+        {
+            id = id,
+            count = count,
+        };
+        // 해당 아이템을 포함하고 있지 않을 때만 추가
+        if(!ItemList.Exists(x => x.id == id))
+            ItemList.Add(itemInfo);
     }
 
     public string GetPlaceName(string place)

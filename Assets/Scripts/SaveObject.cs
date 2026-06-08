@@ -47,11 +47,13 @@ public class SaveObject : InteractionController
         var savePointRooms = RoomManager.Instance.GetSavePointRooms();
         var targetPositions = new List<Vector3>();
         var placeNames = new List<string>();
+        var roomIds = new List<string>();
         var startIndex = 0;
         for (int i = 0; i < savePointRooms.Count; i++)
         {
             targetPositions.Add(savePointRooms[i].SaveObject.transform.position);
             placeNames.Add(savePointRooms[i].Place);
+            roomIds.Add(savePointRooms[i].Id);
 
             // 현재 상호작용 중인 세이브 포인트(this)에서 시작
             if (savePointRooms[i].SaveObject == this)
@@ -72,6 +74,7 @@ public class SaveObject : InteractionController
             {
                 targetPositions = targetPositions,
                 placeNames = placeNames,
+                roomIds = roomIds,
                 startIndex = startIndex,
                 miniMapCamera = GameManager.Instance.MiniMapCamera,
                 closeAction = () =>
@@ -80,6 +83,13 @@ public class SaveObject : InteractionController
                         return;
                     isClosing = true;
                     CloseFastTravelAsync(uiBase).Forget();
+                },
+                selectAction = (index) =>
+                {
+                    if (isClosing)
+                        return;
+                    isClosing = true;
+                    FastTravelSelectAsync(uiBase, roomIds[index]).Forget();
                 }
             };
             var fastTravelPresenter = new PopupFastTravelPresenter(fastTravelInterface, fastTravelModel);
@@ -98,6 +108,14 @@ public class SaveObject : InteractionController
         await uiBase.ReductionClose(true, true);
         // 팝업 닫힘 트윈이 끝난 뒤에 선택지 상태와 조작을 복구한다
         SetInteractionSelectCloseAction();
+    }
+
+    private async UniTaskVoid FastTravelSelectAsync(UIBase uiBase, string roomId)
+    {
+        // 조작 복구는 FastTravelMove 쪽에서 처리하므로 controlStart=false
+        await uiBase.ReductionClose(true, false);
+        // 현재 방에서 선택한 세이브 포인트(roomId)로 패스트 트래블
+        RoomManager.Instance.CurrentRoom.FastTravelMove(roomId);
     }
 
     public void SetSelectAction()
