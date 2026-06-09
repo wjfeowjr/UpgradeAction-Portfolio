@@ -609,7 +609,7 @@ public class Room : MonoBehaviour
             {
                 var attributePoint = new AttributePoint()
                 {
-                    count = roomInfo.attributePoint[i].count,
+                    count = roomsData.attributePoint,
                     alreadyGet = false, 
                 };
                 roomInfo.attributePoint.Add(attributePoint);
@@ -787,7 +787,7 @@ public class Room : MonoBehaviour
                     roomItem[idx].ReduceInteractionObject();
                     GameManager.Instance.GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
                     SoundManager.Instance.PlaySound(ConstValues.Pickup);
-                    GameManager.Instance.GetItemProduct(roomInfo.item[idx].id);
+                    GameManager.Instance.ProductObjectInfo(roomInfo.item[idx].id, GameManager.Instance.GetItemTalk(roomInfo.item[idx].id), roomInfo.item[idx].count);
                     GameManager.Instance.SaveGame();
                 });
             }
@@ -841,7 +841,6 @@ public class Room : MonoBehaviour
                     roomInfo.attributePoint[idx].alreadyGet = true;
                     PlusAttributePoint(roomInfo.attributePoint[idx].count);
                     GameManager.Instance.GetAttributeProduct(roomInfo.attributePoint[idx].count, GetAttributeEvent);
-                    SoundManager.Instance.PlaySound(ConstValues.Pickup);
                     GameManager.Instance.SaveGame();
                 });
             }
@@ -2816,22 +2815,22 @@ public class Room : MonoBehaviour
     }
     
     // 스킬 획득 후 이벤트
-    private async void GetSkillEvent(string skillName)
+    private async void GetSkillEvent(string skillId, string skillName, int count = 1)
     {
-        string getMessage = string.Format(GameManager.Instance.GetTalk(30200), skillName);;
+        //string getMessage = string.Format(GameManager.Instance.GetTalk(30200), skillName);;
         
         if (GameManager.Instance.FirstGetSkill)
         {
-            await GameManager.Instance.SpawnWarningPopup(getMessage);
+            //await GameManager.Instance.SpawnWarningPopup(getMessage);
+            GameManager.Instance.ProductObjectInfo(skillId, skillName, count);
         }
         else
         {
             GameManager.Instance.FirstGetSkill = true;
-            //GameManager.Instance.SaveGame();
-
-            UIOff();
+            GameManager.Instance.StopPlayer();
             GameManager.Instance.CurPlayer.ForceProduct();
-            await GameManager.Instance.SpawnWarningPopup(getMessage);
+            GameManager.Instance.ProductObjectInfo(skillId, skillName, count);
+            //await GameManager.Instance.SpawnWarningPopup(getMessage);
             
             GameManager.Instance.InitProductCancellation();
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
@@ -2845,20 +2844,20 @@ public class Room : MonoBehaviour
     // 특성 포인트 획득 후 이벤트
     private async void GetAttributeEvent(int pointCount)
     {
-        string getMessage = string.Format(GameManager.Instance.GetTalk(30201), pointCount.ToString());
+        //string getMessage = string.Format(GameManager.Instance.GetTalk(30201), pointCount.ToString());
         
         if (GameManager.Instance.FirstGetAttribute)
         {
-            await GameManager.Instance.SpawnWarningPopup(getMessage);
+            //await GameManager.Instance.SpawnWarningPopup(getMessage);
+            GameManager.Instance.ProductObjectInfo(ConstValues.AttributePoint, GameManager.Instance.GetTalk(99001), pointCount);
         }
         else
         {
             GameManager.Instance.FirstGetAttribute = true;
             GameManager.Instance.StopPlayer();
-
-            UIOff();
             GameManager.Instance.CurPlayer.ForceProduct();
-            await GameManager.Instance.SpawnWarningPopup(getMessage);
+            GameManager.Instance.ProductObjectInfo(ConstValues.AttributePoint, GameManager.Instance.GetTalk(99001), pointCount);
+            //await GameManager.Instance.SpawnWarningPopup(getMessage);
             
             GameManager.Instance.InitProductCancellation();
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
@@ -2871,10 +2870,9 @@ public class Room : MonoBehaviour
     }
     
     // 골드 획득 후 이벤트
-    private async void GetGoldEvent(int goldCount)
+    private void GetGoldEvent(int goldCount)
     {
-        string getMessage = string.Format(GameManager.Instance.GetTalk(30210), goldCount.ToString());
-        await GameManager.Instance.SpawnWarningPopup(getMessage);
+        GameManager.Instance.ProductObjectInfo(ConstValues.Gold, GameManager.Instance.GetTalk(99000), goldCount);
     }
 
     // 캐싱

@@ -15,7 +15,6 @@ public class UI_Interface : UIBase
     // 캐릭터 얼굴
     public UICharacterFaceView CharacterFaceView => characterFaceView;
     [SerializeField] private UICharacterFaceView characterFaceView;
-    private UICharacterFacePresenter uiCharacterFacePresenter;
 
     // 체력
     public UIHpView HpView => hpView;
@@ -23,12 +22,17 @@ public class UI_Interface : UIBase
     private UIHpPresenter uiHpPresenter;
     public UIHpPresenter HpPresenter => uiHpPresenter;
     
+    // 획득 아이템
+    public UIObjectInfoView ObjectInfoView => objectInfoView;
+    [SerializeField] private UIObjectInfoView objectInfoView;
+    private UIObjectInfoPresenter uiObjectInfoPresenter;
+    public UIObjectInfoPresenter ObjectInfoPresenter => uiObjectInfoPresenter;
+    
     // 재화
     public UIGoodsView GoodsView => goodsView;
     [SerializeField] private UIGoodsView goodsView;
     private UIGoodsPresenter uiGoodsPresenter;
-    public UIGoodsPresenter GoodsPresenter => uiGoodsPresenter;
-    
+
     // 보스체력
     public UIBossHpView BossHpView => bossHpView;
     [SerializeField] private UIBossHpView bossHpView;
@@ -70,15 +74,15 @@ public class UI_Interface : UIBase
     {
         uiComboPresenter = presenter;
     }
-    
-    public void SetCharacterFacePresenter(UICharacterFacePresenter presenter)
-    {
-        uiCharacterFacePresenter = presenter;
-    }
-    
+
     public void SetHpPresenter(UIHpPresenter presenter)
     {
         uiHpPresenter = presenter;
+    }
+    
+    public void SetObjectInfoPresenter(UIObjectInfoPresenter presenter)
+    {
+        uiObjectInfoPresenter = presenter;
     }
     
     public void SetGoodsPresenter(UIGoodsPresenter presenter)

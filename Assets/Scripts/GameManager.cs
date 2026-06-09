@@ -2380,11 +2380,17 @@ public class GameManager : Singleton<GameManager>
         uiInterface.SetPlaceNamePresenter(placeNamePresenter);
         placeNamePresenter.HideImmediate();
         
+        var objectInfoInterface = uiInterface.ObjectInfoView.ConvertTo<IUIObjectInfoView>();
+        var objectInfoModel = new UIObjectInfoModel();
+        var objectInfoPresenter = new UIObjectInfoPresenter(objectInfoInterface, objectInfoModel);
+        uiInterface.SetObjectInfoPresenter(objectInfoPresenter);
+        objectInfoPresenter.HideImmediate();
+        
         var changeInterface = uiInterface.ChangeSkillView.ConvertTo<IUISkillView>();
         var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
         var skillModel = new UISkillModel
         {
-            changeSkill = this.changeSkill,
+            changeSkill = changeSkill,
             settingSkillList = GetSettingSkillList()
         };
         var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
@@ -2423,8 +2429,6 @@ public class GameManager : Singleton<GameManager>
             playerList = PlayerList,
         };
         var facePresenter = new UICharacterFacePresenter(faceInterface, faceModel);
-        uiInterface.SetCharacterFacePresenter(facePresenter);
-        
         facePresenter.SetChangeFace();
     }
     
@@ -2509,6 +2513,20 @@ public class GameManager : Singleton<GameManager>
         var placeNamePresenter = new UIPlaceNamePresenter(placeNameInterface, placeNameModel);
         uiInterface.SetPlaceNamePresenter(placeNamePresenter);
         placeNamePresenter.SetPlaceText();
+    }
+    
+    public void ProductObjectInfo(string id, string objectName, int count)
+    {
+        var getObjectInterface = uiInterface.ObjectInfoView.ConvertTo<IUIObjectInfoView>();
+        var getObjectModel = new UIObjectInfoModel()
+        {
+            id = id,
+            objectName = objectName,
+            count = count,
+        };
+        var objectInfoPresenter = new UIObjectInfoPresenter(getObjectInterface, getObjectModel);
+        uiInterface.SetObjectInfoPresenter(objectInfoPresenter);
+        objectInfoPresenter.SetObjectText();
     }
 
     public void HidePlaceName()
@@ -2708,16 +2726,16 @@ public class GameManager : Singleton<GameManager>
         await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
     }
 
-    public void GetSkillProduct(string id, Action<string> customAction)
+    public void GetSkillProduct(string id, Action<string, string, int> customAction)
     {
-        var skillName = GetSkillName(id);
         CurPlayer.SpawnObject(ConstValues.GetSkillExplosion, CurPlayer.CenterPos.position);
-        customAction.Invoke(skillName);
+        var skillName = GetSkillName(id);
+        customAction.Invoke(id, skillName, 1);
     }
     
     public void GetAttributeProduct(int count, Action<int> customAction)
     {
-        CurPlayer.SpawnObject(ConstValues.GetSkillExplosion, CurPlayer.CenterPos.position);
+        CurPlayer.SpawnObject(ConstValues.GetAttributeEffect, CurPlayer.CenterPos.position);
         customAction.Invoke(count);
     }
 
@@ -2725,12 +2743,6 @@ public class GameManager : Singleton<GameManager>
     {
         CurPlayer.SpawnObject(ConstValues.BangEffect, boxPos);
         customAction.Invoke(count);
-    }
-
-    public void GetItemProduct(string id)
-    {
-        string getMessage = string.Format(GetTalk(30207), GetItemTalk(id));
-        SpawnWarningPopup(getMessage).Forget();
     }
 
     public string GetThousandCommaText(int data)
@@ -3256,7 +3268,7 @@ public class GameManager : Singleton<GameManager>
                 if (targetKey != null)
                     targetKey.isUse = true;
                 AddNewSkill(reward);
-                GetSkillProduct(reward, GetSkillDialogue);
+                GetSkillProduct(reward, ProductObjectInfo);
                 SaveGame();
                 return false;
             case ConstValues.QuestClear:
@@ -3340,13 +3352,6 @@ public class GameManager : Singleton<GameManager>
             return;
         }
         speechFrame.SpeechEnd();
-    }
-    
-    // 스킬 획득 문구
-    private async void GetSkillDialogue(string skillName)
-    {
-        string getMessage = string.Format(GetTalk(30200), skillName);
-        await SpawnWarningPopup(getMessage);
     }
 
     public async UniTask DialogueMove(float xPos)
