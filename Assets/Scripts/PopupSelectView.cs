@@ -76,7 +76,8 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
         startAction?.Invoke();
     }
 
-    private void Update()
+    // 입력 처리는 소유 Popup_Select의 Update에서 openComplete일 때만 호출됨
+    public void HandleInput()
     {
         if (Input.GetKeyDown(GameManager.Instance.leftKey))
         {

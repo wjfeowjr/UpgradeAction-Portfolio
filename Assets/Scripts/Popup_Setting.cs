@@ -135,7 +135,7 @@ public class Popup_Setting : UIBase
 
     private async void Update()
     {
-        if (Input.GetKeyDown(KeyCode.Escape) && settingState == eSettingState.Setting)
+        if (openComplete && Input.GetKeyDown(KeyCode.Escape) && settingState == eSettingState.Setting)
         {
             await ReductionClose(false, false);
             closeAction?.Invoke();

@@ -10,8 +10,6 @@ public interface IPopupMinimapView
 {
     void SetMinimapText(string check, string cancel);
     void LimitAction(bool[] boolArray);
-    void OpenAction();
-    void SetAction(Action closeAction);
 }
 
 public class PopupMinimapModel
@@ -37,16 +35,6 @@ public class PopupMinimapPresenter
     public void SetMinimapText()
     {
         _view.SetMinimapText(_model.checkString, _model.closeString);
-    }
-
-    public void OpenAction()
-    {
-        _view.OpenAction();
-    }
-
-    public void SetAction()
-    {
-        _view.SetAction(_model.closeAction);
     }
 
     public void CheckAction()
@@ -77,25 +65,10 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
     [SerializeField] private GameObject miniMapLayout;
     [SerializeField] private GameObject[] arrowArray;
 
-    private Action closeAction;
-
-    private bool isClosing;
-    
-    private void Update()
-    {
-        if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
-            CloseAction();
-    }
-
     public void SetMinimapText(string check, string cancel)
     {
         checkText.text = check;
         cancelText.text = cancel;
-    }
-
-    public void SetAction(Action close)
-    {
-        closeAction = close;
     }
 
     public void LimitAction(bool[] boolArray)
@@ -106,31 +79,10 @@ public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
         }
     }
 
-    public async void OpenAction()
+    // 미니맵 콘텐츠 활성/비활성 (열기/닫기 페이드는 Popup_Minimap에서 처리)
+    public void SetMinimapActive(bool active)
     {
-        Time.timeScale = 0;
-        miniMapObject.SetActive(true);
-        miniMapLayout.SetActive(true);
-        isClosing = false;
-
-        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
-            return;
-    }
-    
-    public async void CloseAction()
-    {
-        if (isClosing)
-            return;
-        
-        isClosing = true;
-        miniMapObject.SetActive(false);
-        miniMapLayout.SetActive(false);
-
-        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor).SuppressCancellationThrow())
-            return;
-        
-        gameObject.SetActive(false);
-        Time.timeScale = 1.0f;
-        closeAction?.Invoke();
+        miniMapObject.SetActive(active);
+        miniMapLayout.SetActive(active);
     }
 }

@@ -1,18 +1,19 @@
 using System;
+using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public interface IPopupGuideView
 {
-    void SetModel(string guideMessage, string imgName);
-    void SetAction(Action closeAction);
+    void SetModel(string guideTitle, string guideMessage, List<string> imgNameList);
 }
 
 public class PopupGuideModel
 {
+    public string guideTitle;
     public string guideMessage;
-    public string imgName;
+    public List<string> imgNameList = new List<string>();
     public Action closeAction;
 }
 
@@ -20,41 +21,30 @@ public class PopupGuidePresenter
 {
     private IPopupGuideView _guideView;
     private PopupGuideModel _model;
-    // 가이드 팝업이 스폰된 프레임의 잔여 입력(GetKeyDown)을 무시하기 위한 플래그
-    private bool _inputReady;
 
     public PopupGuidePresenter(IPopupGuideView guideView, PopupGuideModel model)
     {
         _guideView = guideView;
         _model = model;
-        _inputReady = false;
     }
 
-    public void Expansion(Action action)
+    public void Open(Action action)
     {
         action?.Invoke();
     }
 
     public void SetModel()
     {
-        _guideView.SetModel(_model.guideMessage, _model.imgName);
+        _guideView.SetModel(_model.guideTitle, _model.guideMessage, _model.imgNameList);
     }
 
     public void SetAction(Action action)
     {
         _model.closeAction = action;
-        _guideView.SetAction(_model.closeAction);
     }
 
-    public void CloseGuide()
+    public void Close()
     {
-        // 스폰된 프레임에서는 입력을 받지 않고 한 프레임 뒤부터 감지
-        if (!_inputReady)
-        {
-            _inputReady = true;
-            return;
-        }
-
         if (Input.GetKeyDown(GameManager.Instance.escKey))
             _model.closeAction?.Invoke();
     }
@@ -64,22 +54,26 @@ public class PopupGuideView : MonoBehaviour, IPopupGuideView
 {
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text explainText;
-    [SerializeField] private Image guideImage;
-    [SerializeField] private Button closeButton;
+    [SerializeField] private TMP_Text closeText;
+    [SerializeField] private Image[] guideImages;
 
-    public void SetModel(string guideMessage, string imgName)
+    public void SetModel(string guideTitle, string guideMessage, List<string> imgNameList)
     {
-        titleText.text = GameManager.Instance.GetTalk(30010);
+        titleText.text = guideTitle;
         explainText.text = guideMessage;
-        guideImage.sprite = GameManager.Instance.GetAtlasSprite(imgName);
-    }
-    
-    public void SetAction(Action closeAction)
-    {
-        closeButton.onClick.RemoveAllListeners();
-        closeButton.onClick.AddListener(() =>
+        closeText.text = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
+        
+        for (int i = 0; i < guideImages.Length; i++)
         {
-            closeAction();
-        });
+            if (i < imgNameList.Count)
+            {
+                guideImages[i].transform.parent.parent.gameObject.SetActive(true);
+                guideImages[i].sprite = GameManager.Instance.GetAtlasSprite(imgNameList[i]);
+            }
+            else
+            {
+                guideImages[i].transform.parent.parent.gameObject.SetActive(false);
+            }
+        }
     }
 }

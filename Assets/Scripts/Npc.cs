@@ -118,7 +118,7 @@ public class Npc : Character
 
             // TODO: Popup_Store 생성 및 MVP 초기화
             var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Store, Vector3.zero).GetComponent<UIBase>();
-            uiBase.ExpansionOpen(true, true);
+            uiBase.ExpansionOpen(true, true).Forget();
             
             if (uiBase is Popup_Store popupStore)
             {

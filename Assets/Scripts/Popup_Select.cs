@@ -13,4 +13,10 @@ public class Popup_Select : UIBase
     {
         popupSelectPresenter = presenter;
     }
+
+    private void Update()
+    {
+        if (openComplete)
+            selectView.HandleInput();
+    }
 }

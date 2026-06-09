@@ -605,7 +605,6 @@ public class GameManager : Singleton<GameManager>
     
     public KeyCode escKey;
     public KeyCode spaceKey;
-    public KeyCode markKey;
     public KeyCode confirmKey;
     public KeyCode deleteKey;
     public KeyCode copyKey;
@@ -1228,7 +1227,6 @@ public class GameManager : Singleton<GameManager>
     {
         escKey = KeyCode.Escape;
         spaceKey = KeyCode.Space;
-        markKey = KeyCode.Return;
         confirmKey = KeyCode.Return;
         deleteKey = KeyCode.X;
         copyKey = KeyCode.C;
@@ -2824,7 +2822,7 @@ public class GameManager : Singleton<GameManager>
             popupSelect.SetSelectPresenter(selectPresenter);
             selectPresenter.Expansion(() =>
             {
-                uiBase.ExpansionOpen(false, false);
+                uiBase.ExpansionOpen(false, false).Forget();
             });
             selectPresenter.SetModel();
             selectPresenter.SetAction();

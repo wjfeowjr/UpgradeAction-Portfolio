@@ -102,7 +102,11 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
 
         // 골드 표시는 _isConfirmActive 여부와 무관하게 항상 최신 상태로 동기화
         RefreshGold();
+    }
 
+    // 입력 처리는 소유 Popup_Store의 Update에서 openComplete일 때만 호출됨
+    public void HandleInput()
+    {
         if (_isConfirmActive)
             return;
 
@@ -192,7 +196,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
         GameManager.Instance.SpawnSelect
         (
             message,
-            GameManager.Instance.GetAtlasSprite($"{ConstValues.Icon}_{ConstValues.Gold}"),
+            GameManager.Instance.GetAtlasSprite(ConstValues.Gold),
             storeItemData.cost,
             yesAction: () =>
             {

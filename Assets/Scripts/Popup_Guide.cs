@@ -15,6 +15,7 @@ public class Popup_Guide : UIBase
     
     private void Update()
     {
-        popupGuidePresenter?.CloseGuide();
+        if(openComplete)
+            popupGuidePresenter?.Close();
     }
 }

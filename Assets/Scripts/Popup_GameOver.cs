@@ -16,6 +16,7 @@ public class Popup_GameOver : UIBase
     
     private void Update()
     {
-        popupGameOverPresenter?.Restart();
+        if(openComplete)
+            popupGameOverPresenter?.Restart();
     }
 }

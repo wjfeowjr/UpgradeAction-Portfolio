@@ -15,11 +15,17 @@ public class Popup_Pause : UIBase
     
     private void Update()
     {
+        if (!openComplete)
+            return;
+
+        // 기존 PopupPauseView.Update의 입력(방향키/Enter)을 이곳에서 처리
+        pauseView.HandleInput();
+
         if (Input.GetKeyDown(KeyCode.Escape))
         {
             if (pauseView._IsSettingOpen)
                 return;
-            
+
             pausePresenter.HandleEsc();
         }
     }

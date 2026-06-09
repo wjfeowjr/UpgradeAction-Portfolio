@@ -68,7 +68,8 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
 
     public bool _IsSettingOpen => _isSettingOpen;
     
-    private void Update()
+    // 입력 처리는 소유 Popup_Pause의 Update에서 openComplete일 때만 호출됨
+    public void HandleInput()
     {
         if (_presenter == null || _isSettingOpen)
             return;

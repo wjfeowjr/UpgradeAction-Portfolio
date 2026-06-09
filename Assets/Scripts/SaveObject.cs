@@ -72,6 +72,10 @@ public class SaveObject : InteractionController
             var isClosing = false;
             var fastTravelModel = new PopupFastTravelModel()
             {
+                moveText = string.Format(GameManager.Instance.GetTalk(30110), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey), GameManager.Instance.GetKeyCode(GameManager.Instance.downKey)),
+                selectText = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(KeyCode.Return)),
+                cancelText = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
+
                 targetPositions = targetPositions,
                 placeNames = placeNames,
                 roomIds = roomIds,
@@ -94,9 +98,10 @@ public class SaveObject : InteractionController
             };
             var fastTravelPresenter = new PopupFastTravelPresenter(fastTravelInterface, fastTravelModel);
             popupFastTravel.SetFastTravelPresenter(fastTravelPresenter);
+            fastTravelPresenter.SetFastTravelText();
             fastTravelPresenter.Expansion(() =>
             {
-                uiBase.ExpansionOpen(true, true);
+                uiBase.FadeOpen(true, true, 0.1f, false).Forget();
             });
             // 시작 위치(현재 방)로 카메라 이동 및 place 표시
             fastTravelPresenter.Open();
@@ -105,7 +110,7 @@ public class SaveObject : InteractionController
 
     private async UniTaskVoid CloseFastTravelAsync(UIBase uiBase)
     {
-        await uiBase.ReductionClose(true, true);
+        await uiBase.FadeClose(true, true, 0.1f);
         // 팝업 닫힘 트윈이 끝난 뒤에 선택지 상태와 조작을 복구한다
         SetInteractionSelectCloseAction();
     }

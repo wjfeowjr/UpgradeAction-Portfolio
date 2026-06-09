@@ -147,6 +147,9 @@ public class Popup_Character : UIBase
     {
         // Relic 상태가 아닐 때만 Q/E로 캐릭터 변경 처리
         // (Relic 상태의 Q/E는 PopupRelicView에서 직접 처리)
+        if (!openComplete)
+            return;
+        
         if (popupState != ePopupState.Relic && popupState != ePopupState.Item)
         {
             if (Input.GetKeyDown(KeyCode.Q))

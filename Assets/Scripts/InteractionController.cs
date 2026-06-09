@@ -123,7 +123,6 @@ public class InteractionController : MonoBehaviour
         GameManager.Instance.ControlStart = true;
         GameManager.Instance.CurPlayer.MyRigidbody.WakeUp();
         isPlayerTouch = false;
-        SoundManager.Instance.PlaySound(ConstValues.Popup);
     }
     
     protected void SpawnInteractionSelect(NpcCopy npcCopy, NpcInfo npcInfo)

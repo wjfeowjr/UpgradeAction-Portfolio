@@ -205,7 +205,7 @@ public class RoomManager : Singleton<RoomManager>
     private void SpawnPausePopup()
     {
         popupPause = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Pause, Vector3.zero).GetComponent<Popup_Pause>();
-        popupPause.ExpansionOpen(true, true);
+        popupPause.ExpansionOpen(true, true).Forget();
 
         var common = new PopupCommonActions
         {
@@ -249,7 +249,7 @@ public class RoomManager : Singleton<RoomManager>
     {
         popupPause.PausePresenter.SetSettingOpen(true);
         var popup = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Setting, Vector3.zero).GetComponent<Popup_Setting>();
-        popup.ExpansionOpen(false, false);
+        popup.ExpansionOpen(false, false).Forget();
         popup.InitPresenters(
             () =>
             {
@@ -298,7 +298,7 @@ public class RoomManager : Singleton<RoomManager>
         var minimapInterface = popupMinimap.MinimapView.ConvertTo<IPopupMinimapView>();
         var minimapModel = new PopupMinimapModel()
         {
-            checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(GameManager.Instance.markKey)),
+            checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(KeyCode.Return)),
             closeString = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
             moveAction = MinimapCameraMove,
             checkAction = SpawnCheckMark,
@@ -307,9 +307,8 @@ public class RoomManager : Singleton<RoomManager>
         var minimapPresenter = new PopupMinimapPresenter(minimapInterface, minimapModel);
         popupMinimap.SetMinimapPresenter(minimapPresenter);
         popupMinimap.PopupMinimapPresenter.SetMinimapText();
-        
-        popupMinimap.PopupMinimapPresenter.OpenAction();
-        popupMinimap.PopupMinimapPresenter.SetAction();
+
+        popupMinimap.OpenAction(PopupLayerReset);
         PopupLayerOn();
     }
 
@@ -319,7 +318,7 @@ public class RoomManager : Singleton<RoomManager>
         string initialPlayerId = GameManager.Instance.CurPlayer.BasicStat.id;
 
         // 메인 팝업에 주입 및 초기화 실행
-        popupCharacter.ExpansionOpen(true, true);
+        popupCharacter.ExpansionOpen(true, true).Forget();
         popupCharacter.InitPresenters(initialPlayerId, PopupLayerReset);
         PopupLayerOn();
     }
@@ -434,8 +433,9 @@ public class RoomManager : Singleton<RoomManager>
             var isClosing = false;
             var guideModel = new PopupGuideModel()
             {
+                guideTitle = model.guideTitle,
                 guideMessage = model.guideMessage,
-                imgName = model.imgName,
+                imgNameList = model.imgNameList,
                 closeAction = () =>
                 {
                     if (isClosing)
@@ -446,9 +446,9 @@ public class RoomManager : Singleton<RoomManager>
             };
             var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
             popupGuide.SetGuidePresenter(guidePresenter);
-            guidePresenter.Expansion(() =>
+            guidePresenter.Open(() =>
             {
-                uiBase.ExpansionOpen(true, true);
+                uiBase.FadeOpen(true, true, 0.25f).Forget();
             });
             guidePresenter.SetModel();
             guidePresenter.SetAction(guideModel.closeAction);
@@ -460,26 +460,27 @@ public class RoomManager : Singleton<RoomManager>
     // 닫는 도중 ESC 연타로 PausePopup이 함께 뜨는 문제를 막을 수 있다.
     private async UniTaskVoid CloseGuideAsync(UIBase uiBase)
     {
-        await uiBase.ReductionClose(true, true);
+        await uiBase.FadeClose(true, true, 0.25f);
         PopupLayerReset();
     }
     public void Guide(int idx)
     {
+        string guideTitle = GameManager.Instance.GetTalk(idx);
+        
         string guideMessage;
-
         switch (idx)
         {
             case 40000:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.miniMapKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx + 100), GameManager.Instance.GetKeyCode(GameManager.Instance.miniMapKey));
                 break;
             case 40001:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx + 100), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
                 break;
             case 40003:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx + 100), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
                 break;
             case 40004:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(idx + 100), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
                 break;
             default:
                 guideMessage = GameManager.Instance.GetTalk(idx);
@@ -487,11 +488,14 @@ public class RoomManager : Singleton<RoomManager>
         }
 
         string imgName = $"{ConstValues.Guide}{idx}";
+        List<string> imagNameList = new List<string>();
+        imagNameList.Add(imgName);
 
         var guideModel = new PopupGuideModel()
         {
+            guideTitle = guideTitle,
             guideMessage = guideMessage,
-            imgName = imgName,
+            imgNameList = imagNameList,
         };
         SpawnGuide(guideModel);
     }

@@ -6,12 +6,17 @@ using UnityEngine;
 
 public interface IPopupFastTravelView
 {
+    void SetFastTravelText(string move, string select, string cancel);
     void SetEntries(List<string> placeNames);
     void RefreshSelect(int index);
 }
 
 public class PopupFastTravelModel
 {
+    public string moveText;
+    public string selectText;
+    public string cancelText;
+    
     public List<Vector3> targetPositions = new List<Vector3>();   // 각 세이브 포인트의 SaveObject 위치
     public List<string> placeNames = new List<string>();          // 각 세이브 포인트의 place 이름
     public List<string> roomIds = new List<string>();             // 각 세이브 포인트의 roomId
@@ -37,6 +42,11 @@ public class PopupFastTravelPresenter
         _model = model;
         _inputReady = false;
         _index = model.startIndex;
+    }
+    
+    public void SetFastTravelText()
+    {
+        _view.SetFastTravelText(_model.moveText, _model.selectText, _model.cancelText);
     }
 
     public void Expansion(Action action)
@@ -125,6 +135,17 @@ public class PopupFastTravelPresenter
 public class PopupFastTravelView : MonoBehaviour, IPopupFastTravelView
 {
     [SerializeField] private ExpansionUiObject[] expansionUiObjects;
+    
+    [SerializeField] private TMP_Text moveText;
+    [SerializeField] private TMP_Text selectText;
+    [SerializeField] private TMP_Text cancelText;
+    
+    public void SetFastTravelText(string move, string select, string cancel)
+    {
+        moveText.text = move;
+        selectText.text = select;
+        cancelText.text = cancel;
+    }
 
     // 세이브 포인트 개수만큼 place 이름을 채우고, 남는 버튼은 비활성화
     public void SetEntries(List<string> placeNames)

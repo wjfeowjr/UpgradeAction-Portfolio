@@ -16,6 +16,7 @@ public class Popup_FastTravel : UIBase
 
     private void Update()
     {
-        popupFastTravelPresenter?.Tick();
+        if(openComplete)
+            popupFastTravelPresenter?.Tick();
     }
 }
