@@ -2098,7 +2098,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10105));
         await NextDialog(speechFrame1);
 
-        RoomManager.Instance.Guide(40000);
+        RoomManager.Instance.Guide(0);
         
         UIOn();
         roomInfo.roomProduct[0].isFinish = true;
@@ -2123,7 +2123,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10106));
         await NextDialog(speechFrame1);
 
-        RoomManager.Instance.Guide(40001);
+        RoomManager.Instance.Guide(2);
         UIOn();
         roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
@@ -2462,7 +2462,7 @@ public class Room : MonoBehaviour
         // 2인 캐릭터 설정 및 저장
         GameManager.Instance.AddPlayer(ConstValues.Gunner);
         GameManager.Instance.SetCharacterOrder();
-        RoomManager.Instance.Guide(40004);
+        RoomManager.Instance.Guide(4);
         
         UIOn();
         roomInfo.roomProduct[0].isFinish = true;
@@ -2836,12 +2836,12 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
-            RoomManager.Instance.Guide(40002);
+            RoomManager.Instance.Guide(1);
             UIOn();
         }
     }
     
-    // 특성 포인트 획득 후 이벤트
+    // 마력석 획득 후 이벤트
     private async void GetAttributeEvent(int pointCount)
     {
         //string getMessage = string.Format(GameManager.Instance.GetTalk(30201), pointCount.ToString());
@@ -2863,7 +2863,7 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
-            RoomManager.Instance.Guide(40003);
+            RoomManager.Instance.Guide(5);
             UIOn();
             GameManager.Instance.MovePlayer();
         }

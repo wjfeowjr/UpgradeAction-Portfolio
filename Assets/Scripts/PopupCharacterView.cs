@@ -76,7 +76,7 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
         
         // 순서: SkillInfo → Attribute → Relic → Item
         if(choiceFrameObjects.Length > 0)
-            choiceFrameObjects[0].SetText("보유 스킬·패시브"); // TODO: Talk.json id 추가 후 GetTalk으로 교체
+            choiceFrameObjects[0].SetText(GameManager.Instance.GetTalk(30064)); // TODO: Talk.json id 추가 후 GetTalk으로 교체
         if(choiceFrameObjects.Length > 1)
             choiceFrameObjects[1].SetText(GameManager.Instance.GetTalk(30057));
         if(choiceFrameObjects.Length > 2)

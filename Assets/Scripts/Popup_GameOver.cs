@@ -1,4 +1,5 @@
 using System;
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 
 public class Popup_GameOver : UIBase
@@ -13,7 +14,14 @@ public class Popup_GameOver : UIBase
     {
         popupGameOverPresenter = presenter;
     }
-    
+
+    public override async UniTask FadeOpen(bool timeStop, bool controlStop, float time, bool fadeSound = true)
+    {
+        popupGameOverPresenter?.BgActive(false);
+        await base.FadeOpen(timeStop, controlStop, time, fadeSound);
+        popupGameOverPresenter?.BgActive(true);
+    }
+
     private void Update()
     {
         if(openComplete)

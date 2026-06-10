@@ -613,4 +613,5 @@ public class ConstValues : Singleton<ConstValues>
     public const string Fireimpact03 = "Fireimpact03";
     public const string MonsterBigGhostEarthQuake = "Monster_BigGhost_EarthQuake";
     public const string TrolleyStart = "Trolley_Start";
+    public const string Lose = "Lose";
 }

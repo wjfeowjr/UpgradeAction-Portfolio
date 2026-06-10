@@ -31,6 +31,7 @@ public class Popup_Character : UIBase
     
     [SerializeField] private TMP_Text popupText;
     [SerializeField] private TMP_Text selectText;
+    [SerializeField] private TMP_Text dotText;
     [SerializeField] private TMP_Text backText;
     [SerializeField] private TMP_Text leftKeyText;
     [SerializeField] private TMP_Text rightKeyText;
@@ -195,15 +196,14 @@ public class Popup_Character : UIBase
     public void SetState(ePopupState state)
     {
         popupState = state;
-
+        
         switch (popupState)
         {
             case ePopupState.Character:
-                popupText.text = GameManager.Instance.GetTalk(30020);
-                //_characterPresenter.UpdatePlayerInfo(curPlayerId);
+                popupText.text = GameManager.Instance.GetTalk(30064);
                 break;
             case ePopupState.SkillInfo:
-                popupText.text = "보유 스킬·패시브_"; // TODO: Talk.json id 추가 후 GetTalk으로 교체
+                popupText.text = GameManager.Instance.GetTalk(30064); // TODO: Talk.json id 추가 후 GetTalk으로 교체
                 break;
             case ePopupState.Attribute:
                 popupText.text = GameManager.Instance.GetTalk(30021);
@@ -216,6 +216,9 @@ public class Popup_Character : UIBase
                 break;
         }
 
+        selectText.gameObject.SetActive(popupState != ePopupState.SkillInfo);
+        dotText.gameObject.SetActive(popupState != ePopupState.SkillInfo);
+        
         characterView.gameObject.SetActive(popupState == ePopupState.Character);
         skillView.gameObject.SetActive(popupState == ePopupState.SkillInfo);
         attributeView.gameObject.SetActive(popupState == ePopupState.Attribute);

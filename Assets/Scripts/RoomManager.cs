@@ -364,12 +364,12 @@ public class RoomManager : Singleton<RoomManager>
             return;
 
         SpawnGameOver();
-        Time.timeScale = 0;
     }
 
     public void SpawnGameOver()
     {
         BgmManager.Instance.Stop();
+        SoundManager.instance.PlaySound(ConstValues.Lose);
         var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_GameOver, Vector3.zero).GetComponent<UIBase>();
         
         if (uiBase is Popup_GameOver popupGameOver)
@@ -381,16 +381,23 @@ public class RoomManager : Singleton<RoomManager>
                 message = string.Format(GameManager.Instance.GetTalk(30106), GameManager.Instance.GetKeyCode(GameManager.Instance.spaceKey)),
                 replayAction = () =>
                 {
-                    GameManager.Instance.GoScene(ConstValues.BattleScene);
-                    uiBase.Close();
-                    GameManager.Instance.ControlStart = true;
-                    Time.timeScale = 1;
+                    CloseGameOverAsync(uiBase).Forget();
                 }
             };
             var gameOverPresenter = new PopupGameOverPresenter(gameOverInterface, gameOverModel);
             popupGameOver.SetGuidePresenter(gameOverPresenter);
+            gameOverPresenter.Open(() =>
+            {
+                uiBase.FadeOpen(true, true, 0.75f, false).Forget();
+            });
             gameOverPresenter.SetModel();
         }
+    }
+    private async UniTaskVoid CloseGameOverAsync(UIBase uiBase)
+    {
+        await uiBase.FadeClose(true, true, 0.75f, true);
+        GameManager.instance.FadeObjectActiveImmediately(true);
+        GameManager.Instance.GoScene(ConstValues.BattleScene);
     }
 
     // 에피소드 소환
@@ -455,7 +462,6 @@ public class RoomManager : Singleton<RoomManager>
             PopupLayerOn();
         }
     }
-
     // 가이드 팝업의 닫기 트윈이 끝난 뒤에 popupLayer를 해제해야
     // 닫는 도중 ESC 연타로 PausePopup이 함께 뜨는 문제를 막을 수 있다.
     private async UniTaskVoid CloseGuideAsync(UIBase uiBase)
@@ -465,31 +471,49 @@ public class RoomManager : Singleton<RoomManager>
     }
     public void Guide(int idx)
     {
-        string guideTitle = GameManager.Instance.GetTalk(idx);
-        
+        int talkIdx = idx + 40000;
+        int explainIdx = 100;
+        string guideTitle = GameManager.Instance.GetTalk(talkIdx);
         string guideMessage;
+        List<string> imagNameList = new List<string>();
+        
         switch (idx)
         {
-            case 40000:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx + 100), GameManager.Instance.GetKeyCode(GameManager.Instance.miniMapKey));
+            case 0:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.miniMapKey));
+                imagNameList.Add($"{ConstValues.Guide}{0}");
                 break;
-            case 40001:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx + 100), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+            case 1:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+                imagNameList.Add($"{ConstValues.Guide}{1}");
                 break;
-            case 40003:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx + 100), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+            case 2:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+                imagNameList.Add($"{ConstValues.Guide}{2}");
                 break;
-            case 40004:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(idx + 100), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
+            case 3:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+                imagNameList.Add($"{ConstValues.Guide}{3}");
+                break;
+            case 4:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
+                imagNameList.Add($"{ConstValues.Guide}{4}");
+                imagNameList.Add($"{ConstValues.Guide}{5}");
+                break;
+            case 5:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+                imagNameList.Add($"{ConstValues.Guide}{6}");
+                imagNameList.Add($"{ConstValues.Guide}{7}");
+                break;
+            case 6:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.dashKey));
+                imagNameList.Add($"{ConstValues.Guide}{8}");
+                imagNameList.Add($"{ConstValues.Guide}{9}");
                 break;
             default:
-                guideMessage = GameManager.Instance.GetTalk(idx);
+                guideMessage = GameManager.Instance.GetTalk(talkIdx + 100);
                 break;
         }
-
-        string imgName = $"{ConstValues.Guide}{idx}";
-        List<string> imagNameList = new List<string>();
-        imagNameList.Add(imgName);
 
         var guideModel = new PopupGuideModel()
         {

@@ -974,8 +974,10 @@ public abstract class Player : Character
         if(basicStat.hp > 0)
             PlaySound(ConstValues.PlayerDamaged1);
         
-        base.Airborne(xVelocity, yVelocity, false);
+        DamageEscapeGuide();
         
+        base.Airborne(xVelocity, yVelocity, false);
+
         curDashDelay = 0f;
         dashDelayCancellation = new CancellationTokenSource();
         if(await NormalDelay(dashDelay, dashDelayCancellation).SuppressCancellationThrow())
@@ -987,12 +989,24 @@ public abstract class Player : Character
     
     public override void Damaged(float damagedTime)
     {
+        DamageEscapeGuide();
+        
         base.Damaged(damagedTime);
         if(basicStat.hp > 0)
             PlaySound(ConstValues.PlayerDamaged1);
         
         if(GameManager.Instance.ControlStart && IsCanSkill($"{basicStat.id}_{ConstValues.Dash}") && !isDie)
             ActiveDashEffectUI();
+    }
+
+    private void DamageEscapeGuide()
+    {
+        if (GameManager.Instance.FirstDamaged)
+            return;
+        
+        RoomManager.Instance.Guide(6);
+        GameManager.Instance.FirstDamaged = true;
+        GameManager.Instance.SaveGame();
     }
     
     // 교체를 사용 할 수 있는가?

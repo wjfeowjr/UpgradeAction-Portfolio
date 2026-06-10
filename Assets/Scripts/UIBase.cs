@@ -60,7 +60,7 @@ public class UIBase : MonoBehaviour
         if(controlStart)
             GameManager.Instance.ControlStart = true;
     }
-    public async UniTask FadeOpen(bool timeStop, bool controlStop, float time, bool fadeSound = true)
+    public virtual async UniTask FadeOpen(bool timeStop, bool controlStop, float time, bool fadeSound = true)
     {
         if (timeStop)
             Time.timeScale = 0;
@@ -76,12 +76,16 @@ public class UIBase : MonoBehaviour
         await UniTask.Delay(TimeSpan.FromSeconds(time), ignoreTimeScale: true);
         openComplete = true;
     }
-    public async UniTask FadeClose(bool timeReset, bool controlStart, float time)
+    public async UniTask FadeClose(bool timeReset, bool controlStart, float time, bool fadeSound = false)
     {
+        if(fadeSound)
+            PlaySound(ConstValues.Upgrade, true);
+        
         canvasGroup.DOFade(0, time).SetUpdate(true);
         await UniTask.Delay(TimeSpan.FromSeconds(time), ignoreTimeScale: true);
         if (timeReset)
             Time.timeScale = 1;
+
         gameObject.SetActive(false);
         openComplete = false;
 

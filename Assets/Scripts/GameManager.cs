@@ -583,7 +583,8 @@ public class SaveData
 
     public bool firstGetSkill;
     public bool firstGetAttribute;
-    
+    public bool firstDamaged;
+
     public List<string> playerList = new List<string>();
     public List<HaveItemInfo> itemList = new List<HaveItemInfo>();
     public List<string> relicList = new List<string>();
@@ -775,6 +776,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => saveData.firstGetAttribute;
         set => saveData.firstGetAttribute = value;
+    }
+    
+    public bool FirstDamaged
+    {
+        get => saveData.firstDamaged;
+        set => saveData.firstDamaged = value;
     }
     
     public List<string> PlayerList
@@ -2188,6 +2195,15 @@ public class GameManager : Singleton<GameManager>
         fadeSystem.SetParameter(start, end, duration, delete);
         if(await fadeSystem.Fade(ignoreTime).SuppressCancellationThrow())
             return;
+    }
+
+    public void FadeObjectActiveImmediately(bool active)
+    {
+        if (FadeSystem == null)
+            return;
+        
+        fadeSystem.ColorInput(ConstValues.BlackColor);
+        fadeSystem.gameObject.SetActive(active);
     }
     
     public void PoolDisActive()
