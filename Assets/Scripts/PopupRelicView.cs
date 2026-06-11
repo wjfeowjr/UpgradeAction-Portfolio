@@ -184,7 +184,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
         }
 
         // Enter
-        if (Input.GetKeyDown(KeyCode.Return))
+        if (InputHelper.GetEnterDown())
         {
             HandleEnter();
             return;

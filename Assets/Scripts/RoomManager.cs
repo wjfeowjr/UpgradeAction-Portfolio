@@ -205,7 +205,7 @@ public class RoomManager : Singleton<RoomManager>
     private void SpawnPausePopup()
     {
         popupPause = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Pause, Vector3.zero).GetComponent<Popup_Pause>();
-        popupPause.ExpansionOpen(true, true).Forget();
+        popupPause.FadeOpen(true, true, 0.2f, false).Forget();
 
         var common = new PopupCommonActions
         {
@@ -231,7 +231,7 @@ public class RoomManager : Singleton<RoomManager>
 
     private async void ResumeAction()
     {
-        await popupPause.ReductionClose(true, true);
+        await popupPause.FadeClose(true, true, 0.2f, true);
         PopupLayerReset();
     }
 
@@ -249,7 +249,7 @@ public class RoomManager : Singleton<RoomManager>
     {
         popupPause.PausePresenter.SetSettingOpen(true);
         var popup = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Setting, Vector3.zero).GetComponent<Popup_Setting>();
-        popup.ExpansionOpen(false, false).Forget();
+        popup.FadeOpen(false, false, 0.2f, false).Forget();
         popup.InitPresenters(
             () =>
             {

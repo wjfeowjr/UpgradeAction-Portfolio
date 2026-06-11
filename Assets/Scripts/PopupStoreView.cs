@@ -114,7 +114,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
             HandleArrow(-1);
         if (Input.GetKeyDown(GameManager.Instance.downKey))
             HandleArrow(+1);
-        if (Input.GetKeyDown(KeyCode.Return))
+        if (InputHelper.GetEnterDown())
             HandleEnter();
     }
 

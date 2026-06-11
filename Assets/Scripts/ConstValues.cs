@@ -75,10 +75,16 @@ public class ConstValues : Singleton<ConstValues>
     public const string SFXVolume = "SFXVolume";
     public const string BGMVolume = "BGMVolume";
     
+    // 해상도 및 풀스크린
+    public const string ResolutionX = "ResolutionX";
+    public const string ResolutionY = "ResolutionY";
+    public const string FullScreen = "FullScreen";
+    public const string Vsync = "Vsync";
+    
     // 설정
     public const string Language = "Language";
     public const string CameraShaking = "CameraShaking";
-    
+
     // 언어
     public const string Korean = "Korean";
     public const string English = "English";

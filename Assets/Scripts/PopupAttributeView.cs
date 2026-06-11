@@ -148,7 +148,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             SetSkillIndex(curSkillIndex + 1);
             _actions?.PlayMoveSound?.Invoke();
         }
-        else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        else if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
         {
             // 스킬 선택 확정 → 특성 선택 단계 진입
             EnterAttributeSelect();
@@ -266,7 +266,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         {
             MoveAttributeVertical(1);
         }
-        else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        else if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
         {
             EnterPointAdjust();
         }

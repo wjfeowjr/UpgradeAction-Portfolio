@@ -39,7 +39,7 @@ public class PopupMinimapPresenter
 
     public void CheckAction()
     {
-        if (Input.GetKeyDown(KeyCode.Return))
+        if (InputHelper.GetEnterDown())
             _model.checkAction();
     }
 

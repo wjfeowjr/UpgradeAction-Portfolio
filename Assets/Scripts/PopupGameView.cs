@@ -123,7 +123,7 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
     private void RefreshGameData()
     {
         if (gameFrames.Length > 0)
-            gameFrames[0].SetData(GameManager.Instance.GetTalk(30056));
+            gameFrames[0].SetData(GameManager.Instance.GetTalk(30057));
         if (gameFrames.Length > 1)
             gameFrames[1].SetData(CameraShakingToText(GameManager.Instance.cameraShaking));
     }

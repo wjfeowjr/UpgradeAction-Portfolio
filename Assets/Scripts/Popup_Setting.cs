@@ -8,6 +8,7 @@ public enum eSettingState
     Setting,
     Game,
     Audio,
+    Video,
     Keyboard,
 }
 
@@ -20,6 +21,7 @@ public class Popup_Setting : UIBase
     [SerializeField] private PopupSettingView  settingView;
     [SerializeField] private PopupGameView     gameView;
     [SerializeField] private PopupAudioView    audioView;
+    [SerializeField] private PopupVideoView    videoView;
     [SerializeField] private PopupKeyboardView keyboardView;
     
     private Action languageChangeAction;
@@ -54,9 +56,13 @@ public class Popup_Setting : UIBase
             case eSettingState.Audio:
                 settingText.text = GameManager.Instance.GetTalk(30054);
                 break;
-            
-            case eSettingState.Keyboard:
+
+            case eSettingState.Video:
                 settingText.text = GameManager.Instance.GetTalk(30055);
+                break;
+
+            case eSettingState.Keyboard:
+                settingText.text = GameManager.Instance.GetTalk(30056);
                 break;
         }
     }
@@ -67,6 +73,7 @@ public class Popup_Setting : UIBase
         settingView.gameObject.SetActive(state == eSettingState.Setting);
         gameView.gameObject.SetActive(state == eSettingState.Game);
         audioView.gameObject.SetActive(state == eSettingState.Audio);
+        videoView.gameObject.SetActive(state == eSettingState.Video);
         keyboardView.gameObject.SetActive(state == eSettingState.Keyboard);
         SetSettingText();
     }
@@ -108,6 +115,15 @@ public class Popup_Setting : UIBase
         var audioPresenter = new PopupAudioPresenter(audioView.ConvertTo<IPopupAudioView>(), audioModel);
         audioPresenter.SetAction();
 
+        // VideoView
+        var videoModel = new PopupVideoModel
+        {
+            closeAction   = () => SetState(eSettingState.Setting),
+            commonActions = common,
+        };
+        var videoPresenter = new PopupVideoPresenter(videoView.ConvertTo<IPopupVideoView>(), videoModel);
+        videoPresenter.SetAction();
+
         // KeyboardView
         var keyboardModel = new PopupKeyboardModel
         {
@@ -126,6 +142,7 @@ public class Popup_Setting : UIBase
         {
             openGameAction     = () => SetState(eSettingState.Game),
             openAudioAction    = () => SetState(eSettingState.Audio),
+            openVideoAction    = () => SetState(eSettingState.Video),
             openKeyboardAction = () => SetState(eSettingState.Keyboard),
             commonActions      = common,
         };
@@ -137,7 +154,7 @@ public class Popup_Setting : UIBase
     {
         if (openComplete && Input.GetKeyDown(KeyCode.Escape) && settingState == eSettingState.Setting)
         {
-            await ReductionClose(false, false);
+            await FadeClose(false, false, 0.2f, true);
             closeAction?.Invoke();
         }
     }

@@ -132,7 +132,7 @@ public class PopupItemView : MonoBehaviour, IPopupItemView
         if (_itemCount == 0)
             return;
         
-        if (Input.GetKeyDown(KeyCode.Return))
+        if (InputHelper.GetEnterDown())
         {
             HandleEnter();
             return;

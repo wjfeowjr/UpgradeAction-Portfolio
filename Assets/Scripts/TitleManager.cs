@@ -36,6 +36,11 @@ public class TitleManager : MonoBehaviour
     private async void Start()
     {
         Time.timeScale = 1.0f;
+        // 저장된 해상도가 모니터보다 크면 모니터가 수용하는 가장 큰 해상도로 보정해서 적용 (저장값은 유지)
+        Vector2Int resolution = PopupVideoView.ClampToDisplay(GameManager.Instance.resolutionX, GameManager.Instance.resolutionY);
+        Screen.SetResolution(resolution.x, resolution.y,
+            GameManager.Instance.fullScreen == 1 ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed);
+        QualitySettings.vSyncCount = GameManager.Instance.vSync;
         GameManager.Instance.InGame = false;
         if (SceneChanger.Instance)
             SceneChanger.Instance.TitleScene = true;
@@ -74,7 +79,7 @@ public class TitleManager : MonoBehaviour
             if (Input.GetKeyDown(GameManager.Instance.downKey))
                 HandleArrow(+1);
         }
-        if (Input.GetKeyDown(KeyCode.Return))
+        if (InputHelper.GetEnterDown())
             HandleEnter();
         if (Input.GetKeyDown(KeyCode.Escape))
             HandleEsc();
@@ -118,7 +123,7 @@ public class TitleManager : MonoBehaviour
                     saveFrames[i].SetData(GameManager.Instance.SaveFileName(i + 1), i + 1);
                 RefreshSaveFrameCursors();
                 SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
-                saveSelectText.text = GameManager.Instance.GetTalk(30061);
+                saveSelectText.text = GameManager.Instance.GetTalk(30062);
                 return;
             }
             _isSceneChange = true;
@@ -170,7 +175,7 @@ public class TitleManager : MonoBehaviour
             _isCopyMode       = false;
             _saveSelectCursor = _copySrcCursor;
             RefreshSaveFrameCursors();
-            saveSelectText.text = GameManager.Instance.GetTalk(30061);
+            saveSelectText.text = GameManager.Instance.GetTalk(30062);
             SoundManager.Instance.PlaySound(ConstValues.NormalButton);
             return;
         }
@@ -197,7 +202,7 @@ public class TitleManager : MonoBehaviour
         int targets       = saveFrames.Length;
         _saveSelectCursor = (_copySrcCursor + 1) % targets;
 
-        saveSelectText.text = GameManager.Instance.GetTalk(30062);
+        saveSelectText.text = GameManager.Instance.GetTalk(30063);
         SoundManager.Instance.PlaySound(ConstValues.NormalButton2);
         RefreshSaveFrameCursors();
     }
@@ -225,7 +230,7 @@ public class TitleManager : MonoBehaviour
     {
         _isConfirmActive = true;
         var popup = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Setting, Vector3.zero).GetComponent<Popup_Setting>();
-        popup.ExpansionOpen(false, false).Forget();
+        popup.FadeOpen(false, false, 0.2f, false).Forget();
         popup.InitPresenters(() => { _isConfirmActive = false; }, LanguageSetting, null);
     }
 
@@ -297,7 +302,7 @@ public class TitleManager : MonoBehaviour
     private void LanguageSetting()
     {
         titleText.text = GameManager.Instance.GetTalk(10000);
-        saveSelectText.text = GameManager.Instance.GetTalk(30061);
+        saveSelectText.text = GameManager.Instance.GetTalk(30062);
         selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
         backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
         deleteText.text = string.Format(GameManager.Instance.GetTalk(30111), GameManager.Instance.GetKeyCode(GameManager.Instance.deleteKey));

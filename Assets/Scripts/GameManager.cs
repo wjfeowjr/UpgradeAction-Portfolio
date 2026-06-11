@@ -639,6 +639,11 @@ public class GameManager : Singleton<GameManager>
     public float sfxVolume;
     public float bgmVolume;
 
+    public int resolutionX;
+    public int resolutionY;
+    public int fullScreen;
+    public int vSync;
+
     public string language;
     public int cameraShaking;
    
@@ -839,8 +844,8 @@ public class GameManager : Singleton<GameManager>
     {
         base.Awake();
         //QualitySettings.vSyncCount = 0;
+        //Application.targetFrameRate = 60;
         
-        Application.targetFrameRate = 60;
         InitManager();
         SetCopyData();
         InitAtlas(uiAtlas);
@@ -855,6 +860,21 @@ public class GameManager : Singleton<GameManager>
     {
         if (Input.GetKeyDown(KeyCode.F12))
             inGameDebugConsole.SetActive(!inGameDebugConsole.activeSelf);
+
+        // Alt+Enter: 전체화면 <-> 창모드 토글
+        if (InputHelper.IsAltPressed && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+            ToggleFullScreen();
+    }
+
+    // 전체화면 상태를 토글하고 저장 (Alt+Enter)
+    // SetResolution으로 창을 다시 만들어야 창모드 복귀 시 크기 조절 핸들이 정상 복원된다
+    private void ToggleFullScreen()
+    {
+        fullScreen = fullScreen == 1 ? 0 : 1;
+        SettingIntBinding.SaveSetting(ConstValues.FullScreen, fullScreen);
+
+        Vector2Int resolution = PopupVideoView.ClampToDisplay(resolutionX, resolutionY);
+        Screen.SetResolution(resolution.x, resolution.y, fullScreen == 1 ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed);
     }
 
     private void OnDestroy()
@@ -1261,7 +1281,12 @@ public class GameManager : Singleton<GameManager>
         masterVolume = VolumeBinding.LoadVolume(ConstValues.MasterVolume, 0.8f);
         sfxVolume = VolumeBinding.LoadVolume(ConstValues.SFXVolume, 1.0f);
         bgmVolume = VolumeBinding.LoadVolume(ConstValues.BGMVolume, 1.0f);
-
+        
+        resolutionX = SettingIntBinding.LoadSetting(ConstValues.ResolutionX, 1920);
+        resolutionY = SettingIntBinding.LoadSetting(ConstValues.ResolutionY, 1080);
+        fullScreen = SettingIntBinding.LoadSetting(ConstValues.FullScreen, 1);
+        vSync = SettingIntBinding.LoadSetting(ConstValues.Vsync, 1);
+        
         language = SettingStringBinding.LoadSetting(ConstValues.Language, Application.systemLanguage.ToString());
         cameraShaking = SettingIntBinding.LoadSetting(ConstValues.CameraShaking, 1);
 

@@ -6,6 +6,7 @@ public class PopupSettingModel
 {
     public Action openGameAction;
     public Action openAudioAction;
+    public Action openVideoAction;
     public Action openKeyboardAction;
     public PopupCommonActions commonActions;
 }
@@ -31,13 +32,14 @@ public class PopupSettingPresenter
     public void SetAction()    => _view.SetAction(this, _model.commonActions);
     public void OpenGame()     => _model.openGameAction?.Invoke();
     public void OpenAudio()    => _model.openAudioAction?.Invoke();
+    public void OpenVideo()    => _model.openVideoAction?.Invoke();
     public void OpenKeyboard() => _model.openKeyboardAction?.Invoke();
 }
 
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupSettingView : MonoBehaviour, IPopupSettingView
 {
-    private const int ButtonCount = 3;
+    private const int ButtonCount = 4;
 
     [SerializeField] private ExpansionUiObject[] settingButtons;
 
@@ -60,7 +62,7 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
             HandleArrow(-1);
         if (Input.GetKeyDown(GameManager.Instance.downKey))
             HandleArrow(+1);
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
             HandleEnter();
     }
     
@@ -72,6 +74,8 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
             settingButtons[1].SetText(GameManager.Instance.GetTalk(30054));
         if (settingButtons.Length > 2)
             settingButtons[2].SetText(GameManager.Instance.GetTalk(30055));
+        if (settingButtons.Length > 3)
+            settingButtons[3].SetText(GameManager.Instance.GetTalk(30056));
     }
 
     private void HandleArrow(int dir)
@@ -90,7 +94,9 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
                 break;
             case 1: _presenter.OpenAudio();
                 break;
-            case 2: _presenter.OpenKeyboard();
+            case 2: _presenter.OpenVideo();
+                break;
+            case 3: _presenter.OpenKeyboard();
                 break;
         }
     }

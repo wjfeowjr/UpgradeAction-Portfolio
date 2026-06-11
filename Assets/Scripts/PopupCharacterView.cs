@@ -76,13 +76,13 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
         
         // 순서: SkillInfo → Attribute → Relic → Item
         if(choiceFrameObjects.Length > 0)
-            choiceFrameObjects[0].SetText(GameManager.Instance.GetTalk(30064)); // TODO: Talk.json id 추가 후 GetTalk으로 교체
+            choiceFrameObjects[0].SetText(GameManager.Instance.GetTalk(30065)); // TODO: Talk.json id 추가 후 GetTalk으로 교체
         if(choiceFrameObjects.Length > 1)
-            choiceFrameObjects[1].SetText(GameManager.Instance.GetTalk(30057));
+            choiceFrameObjects[1].SetText(GameManager.Instance.GetTalk(30058));
         if(choiceFrameObjects.Length > 2)
-            choiceFrameObjects[2].SetText(GameManager.Instance.GetTalk(30058));
+            choiceFrameObjects[2].SetText(GameManager.Instance.GetTalk(30059));
         if(choiceFrameObjects.Length > 3)
-            choiceFrameObjects[3].SetText(GameManager.Instance.GetTalk(30063));
+            choiceFrameObjects[3].SetText(GameManager.Instance.GetTalk(30064));
         
         var curPlayer = GameManager.Instance.GetPlayer(curPlayerId);
         int txtIdx = 50100;
@@ -147,7 +147,7 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
         }
  
         // 엔터: 현재 선택된 항목의 팝업 상태를 콜백으로 전달
-        if (Input.GetKeyDown(KeyCode.Return))
+        if (InputHelper.GetEnterDown())
         {
             if (_selectedIndex >= 0 && _selectedIndex < _popupStateOrder.Length)
                 _onStateSelected?.Invoke(_popupStateOrder[_selectedIndex]);

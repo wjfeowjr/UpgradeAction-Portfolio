@@ -78,7 +78,7 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
             HandleArrow(-1);
         if (Input.GetKeyDown(GameManager.Instance.downKey))
             HandleArrow(+1);
-        if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
             HandleEnter();
     }
 

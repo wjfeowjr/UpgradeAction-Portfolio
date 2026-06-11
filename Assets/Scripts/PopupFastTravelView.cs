@@ -81,7 +81,7 @@ public class PopupFastTravelPresenter
         NavigateAction();
 
         // Enter 입력 시 선택한 세이브 포인트로 확정(이동)
-        if (Input.GetKeyDown(KeyCode.Return) && _model.targetPositions.Count > 0)
+        if (InputHelper.GetEnterDown() && _model.targetPositions.Count > 0)
         {
             _moveTween?.Kill();
             _model.selectAction?.Invoke(_index);

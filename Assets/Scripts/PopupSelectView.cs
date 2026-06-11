@@ -97,7 +97,7 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
             No();
             popupCommonActions?.PlayMoveSound.Invoke();
         }
-        else if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
+        else if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
         {
             // 선택 확정
             if (isYes)
@@ -119,8 +119,8 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
             No();
         
         messageText.text = message;
-        yesObject.SetText(GameManager.Instance.GetTalk(30059));
-        noObject.SetText(GameManager.Instance.GetTalk(30060));
+        yesObject.SetText(GameManager.Instance.GetTalk(30060));
+        noObject.SetText(GameManager.Instance.GetTalk(30061));
         if (goods == null)
         {
             goodsObject.SetActive(false);

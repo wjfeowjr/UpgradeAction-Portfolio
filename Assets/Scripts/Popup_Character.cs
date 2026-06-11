@@ -200,10 +200,10 @@ public class Popup_Character : UIBase
         switch (popupState)
         {
             case ePopupState.Character:
-                popupText.text = GameManager.Instance.GetTalk(30064);
+                popupText.text = GameManager.Instance.GetTalk(30040);
                 break;
             case ePopupState.SkillInfo:
-                popupText.text = GameManager.Instance.GetTalk(30064); // TODO: Talk.json id 추가 후 GetTalk으로 교체
+                popupText.text = GameManager.Instance.GetTalk(30065);
                 break;
             case ePopupState.Attribute:
                 popupText.text = GameManager.Instance.GetTalk(30021);
@@ -212,7 +212,7 @@ public class Popup_Character : UIBase
                 popupText.text = GameManager.Instance.GetTalk(30022);
                 break;
             case ePopupState.Item:
-                popupText.text = GameManager.Instance.GetTalk(30063);
+                popupText.text = GameManager.Instance.GetTalk(30064);
                 break;
         }
 
