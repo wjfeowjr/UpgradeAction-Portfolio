@@ -70,6 +70,7 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
     private Action noAction;
     private Action escAction;
     private PopupCommonActions popupCommonActions;
+    //private UIBase ownerPopup; // 마우스 상호작용 (보류)
 
     private void OnEnable()
     {
@@ -140,7 +141,57 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
         noAction = no;
         escAction = esc;
         popupCommonActions = common;
+
+        //SetMouseInteraction(); // 마우스 상호작용 (보류)
     }
+
+    // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
+    /*
+    // 예/아니오 버튼에 마우스 호버/클릭 연결
+    private void SetMouseInteraction()
+    {
+        ownerPopup = GetComponentInParent<UIBase>();
+
+        MouseSelectable.Attach(yesObject,
+            onHover: () =>
+            {
+                if (!CanMouseInput() || isYes)
+                    return;
+
+                Yes();
+                popupCommonActions?.PlayMoveSound?.Invoke();
+            },
+            onClick: () =>
+            {
+                if (!CanMouseInput())
+                    return;
+
+                Yes();
+                yesAction?.Invoke();
+            });
+
+        MouseSelectable.Attach(noObject,
+            onHover: () =>
+            {
+                if (!CanMouseInput() || !isYes)
+                    return;
+
+                No();
+                popupCommonActions?.PlayMoveSound?.Invoke();
+            },
+            onClick: () =>
+            {
+                if (!CanMouseInput())
+                    return;
+
+                No();
+                noAction?.Invoke();
+            });
+    }
+
+    // 팝업 열림 연출이 끝난 뒤에만 마우스 입력 허용
+    private bool CanMouseInput() => ownerPopup && ownerPopup.OpenComplete;
+    */
     
     private void Yes()
     {

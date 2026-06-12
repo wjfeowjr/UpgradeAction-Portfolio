@@ -64,6 +64,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string SkillKey6 = "SkillKey6";
     public const string SkillKey7 = "SkillKey7";
     public const string SkillKey8 = "SkillKey8";
+
+    public const string PotionKey = "PotionKey";
     
     public const string PauseKey = "PauseKey";
 

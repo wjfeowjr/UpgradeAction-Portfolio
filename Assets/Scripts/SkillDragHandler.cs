@@ -36,31 +36,31 @@ public class SkillDragHandler : MonoBehaviour, IPointerMoveHandler, IBeginDragHa
     
     public void OnPointerMove(PointerEventData eventData)
     {
-        skillTooltipView = GetSkillView(eventData, false);
-        if (skillTooltipView == null || string.IsNullOrEmpty(skillTooltipView.GetSkillId()) || !GameManager.Instance.ControlStart || isDrag)
-        {
-            if (toolTip != null)
-                toolTip.gameObject.SetActive(false);
-            return;
-        }
-        
-        var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
-        if (uiInterfaceObj == null)
-            return;
-        
-        var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
-        if (toolTip == null)
-        {
-            Debug.Log($"{skillTooltipView.GetSkillId()}스킬 툴팁 최초 생성");
-            toolTip = GameManager.Instance.SpawnToUIPool(ConstValues.SkillTooltip, uiInterface.GetTooltipPos()).GetComponent<SkillTooltip>();
-        }
-        toolTip.SetTooltip(GameManager.Instance.CurPlayer.GetSkill(skillTooltipView.GetSkillId()));
-        
-        if (toolTip.gameObject.activeSelf)
-            return;
-        
-        // 툴팁 표시 및 설명 추가
-        toolTip.gameObject.SetActive(true);
+        // skillTooltipView = GetSkillView(eventData, false);
+        // if (skillTooltipView == null || string.IsNullOrEmpty(skillTooltipView.GetSkillId()) || !GameManager.Instance.ControlStart || isDrag)
+        // {
+        //     if (toolTip != null)
+        //         toolTip.gameObject.SetActive(false);
+        //     return;
+        // }
+        //
+        // var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
+        // if (uiInterfaceObj == null)
+        //     return;
+        //
+        // var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
+        // if (toolTip == null)
+        // {
+        //     Debug.Log($"{skillTooltipView.GetSkillId()}스킬 툴팁 최초 생성");
+        //     toolTip = GameManager.Instance.SpawnToUIPool(ConstValues.SkillTooltip, uiInterface.GetTooltipPos()).GetComponent<SkillTooltip>();
+        // }
+        // toolTip.SetTooltip(GameManager.Instance.CurPlayer.GetSkill(skillTooltipView.GetSkillId()));
+        //
+        // if (toolTip.gameObject.activeSelf)
+        //     return;
+        //
+        // // 툴팁 표시 및 설명 추가
+        // toolTip.gameObject.SetActive(true);
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -120,7 +120,8 @@ public class SkillDragHandler : MonoBehaviour, IPointerMoveHandler, IBeginDragHa
         targetSkillView.ExecuteSkillAction(temp);
         
         // 툴팁 표시 및 설명 추가
-        toolTip.gameObject.SetActive(true);
+        if(toolTip)
+            toolTip.gameObject.SetActive(true);
     }
 
     private UISkillView GetSkillView(PointerEventData eventData, bool canDrag = true)

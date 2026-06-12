@@ -8,6 +8,7 @@ public class PopupSettingModel
     public Action openAudioAction;
     public Action openVideoAction;
     public Action openKeyboardAction;
+    public Action closeAction;
     public PopupCommonActions commonActions;
 }
 
@@ -34,21 +35,25 @@ public class PopupSettingPresenter
     public void OpenAudio()    => _model.openAudioAction?.Invoke();
     public void OpenVideo()    => _model.openVideoAction?.Invoke();
     public void OpenKeyboard() => _model.openKeyboardAction?.Invoke();
+    public void Close()        => _model.closeAction?.Invoke();
 }
 
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupSettingView : MonoBehaviour, IPopupSettingView
 {
-    private const int ButtonCount = 4;
+    private const int ButtonCount = 5;
 
     [SerializeField] private ExpansionUiObject[] settingButtons;
 
     private PopupSettingPresenter _presenter;
     private PopupCommonActions    _commonActions;
+    //private UIBase _ownerPopup; // 마우스 상호작용 (보류)
     private int _cursor = 0;
+    private int _enabledFrame = -1;
 
     private void OnEnable()
     {
+        _enabledFrame = Time.frameCount;
         RefreshCursors();
         SetTextGameFrames();
     }
@@ -56,6 +61,10 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
     private void Update()
     {
         if (_presenter == null)
+            return;
+
+        // 다른 뷰에서 전환된 프레임에는 입력 무시 (같은 Enter가 중복 처리되는 것 방지)
+        if (Time.frameCount == _enabledFrame)
             return;
 
         if (Input.GetKeyDown(GameManager.Instance.upKey))
@@ -76,6 +85,8 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
             settingButtons[2].SetText(GameManager.Instance.GetTalk(30055));
         if (settingButtons.Length > 3)
             settingButtons[3].SetText(GameManager.Instance.GetTalk(30056));
+        if (settingButtons.Length > 4)
+            settingButtons[4].SetText(GameManager.Instance.GetTalk(30070));
     }
 
     private void HandleArrow(int dir)
@@ -87,16 +98,21 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
 
     private void HandleEnter()
     {
-        _commonActions?.PlaySelectSound?.Invoke();
         switch (_cursor)
         {
             case 0: _presenter.OpenGame();
+                _commonActions?.PlaySelectSound?.Invoke();
                 break;
             case 1: _presenter.OpenAudio();
+                _commonActions?.PlaySelectSound?.Invoke();
                 break;
             case 2: _presenter.OpenVideo();
+                _commonActions?.PlaySelectSound?.Invoke();
                 break;
             case 3: _presenter.OpenKeyboard();
+                _commonActions?.PlaySelectSound?.Invoke();
+                break;
+            case 4: _presenter.Close();
                 break;
         }
     }
@@ -125,5 +141,47 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
         _commonActions = commonActions;
         _cursor        = 0;
         RefreshCursors();
+        //SetMouseInteraction(); // 마우스 상호작용 (보류)
     }
+
+    // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
+    /*
+    // 선택지 버튼에 마우스 호버/클릭 연결
+    private void SetMouseInteraction()
+    {
+        _ownerPopup = GetComponentInParent<UIBase>();
+
+        for (int i = 0; i < settingButtons.Length; i++)
+        {
+            int index = i; // 클로저 캡처용
+            MouseSelectable.Attach(settingButtons[i],
+                onHover: () => MoveCursorTo(index),
+                onClick: () =>
+                {
+                    if (!CanMouseInput())
+                        return;
+
+                    MoveCursorTo(index);
+                    HandleEnter();
+                });
+        }
+    }
+
+    // 마우스 호버로 커서 이동 (키보드 커서 이동과 동일한 연출)
+    private void MoveCursorTo(int index)
+    {
+        if (!CanMouseInput())
+            return;
+
+        if (_cursor == index)
+            return;
+
+        _cursor = index;
+        _commonActions?.PlayMoveSound?.Invoke();
+        RefreshCursors();
+    }
+
+    // 팝업 열림 연출이 끝난 뒤에만 마우스 입력 허용
+    private bool CanMouseInput() => _presenter != null && _ownerPopup && _ownerPopup.OpenComplete;
+    */
 }

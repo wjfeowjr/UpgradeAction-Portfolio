@@ -298,7 +298,7 @@ public class RoomManager : Singleton<RoomManager>
         var minimapInterface = popupMinimap.MinimapView.ConvertTo<IPopupMinimapView>();
         var minimapModel = new PopupMinimapModel()
         {
-            checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(KeyCode.Return)),
+            checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey)),
             closeString = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
             moveAction = MinimapCameraMove,
             checkAction = SpawnCheckMark,

@@ -11,6 +11,9 @@ public class UIBase : MonoBehaviour
     [SerializeField] private CanvasGroup canvasGroup;
     protected bool openComplete;
 
+    // 외부(자식 뷰 등)에서 열림 완료 여부를 확인할 때 사용 (마우스 입력 게이트 등)
+    public bool OpenComplete => openComplete;
+
     private void OnEnable()
     {
         openComplete = false;

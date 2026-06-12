@@ -41,10 +41,11 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
     private const float VolumeMin  = 0.0f;
     private const float VolumeMax  = 1.0f;
 
-    [SerializeField] private VolumeFrame[] volumeFrames;
+    [SerializeField] private ExpansionUiObject[] volumeFrames;
 
     private PopupAudioPresenter _presenter;
     private PopupCommonActions  _commonActions;
+    //private UIBase _ownerPopup; // 마우스 상호작용 (보류)
     private int _cursor = 0;
 
     private void OnEnable()
@@ -68,8 +69,38 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
             HandleVolume(-1);
         if (Input.GetKeyDown(GameManager.Instance.rightKey))
             HandleVolume(+1);
+        if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
+            HandleEnter();
         if (Input.GetKeyDown(KeyCode.Escape))
             _presenter.HandleEsc();
+    }
+
+    private void HandleEnter()
+    {
+        switch (_cursor)
+        {
+            case 3:
+                GameManager.Instance.SetDefaultAudio();
+                RefreshVolumeData();
+
+                float newVolume1 = GameManager.Instance.masterVolume;
+                volumeFrames[0].GetComponent<VolumeFrame>().ChangeVolume(newVolume1);
+                ApplyVolume(0, newVolume1);
+                
+                float newVolume2 = GameManager.Instance.sfxVolume;
+                volumeFrames[1].GetComponent<VolumeFrame>().ChangeVolume(newVolume2);
+                ApplyVolume(1, newVolume2);
+                
+                float newVolume3 = GameManager.Instance.bgmVolume;
+                volumeFrames[2].GetComponent<VolumeFrame>().ChangeVolume(newVolume3);
+                ApplyVolume(2, newVolume3);
+                _commonActions?.PlaySelectSound?.Invoke();
+                break;
+
+            case 4:
+                _presenter.HandleEsc();
+                break;
+        }
     }
     
     private void SetTextVolumeFrames()
@@ -80,6 +111,10 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
             volumeFrames[1].SetText(GameManager.Instance.GetTalk(30031));
         if (volumeFrames.Length > 2)
             volumeFrames[2].SetText(GameManager.Instance.GetTalk(30032));
+        if (volumeFrames.Length > 3)
+            volumeFrames[3].SetText(GameManager.Instance.GetTalk(30069));
+        if (volumeFrames.Length > 4)
+            volumeFrames[4].SetText(GameManager.Instance.GetTalk(30070));
     }
 
     private void HandleArrow(int dir)
@@ -97,13 +132,17 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
         if (volumeFrames.Length == 0)
             return;
 
-        var frame      = volumeFrames[_cursor];
-        float newVolume = Mathf.Clamp(Mathf.Round((frame.CurrentVolume + dir * VolumeStep) * 10f) / 10f, VolumeMin, VolumeMax);
-
-        if (Mathf.Approximately(newVolume, frame.CurrentVolume))
+        // 볼륨 항목이 아닌 커서(닫기 등)에서는 무시
+        var volumeFrame = volumeFrames[_cursor].GetComponent<VolumeFrame>();
+        if (!volumeFrame)
             return;
 
-        frame.ChangeVolume(newVolume);
+        float newVolume = Mathf.Clamp(Mathf.Round((volumeFrame.CurrentVolume + dir * VolumeStep) * 10f) / 10f, VolumeMin, VolumeMax);
+
+        if (Mathf.Approximately(newVolume, volumeFrame.CurrentVolume))
+            return;
+
+        volumeFrame.ChangeVolume(newVolume);
         ApplyVolume(_cursor, newVolume);
         _commonActions?.PlayMoveSound?.Invoke();
     }
@@ -134,11 +173,11 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
     private void RefreshVolumeData()
     {
         if (volumeFrames.Length > 0)
-            volumeFrames[0].SetData(GameManager.Instance.masterVolume);
+            volumeFrames[0].GetComponent<VolumeFrame>().SetData(GameManager.Instance.masterVolume);
         if (volumeFrames.Length > 1)
-            volumeFrames[1].SetData(GameManager.Instance.sfxVolume);
+            volumeFrames[1].GetComponent<VolumeFrame>().SetData(GameManager.Instance.sfxVolume);
         if (volumeFrames.Length > 2)
-            volumeFrames[2].SetData(GameManager.Instance.bgmVolume);
+            volumeFrames[2].GetComponent<VolumeFrame>().SetData(GameManager.Instance.bgmVolume);
     }
 
     private void RefreshCursors()
@@ -163,5 +202,65 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
     {
         _presenter     = presenter;
         _commonActions = commonActions;
+        //SetMouseInteraction(); // 마우스 상호작용 (보류)
     }
+
+    // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
+    /*
+    // 항목 호버/클릭과 좌우 화살표 클릭(볼륨 조절) 연결
+    private void SetMouseInteraction()
+    {
+        _ownerPopup = GetComponentInParent<UIBase>();
+
+        for (int i = 0; i < volumeFrames.Length; i++)
+        {
+            int index = i; // 클로저 캡처용
+            MouseSelectable.Attach(volumeFrames[i],
+                onHover: () => MoveCursorTo(index),
+                onClick: () =>
+                {
+                    if (!CanMouseInput())
+                        return;
+
+                    MoveCursorTo(index);
+                    HandleEnter(); // 버튼 항목만 동작 (볼륨 항목은 케이스 없음)
+                });
+
+            // 볼륨 항목의 좌/우 화살표 클릭 → 볼륨 증감
+            var frame = volumeFrames[i].GetComponent<VolumeFrame>();
+            if (!frame)
+                continue;
+
+            MouseSelectable.Attach(frame.LeftArrow,  onHover: null, onClick: () => ClickVolume(index, -1));
+            MouseSelectable.Attach(frame.RightArrow, onHover: null, onClick: () => ClickVolume(index, +1));
+        }
+    }
+
+    // 화살표 클릭으로 해당 항목의 볼륨 증감
+    private void ClickVolume(int index, int dir)
+    {
+        if (!CanMouseInput())
+            return;
+
+        MoveCursorTo(index);
+        HandleVolume(dir);
+    }
+
+    // 마우스 호버로 커서 이동 (키보드 커서 이동과 동일한 연출)
+    private void MoveCursorTo(int index)
+    {
+        if (!CanMouseInput())
+            return;
+
+        if (_cursor == index)
+            return;
+
+        _cursor = index;
+        _commonActions?.PlayMoveSound?.Invoke();
+        RefreshCursors();
+    }
+
+    // 팝업 열림 연출이 끝난 뒤에만 마우스 입력 허용
+    private bool CanMouseInput() => _presenter != null && _ownerPopup && _ownerPopup.OpenComplete;
+    */
 }

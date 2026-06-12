@@ -46,6 +46,7 @@ public class TitleManager : MonoBehaviour
             SceneChanger.Instance.TitleScene = true;
 
         StartSetting();
+        //SetMouseInteraction(); // 마우스 상호작용 (보류)
 
         if (await GameManager.Instance.Fading(1, 0, 0.5f, true, ConstValues.BlackColor).SuppressCancellationThrow())
             return;
@@ -84,6 +85,79 @@ public class TitleManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Escape))
             HandleEsc();
     }
+
+    // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
+    /*
+    // 타이틀 버튼과 세이브 슬롯에 마우스 호버/클릭 연결
+    private void SetMouseInteraction()
+    {
+        for (int i = 0; i < titleButtons.Length; i++)
+        {
+            int index = i; // 클로저 캡처용
+            MouseSelectable.Attach(titleButtons[i],
+                onHover: () => MoveCursorTo(index),
+                onClick: () =>
+                {
+                    if (_isSceneChange || _isConfirmActive || _isSaveSelect)
+                        return;
+
+                    MoveCursorTo(index);
+                    HandleEnter();
+                });
+        }
+
+        for (int i = 0; i < saveFrames.Length; i++)
+        {
+            int index = i; // 클로저 캡처용
+            MouseSelectable.Attach(saveFrames[i],
+                onHover: () => MoveSaveCursorTo(index),
+                onClick: () =>
+                {
+                    if (_isSceneChange || _isConfirmActive || !_isSaveSelect)
+                        return;
+
+                    // 복사 모드에서 원본 슬롯은 선택 불가
+                    if (_isCopyMode && index == _copySrcCursor)
+                        return;
+
+                    MoveSaveCursorTo(index);
+                    HandleEnter();
+                });
+        }
+    }
+
+    // 마우스 호버로 타이틀 커서 이동 (키보드 커서 이동과 동일한 연출)
+    private void MoveCursorTo(int index)
+    {
+        if (_isSceneChange || _isConfirmActive || _isSaveSelect)
+            return;
+
+        if (_cursor == index)
+            return;
+
+        _cursor = index;
+        SoundManager.Instance.PlaySound(ConstValues.Jump1);
+        RefreshCursors();
+    }
+
+    // 마우스 호버로 세이브 슬롯 커서 이동
+    private void MoveSaveCursorTo(int index)
+    {
+        if (_isSceneChange || _isConfirmActive || !_isSaveSelect)
+            return;
+
+        // 복사 모드에서 원본 슬롯은 선택 불가
+        if (_isCopyMode && index == _copySrcCursor)
+            return;
+
+        if (_saveSelectCursor == index)
+            return;
+
+        _saveSelectCursor = index;
+        SoundManager.Instance.PlaySound(ConstValues.Jump1);
+        RefreshSaveFrameCursors();
+    }
+    */
 
     private void HandleArrow(int dir)
     {

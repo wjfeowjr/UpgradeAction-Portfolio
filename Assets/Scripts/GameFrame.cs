@@ -10,6 +10,9 @@ public class GameFrame : ExpansionUiObject
     [SerializeField] private float     arrowOffset   = 8f;
     [SerializeField] private float     arrowDuration = 0.4f;
 
+    public Transform LeftArrow  => leftArrow;
+    public Transform RightArrow => rightArrow;
+
     private Vector3 _leftArrowOrigin;
     private Vector3 _rightArrowOrigin;
 

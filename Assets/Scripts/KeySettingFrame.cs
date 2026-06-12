@@ -56,6 +56,9 @@ public class KeySettingFrame : ExpansionUiObject
             case ConstValues.SkillKey4:
                 SetText(GameManager.Instance.GetTalk(30048));
                 break;
+            case ConstValues.PotionKey:
+                SetText(GameManager.Instance.GetTalk(30071));
+                break;
         }
         keyText.text = GameManager.Instance.GetKeyCode(actionKeyCode);
     }
@@ -85,6 +88,7 @@ public class KeySettingFrame : ExpansionUiObject
             case ConstValues.SkillKey2:         GameManager.Instance.skillKey2         = changeKeyCode; break;
             case ConstValues.SkillKey3:         GameManager.Instance.skillKey3         = changeKeyCode; break;
             case ConstValues.SkillKey4:         GameManager.Instance.skillKey4         = changeKeyCode; break;
+            case ConstValues.PotionKey:         GameManager.Instance.potionKey         = changeKeyCode; break;
         }
         CurrentKeyCode   = changeKeyCode;
         keyText.text     = GameManager.Instance.GetKeyCode(changeKeyCode);

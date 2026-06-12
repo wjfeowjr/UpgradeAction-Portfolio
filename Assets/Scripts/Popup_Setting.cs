@@ -15,9 +15,7 @@ public enum eSettingState
 public class Popup_Setting : UIBase
 {
     [SerializeField] private TMP_Text settingText;
-    [SerializeField] private TMP_Text selectText;
-    [SerializeField] private TMP_Text backText;
-    
+
     [SerializeField] private PopupSettingView  settingView;
     [SerializeField] private PopupGameView     gameView;
     [SerializeField] private PopupAudioView    audioView;
@@ -37,8 +35,6 @@ public class Popup_Setting : UIBase
     private void LanguageChange()
     {
         SetSettingText();
-        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
-        backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
     }
 
     private void SetSettingText()
@@ -144,18 +140,26 @@ public class Popup_Setting : UIBase
             openAudioAction    = () => SetState(eSettingState.Audio),
             openVideoAction    = () => SetState(eSettingState.Video),
             openKeyboardAction = () => SetState(eSettingState.Keyboard),
+            closeAction        = ClosePopup,
             commonActions      = common,
         };
         var settingPresenter = new PopupSettingPresenter(settingView.ConvertTo<IPopupSettingView>(), settingModel);
         settingPresenter.SetAction();
     }
 
-    private async void Update()
+    private void Update()
     {
         if (openComplete && Input.GetKeyDown(KeyCode.Escape) && settingState == eSettingState.Setting)
-        {
-            await FadeClose(false, false, 0.2f, true);
-            closeAction?.Invoke();
-        }
+            ClosePopup();
+    }
+
+    // 설정 팝업 닫기 (Escape 또는 선택지의 닫기 항목)
+    private async void ClosePopup()
+    {
+        if (!openComplete)
+            return;
+
+        await FadeClose(false, false, 0.2f, true);
+        closeAction?.Invoke();
     }
 }

@@ -14,6 +14,9 @@ public class VolumeFrame : ExpansionUiObject
 
     public float CurrentVolume { get; private set; }
 
+    public Transform LeftArrow  => leftArrow;
+    public Transform RightArrow => rightArrow;
+
     private Vector3 _leftArrowOrigin;
     private Vector3 _rightArrowOrigin;
 

@@ -128,6 +128,7 @@ public static class KeyBinding
     // 저장할 때
     public static void SaveKey(string prefKey, KeyCode key)
     {
+        Debug.Log($"{prefKey}를 {key}로 저장");
         PlayerPrefs.SetInt(prefKey, (int)key);
         PlayerPrefs.Save();
     }
@@ -142,7 +143,6 @@ public static class KeyBinding
         }
         
         // 처음 실행 시 디폴트 키를 저장
-        Debug.Log($"최초 키 설정: {prefKey}를 {defaultKey}로 저장");
         SaveKey(prefKey, defaultKey);
         return defaultKey;
     }
@@ -176,7 +176,7 @@ public static class VolumeBinding
 public static class SettingStringBinding
 {
     // 저장할 때
-    public static void SaveSetting(string prefKey, string value)
+    public static void SaveGameSetting(string prefKey, string value)
     {
         PlayerPrefs.SetString(prefKey, value);
         PlayerPrefs.Save();
@@ -193,7 +193,7 @@ public static class SettingStringBinding
         
         // 처음 실행 시 디폴트 설정 저장
         Debug.Log($"최초 {prefKey} 설정: {defaultValue}");
-        SaveSetting(prefKey, defaultValue);
+        SaveGameSetting(prefKey, defaultValue);
         return defaultValue;
     }
 }
@@ -201,7 +201,7 @@ public static class SettingStringBinding
 public static class SettingIntBinding
 {
     // 저장할 때
-    public static void SaveSetting(string prefKey, int value)
+    public static void SaveGameSetting(string prefKey, int value)
     {
         PlayerPrefs.SetInt(prefKey, value);
         PlayerPrefs.Save();
@@ -218,7 +218,7 @@ public static class SettingIntBinding
         
         // 처음 실행 시 디폴트 설정 저장
         Debug.Log($"최초 {prefKey} 설정: {defaultValue}");
-        SaveSetting(prefKey, defaultValue);
+        SaveGameSetting(prefKey, defaultValue);
         return defaultValue;
     }
 }
@@ -629,6 +629,8 @@ public class GameManager : Singleton<GameManager>
     //public KeyCode skillKey6;
     //public KeyCode skillKey7;
     //public KeyCode skillKey8;
+    
+    public KeyCode potionKey;
 
     public KeyCode changeCharacterLeftKey;
     public KeyCode changeCharacterRightKey;
@@ -862,7 +864,7 @@ public class GameManager : Singleton<GameManager>
             inGameDebugConsole.SetActive(!inGameDebugConsole.activeSelf);
 
         // Alt+Enter: 전체화면 <-> 창모드 토글
-        if (InputHelper.IsAltPressed && (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+        if (InputHelper.IsAltPressed && (Input.GetKeyDown(confirmKey) || Input.GetKeyDown(KeyCode.KeypadEnter)))
             ToggleFullScreen();
     }
 
@@ -871,7 +873,7 @@ public class GameManager : Singleton<GameManager>
     private void ToggleFullScreen()
     {
         fullScreen = fullScreen == 1 ? 0 : 1;
-        SettingIntBinding.SaveSetting(ConstValues.FullScreen, fullScreen);
+        SettingIntBinding.SaveGameSetting(ConstValues.FullScreen, fullScreen);
 
         Vector2Int resolution = PopupVideoView.ClampToDisplay(resolutionX, resolutionY);
         Screen.SetResolution(resolution.x, resolution.y, fullScreen == 1 ? FullScreenMode.FullScreenWindow : FullScreenMode.Windowed);
@@ -1258,42 +1260,109 @@ public class GameManager : Singleton<GameManager>
         deleteKey = KeyCode.X;
         copyKey = KeyCode.C;
         
+        changeCharacterLeftKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterLeftKey, KeyCode.Q);
+        changeCharacterRightKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterRightKey, KeyCode.E);
+        
+        // 게임
+        language = SettingStringBinding.LoadSetting(ConstValues.Language, Application.systemLanguage.ToString());
+        cameraShaking = SettingIntBinding.LoadSetting(ConstValues.CameraShaking, 1);
+        
+        // 오디오
+        masterVolume = VolumeBinding.LoadVolume(ConstValues.MasterVolume, 0.8f);
+        sfxVolume = VolumeBinding.LoadVolume(ConstValues.SFXVolume, 1.0f);
+        bgmVolume = VolumeBinding.LoadVolume(ConstValues.BGMVolume, 1.0f);
+        
+        // 비디오
+        resolutionX = SettingIntBinding.LoadSetting(ConstValues.ResolutionX, 1920);
+        resolutionY = SettingIntBinding.LoadSetting(ConstValues.ResolutionY, 1080);
+        fullScreen = SettingIntBinding.LoadSetting(ConstValues.FullScreen, 1);
+        vSync = SettingIntBinding.LoadSetting(ConstValues.Vsync, 1);
+        
+        // 키 코드
         leftKey = KeyBinding.LoadKey(ConstValues.LeftKey, KeyCode.LeftArrow);
         rightKey = KeyBinding.LoadKey(ConstValues.RightKey, KeyCode.RightArrow);
         upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
         downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
-        
         miniMapKey = KeyBinding.LoadKey(ConstValues.MiniMapKey, KeyCode.Tab);
         characterInfoKey = KeyBinding.LoadKey(ConstValues.CharacterInfoKey, KeyCode.I);
-        
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
         jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
-
         changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
         dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
         skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.A);
         skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
         skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
-        
+        potionKey = KeyBinding.LoadKey(ConstValues.PotionKey, KeyCode.R);
         pauseKey = KeyBinding.LoadKey(ConstValues.PauseKey, KeyCode.Escape);
-
+    }
+    public void SetDefaultGame()
+    {
+        SettingStringBinding.SaveGameSetting(ConstValues.Language, Application.systemLanguage.ToString());
+        SettingIntBinding.SaveGameSetting(ConstValues.CameraShaking, 1);
+        
+        language = SettingStringBinding.LoadSetting(ConstValues.Language, Application.systemLanguage.ToString());
+        cameraShaking = SettingIntBinding.LoadSetting(ConstValues.CameraShaking, 1);
+    }
+    public void SetDefaultAudio()
+    {
+        VolumeBinding.SaveVolume(ConstValues.MasterVolume, 0.8f);
+        VolumeBinding.SaveVolume(ConstValues.SFXVolume, 1.0f);
+        VolumeBinding.SaveVolume(ConstValues.BGMVolume, 1.0f);
+        
         masterVolume = VolumeBinding.LoadVolume(ConstValues.MasterVolume, 0.8f);
         sfxVolume = VolumeBinding.LoadVolume(ConstValues.SFXVolume, 1.0f);
         bgmVolume = VolumeBinding.LoadVolume(ConstValues.BGMVolume, 1.0f);
+    }
+    public void SetDefaultVideo()
+    {
+        SettingIntBinding.SaveGameSetting(ConstValues.ResolutionX, 1920);
+        SettingIntBinding.SaveGameSetting(ConstValues.ResolutionY, 1080);
+        SettingIntBinding.SaveGameSetting(ConstValues.FullScreen, 1);
+        SettingIntBinding.SaveGameSetting(ConstValues.Vsync, 1);
         
         resolutionX = SettingIntBinding.LoadSetting(ConstValues.ResolutionX, 1920);
         resolutionY = SettingIntBinding.LoadSetting(ConstValues.ResolutionY, 1080);
         fullScreen = SettingIntBinding.LoadSetting(ConstValues.FullScreen, 1);
         vSync = SettingIntBinding.LoadSetting(ConstValues.Vsync, 1);
-        
-        language = SettingStringBinding.LoadSetting(ConstValues.Language, Application.systemLanguage.ToString());
-        cameraShaking = SettingIntBinding.LoadSetting(ConstValues.CameraShaking, 1);
-
-        changeCharacterLeftKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterLeftKey, KeyCode.Q);
-        changeCharacterRightKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterRightKey, KeyCode.E);
     }
-
+    public void SetDefaultKeyboard()
+    {
+        KeyBinding.SaveKey(ConstValues.LeftKey, KeyCode.LeftArrow);
+        KeyBinding.SaveKey(ConstValues.RightKey, KeyCode.RightArrow);
+        KeyBinding.SaveKey(ConstValues.UpKey, KeyCode.UpArrow);
+        KeyBinding.SaveKey(ConstValues.DownKey, KeyCode.DownArrow);
+        KeyBinding.SaveKey(ConstValues.MiniMapKey, KeyCode.Tab);
+        KeyBinding.SaveKey(ConstValues.CharacterInfoKey, KeyCode.I);
+        KeyBinding.SaveKey(ConstValues.AttackKey, KeyCode.X);
+        KeyBinding.SaveKey(ConstValues.JumpKey, KeyCode.C);
+        KeyBinding.SaveKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
+        KeyBinding.SaveKey(ConstValues.DashKey, KeyCode.Z);
+        KeyBinding.SaveKey(ConstValues.SkillKey1, KeyCode.A);
+        KeyBinding.SaveKey(ConstValues.SkillKey2, KeyCode.S);
+        KeyBinding.SaveKey(ConstValues.SkillKey3, KeyCode.D);
+        KeyBinding.SaveKey(ConstValues.SkillKey4, KeyCode.F);
+        KeyBinding.SaveKey(ConstValues.PotionKey, KeyCode.R);
+        KeyBinding.SaveKey(ConstValues.PauseKey, KeyCode.Escape);
+        
+        leftKey = KeyBinding.LoadKey(ConstValues.LeftKey, KeyCode.LeftArrow);
+        rightKey = KeyBinding.LoadKey(ConstValues.RightKey, KeyCode.RightArrow);
+        upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
+        downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
+        miniMapKey = KeyBinding.LoadKey(ConstValues.MiniMapKey, KeyCode.Tab);
+        characterInfoKey = KeyBinding.LoadKey(ConstValues.CharacterInfoKey, KeyCode.I);
+        attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
+        jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
+        changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
+        dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
+        skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.A);
+        skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
+        skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
+        skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
+        potionKey = KeyBinding.LoadKey(ConstValues.PotionKey, KeyCode.R);
+        pauseKey = KeyBinding.LoadKey(ConstValues.PauseKey, KeyCode.Escape);
+    }
+    
     private void DefaultRelicSetting()
     {
         foreach (var playerInfo in saveData.playerInfoList)
