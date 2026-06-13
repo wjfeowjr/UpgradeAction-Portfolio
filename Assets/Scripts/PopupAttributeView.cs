@@ -62,14 +62,17 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
     [SerializeField] private TMP_Text leftPoint;
     [SerializeField] private TMP_Text attributeNameText;        // 특성 이름
     [SerializeField] private TMP_Text attributeExplainText;     // 특성 설명
+    [SerializeField] private TMP_Text noHaveSkillText;          // 특성 스킬없음
     [SerializeField] private TMP_Text costText;
     [SerializeField] private TMP_Text activeText;
     [SerializeField] private TMP_Text disActiveText;
-    
+
     [Header("Objects")]
     [SerializeField] private GameObject explainObject;
     [SerializeField] private GameObject activeObject;
     [SerializeField] private GameObject disActiveObject;
+    [SerializeField] private GameObject attributeInfoObject;
+    [SerializeField] private GameObject attributeLockObject;
     [SerializeField] private GameObject[] infoObjects;
     
     [SerializeField] private GameObject buyButton;
@@ -112,6 +115,11 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private const int AttributeCols = 4;
     private const int AttributeRows = 2;
+
+    private void Start()
+    {
+        noHaveSkillText.text = GameManager.Instance.GetTalk(91001);
+    }
 
     private void OnEnable()
     {
@@ -596,7 +604,11 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         var playerInfo = playerInfoList.Find(x => x.playerId == curPlayerId);
         
         // 배우지 않은 스킬이면 슬롯 숨김
-        if (playerInfo.skillList.Count == 0 || playerInfo.skillList.Find(x => x.skillId == curSkillId) == null)
+        bool isNotSkill = playerInfo.skillList.Count == 0 || playerInfo.skillList.Find(x => x.skillId == curSkillId) == null;
+        attributeLockObject.SetActive(isNotSkill);
+        attributeInfoObject.SetActive(!isNotSkill);
+        
+        if (isNotSkill)
         {
             for (int i = 0; i < attributeArray.Length; i++)
             {
