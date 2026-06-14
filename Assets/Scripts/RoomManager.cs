@@ -154,6 +154,18 @@ public class RoomManager : Singleton<RoomManager>
         return list;
     }
 
+    // 포탈이 발견(portalCheck)된 방을 RoomArray(idx) 순서대로 반환 (포탈 이동용)
+    public List<Room> GetPortalRooms()
+    {
+        var list = new List<Room>();
+        foreach (var room in totalRoom.RoomArray)
+        {
+            if (room.PortalCheck && room.PortalObject)
+                list.Add(room);
+        }
+        return list;
+    }
+
     public void AllMonsterArrive()
     {
         foreach (var room in totalRoom.RoomArray)

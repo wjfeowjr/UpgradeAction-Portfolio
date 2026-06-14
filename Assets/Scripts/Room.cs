@@ -129,6 +129,10 @@ public class Room : MonoBehaviour
     public bool SavePointCheck => roomInfo != null && roomInfo.savePointCheck;
     public SaveObject SaveObject => saveObject;
 
+    // 포탈 이동용: 포탈 발견 여부와 포탈 오브젝트 접근자
+    public bool PortalCheck => roomInfo != null && roomInfo.portalCheck;
+    public PortalObject PortalObject => portalObject;
+
     private void Awake()
     {
         if (!RoomManager.Instance.MainCamera)
@@ -218,7 +222,7 @@ public class Room : MonoBehaviour
         targetRoom.ObjectActive(true);
         targetRoom.SetCameraLimit();
         targetRoom.SetPortal();
-        targetRoom.PortalSoundActive(false);
+        
         // 여기서 몹 소환
         targetRoom.SpawnMonster();
         // 여기서 트랩 데이터 넣기
@@ -252,7 +256,6 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        targetRoom.PortalSoundActive(true);
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
         GameManager.Instance.MovePlayer();
         GameManager.Instance.CurPlayer.ClearLastPlatform();
@@ -1012,9 +1015,10 @@ public class Room : MonoBehaviour
         return true;
     }
 
-    private async void MovePortal(string roomId)
+    public async void MovePortal(string roomId)
     {
         var targetRoom = RoomManager.Instance.TargetRoom(roomId);
+        portalObject.SoundActive(false);
         GameManager.Instance.StopPlayer();
 
         if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
@@ -1062,6 +1066,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
         GameManager.Instance.MovePlayer();
         GameManager.Instance.CurPlayer.ClearLastPlatform();
+        GameManager.Instance.CurPlayer.MyRigidbody.WakeUp();
         
         RoomManager.Instance.ActivePlaceName();
         GameManager.Instance.HidePlaceName();
@@ -1429,12 +1434,23 @@ public class Room : MonoBehaviour
         
         portalObject.SetPortalAction(() =>
         {
-            portalObject.SoundActive(false);
             portalObject.ReduceInteractionObject();
-            MovePortal(portalObject.TargetRoom);
+
+            // 첫 포탈 사용 시에는 UI 없이 Room_3_2로 강제 이동 후 firstPortal 저장
+            if (!GameManager.Instance.FirstPortal)
+            {
+                MovePortal(ConstValues.FirstPortalRoom);
+                GameManager.Instance.FirstPortal = true;
+                GameManager.Instance.SaveGame();
+            }
+            else
+            {
+                // 이후에는 포탈 선택 UI를 띄우고, 선택으로 MovePortal 실행
+                portalObject.SpawnFastTravel();
+            }
         });
     }
-    
+
     private void PortalSoundActive(bool active)
     {
         if (!portalObject)

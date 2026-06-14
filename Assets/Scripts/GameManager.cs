@@ -584,6 +584,7 @@ public class SaveData
     public bool firstGetSkill;
     public bool firstGetAttribute;
     public bool firstDamaged;
+    public bool firstPortal;
 
     public List<string> playerList = new List<string>();
     public List<HaveItemInfo> itemList = new List<HaveItemInfo>();
@@ -771,6 +772,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => saveData.savePoint;
         set => saveData.savePoint = value;
+    }
+
+    public bool FirstPortal
+    {
+        get => saveData.firstPortal;
+        set => saveData.firstPortal = value;
     }
 
     public bool FirstGetSkill

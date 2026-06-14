@@ -78,7 +78,6 @@ public class SaveObject : InteractionController
 
                 targetPositions = targetPositions,
                 placeNames = placeNames,
-                roomIds = roomIds,
                 startIndex = startIndex,
                 miniMapCamera = GameManager.Instance.MiniMapCamera,
                 closeAction = () =>
@@ -99,7 +98,7 @@ public class SaveObject : InteractionController
             var fastTravelPresenter = new PopupFastTravelPresenter(fastTravelInterface, fastTravelModel);
             popupFastTravel.SetFastTravelPresenter(fastTravelPresenter);
             fastTravelPresenter.SetFastTravelText();
-            fastTravelPresenter.Expansion(() =>
+            fastTravelPresenter.Fade(() =>
             {
                 uiBase.FadeOpen(true, true, 0.1f, false).Forget();
             });
@@ -118,7 +117,7 @@ public class SaveObject : InteractionController
     private async UniTaskVoid FastTravelSelectAsync(UIBase uiBase, string roomId)
     {
         // 조작 복구는 FastTravelMove 쪽에서 처리하므로 controlStart=false
-        await uiBase.ReductionClose(true, false);
+        await uiBase.FadeClose(true, false, 0.1f);
         // 현재 방에서 선택한 세이브 포인트(roomId)로 패스트 트래블
         RoomManager.Instance.CurrentRoom.FastTravelMove(roomId);
     }

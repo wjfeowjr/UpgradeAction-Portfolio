@@ -19,7 +19,6 @@ public class PopupFastTravelModel
     
     public List<Vector3> targetPositions = new List<Vector3>();   // 각 세이브 포인트의 SaveObject 위치
     public List<string> placeNames = new List<string>();          // 각 세이브 포인트의 place 이름
-    public List<string> roomIds = new List<string>();             // 각 세이브 포인트의 roomId
     public int startIndex;                                        // 시작 인덱스(현재 방)
     public Transform miniMapCamera;                               // 이동시킬 미니맵 카메라
     public Action closeAction;                                    // ESC 닫기
@@ -49,7 +48,7 @@ public class PopupFastTravelPresenter
         _view.SetFastTravelText(_model.moveText, _model.selectText, _model.cancelText);
     }
 
-    public void Expansion(Action action)
+    public void Fade(Action action)
     {
         action?.Invoke();
     }

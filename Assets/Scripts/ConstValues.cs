@@ -264,6 +264,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Minimap = "Minimap";
     public const string SavePoint = "SavePoint";
     public const string PortalObject = "PortalObject";
+    public const string FirstPortalRoom = "Room_3_2";   // 첫 포탈 사용 시 강제 이동 대상
     public const string Interaction = "Interaction";
     public const string InteractionUI = "InteractionUI";
     public const string InteractionSelectUI = "InteractionSelectUI";
