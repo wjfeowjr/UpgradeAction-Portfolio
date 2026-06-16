@@ -910,6 +910,80 @@ public class GameManager : Singleton<GameManager>
         return data;
     }
 
+    // saveData.roomInfoList의 정렬 순서를 RoomManager의 TotalRoom.RoomArray 순서와 동일하게 맞춘다.
+    public void SortRoomInfo()
+    {
+        if (!RoomManager.Instance)
+            return;
+
+        var roomArray = RoomManager.Instance.RoomArray;
+        if (roomArray == null || roomArray.Length == 0)
+            return;
+
+        var sortedList = new List<RoomInfo>();
+
+        // RoomArray 순서대로 매칭되는 RoomInfo를 먼저 채운다.
+        foreach (var room in roomArray)
+        {
+            var info = saveData.roomInfoList.Find(x => x.roomId == room.name);
+            if (info != null && !sortedList.Contains(info))
+                sortedList.Add(info);
+        }
+
+        // RoomArray에 매칭되지 않는 데이터는 유실 방지를 위해 뒤에 그대로 유지한다.
+        foreach (var info in saveData.roomInfoList)
+        {
+            if (!sortedList.Contains(info))
+                sortedList.Add(info);
+        }
+
+        saveData.roomInfoList = sortedList;
+    }
+
+    // Rooms.json에는 더 이상 없는데 세이브 데이터(roomInfoList)에는 남아있는 방 데이터를 정리한다.
+    // 대상: npc, customObject, skill, treasureBox, attributePoint, relic, item
+    private void PatchRoomData()
+    {
+        if (!TableManager.Instance || TableManager.Instance.roomsTable == null)
+            return;
+
+        var roomsTable = TableManager.Instance.roomsTable.Rooms;
+
+        foreach (var roomInfo in saveData.roomInfoList)
+        {
+            // 해당 방의 json 데이터 (없으면 모든 필드를 '없음'으로 간주)
+            var roomsData = roomsTable.Find(x => x.id == roomInfo.roomId);
+
+            // npc
+            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.npc)) && roomInfo.eventNpc.Count > 0)
+                roomInfo.eventNpc.Clear();
+
+            // customObject
+            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.customObject)) && roomInfo.customObject.Count > 0)
+                roomInfo.customObject.Clear();
+
+            // skill
+            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.skill)) && roomInfo.skillAndPassive.Count > 0)
+                roomInfo.skillAndPassive.Clear();
+
+            // treasureBox
+            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.treasureBox)) && roomInfo.treasureBox.Count > 0)
+                roomInfo.treasureBox.Clear();
+
+            // attributePoint (json은 int, 0 이하이면 '없음')
+            if ((roomsData == null || roomsData.attributePoint <= 0) && roomInfo.attributePoint.Count > 0)
+                roomInfo.attributePoint.Clear();
+
+            // relic
+            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.relic)) && roomInfo.relic.Count > 0)
+                roomInfo.relic.Clear();
+
+            // item
+            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.item)) && roomInfo.item.Count > 0)
+                roomInfo.item.Clear();
+        }
+    }
+
     private void DataPatch(SaveData data)
     {
         // 패치 필요 여부 확인 (마지막 저장 시각이 패치 기준 시각보다 이전이면 패치 필요)
@@ -983,6 +1057,7 @@ public class GameManager : Singleton<GameManager>
                 }
             }
         }
+        PatchRoomData();
     }
     
     public void DeleteData()

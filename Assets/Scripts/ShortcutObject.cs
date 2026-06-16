@@ -64,9 +64,9 @@ public class ShortcutObject : Lever
                 return;
             }
         }
-
-        openAction(name, true);
+        
         OpenProduct();
+        openAction(name, true);
     }
 
     // 열리는 연출

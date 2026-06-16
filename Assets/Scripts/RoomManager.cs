@@ -43,6 +43,9 @@ public class RoomManager : Singleton<RoomManager>
         set => currentRoom = value;
     }
 
+    // TotalRoom의 방 정렬 순서 (roomInfoList 정렬 기준으로 사용)
+    public Room[] RoomArray => totalRoom ? totalRoom.RoomArray : null;
+
     public int PopupLayer
     {
         get => popupLayer;
@@ -84,6 +87,9 @@ public class RoomManager : Singleton<RoomManager>
             room.ObjectActive(false);
             room.SetShortCutAndMinimapObject();
         }
+        // 방 데이터 정리까지 한방에
+        GameManager.Instance.SortRoomInfo();
+        
         SetPlaceName();
         ActivePlaceName();
 

@@ -292,6 +292,9 @@ public class Room : MonoBehaviour
     public void AddRoomData()
     {
         var data = GameManager.Instance.RoomInfoList.Find(x => x.roomId == name);
+        if(name == "Room_1_13")
+            Debug.Log("꽥");
+        
         if (data == null)
         {
             RoomInfo room = new RoomInfo();
@@ -536,6 +539,20 @@ public class Room : MonoBehaviour
                 roomInfo.shortCut.Add(addShortcut);
             }
             GameManager.Instance.SaveGame();
+        }
+        else if (shortCutObjects.Length == roomInfo.shortCut.Count)
+        {
+            for (int i = 0; i < roomInfo.shortCut.Count; i++)
+            {
+                if (roomInfo != null)
+                {
+                    if (roomInfo != null && roomInfo.shortCut[i].id != shortCutObjects[i].name)
+                        roomInfo.shortCut[i].id = shortCutObjects[i].name;
+                    
+                    if (roomInfo.shortCut != null && roomInfo.shortCut[i].type != shortCutObjects[i].Type.ToString())
+                        roomInfo.shortCut[i].type = shortCutObjects[i].Type.ToString();
+                }
+            }
         }
         else if (shortCutObjects.Length < roomInfo.shortCut.Count)
         {
@@ -1341,7 +1358,6 @@ public class Room : MonoBehaviour
                 idx += 1;
             }
         }
-
         for (int i = 0; i < shortCutObjects.Length; i++)
             shortCutObjects[i].OpenSetting(roomInfo.shortCut[i].isOpened, ShortcutOpen);
         
@@ -1596,6 +1612,9 @@ public class Room : MonoBehaviour
                 break;
             case 11:
                 Product11();
+                break;
+            case 12:
+                Product12();
                 break;
         }
     }
@@ -2145,8 +2164,14 @@ public class Room : MonoBehaviour
         GameManager.Instance.SaveGame();
     }
     
+    // 아레나 대전
+    private void Product4()
+    {
+        StartArena();
+    }
+    
     // 태양과 대결
-    private async void Product4()
+    private async void Product5()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2434,7 +2459,7 @@ public class Room : MonoBehaviour
     }
 
     // 거너를 만남
-    private async void Product5()
+    private async void Product6()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2487,13 +2512,13 @@ public class Room : MonoBehaviour
     }
     
     // 아레나 대전
-    private void Product6()
+    private void Product7()
     {
         StartArena();
     }
     
     // 암살자와 대결
-    private async void Product7()
+    private async void Product8()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2605,7 +2630,7 @@ public class Room : MonoBehaviour
     }
     
     // 광부를 만남
-    private async void Product8()
+    private async void Product9()
     {
         GameManager.Instance.InitProductCancellation();
         UIOff();
@@ -2708,12 +2733,12 @@ public class Room : MonoBehaviour
         UIOn();
     }
     
-    private void Product9()
+    private void Product10()
     {
         StartArena();
     }
     
-    private async void Product10()
+    private async void Product11()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2756,7 +2781,7 @@ public class Room : MonoBehaviour
         UIOn();
     }
 
-    private async void Product11()
+    private async void Product12()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
