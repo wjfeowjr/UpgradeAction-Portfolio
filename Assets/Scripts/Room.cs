@@ -1418,6 +1418,7 @@ public class Room : MonoBehaviour
             GameManager.Instance.SavePoint = name;
             //GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30206)).Forget();
             GameManager.Instance.RefillPlayerHp();
+            GameManager.Instance.SetPotionCount();
             saveObject.InteractionObject.FadeOut();
             SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
             GameManager.Instance.SaveGame();

@@ -52,6 +52,7 @@ public enum ENormalState
     JumpAttack,
     Dash,
     Skill,
+    Potion,
     Grabbed,
     Airborne,
     Down,
@@ -1296,6 +1297,17 @@ public abstract class Character : InteractionController
             basicStat.hp = 0;
     }
 
+    protected virtual void Heal(int healHp)
+    {
+        if (healHp <= 0)
+            return;
+
+        // 체력 다는 알고리즘 삽입
+        basicStat.hp += healHp;
+        if (basicStat.hp > basicStat.maxHp)
+            basicStat.hp = basicStat.maxHp;
+    }
+    
     // 실드로 데미지를 흡수하고, 흡수 후 남은 데미지를 반환
     // 소비 순서: priority 오름차순 -> 같으면 남은시간 짧은 것 우선(곧 사라질 실드부터 소비)
     public int ConsumeShield(int damage)
@@ -1345,6 +1357,7 @@ public abstract class Character : InteractionController
         basicStat.shield = TotalShield();
         return damage;
     }
+    
     public void SpawnDamageFont(int damage, bool critical, bool additional, bool dot)
     {
         if (damage == 0)
@@ -1410,6 +1423,18 @@ public abstract class Character : InteractionController
         }
 
         effectObj.transform.localScale = randomVector;
+    }
+
+    protected void SpawnHealFont(int healHp)
+    {
+        if (healHp == 0)
+            return;
+
+        int fontSize = 35;
+        
+        var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, fontPos.position).GetComponent<TextFont>();
+        textFont.ColorSetting(EFontType.Heal);
+        textFont.DisplayFont(fontSize, healHp.ToString());
     }
 
     private void SetSpawnedObjectData(string id, GameObject obj, int zAngle, Transform traceTransform = null, bool isBuff = false)

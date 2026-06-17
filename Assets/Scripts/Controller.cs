@@ -155,6 +155,9 @@ public class Controller : Singleton<Controller>
                 GameManager.Instance.CurPlayer.ChangeCharacter();
         }
         
+        if (Input.GetKeyDown(GameManager.Instance.potionKey))
+            GameManager.Instance.CurPlayer.PotionDrink();
+        
         if (Input.GetKeyDown(GameManager.Instance.dashKey))
             GameManager.Instance.CurPlayer.Skill(GameManager.Instance.dashKey);
         

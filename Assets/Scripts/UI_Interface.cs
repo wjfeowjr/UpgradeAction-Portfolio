@@ -47,10 +47,13 @@ public class UI_Interface : UIBase
     
     // 스킬
     public UISkillView ChangeSkillView => changeSkillView;
+    public UISkillView PotionSkillView => potionSkillView;
+    
     public List<UISkillView> SkillViews => skillViews;
     [SerializeField] private RectTransform skillLayout;
     [SerializeField] private RectTransform waitingCharacterPos;
     [SerializeField] private UISkillView changeSkillView;
+    [SerializeField] private UISkillView potionSkillView;
     [SerializeField] private List<UISkillView> skillViews;
     private UISkillPresenter uiSkillPresenter;
     public UISkillPresenter SkillPresenter => uiSkillPresenter;

@@ -17,18 +17,21 @@ public interface IUISkillView
 public class UISkillModel
 {
     public SettingSkill changeSkill;
+    public SettingSkill potionSkill;
     public List<SettingSkill> settingSkillList = new List<SettingSkill>();
 }
 
 public class UISkillPresenter
 {
     private readonly IUISkillView _changeView;
+    private readonly IUISkillView _potionView;
     private readonly List<IUISkillView> _views;
     private UISkillModel _model;
 
-    public UISkillPresenter(IUISkillView changeView, List<IUISkillView> views, UISkillModel model)
+    public UISkillPresenter(IUISkillView changeView, IUISkillView potionView, List<IUISkillView> views, UISkillModel model)
     {
         _changeView = changeView;
+        _potionView = potionView;
         _views = views;
         _model = model;
         
@@ -55,6 +58,7 @@ public class UISkillPresenter
         _model = new UISkillModel
         {
             changeSkill = GameManager.Instance.ChangeSkill,
+            potionSkill = GameManager.Instance.PotionSkill,
             settingSkillList = GameManager.Instance.GetSettingSkillList()
         };
     }
@@ -62,6 +66,8 @@ public class UISkillPresenter
     public void SetSkillInfo()
     {
         _changeView.SetSkillInfo(_model.changeSkill.keyCode, _model.changeSkill.skillId, _model.changeSkill.playerSkill.curCoolTime);
+        _potionView.SetSkillInfo(_model.potionSkill.keyCode, _model.potionSkill.skillId, _model.potionSkill.playerSkill.curCoolTime);
+        
         for (int i = 0; i < _model.settingSkillList.Count; i++)
         {
             var playerSkill = _model.settingSkillList[i].playerSkill;
@@ -81,6 +87,7 @@ public class UISkillPresenter
     public void UpdateSkillCoolTime()
     {
         _changeView.UpdateCoolTimeText(_model.changeSkill.playerSkill.GetRemainingCooldown(), _model.changeSkill.playerSkill.GetMaxCoolTime());
+        _potionView.UpdateCoolTimeText(_model.potionSkill.playerSkill.GetRemainingCooldown(), _model.potionSkill.playerSkill.GetMaxCoolTime());
         
         for (int i = 0; i < _model.settingSkillList.Count; i++)
         {
@@ -95,6 +102,7 @@ public class UISkillPresenter
     public void ResetSkillCoolTime()
     {
         _changeView.UpdateCoolTimeText(_model.changeSkill.playerSkill.ResetCooldown(), _model.changeSkill.playerSkill.GetMaxCoolTime());
+        _potionView.UpdateCoolTimeText(_model.potionSkill.playerSkill.ResetCooldown(), _model.potionSkill.playerSkill.GetMaxCoolTime());
         
         for (int i = 0; i < _model.settingSkillList.Count; i++)
         {
@@ -114,13 +122,16 @@ public class UISkillView : MonoBehaviour, IUISkillView
     private bool isChanging;
     
     [SerializeField] private Image skillImage;
+    [SerializeField] private Image coolTimeImage;
+    [SerializeField] private Image stackCoolTimeImage;
+
     [SerializeField] private TMP_Text skillKey;
     [SerializeField] private TMP_Text coolTimeText;
     [SerializeField] private TMP_Text stackText;
-    [SerializeField] private GameObject coolTimeObject;
-    [SerializeField] private Image coolTimeImage;
-    [SerializeField] private Image stackCoolTimeImage;
     
+    [SerializeField] private GameObject coolTimeObject;
+    [SerializeField] private GameObject cantSkillObject;
+
     public event Action OnSkillDropped;
 
     public bool IsChangeCharacter()
@@ -156,7 +167,9 @@ public class UISkillView : MonoBehaviour, IUISkillView
         coolTimeText.gameObject.SetActive(!string.IsNullOrEmpty(skillId));
         coolTimeObject.SetActive(!string.IsNullOrEmpty(skillId));
         
-        stackText.gameObject.SetActive(maxCoolTime != null && maxCoolTime.Count > 1);
+        if(keyCode != GameManager.Instance.potionKey)
+            stackText.gameObject.SetActive(maxCoolTime != null && maxCoolTime.Count > 1);
+        
         stackCoolTimeImage.gameObject.SetActive(maxCoolTime != null && maxCoolTime.Count > 1);
 
         if (string.IsNullOrEmpty(skillId))
@@ -192,32 +205,48 @@ public class UISkillView : MonoBehaviour, IUISkillView
         // 스택형 쿨타임 표시
         if (coolTime.Count > 1)
         {
-            // 모든 스택을 소모하지 않았다면, 기본 쿨타임을 보여준다
-            var finalCoolTime = maxCoolTime[0] - coolTime[0];
-            var finalStackCoolTime = maxCoolTime[1] - coolTime[1];
-            
-            if (coolTime[2] > 0)
+            if (maxCoolTime[1] <= 0)
             {
-                coolTimeText.gameObject.SetActive(finalCoolTime > 0);
-                coolTimeObject.SetActive(finalCoolTime > 0);
-                coolTimeText.text = finalCoolTime.ToString("F1");
-                coolTimeImage.fillAmount = finalCoolTime / maxCoolTime[0];
+                coolTimeImage.gameObject.SetActive(false);
+                stackCoolTimeImage.gameObject.SetActive(false);
+                coolTimeText.gameObject.SetActive(false);
+                coolTimeObject.SetActive(false);
+                stackText.gameObject.SetActive((int)coolTime[2] > 0);
+                stackText.text = ((int)coolTime[2]).ToString();
+                cantSkillObject.SetActive(coolTime[2] == 0);
             }
-            // 모든 스택을 소모하였다면, 스택 쿨타임을 기본 쿨타임으로 보여준다
             else
             {
-                coolTimeText.gameObject.SetActive(finalStackCoolTime > 0);
-                coolTimeObject.SetActive(finalStackCoolTime > 0);
-                coolTimeText.text = finalStackCoolTime.ToString("F1");
-                coolTimeImage.fillAmount = finalStackCoolTime / maxCoolTime[1];
+                // 모든 스택을 소모하지 않았다면, 기본 쿨타임을 보여준다
+                var finalCoolTime = maxCoolTime[0] - coolTime[0];
+                var finalStackCoolTime = maxCoolTime[1] - coolTime[1];
+            
+                if (coolTime[2] > 0)
+                {
+                    coolTimeText.gameObject.SetActive(finalCoolTime > 0);
+                    coolTimeObject.SetActive(finalCoolTime > 0);
+                    coolTimeText.text = finalCoolTime.ToString("F1");
+                    coolTimeImage.fillAmount = finalCoolTime / maxCoolTime[0];
+                }
+                // 모든 스택을 소모하였다면, 스택 쿨타임을 기본 쿨타임으로 보여준다
+                else
+                {
+                    coolTimeText.gameObject.SetActive(finalStackCoolTime > 0);
+                    coolTimeObject.SetActive(finalStackCoolTime > 0);
+                    coolTimeText.text = finalStackCoolTime.ToString("F1");
+                    coolTimeImage.fillAmount = finalStackCoolTime / maxCoolTime[1];
+                }
+            
+                // 기본 쿨타임이 돌아가는동안은 스택 쿨타임이 보이지 않는다.
+                stackText.gameObject.SetActive((int)coolTime[2] > 0);
+                stackCoolTimeImage.gameObject.SetActive(finalCoolTime <= 0 && coolTime[2] > 0);
+            
+                stackText.text = ((int)coolTime[2]).ToString();
+                stackCoolTimeImage.fillAmount = finalStackCoolTime / maxCoolTime[1];
+                
+                if(cantSkillObject.activeSelf)
+                    cantSkillObject.SetActive(false);
             }
-            
-            // 기본 쿨타임이 돌아가는동안은 스택 쿨타임이 보이지 않는다.
-            stackText.gameObject.SetActive((int)coolTime[2] > 0);
-            stackCoolTimeImage.gameObject.SetActive(finalCoolTime <= 0 && coolTime[2] > 0);
-            
-            stackText.text = ((int)coolTime[2]).ToString();
-            stackCoolTimeImage.fillAmount = finalStackCoolTime / maxCoolTime[1];
         }
         // 일반형 쿨타임 표시, 기본 쿨타임을 보여준다
         else
@@ -228,8 +257,12 @@ public class UISkillView : MonoBehaviour, IUISkillView
             coolTimeText.text = finalCoolTime.ToString("F1");
             coolTimeImage.fillAmount = finalCoolTime / maxCoolTime[0];
             
-            stackText.gameObject.SetActive(false);
-            stackCoolTimeImage.gameObject.SetActive(false);
+            if(stackText.gameObject.activeSelf)
+                stackText.gameObject.SetActive(false);
+            if(stackCoolTimeImage.gameObject.activeSelf)
+                stackCoolTimeImage.gameObject.SetActive(false);
+            if(cantSkillObject.activeSelf)
+                cantSkillObject.SetActive(false);
         }
     }
 

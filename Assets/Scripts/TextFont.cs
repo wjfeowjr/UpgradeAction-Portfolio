@@ -93,6 +93,9 @@ public class TextFont : MonoBehaviour
             case EFontType.AdditionalDamage:
                 myText.color = ConstValues.CyanColor;
                 break;
+            case EFontType.Heal:
+                myText.color = ConstValues.GreenColor;
+                break;
             case EFontType.Dot:
                 myText.color = ConstValues.OrangeColor;
                 break;

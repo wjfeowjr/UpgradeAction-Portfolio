@@ -574,6 +574,7 @@ public class SaveData
 {
     // 재화
     public int gold;
+    public int additionPotionCount;
 
     // 세이브 포인트
     public string savePoint;
@@ -685,7 +686,8 @@ public class GameManager : Singleton<GameManager>
     [SerializeField] private SaveData saveData;
     
     // 등록된 스킬 및 키 세팅 목록
-    private SettingSkill changeSkill;
+    [SerializeField] private SettingSkill changeSkill;
+    [SerializeField] private SettingSkill potionSkill;
     
     // 복제체 데이터들
     public List<SkillAttributeCopy> skillAttributeCopyList = new List<SkillAttributeCopy>();
@@ -767,6 +769,12 @@ public class GameManager : Singleton<GameManager>
         get => saveData.gold;
         set => saveData.gold = value;
     }
+    
+    public int AdditionPotionCount
+    {
+        get => saveData.additionPotionCount;
+        set => saveData.additionPotionCount = value;
+    }
 
     public string SavePoint
     {
@@ -828,7 +836,9 @@ public class GameManager : Singleton<GameManager>
     public List<NpcInfo> NpcInfoList => saveData.npcInfoList;
 
     public SettingSkill ChangeSkill => changeSkill;
-
+    
+    public SettingSkill PotionSkill => potionSkill;
+    
     public List<Monster> MonsterList
     {
         get => monsterList;
@@ -987,76 +997,82 @@ public class GameManager : Singleton<GameManager>
     private void DataPatch(SaveData data)
     {
         // 패치 필요 여부 확인 (마지막 저장 시각이 패치 기준 시각보다 이전이면 패치 필요)
-        if (data != null && DateTime.TryParse(data.lastSavedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime lastSavedAt))
+        if (data != null)
         {
-            // 기준 시각: 한국 시간(KST, UTC+9) 2026년 5월 29일 00시
-            DateTime patchTime1 = new DateTime(2026, 6, 1, 7, 0, 0);
-            if (lastSavedAt.ToUniversalTime() < patchTime1)
+            if (DateTime.TryParse(data.lastSavedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime lastSavedAt))
             {
-                Debug.Log("1차 패치 필요");
-                // 특성 초기화
-                foreach (var playerInfo in data.playerInfoList)
+                // 기준 시각: 한국 시간(KST, UTC+9) 2026년 5월 29일 00시
+                DateTime patchTime1 = new DateTime(2026, 6, 1, 7, 0, 0);
+                if (lastSavedAt.ToUniversalTime() < patchTime1)
                 {
-                    switch (playerInfo.playerId)
+                    Debug.Log("1차 패치 필요");
+                    // 특성 초기화
+                    foreach (var playerInfo in data.playerInfoList)
                     {
-                        case ConstValues.Berserker:
-                            AddDashSkill(ConstValues.BerserkerDash, playerInfo);
-                            break;
-                
-                        case ConstValues.Gunner:
-                            AddDashSkill(ConstValues.GunnerDash, playerInfo);
-                            break;
-                
-                        case ConstValues.Fighter:
-                            AddDashSkill(ConstValues.FighterDash, playerInfo);
-                            break;
-                    }
-
-                    playerInfo.attributePoint = data.totalAttributePoint;
-                    foreach (var skill in playerInfo.skillList)
-                        skill.attributeList.Clear();
-                }
-            }
-            
-            DateTime patchTime2 = new DateTime(2026, 6, 8, 5, 20, 0);
-            if (lastSavedAt.ToUniversalTime() < patchTime2)
-            {
-                Debug.Log("2차 패치 필요");
-                // 세이브 이동 아이템 추가
-                var bossRoom2 = saveData.roomInfoList.Find(x => x.roomId == ConstValues.RoomBoss2);
-                if (bossRoom2 != null && bossRoom2.roomProduct[0].isFinish)
-                    GetItem(ConstValues.SaveTravel, 1);
-            }
-            
-            DateTime patchTime3 = new DateTime(2026, 6, 8, 19, 55, 0);
-            if (lastSavedAt.ToUniversalTime() < patchTime3)
-            {
-                Debug.Log("3차 패치 필요");
-                // 기존 보물상자의 데이터와 새로운 특성포인트를 동기화 시키기
-                foreach (var roomInfo in data.roomInfoList)
-                {
-                    List<TreasureBox> removingTreasureBoxList = new List<TreasureBox>();
-                    foreach (var treasureBox in roomInfo.treasureBox)
-                    {
-                        if (treasureBox.id != ConstValues.AttributePoint)
-                            continue;
-                        
-                        removingTreasureBoxList.Add(treasureBox);
-                        roomInfo.attributePoint.Clear();
-                        AttributePoint attributePoint = new AttributePoint
+                        switch (playerInfo.playerId)
                         {
-                            count = treasureBox.count,
-                            alreadyGet = treasureBox.alreadyGet
-                        };
-                        roomInfo.attributePoint.Add(attributePoint);
-                    }
+                            case ConstValues.Berserker:
+                                AddDashSkill(ConstValues.BerserkerDash, playerInfo);
+                                break;
 
-                    foreach (var removingTreasureBox in removingTreasureBoxList)
-                        roomInfo.treasureBox.Remove(removingTreasureBox);
-                    
+                            case ConstValues.Gunner:
+                                AddDashSkill(ConstValues.GunnerDash, playerInfo);
+                                break;
+
+                            case ConstValues.Fighter:
+                                AddDashSkill(ConstValues.FighterDash, playerInfo);
+                                break;
+                        }
+
+                        playerInfo.attributePoint = data.totalAttributePoint;
+                        foreach (var skill in playerInfo.skillList)
+                            skill.attributeList.Clear();
+                    }
+                }
+
+                DateTime patchTime2 = new DateTime(2026, 6, 8, 5, 20, 0);
+                if (lastSavedAt.ToUniversalTime() < patchTime2)
+                {
+                    Debug.Log("2차 패치 필요");
+                    // 세이브 이동 아이템 추가
+                    var bossRoom2 = saveData.roomInfoList.Find(x => x.roomId == ConstValues.RoomBoss2);
+                    if (bossRoom2 != null && bossRoom2.roomProduct[0].isFinish)
+                        GetItem(ConstValues.SaveTravel, 1);
+                }
+
+                DateTime patchTime3 = new DateTime(2026, 6, 8, 19, 55, 0);
+                if (lastSavedAt.ToUniversalTime() < patchTime3)
+                {
+                    Debug.Log("3차 패치 필요");
+                    // 기존 보물상자의 데이터와 새로운 특성포인트를 동기화 시키기
+                    foreach (var roomInfo in data.roomInfoList)
+                    {
+                        List<TreasureBox> removingTreasureBoxList = new List<TreasureBox>();
+                        foreach (var treasureBox in roomInfo.treasureBox)
+                        {
+                            if (treasureBox.id != ConstValues.AttributePoint)
+                                continue;
+
+                            removingTreasureBoxList.Add(treasureBox);
+                            roomInfo.attributePoint.Clear();
+                            AttributePoint attributePoint = new AttributePoint
+                            {
+                                count = treasureBox.count,
+                                alreadyGet = treasureBox.alreadyGet
+                            };
+                            roomInfo.attributePoint.Add(attributePoint);
+                        }
+
+                        foreach (var removingTreasureBox in removingTreasureBoxList)
+                            roomInfo.treasureBox.Remove(removingTreasureBox);
+                    }
                 }
             }
         }
+
+        if (saveData.additionPotionCount == 0)
+            saveData.additionPotionCount = 1;
+        
         PatchRoomData();
     }
     
@@ -1097,6 +1113,8 @@ public class GameManager : Singleton<GameManager>
         GameStartSetting();
         InitPlayer();
         InitChangeSkill();
+        InitPotionSkill();
+        SetPotionCount();
         
         BgmManager.Instance.Stop();
         SoundManager.Instance.PlaySound(ConstValues.Upgrade, true);
@@ -1291,6 +1309,7 @@ public class GameManager : Singleton<GameManager>
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterDash, dashKey));
                     break;
             }
+            playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.PotionKey, potionKey));
             playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey1));
             playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey2));
             playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey3));
@@ -1370,12 +1389,13 @@ public class GameManager : Singleton<GameManager>
         attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
         jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
         changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
+        potionKey = KeyBinding.LoadKey(ConstValues.PotionKey, KeyCode.R);
+        
         dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
         skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.A);
         skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
         skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
-        potionKey = KeyBinding.LoadKey(ConstValues.PotionKey, KeyCode.R);
         pauseKey = KeyBinding.LoadKey(ConstValues.PauseKey, KeyCode.Escape);
     }
     public void SetDefaultGame()
@@ -2177,7 +2197,8 @@ public class GameManager : Singleton<GameManager>
 
     public void ReduceSkillPlayer()
     {
-        ChangeSkill.playerSkill.ReducingCooldown();
+        changeSkill.playerSkill.ReducingCooldown();
+        potionSkill.playerSkill.ReducingCooldown();
         foreach (var player in players)
             player.ReduceSkillCoolTime();
     }
@@ -2577,13 +2598,15 @@ public class GameManager : Singleton<GameManager>
         objectInfoPresenter.HideImmediate();
         
         var changeInterface = uiInterface.ChangeSkillView.ConvertTo<IUISkillView>();
+        var potionInterface = uiInterface.PotionSkillView.ConvertTo<IUISkillView>();
         var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
         var skillModel = new UISkillModel
         {
             changeSkill = changeSkill,
+            potionSkill = potionSkill,
             settingSkillList = GetSettingSkillList()
         };
-        var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
+        var skillPresenter = new UISkillPresenter(changeInterface, potionInterface, skillInterfaces, skillModel);
         uiInterface.SetSkillPresenter(skillPresenter);
         skillPresenter.SetSkillInfo();
         
@@ -2753,7 +2776,7 @@ public class GameManager : Singleton<GameManager>
             
             PlayerSkill addedSkill = new PlayerSkill();
             addedSkill.id = skill.id;
-            var coolTimeArray = skill.coolTime.Split(',');
+            var coolTimeArray = skill.coolTime.Split(';');
             foreach (var coolTime in coolTimeArray)
             {
                 addedSkill.maxCoolTime.Add(float.Parse(coolTime));
@@ -2765,6 +2788,39 @@ public class GameManager : Singleton<GameManager>
             changeSkill.playerSkill = addedSkill;
             break;
         }
+    }
+    private void InitPotionSkill()
+    {
+        potionSkill = new SettingSkill()
+        {
+            skillId = ConstValues.PotionDrink,
+            keyCode = potionKey,
+        };
+        
+        foreach (var skill in tableManager.skillTable.Skill)
+        {
+            if (skill.id != ConstValues.PotionDrink)
+                continue;
+            
+            PlayerSkill addedSkill = new PlayerSkill();
+            addedSkill.id = skill.id;
+            var coolTimeArray = skill.coolTime.Split(';');
+            foreach (var coolTime in coolTimeArray)
+            {
+                addedSkill.maxCoolTime.Add(float.Parse(coolTime));
+                addedSkill.curCoolTime.Add(float.Parse(coolTime));
+            }
+            
+            addedSkill.talk = GetTalk(skill.talk);
+            addedSkill.explainTalk = GetTalk(skill.explainTalk);
+            potionSkill.playerSkill = addedSkill;
+            break;
+        }
+    }
+    public void SetPotionCount()
+    {
+        potionSkill.playerSkill.maxCoolTime[2] = saveData.additionPotionCount;
+        potionSkill.playerSkill.curCoolTime[2] = saveData.additionPotionCount;
     }
 
     // 해당 아이템을 가지고 있는가?
@@ -2841,13 +2897,15 @@ public class GameManager : Singleton<GameManager>
             return;
         
         var changeInterface = uiInterface.ChangeSkillView.ConvertTo<IUISkillView>();
+        var potionInterface = uiInterface.PotionSkillView.ConvertTo<IUISkillView>();
         var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
         var skillModel = new UISkillModel
         {
             changeSkill = changeSkill,
+            potionSkill = potionSkill,
             settingSkillList = GetSettingSkillList()
         };
-        var skillPresenter = new UISkillPresenter(changeInterface, skillInterfaces, skillModel);
+        var skillPresenter = new UISkillPresenter(changeInterface, potionInterface, skillInterfaces, skillModel);
         uiInterface.SetSkillPresenter(skillPresenter);
         skillPresenter.SetSkillInfo();
     }

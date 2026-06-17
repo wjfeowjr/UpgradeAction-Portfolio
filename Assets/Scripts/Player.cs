@@ -58,27 +58,30 @@ public class PlayerSkill
             curCoolTime[0] = maxCoolTime[0];
 
         // 스택형 스킬이라면
-        if (curCoolTime.Count > 1)
-        {
-            // 스택 개수가 적다면
-            if ((int)curCoolTime[2] < maxCoolTime[2])
-            {
-                curCoolTime[1] += Time.deltaTime;
-                // 스택 쿨타임이 다 차게 되면
-                if (curCoolTime[1] >= maxCoolTime[1])
-                {
-                    // 스킬 스택이 1 차오르고
-                    curCoolTime[2] += 1;
-                    // 스택이 찼는데도 최대 스택에 도달하지 못한다면
-                    if ((int)curCoolTime[2] < maxCoolTime[2])
-                        // 스택 쿨타임을 0으로 바꾼다(다시 채워지도록)
-                        curCoolTime[1] = 0;
-                }
-            }
-            if ((int)curCoolTime[2] > maxCoolTime[2])
-                curCoolTime[2] = maxCoolTime[2];
-        }
+        if (curCoolTime.Count <= 1)
+            return curCoolTime;
+
+        if (!(maxCoolTime[1] > 0))
+            return curCoolTime;
         
+        // 스택 개수가 적다면
+        if ((int)curCoolTime[2] < maxCoolTime[2])
+        {
+            curCoolTime[1] += Time.deltaTime;
+            // 스택 쿨타임이 다 차게 되면
+            if (curCoolTime[1] >= maxCoolTime[1])
+            {
+                // 스킬 스택이 1 차오르고
+                curCoolTime[2] += 1;
+                // 스택이 찼는데도 최대 스택에 도달하지 못한다면
+                if ((int)curCoolTime[2] < maxCoolTime[2])
+                    // 스택 쿨타임을 0으로 바꾼다(다시 채워지도록)
+                    curCoolTime[1] = 0;
+            }
+        }
+        if ((int)curCoolTime[2] > maxCoolTime[2])
+            curCoolTime[2] = maxCoolTime[2];
+
         return curCoolTime;
     }
 
@@ -873,7 +876,7 @@ public abstract class Player : Character
     // 플레이어 공격
     public virtual async UniTask<bool> Attack()
     {
-        if (normalState is ENormalState.Skill || IsDamaged() || downJumping)
+        if (normalState is ENormalState.Skill or ENormalState.Potion || IsDamaged() || downJumping)
         {
             Debug.Log("공격을 할 수 없는 상태임");
             return false;
@@ -949,6 +952,13 @@ public abstract class Player : Character
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
         uiInterface.HpPresenter.SetHpText();
         uiInterface.HpPresenter.HpReduce();
+    }
+
+    protected override void Heal(int healHp)
+    {
+        base.Heal(healHp);
+        GameManager.Instance.SetPlayerHp(basicStat.hp);
+        GameManager.Instance.RefreshPlayerHp();
     }
 
     public override void Die()
@@ -1044,6 +1054,28 @@ public abstract class Player : Character
         targetSkill.SetCoolTime();
         return true;
     }
+    
+    // 물약을 사용 할 수 있는가?
+    private bool IsCanPotion()
+    {
+        var targetSkill = GameManager.Instance.PotionSkill.playerSkill;
+        if (targetSkill.IsOnCooldown)
+        {
+            var coolTimeList = targetSkill.GetRemainingCooldown();
+            Debug.Log($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
+            return false;
+        }
+
+        // 일반 스킬
+        if (normalState is ENormalState.Dash or ENormalState.Skill or ENormalState.Potion || landingState == ELandingState.Air || IsDamaged())
+        {
+            Debug.Log("물약을 사용 할 수 있는 상태가 아님");
+            return false;
+        }
+        
+        targetSkill.SetCoolTime();
+        return true;
+    }
 
     // 스킬을 사용 할 수 있는가?
     protected bool IsCanSkill(string id)
@@ -1069,18 +1101,18 @@ public abstract class Player : Character
         var type = TableManager.Instance.skillTable.Skill.Find(x => x.id == id).type;
 
         // 대시
-        if (type == ConstValues.Dash && IsCc())
+        if (type == ConstValues.Dash && normalState == ENormalState.Potion && IsCc())
         {
             Debug.Log("대시를 사용 할 수 있는 상태가 아님");
             return false;
         }
         // 일반 스킬
-        if (type == ConstValues.Skill && (normalState == ENormalState.Skill || IsDamaged()))
+        if (type == ConstValues.Skill && (normalState is ENormalState.Skill or ENormalState.Potion || IsDamaged()))
         {
             Debug.Log("스킬을 사용 할 수 있는 상태가 아님");
             return false;
         }
-        
+
         if(!GetSkillGlobalCoolTime())
         {
             Debug.Log("스킬 글로벌 쿨타임이 지나지 않음");
@@ -1449,7 +1481,6 @@ public abstract class Player : Character
             addedSkill.skillArmor = originSkill.skillArmor;
             skillList.Add(addedSkill);
         }
-
     }
 
     public void InitAnimation()
@@ -1657,9 +1688,65 @@ public abstract class Player : Character
         
         if (!changing)
             return;
-
-        Debug.Log("교체!");
+        
         GameManager.Instance.CharacterChange();
+    }
+    
+    // 포션 마시기
+    public async void PotionDrink()
+    {
+        if (Time.timeScale == 0)
+            return;
+        
+        if (!IsCanPotion())
+            return;
+        
+        if(!GetGlobalCoolTime())
+        {
+            Debug.Log("글로벌 쿨타임이 지나지 않음");
+            return;
+        }
+        
+        curGlobalCoolTime = 0;
+        if (moveState == EMoveState.Moving)
+            MoveStateSetting(EMoveState.Stopping);
+
+        // 대시중이라면 즉시 정지해야함..
+        if (normalState == ENormalState.Dash)
+            myRigidbody.linearVelocity = Vector2.zero;
+        
+        CancelMotion(false, true);
+        
+        stateCancellation = new CancellationTokenSource();
+        StateSetting(ENormalState.Potion, ConstValues.PotionDrink, ConstValues.PotionDrink);
+
+        var delay1 = 0.6f;
+        var delay2 = 0.2f;
+
+        SpawnObject(ConstValues.HealingEffect, centerPos.position);
+        if (await AttackDelay(delay1).SuppressCancellationThrow())
+        {
+            Debug.Log("물약먹기 캔슬");
+            return;
+        }
+
+        var potionDrink = skillList.Find(x => x.id == ConstValues.PotionDrink);
+        if (potionDrink != null)
+        {
+            int healValue = Mathf.RoundToInt(basicStat.maxHp * potionDrink.buffValue[0] * 0.01f);
+            Heal(healValue);
+            SpawnHealFont(healValue);
+        }
+        SpawnObject(ConstValues.HealEffect, centerPos.position);
+        if (await AttackDelay(delay2).SuppressCancellationThrow())
+        {
+            Debug.Log("물약먹기 후딜 캔슬");
+            return;
+        }
+        
+        GravityChange(myGravity);
+        // 동작이 끝날때 반환하는 트리거
+        StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
     }
 
     public void ReceiveChangeData(Player player)

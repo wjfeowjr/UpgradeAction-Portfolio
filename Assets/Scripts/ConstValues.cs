@@ -65,6 +65,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SkillKey7 = "SkillKey7";
     public const string SkillKey8 = "SkillKey8";
 
+    public const string ChangeCharacterKey = "ChangeCharacterKey";
     public const string PotionKey = "PotionKey";
     
     public const string PauseKey = "PauseKey";
@@ -338,6 +339,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string GoldExplosion = "GoldExplosion";
     public const string SlotEquip = "SlotEquip";
     public const string AttributePoint = "AttributePoint";
+    public const string HealingEffect = "HealingEffect";
+    public const string HealEffect = "HealEffect";
     
     public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";
@@ -356,9 +359,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string AttackSpeed = "AttackSpeed";
     public const string IgnoreTime = "IgnoreTime";
     
-    public const string ChangeCharacter = "ChangeCharacter";
-    public const string ChangeCharacterKey = "ChangeCharacterKey";
-    
+    public const string Potion = "Potion";
+
     // 기타 애니메이션
     public const string Left = "Left";
     public const string Right = "Right";
@@ -390,6 +392,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string PlatformDestroyDust = "PlatformDestroyDust";
     public const string UI = "UI";
     public const string PlatformDust = "PlatformDust";
+    public const string ChangeCharacter = "ChangeCharacter";
+    public const string PotionDrink = "PotionDrink";
 
     public const string BerserkerSlash = "Berserker_Slash";
     public const string BerserkerFlash = "Berserker_Flash";
