@@ -126,11 +126,11 @@ public class Room : MonoBehaviour
     public string Place => GameManager.Instance.GetPlaceName(roomsData.place);
 
     // 패스트 트래블용: 세이브 포인트 활성화 여부와 세이브 오브젝트 접근자
-    public bool SavePointCheck => roomInfo != null && roomInfo.savePointCheck;
+    public bool SavePointCheck => roomInfo != null && roomInfo.IsRevealed(EMinimapObjectType.SavePoint);
     public SaveObject SaveObject => saveObject;
 
     // 포탈 이동용: 포탈 발견 여부와 포탈 오브젝트 접근자
-    public bool PortalCheck => roomInfo != null && roomInfo.portalCheck;
+    public bool PortalCheck => roomInfo != null && roomInfo.IsRevealed(EMinimapObjectType.Portal);
     public PortalObject PortalObject => portalObject;
 
     private void Awake()
@@ -805,6 +805,7 @@ public class Room : MonoBehaviour
                     roomItem[idx].IsGet = true;
                     roomInfo.item[idx].alreadyGet = true;
                     roomItem[idx].ReduceInteractionObject();
+                    roomItem[idx].SpawnAcquireEffect(ConstValues.BangEffect, roomItem[idx].transform.position);
                     GameManager.Instance.GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
                     SoundManager.Instance.PlaySound(ConstValues.Pickup);
                     GameManager.Instance.ProductObjectInfo(roomInfo.item[idx].id, GameManager.Instance.GetItemTalk(roomInfo.item[idx].id), roomInfo.item[idx].count);
@@ -855,16 +856,18 @@ public class Room : MonoBehaviour
             }
             else
             {
+                roomAttributePoint[idx].SetInteractionAction();
                 roomAttributePoint[idx].SetAction(() =>
                 {
-                    roomAttributePoint[idx].gameObject.SetActive(false);
+                    roomAttributePoint[idx].IsGet = true;
                     roomInfo.attributePoint[idx].alreadyGet = true;
+                    roomAttributePoint[idx].ReduceInteractionObject();
+                    roomAttributePoint[idx].SpawnAcquireEffect(ConstValues.GetAttributeEffect, roomAttributePoint[idx].transform.position);
                     PlusAttributePoint(roomInfo.attributePoint[idx].count);
                     GameManager.Instance.GetAttributeProduct(roomInfo.attributePoint[idx].count, GetAttributeEvent);
                     GameManager.Instance.SaveGame();
                 });
             }
-            roomAttributePoint[idx].AlreadyGet = roomInfo.attributePoint[idx].alreadyGet;
         }
         
         // 엘리베이터
@@ -1345,8 +1348,8 @@ public class Room : MonoBehaviour
             GameManager.Instance.InputDataTrap(trap.name, trap);
     }
 
-    // 숏컷과 세이브 오브젝트 진행도에 맞춰 변경(미니맵 포함)
-    public void SetShortCutAndMinimapObject()
+    // 미니맵에 나타나는 오브젝트 관리
+    public void SetMinimapObject()
     {
         int idx = 0;
         for (int i = 0; i < shortCutObjects.Length; i++)
@@ -1361,32 +1364,31 @@ public class Room : MonoBehaviour
         for (int i = 0; i < shortCutObjects.Length; i++)
             shortCutObjects[i].OpenSetting(roomInfo.shortCut[i].isOpened, ShortcutOpen);
         
-        Transform tilemapObject = roomGameObject.transform.Find(ConstValues.TilemapObject);
         if (saveObject)
         {
-            saveObject.SetParents(tilemapObject);
+            saveObject.SetParents(transform);
             // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
-            saveObject.MinimapObject.SetActive(roomInfo.savePointCheck);
+            saveObject.MinimapObject.SetActive(roomInfo.IsRevealed(EMinimapObjectType.SavePoint));
         }
         if (portalObject)
         {
-            portalObject.SetParents(tilemapObject);
+            portalObject.SetParents(transform);
             // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
-            portalObject.MinimapObject.SetActive(roomInfo.portalCheck);
+            portalObject.MinimapObject.SetActive(roomInfo.IsRevealed(EMinimapObjectType.Portal));
         }
         if (merchantObject)
         {
-            merchantObject.SetParents(tilemapObject);
+            merchantObject.SetParents(transform);
             // 저장 데이터 있음: 세이브 오브젝트 미니맵 활성화 / 저장 데이터 없음: 세이브 오브젝트 미니맵 비활성화
-            merchantObject.MinimapObject.SetActive(roomInfo.merchantCheck);
+            merchantObject.MinimapObject.SetActive(roomInfo.IsRevealed(EMinimapObjectType.Merchant));
         }
 
         if (roomAttributePoint.Length > 0)
         {
-            foreach (var attributePoint in roomAttributePoint)
+            for (var i = 0; i < roomAttributePoint.Length; i++)
             {
-                attributePoint.SetParents(tilemapObject);
-                attributePoint.MinimapObject.SetActive(roomInfo.attributePointCheck);
+                roomAttributePoint[i].SetParents(transform);
+                roomAttributePoint[i].MinimapObject.SetActive(roomInfo.IsRevealed(EMinimapObjectType.AttributePoint) && !roomInfo.attributePoint[i].alreadyGet);
             }
         }
     }
@@ -1972,25 +1974,25 @@ public class Room : MonoBehaviour
     private void SaveSaveObject()
     {
         saveObject.MinimapObject.SetActive(true);
-        roomInfo.savePointCheck = true;
+        roomInfo.Reveal(EMinimapObjectType.SavePoint);
     }
     
     private void SavePortalObject()
     {
         portalObject.MinimapObject.SetActive(true);
-        roomInfo.portalCheck = true;
+        roomInfo.Reveal(EMinimapObjectType.Portal);
     }
     
     private void SaveMerchantObject()
     {
         merchantObject.MinimapObject.SetActive(true);
-        roomInfo.merchantCheck = true;
+        roomInfo.Reveal(EMinimapObjectType.Merchant);
     }
     
     private void SaveAttributePointCheck(int idx)
     {
-        roomAttributePoint[idx].MinimapObject.SetActive(!roomAttributePoint[idx].AlreadyGet);
-        roomInfo.attributePointCheck = true;
+        roomAttributePoint[idx].MinimapObject.SetActive(!roomInfo.attributePoint[idx].alreadyGet);
+        roomInfo.Reveal(EMinimapObjectType.AttributePoint);
     }
 
     /// <summary>

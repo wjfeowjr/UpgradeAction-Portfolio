@@ -1434,7 +1434,7 @@ public abstract class Character : InteractionController
         
         var textFont = GameManager.Instance.SpawnToUIObjectPool(ConstValues.TextFont, fontPos.position).GetComponent<TextFont>();
         textFont.ColorSetting(EFontType.Heal);
-        textFont.DisplayFont(fontSize, healHp.ToString());
+        textFont.DisplayFont(fontSize, $"+{healHp}");
     }
 
     private void SetSpawnedObjectData(string id, GameObject obj, int zAngle, Transform traceTransform = null, bool isBuff = false)

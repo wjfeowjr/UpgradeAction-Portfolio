@@ -12,9 +12,9 @@ public class RoomItem : InteractionController
     private float duration = 1.0f;
     
     private Tween moveTween;
-    private bool isGet;
     private Action action;
-    
+    private bool isGet;
+
     public bool IsGet
     {
         get => isGet;
@@ -42,25 +42,7 @@ public class RoomItem : InteractionController
     private void GetItem()
     {
         action();
-        SpawnObject(ConstValues.BangEffect, movingObject.transform.position);
         gameObject.SetActive(false);
-    }
-    
-    // 오브젝트 소환
-    private void SpawnObject(string objectId, Vector2 pos)
-    {
-        var obj = GameManager.Instance.SpawnToObjectPool(objectId, pos);
-        
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == objectId);
-        if (objectData != null)
-        {
-            var spawnedObject = obj.GetComponent<SpawnedObject>();
-            if (!spawnedObject)
-                spawnedObject = obj.AddComponent<SpawnedObject>();
-
-            spawnedObject.SetupData(objectData, transform.localScale.x);
-            spawnedObject.EnableSetting();
-        }
     }
 
     public void SetAction(Action getAction)

@@ -491,6 +491,16 @@ public class LockDoorData
     public bool isOpen;
 }
 
+// 미니맵에 표시되는(발견 시 공개되는) 오브젝트 종류. 새 오브젝트가 생기면 값만 추가한다.
+public enum EMinimapObjectType
+{
+    SavePoint,          // 세이브 포인트
+    Portal,             // 포탈
+    Merchant,           // 상인
+    AttributePoint,     // 특성 포인트
+    Potion,             // 포션
+}
+
 [Serializable]
 public class RoomInfo
 {
@@ -499,10 +509,25 @@ public class RoomInfo
     public string visitedFrameCells;                                 // 방문한 구역 테두리
     public string visitedInCells;                                    // 방문한 구역 내부
     public List<string> visitedShortcutCells = new List<string>();   // 방문한 숏컷
-    public bool savePointCheck;                                      // 세이브 포인트
-    public bool portalCheck;                                         // 포탈
-    public bool merchantCheck;                                       // 상인
-    public bool attributePointCheck;                                 // 특성 포인트
+
+    // 발견(공개)된 미니맵 오브젝트 종류 집합. 종류가 늘어도 이 리스트 하나로 관리한다.
+    public List<EMinimapObjectType> revealedMinimapObjects = new List<EMinimapObjectType>();
+
+    // [마이그레이션 전용] 구버전 세이브의 bool 플래그. 신규 코드에서 직접 사용 금지 → Reveal/IsRevealed 사용.
+    [SerializeField] private bool savePointCheck;
+    [SerializeField] private bool portalCheck;
+    [SerializeField] private bool merchantCheck;
+    [SerializeField] private bool attributePointCheck;
+
+    // 해당 미니맵 오브젝트가 발견되었는지 여부
+    public bool IsRevealed(EMinimapObjectType type) => revealedMinimapObjects.Contains(type);
+
+    // 미니맵 오브젝트를 발견 처리(중복 추가 방지)
+    public void Reveal(EMinimapObjectType type)
+    {
+        if (!revealedMinimapObjects.Contains(type))
+            revealedMinimapObjects.Add(type);
+    }
 
     public List<RoomProduct> roomProduct = new List<RoomProduct>();
     public List<EventNpc> eventNpc = new List<EventNpc>();
@@ -950,130 +975,9 @@ public class GameManager : Singleton<GameManager>
         saveData.roomInfoList = sortedList;
     }
 
-    // Rooms.json에는 더 이상 없는데 세이브 데이터(roomInfoList)에는 남아있는 방 데이터를 정리한다.
-    // 대상: npc, customObject, skill, treasureBox, attributePoint, relic, item
-    private void PatchRoomData()
-    {
-        if (!TableManager.Instance || TableManager.Instance.roomsTable == null)
-            return;
-
-        var roomsTable = TableManager.Instance.roomsTable.Rooms;
-
-        foreach (var roomInfo in saveData.roomInfoList)
-        {
-            // 해당 방의 json 데이터 (없으면 모든 필드를 '없음'으로 간주)
-            var roomsData = roomsTable.Find(x => x.id == roomInfo.roomId);
-
-            // npc
-            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.npc)) && roomInfo.eventNpc.Count > 0)
-                roomInfo.eventNpc.Clear();
-
-            // customObject
-            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.customObject)) && roomInfo.customObject.Count > 0)
-                roomInfo.customObject.Clear();
-
-            // skill
-            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.skill)) && roomInfo.skillAndPassive.Count > 0)
-                roomInfo.skillAndPassive.Clear();
-
-            // treasureBox
-            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.treasureBox)) && roomInfo.treasureBox.Count > 0)
-                roomInfo.treasureBox.Clear();
-
-            // attributePoint (json은 int, 0 이하이면 '없음')
-            if ((roomsData == null || roomsData.attributePoint <= 0) && roomInfo.attributePoint.Count > 0)
-                roomInfo.attributePoint.Clear();
-
-            // relic
-            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.relic)) && roomInfo.relic.Count > 0)
-                roomInfo.relic.Clear();
-
-            // item
-            if ((roomsData == null || string.IsNullOrWhiteSpace(roomsData.item)) && roomInfo.item.Count > 0)
-                roomInfo.item.Clear();
-        }
-    }
-
     private void DataPatch(SaveData data)
     {
-        // 패치 필요 여부 확인 (마지막 저장 시각이 패치 기준 시각보다 이전이면 패치 필요)
-        if (data != null)
-        {
-            if (DateTime.TryParse(data.lastSavedAt, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out DateTime lastSavedAt))
-            {
-                // 기준 시각: 한국 시간(KST, UTC+9) 2026년 5월 29일 00시
-                DateTime patchTime1 = new DateTime(2026, 6, 1, 7, 0, 0);
-                if (lastSavedAt.ToUniversalTime() < patchTime1)
-                {
-                    Debug.Log("1차 패치 필요");
-                    // 특성 초기화
-                    foreach (var playerInfo in data.playerInfoList)
-                    {
-                        switch (playerInfo.playerId)
-                        {
-                            case ConstValues.Berserker:
-                                AddDashSkill(ConstValues.BerserkerDash, playerInfo);
-                                break;
-
-                            case ConstValues.Gunner:
-                                AddDashSkill(ConstValues.GunnerDash, playerInfo);
-                                break;
-
-                            case ConstValues.Fighter:
-                                AddDashSkill(ConstValues.FighterDash, playerInfo);
-                                break;
-                        }
-
-                        playerInfo.attributePoint = data.totalAttributePoint;
-                        foreach (var skill in playerInfo.skillList)
-                            skill.attributeList.Clear();
-                    }
-                }
-
-                DateTime patchTime2 = new DateTime(2026, 6, 8, 5, 20, 0);
-                if (lastSavedAt.ToUniversalTime() < patchTime2)
-                {
-                    Debug.Log("2차 패치 필요");
-                    // 세이브 이동 아이템 추가
-                    var bossRoom2 = saveData.roomInfoList.Find(x => x.roomId == ConstValues.RoomBoss2);
-                    if (bossRoom2 != null && bossRoom2.roomProduct[0].isFinish)
-                        GetItem(ConstValues.SaveTravel, 1);
-                }
-
-                DateTime patchTime3 = new DateTime(2026, 6, 8, 19, 55, 0);
-                if (lastSavedAt.ToUniversalTime() < patchTime3)
-                {
-                    Debug.Log("3차 패치 필요");
-                    // 기존 보물상자의 데이터와 새로운 특성포인트를 동기화 시키기
-                    foreach (var roomInfo in data.roomInfoList)
-                    {
-                        List<TreasureBox> removingTreasureBoxList = new List<TreasureBox>();
-                        foreach (var treasureBox in roomInfo.treasureBox)
-                        {
-                            if (treasureBox.id != ConstValues.AttributePoint)
-                                continue;
-
-                            removingTreasureBoxList.Add(treasureBox);
-                            roomInfo.attributePoint.Clear();
-                            AttributePoint attributePoint = new AttributePoint
-                            {
-                                count = treasureBox.count,
-                                alreadyGet = treasureBox.alreadyGet
-                            };
-                            roomInfo.attributePoint.Add(attributePoint);
-                        }
-
-                        foreach (var removingTreasureBox in removingTreasureBoxList)
-                            roomInfo.treasureBox.Remove(removingTreasureBox);
-                    }
-                }
-            }
-        }
-
-        if (saveData.additionPotionCount == 0)
-            saveData.additionPotionCount = 1;
         
-        PatchRoomData();
     }
     
     public void DeleteData()
@@ -1272,6 +1176,7 @@ public class GameManager : Singleton<GameManager>
     {
         saveData.playerList.Clear();
         saveData.gold = 0;
+        saveData.additionPotionCount = 1;
         saveData.itemList.Clear();
     }
 
@@ -1309,7 +1214,6 @@ public class GameManager : Singleton<GameManager>
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterDash, dashKey));
                     break;
             }
-            playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.PotionKey, potionKey));
             playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey1));
             playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey2));
             playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey3));
@@ -2983,7 +2887,6 @@ public class GameManager : Singleton<GameManager>
     
     public void GetAttributeProduct(int count, Action<int> customAction)
     {
-        CurPlayer.SpawnObject(ConstValues.GetAttributeEffect, CurPlayer.CenterPos.position);
         customAction.Invoke(count);
     }
 

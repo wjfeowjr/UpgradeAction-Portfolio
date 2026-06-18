@@ -2,7 +2,7 @@ using System;
 using DG.Tweening;
 using UnityEngine;
 
-public class RoomAttributePoint : MonoBehaviour
+public class RoomAttributePoint : InteractionController
 {
     [SerializeField] private GameObject movingObject;
     [SerializeField] private GameObject minimapObject;
@@ -12,14 +12,14 @@ public class RoomAttributePoint : MonoBehaviour
     
     private Tween moveTween;
     private Action action;
-    private bool alreadyGet;
+    private bool isGet;
     
     public GameObject MinimapObject => minimapObject;
 
-    public bool AlreadyGet
+    public bool IsGet
     {
-        get => alreadyGet;
-        set => alreadyGet = value;
+        get => isGet;
+        set => isGet = value;
     }
 
     private void Start()
@@ -27,6 +27,26 @@ public class RoomAttributePoint : MonoBehaviour
         movingObject.transform.DOMoveY(movingObject.transform.position.y + moveY, duration).SetEase(Ease.InOutSine).SetLoops(-1, LoopType.Yoyo);
     }
 
+    public override void SpawnInteractionObject()
+    {
+        if (isGet)
+            return;
+
+        base.SpawnInteractionObject();
+    }
+    
+    public void SetInteractionAction()
+    {
+        SetInteractionAction(GetItem, 30017, GameManager.Instance.upKey);
+    }
+    
+    private void GetItem()
+    {
+        action();
+        gameObject.SetActive(false);
+        minimapObject.SetActive(false);
+    }
+    
     public void SetAction(Action getAction)
     {
         action = getAction;
@@ -35,14 +55,5 @@ public class RoomAttributePoint : MonoBehaviour
     public void SetParents(Transform targetTransform)
     {
         minimapObject.transform.SetParent(targetTransform);
-    }
-
-    private void OnTriggerEnter2D(Collider2D col)
-    {
-        if (col.CompareTag(ConstValues.Player) && !col.isTrigger)
-        {
-            action();
-            gameObject.SetActive(false);
-        }
     }
 }

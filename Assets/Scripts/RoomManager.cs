@@ -17,8 +17,8 @@ public class RoomManager : Singleton<RoomManager>
     [SerializeField] private FollowCamera mainCameraFollow;
     [SerializeField] private SpriteRenderer bgSprite;
     [SerializeField] private GameObject bgDeco;
-    [SerializeField] private Room currentRoom;
     [SerializeField] private TotalRoom totalRoom;
+    [SerializeField] private Room currentRoom;
 
     private UI_Episode uiEpisode;
     private Popup_Minimap popupMinimap;
@@ -85,7 +85,7 @@ public class RoomManager : Singleton<RoomManager>
             room.MonsterPosSetting();
             room.BossPosSetting();
             room.ObjectActive(false);
-            room.SetShortCutAndMinimapObject();
+            room.SetMinimapObject();
         }
         // 방 데이터 정리까지 한방에
         GameManager.Instance.SortRoomInfo();

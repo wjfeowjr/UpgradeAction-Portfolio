@@ -195,4 +195,21 @@ public class InteractionController : MonoBehaviour
             interactionSelect.gameObject.SetActive(active);
         }
     }
+    
+    // 오브젝트 소환
+    public void SpawnAcquireEffect(string effectId, Vector2 pos)
+    {
+        var obj = GameManager.Instance.SpawnToObjectPool(effectId, pos);
+        
+        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == effectId);
+        if (objectData != null)
+        {
+            var spawnedObject = obj.GetComponent<SpawnedObject>();
+            if (!spawnedObject)
+                spawnedObject = obj.AddComponent<SpawnedObject>();
+
+            spawnedObject.SetupData(objectData, transform.localScale.x);
+            spawnedObject.EnableSetting();
+        }
+    }
 }
