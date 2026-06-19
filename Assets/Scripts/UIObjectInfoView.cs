@@ -58,7 +58,7 @@ public class UIObjectInfoView : MonoBehaviour, IUIObjectInfoView
 
         image.sprite = GameManager.Instance.GetAtlasSprite(id);
         
-        if(count == 1)
+        if(count <= 1)
             objectText.text = objectName;
         else
             objectText.text = $"{objectName} x {count}";

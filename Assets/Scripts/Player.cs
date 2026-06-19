@@ -1014,7 +1014,7 @@ public abstract class Player : Character
         if (GameManager.Instance.FirstDamaged)
             return;
         
-        RoomManager.Instance.Guide(6);
+        RoomManager.Instance.Guide(7);
         GameManager.Instance.FirstDamaged = true;
         GameManager.Instance.SaveGame();
     }

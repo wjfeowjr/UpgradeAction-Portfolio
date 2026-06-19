@@ -92,7 +92,7 @@ public class Arena : MonoBehaviour
         tileFactory.Build();
     }
     
-    public async UniTask RoundStart()
+    public async UniTask RoundStart(CancellationTokenSource tokenSource)
     {
         var monsterDelay = 0.15f;
         var roundDelay = 1.5f;
@@ -103,23 +103,23 @@ public class Arena : MonoBehaviour
             for (var i = 0; i < round.Count; i++)
             {
                 SpawnMonster(round[i], -2 - i);
-                if (await NormalDelay(monsterDelay).SuppressCancellationThrow())
+                if (await NormalDelay(monsterDelay, tokenSource).SuppressCancellationThrow())
                     return;
             }
 
-            if (await WaitUntilDelay(()=> RoundMonsterAllDead(round)).SuppressCancellationThrow())
+            if (await WaitUntilDelay(() => RoundMonsterAllDead(round), tokenSource).SuppressCancellationThrow())
                 return;
 
             count += 1;
             if (count == roundList.Count)
                 break;
             
-            if (await NormalDelay(roundDelay).SuppressCancellationThrow())
+            if (await NormalDelay(roundDelay, tokenSource).SuppressCancellationThrow())
                 return;
         }
     }
 
-    public async UniTask RoundEnd()
+    public async UniTask RoundEnd(CancellationTokenSource tokenSource)
     {
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.Immortal = true;
@@ -131,17 +131,17 @@ public class Arena : MonoBehaviour
         var productDelay = 2.0f;
         
         BgmManager.Instance.DelayStop(0.1f);
-        if (await NormalDelay(finishDelay).SuppressCancellationThrow())
+        if (await NormalDelay(finishDelay, tokenSource).SuppressCancellationThrow())
             return;
-        
+
         Time.timeScale = 1.0f;
         GameManager.Instance.CurPlayer.ForceProduct();
-        if (await NormalDelay(endDelay).SuppressCancellationThrow())
+        if (await NormalDelay(endDelay, tokenSource).SuppressCancellationThrow())
             return;
-        
+
         SoundManager.Instance.PlaySound(ConstValues.Star3);
         
-        if (await NormalDelay(productDelay).SuppressCancellationThrow())
+        if (await NormalDelay(productDelay, tokenSource).SuppressCancellationThrow())
             return;
 
         tileFactory.Crash();
@@ -174,9 +174,9 @@ public class Arena : MonoBehaviour
         return allDead;
     }
     
-    private async UniTask NormalDelay(float second)
+    private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {
-        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: arenaCancellation.Token);
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
 
     private async UniTask YieldDelay()
@@ -184,8 +184,8 @@ public class Arena : MonoBehaviour
         await UniTask.Yield(cancellationToken: arenaCancellation.Token);
     }
     
-    private async UniTask WaitUntilDelay(Func<bool> condition)
+    private async UniTask WaitUntilDelay(Func<bool> condition, CancellationTokenSource tokenSource)
     {
-        await UniTask.WaitUntil(condition, cancellationToken: arenaCancellation.Token);
+        await UniTask.WaitUntil(condition, cancellationToken: tokenSource.Token);
     }
 }

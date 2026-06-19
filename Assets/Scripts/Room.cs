@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading;
 using Cysharp.Threading.Tasks;
@@ -54,9 +55,8 @@ public class Room : MonoBehaviour
 
     // 나중에 한번에 데이터 처리하기
     [SerializeField] protected RoomSkillAndPassive[] roomSkillAndPassive;
-    [SerializeField] protected RoomItem[] roomItem;
     [SerializeField] protected RoomTreasureBox[] roomTreasureBox;
-    [SerializeField] protected RoomAttributePoint[] roomAttributePoint;
+    [SerializeField] protected RoomObject[] roomObjects;
     [SerializeField] protected Elevator[] elevators;
     [SerializeField] protected LockDoor[] lockDoors;
     [SerializeField] protected Arena[] arenas;
@@ -577,7 +577,7 @@ public class Room : MonoBehaviour
                 roomInfo.skillAndPassive.Clear();
                 for (var i = 0; i < roomSkillAndPassive.Length; i++)
                 {
-                    var skillAndPassive = new SkillAndPassive()
+                    var skillAndPassive = new RoomObjectClass()
                     {
                         id = skillArray[i],
                         alreadyGet = false,
@@ -605,7 +605,7 @@ public class Room : MonoBehaviour
                     var treasure = treasureArray[0];
                     var treasureCount = int.Parse(treasureArray[1]);
                     
-                    var treasureBox = new TreasureBox()
+                    var treasureBox = new RoomObjectClass()
                     {
                         id = treasure,
                         count = treasureCount,
@@ -622,13 +622,16 @@ public class Room : MonoBehaviour
             GameManager.Instance.SaveGame();
         }
         
-        // 맵에 널려있는 특성 포인트 세팅
-        if (roomInfo.attributePoint.Count < roomAttributePoint.Length)
+        // 맵에 있는 오브젝트들(아이템, 유물, 특성, 포션 등) 설정
+        // 특성 설정
+        var attributeList = roomObjects.ToList().FindAll(x => x.RoomObjectType == ERoomObjectType.AttributePoint);
+        if (roomInfo.attributePoint.Count < attributeList.Count)
         {
-            for (int i = 0; i < roomAttributePoint.Length; i++)
+            for (int i = 0; i < attributeList.Count; i++)
             {
-                var attributePoint = new AttributePoint()
+                var attributePoint = new RoomObjectClass()
                 {
+                    id = ConstValues.AttributePoint,
                     count = roomsData.attributePoint,
                     alreadyGet = false, 
                 };
@@ -636,13 +639,35 @@ public class Room : MonoBehaviour
             }
             GameManager.Instance.SaveGame();
         }
-        else if (roomAttributePoint.Length < roomInfo.treasureBox.Count)
+        else if (roomInfo.attributePoint.Count > attributeList.Count)
         {
             roomInfo.attributePoint.Clear();
             GameManager.Instance.SaveGame();
         }
+        
+        // 포션 설정
+        var potionList = roomObjects.ToList().FindAll(x => x.RoomObjectType == ERoomObjectType.Potion);
+        if (roomInfo.potion.Count < potionList.Count)
+        {
+            for (int i = 0; i < potionList.Count; i++)
+            {
+                var potion = new RoomObjectClass()
+                {
+                    id = ConstValues.Potion,
+                    count = roomsData.potion,
+                    alreadyGet = false, 
+                };
+                roomInfo.potion.Add(potion);
+            }
+            GameManager.Instance.SaveGame();
+        }
+        else if (roomInfo.potion.Count > potionList.Count)
+        {
+            roomInfo.potion.Clear();
+            GameManager.Instance.SaveGame();
+        }
 
-        // 맵에 널려있는 아이템 세팅
+        // 아이템 설정
         if (!string.IsNullOrWhiteSpace(roomsData.item))
         {
             var itemArray = roomsData.item.Split('ㅗ');
@@ -654,7 +679,7 @@ public class Room : MonoBehaviour
                     var itemName = itemInfoArray[0];
                     var itemCount = int.Parse(itemInfoArray[1]);
                     
-                    var item = new Item()
+                    var item = new RoomObjectClass()
                     {
                         id = itemName,
                         count = itemCount,
@@ -698,6 +723,65 @@ public class Room : MonoBehaviour
                 }
             }
             if(isHaveItem)
+                GameManager.Instance.SaveGame();
+        }
+        
+         // 유물 설정
+        if (!string.IsNullOrWhiteSpace(roomsData.relic))
+        {
+            var relicArray = roomsData.relic.Split('ㅗ');
+            if (roomInfo.relic.Count < relicArray.Length)
+            {
+                for (int i = 0; i < relicArray.Length; i++)
+                {
+                    var relicInfoArray = relicArray[i].Split(';');
+                    var relicName = relicInfoArray[0];
+                    var relicCount = int.Parse(relicInfoArray[1]);
+                    
+                    var relic = new RoomObjectClass()
+                    {
+                        id = relicName,
+                        count = relicCount,
+                        alreadyGet = false,
+                    };
+                    roomInfo.relic.Add(relic);
+                }
+                GameManager.Instance.SaveGame();
+            }
+            else if (roomInfo.relic.Count > relicArray.Length)
+            {
+                roomInfo.relic.Clear();
+                GameManager.Instance.SaveGame();
+            }
+            // 수가 같을 때
+            else  if (roomInfo.relic.Count == relicArray.Length)
+            {
+                if (roomInfo.relic.Count > 0 && relicArray.Length > 0)
+                {
+                    var relicInfoArray = relicArray[0].Split(';');
+                    if (roomInfo.relic[0].id != relicInfoArray[0])
+                    {
+                        roomInfo.relic[0].id = relicInfoArray[0];
+                        roomInfo.relic[0].alreadyGet = false;
+                        GameManager.Instance.SaveGame();
+                    }
+                }
+            }
+            
+            // 해당 유물을 이미 가지고 있을 때는 비활성화
+            bool isHaveRelic = false;
+            foreach (var haveRelic in GameManager.Instance.RelicList)
+            {
+                foreach (var relic in roomInfo.relic)
+                {
+                    if (haveRelic != relic.id)
+                        continue;
+                    
+                    relic.alreadyGet = true;
+                    isHaveRelic = true;
+                }
+            }
+            if(isHaveRelic)
                 GameManager.Instance.SaveGame();
         }
 
@@ -788,32 +872,6 @@ public class Room : MonoBehaviour
             }
         }
         
-        // 아이템을 얻었으면, 그 아이템은 비활성화
-        for (var i = 0; i < roomItem.Length; i++)
-        {
-            int idx = i;
-
-            if (roomInfo.item[idx].alreadyGet)
-            {
-                roomItem[idx].gameObject.SetActive(false);
-            }
-            else
-            {
-                roomItem[idx].SetInteractionAction();
-                roomItem[idx].SetAction(() =>
-                {
-                    roomItem[idx].IsGet = true;
-                    roomInfo.item[idx].alreadyGet = true;
-                    roomItem[idx].ReduceInteractionObject();
-                    roomItem[idx].SpawnAcquireEffect(ConstValues.BangEffect, roomItem[idx].transform.position);
-                    GameManager.Instance.GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
-                    SoundManager.Instance.PlaySound(ConstValues.Pickup);
-                    GameManager.Instance.ProductObjectInfo(roomInfo.item[idx].id, GameManager.Instance.GetItemTalk(roomInfo.item[idx].id), roomInfo.item[idx].count);
-                    GameManager.Instance.SaveGame();
-                });
-            }
-        }
-
         // 보물상자를 열었으면, 열린 상태로 나오게 조정
         for (var i = 0; i < roomTreasureBox.Length; i++)
         {
@@ -846,30 +904,108 @@ public class Room : MonoBehaviour
         }
         
         // 특성 포인트를 얻었다면, 비활성화
-        for (var i = 0; i < roomAttributePoint.Length; i++)
+        for (var i = 0; i < attributeList.Count; i++)
         {
             int idx = i;
 
             if (roomInfo.attributePoint[idx].alreadyGet)
             {
-                roomAttributePoint[idx].gameObject.SetActive(false);
+                attributeList[idx].gameObject.SetActive(false);
             }
             else
             {
-                roomAttributePoint[idx].SetInteractionAction();
-                roomAttributePoint[idx].SetAction(() =>
+                attributeList[idx].SetInteractionAction();
+                attributeList[idx].SetAction(() =>
                 {
-                    roomAttributePoint[idx].IsGet = true;
+                    attributeList[idx].IsGet = true;
                     roomInfo.attributePoint[idx].alreadyGet = true;
-                    roomAttributePoint[idx].ReduceInteractionObject();
-                    roomAttributePoint[idx].SpawnAcquireEffect(ConstValues.GetAttributeEffect, roomAttributePoint[idx].transform.position);
-                    PlusAttributePoint(roomInfo.attributePoint[idx].count);
+                    attributeList[idx].ReduceInteractionObject();
+                    attributeList[idx].SpawnAcquireEffect(ConstValues.GetAttributeEffect, attributeList[idx].transform.position);
+                    GameManager.Instance.PlusAttributePoint(roomInfo.attributePoint[idx].count);
                     GameManager.Instance.GetAttributeProduct(roomInfo.attributePoint[idx].count, GetAttributeEvent);
                     GameManager.Instance.SaveGame();
                 });
             }
         }
         
+        // 포션을 얻었다면, 비활성화
+        for (var i = 0; i < potionList.Count; i++)
+        {
+            int idx = i;
+        
+            if (roomInfo.potion[idx].alreadyGet)
+            {
+                potionList[idx].gameObject.SetActive(false);
+            }
+            else
+            {
+                potionList[idx].SetInteractionAction();
+                potionList[idx].SetAction(() =>
+                {
+                    potionList[idx].IsGet = true;
+                    roomInfo.potion[idx].alreadyGet = true;
+                    potionList[idx].ReduceInteractionObject();
+                    potionList[idx].SpawnAcquireEffect(ConstValues.GetPotionEffect, potionList[idx].transform.position);
+                    GameManager.Instance.PlusPotion();
+                    GameManager.Instance.GetPotionProduct(GetPotionEvent);
+                    GameManager.Instance.SaveGame();
+                });
+            }
+        }
+        
+        // 아이템을 얻었으면, 그 아이템은 비활성화
+        var itemList = roomObjects.ToList().FindAll(x => x.RoomObjectType == ERoomObjectType.Item);
+        for (var i = 0; i < itemList.Count; i++)
+        {
+            int idx = i;
+            
+            if (roomInfo.item[idx].alreadyGet)
+            {
+                itemList[idx].gameObject.SetActive(false);
+            }
+            else
+            {
+                itemList[idx].SetInteractionAction();
+                itemList[idx].SetAction(() =>
+                {
+                    itemList[idx].IsGet = true;
+                    roomInfo.item[idx].alreadyGet = true;
+                    itemList[idx].ReduceInteractionObject();
+                    itemList[idx].SpawnAcquireEffect(ConstValues.GetItemEffect, itemList[idx].transform.position);
+                    GameManager.Instance.GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
+                    GameManager.Instance.ProductObjectInfo(roomInfo.item[idx].id, GameManager.Instance.GetItemTalk(roomInfo.item[idx].id), roomInfo.item[idx].count);
+                    GameManager.Instance.SaveGame();
+                });
+            }
+        }
+        
+        // 유물을 얻었으면, 그 유물은 비활성화
+        var relicList = roomObjects.ToList().FindAll(x => x.RoomObjectType == ERoomObjectType.Relic);
+        for (var i = 0; i < relicList.Count; i++)
+        {
+            int idx = i;
+
+            if (roomInfo.relic[idx].alreadyGet)
+            {
+                relicList[idx].gameObject.SetActive(false);
+            }
+            else
+            {
+                relicList[idx].SetInteractionAction();
+                relicList[idx].SetAction(() =>
+                {
+                    relicList[idx].IsGet = true;
+                    roomInfo.relic[idx].alreadyGet = true;
+                    relicList[idx].ReduceInteractionObject();
+                    relicList[idx].SpawnAcquireEffect(ConstValues.GetRelicEffect, relicList[idx].transform.position);
+                    GameManager.Instance.GetRelic(roomInfo.relic[idx].id);
+                    GameManager.Instance.GetRelicProduct(roomInfo.relic[idx].id, GetRelicEvent);
+                    GameManager.Instance.ProductObjectInfo(roomInfo.relic[idx].id, GameManager.Instance.GetItemTalk(roomInfo.relic[idx].id), roomInfo.relic[idx].count);
+                    GameManager.Instance.SaveGame();
+                });
+            }
+        }
+
         // 엘리베이터
         for (int i = 0; i < roomInfo.elevators.Count; i++)
         {
@@ -932,6 +1068,7 @@ public class Room : MonoBehaviour
             guideObject.Setting();
     }
 
+    // 번역 직후 토크
     public void RefreshTalk()
     {
         // 여기서 npc 활성화
@@ -939,8 +1076,8 @@ public class Room : MonoBehaviour
             person.RefreshTalkText();
 
         // 아이템을 얻었으면, 그 아이템은 비활성화
-        foreach (var item in roomItem)
-            item.RefreshTalkText();
+        foreach (var roomObject in roomObjects)
+            roomObject.RefreshTalkText();
 
         // 보물상자를 열었으면, 열린 상태로 나오게 조정
         foreach (var treasureBox in roomTreasureBox)
@@ -967,21 +1104,18 @@ public class Room : MonoBehaviour
             guideObject.Setting();
     }
 
+    // 키설정 직후 키
     public void RefreshKey()
     {
-        // 여기서 npc 활성화
         foreach (var person in npc)
             person.RefreshKeyText(GameManager.Instance.upKey);
-
-        // 아이템을 얻었으면, 그 아이템은 비활성화
-        foreach (var item in roomItem)
-            item.RefreshKeyText(GameManager.Instance.upKey);
-
-        // 보물상자를 열었으면, 열린 상태로 나오게 조정
+        
+        foreach (var roomObject in roomObjects)
+            roomObject.RefreshKeyText(GameManager.Instance.upKey);
+        
         foreach (var treasureBox in roomTreasureBox)
             treasureBox.RefreshKeyText(GameManager.Instance.upKey);
-
-        // 엘리베이터
+        
         for (int i = 0; i < roomInfo.elevators.Count; i++)
             elevators[i].RefreshKeyText(GameManager.Instance.upKey);
 
@@ -1276,11 +1410,6 @@ public class Room : MonoBehaviour
             GameManager.Instance.GetGold(gold, GameManager.Instance.Gold);
         });
     }
-    
-    private void PlusAttributePoint(int attributePoint)
-    {
-        GameManager.Instance.PlusAttributePoint(attributePoint);
-    }
 
     // 숏컷정보 저장
     public void ShortcutOpen(string id, bool isSave)
@@ -1383,12 +1512,23 @@ public class Room : MonoBehaviour
             merchantObject.MinimapObject.SetActive(roomInfo.IsRevealed(EMinimapObjectType.Merchant));
         }
 
-        if (roomAttributePoint.Length > 0)
+        if (roomObjects.Length > 0)
         {
-            for (var i = 0; i < roomAttributePoint.Length; i++)
+            foreach (var roomObject in roomObjects)
             {
-                roomAttributePoint[i].SetParents(transform);
-                roomAttributePoint[i].MinimapObject.SetActive(roomInfo.IsRevealed(EMinimapObjectType.AttributePoint) && !roomInfo.attributePoint[i].alreadyGet);
+                roomObject.SetParents(transform);
+                if (roomObject.MinimapObject)
+                {
+                    switch (roomObject.RoomObjectType)
+                    {
+                        case ERoomObjectType.AttributePoint:
+                            roomObject.MinimapObject.SetActive(roomInfo.IsRevealed(EMinimapObjectType.AttributePoint) && !roomInfo.attributePoint[0].alreadyGet);
+                            break;
+                        case ERoomObjectType.Potion:
+                            roomObject.MinimapObject.SetActive(roomInfo.IsRevealed(EMinimapObjectType.Potion) && !roomInfo.potion[0].alreadyGet);
+                            break;
+                    }
+                }
             }
         }
     }
@@ -1823,13 +1963,13 @@ public class Room : MonoBehaviour
         if (merchantNew)
             SaveMerchantObject();
         
-        if(roomAttributePoint.Length > 0)
+        if(roomObjects.Length > 0)
         {
-            for (var i = 0; i < roomAttributePoint.Length; i++)
+            for (var i = 0; i < roomObjects.Length; i++)
             {
-                bool attributeNew = false;
+                bool roomObjectNew = false;
 
-                Vector2 attributePointPos = roomAttributePoint[i].transform.position;
+                Vector2 attributePointPos = roomObjects[i].transform.position;
                 Vector2 saveSize = new Vector2(3.5f, 3.5f);
 
                 Vector2 min = new Vector2(attributePointPos.x - saveSize.x, attributePointPos.y - saveSize.y);
@@ -1838,10 +1978,10 @@ public class Room : MonoBehaviour
                 if (max.x >= viewRect.xMin && min.x <= viewRect.xMax &&
                     max.y >= viewRect.yMin && min.y <= viewRect.yMax)
                 {
-                    attributeNew = true;
+                    roomObjectNew = true;
                 }
 
-                if (attributeNew)
+                if (roomObjectNew)
                     SaveAttributePointCheck(i);
             }
         }
@@ -1991,8 +2131,20 @@ public class Room : MonoBehaviour
     
     private void SaveAttributePointCheck(int idx)
     {
-        roomAttributePoint[idx].MinimapObject.SetActive(!roomInfo.attributePoint[idx].alreadyGet);
-        roomInfo.Reveal(EMinimapObjectType.AttributePoint);
+        if(roomObjects[idx].MinimapObject)
+        {
+            switch (roomObjects[idx].RoomObjectType)
+            {
+                case ERoomObjectType.AttributePoint:
+                    roomObjects[idx].MinimapObject.SetActive(!roomInfo.attributePoint[0].alreadyGet);
+                    roomInfo.Reveal(EMinimapObjectType.AttributePoint);
+                    break;
+                case ERoomObjectType.Potion:
+                    roomObjects[idx].MinimapObject.SetActive(!roomInfo.potion[0].alreadyGet);
+                    roomInfo.Reveal(EMinimapObjectType.Potion);
+                    break;
+            }
+        }
     }
 
     /// <summary>
@@ -2161,7 +2313,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10106));
         await NextDialog(speechFrame1);
 
-        RoomManager.Instance.Guide(2);
+        RoomManager.Instance.Guide(3);
         UIOn();
         roomInfo.roomProduct[0].isFinish = true;
         GameManager.Instance.SaveGame();
@@ -2506,7 +2658,7 @@ public class Room : MonoBehaviour
         // 2인 캐릭터 설정 및 저장
         GameManager.Instance.AddPlayer(ConstValues.Gunner);
         GameManager.Instance.SetCharacterOrder();
-        RoomManager.Instance.Guide(4);
+        RoomManager.Instance.Guide(5);
         
         UIOn();
         roomInfo.roomProduct[0].isFinish = true;
@@ -2847,10 +2999,15 @@ public class Room : MonoBehaviour
         PlayBGM(ConstValues.BGMArena, true);
         
         GameManager.Instance.MovePlayer();
-        await arenas[0].RoundStart();
-        GameManager.Instance.StopPlayer();
-        await arenas[0].RoundEnd();
         
+        if (await arenas[0].RoundStart(GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        GameManager.Instance.StopPlayer();
+        
+        if (await arenas[0].RoundEnd(GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
         SetBgm(true);
         GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
         
@@ -2880,7 +3037,7 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
-            RoomManager.Instance.Guide(1);
+            RoomManager.Instance.Guide(2);
             UIOn();
         }
     }
@@ -2907,7 +3064,57 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
-            RoomManager.Instance.Guide(5);
+            RoomManager.Instance.Guide(6);
+            UIOn();
+            GameManager.Instance.MovePlayer();
+        }
+    }
+    
+    // 포션 획득 후 이벤트
+    private async void GetPotionEvent()
+    {
+        string getMessage = GameManager.Instance.GetTalk(30217);
+        
+        if (GameManager.Instance.FirstGetPotion)
+        {
+            GameManager.Instance.SpawnWarningPopup(getMessage).Forget();
+        }
+        else
+        {
+            GameManager.Instance.FirstGetPotion = true;
+            GameManager.Instance.StopPlayer();
+            GameManager.Instance.CurPlayer.ForceProduct();
+            await GameManager.Instance.SpawnWarningPopup(getMessage);
+            
+            GameManager.Instance.InitProductCancellation();
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+
+            RoomManager.Instance.Guide(1);
+            UIOn();
+            GameManager.Instance.MovePlayer();
+        }
+    }
+    
+    // 유물 획득 후 이벤트
+    private async void GetRelicEvent(string id)
+    {
+        if (GameManager.Instance.FirstGetRelic)
+        {
+            GameManager.Instance.ProductObjectInfo(id, GameManager.Instance.GetItemTalk(id), 1);
+        }
+        else
+        {
+            GameManager.Instance.FirstGetRelic = true;
+            GameManager.Instance.StopPlayer();
+            GameManager.Instance.CurPlayer.ForceProduct();
+            GameManager.Instance.ProductObjectInfo(id, GameManager.Instance.GetItemTalk(id), 1);
+
+            GameManager.Instance.InitProductCancellation();
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+
+            RoomManager.Instance.Guide(4);
             UIOn();
             GameManager.Instance.MovePlayer();
         }
@@ -2943,8 +3150,7 @@ public class Room : MonoBehaviour
         {
             roomSkillAndPassive = interactionArray.GetComponentsInChildren<RoomSkillAndPassive>();
             roomTreasureBox = interactionArray.GetComponentsInChildren<RoomTreasureBox>();
-            roomAttributePoint = interactionArray.GetComponentsInChildren<RoomAttributePoint>();
-            roomItem = interactionArray.GetComponentsInChildren<RoomItem>();
+            roomObjects = interactionArray.GetComponentsInChildren<RoomObject>();
             elevators = interactionArray.GetComponentsInChildren<Elevator>();
             arenas = interactionArray.GetComponentsInChildren<Arena>();
         }

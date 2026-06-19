@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -43,6 +44,8 @@ public class Missile : MonoBehaviour, IProjectile
     private BoxCollider2D myCollider;
     private SpriteRenderer missileSprite;
     private Spin mySpin;
+    private CancellationTokenSource missileCancellation;
+    
     [SerializeField] private MissileInfo missileInfo;
 
     private int missileLayerMask;
@@ -67,6 +70,8 @@ public class Missile : MonoBehaviour, IProjectile
             myCollider.enabled = true;
         if (missileSprite)
             missileSprite.enabled = true;
+        
+        missileCancellation?.Cancel();
     }
 
     private void Update()
@@ -341,8 +346,14 @@ public class Missile : MonoBehaviour, IProjectile
 
         // 잔상 남기기 용도
         if (missileInfo.afterImage)
-            await UniTask.WaitForSeconds(1.0f);
-        gameObject.SetActive(false);
+        {
+            missileCancellation = new CancellationTokenSource();
+            if (await NormalDelay(1.0f, missileCancellation).SuppressCancellationThrow())
+                return;
+        }
+
+        if(gameObject)
+            gameObject.SetActive(false);
     }
 
     public void LookAtTarget(Vector2 target)
@@ -397,5 +408,10 @@ public class Missile : MonoBehaviour, IProjectile
             Explosion(true);
             return;
         }
+    }
+    
+    private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
+    {
+        await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: tokenSource.Token);
     }
 }

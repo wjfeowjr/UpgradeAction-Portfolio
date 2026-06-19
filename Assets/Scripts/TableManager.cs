@@ -316,6 +316,7 @@ public class RoomsData
     public string treasureBox;
     public int attributePoint;
     public string relic;
+    public int potion;
     public string item;
     public string namedMonster;
     public string bgSprite;

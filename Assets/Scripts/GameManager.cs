@@ -434,41 +434,8 @@ public class ShortCut
 }
 
 [Serializable]
-// 스킬 및 패시브
-public class SkillAndPassive
-{
-    public string id;
-    public bool alreadyGet;
-}
-
-[Serializable]
-// 보물상자
-public class TreasureBox
-{
-    public string id;
-    public int count;
-    public bool alreadyGet;
-}
-
-[Serializable]
-// 특성 포인트
-public class AttributePoint
-{
-    public int count;
-    public bool alreadyGet;
-}
-
-[Serializable]
-// 유물
-public class Relic
-{
-    public string id;
-    public bool alreadyGet;
-}
-
-[Serializable]
-// 아이템(보물상자)
-public class Item
+// 방의 오브젝트
+public class RoomObjectClass
 {
     public string id;
     public int count;
@@ -513,12 +480,6 @@ public class RoomInfo
     // 발견(공개)된 미니맵 오브젝트 종류 집합. 종류가 늘어도 이 리스트 하나로 관리한다.
     public List<EMinimapObjectType> revealedMinimapObjects = new List<EMinimapObjectType>();
 
-    // [마이그레이션 전용] 구버전 세이브의 bool 플래그. 신규 코드에서 직접 사용 금지 → Reveal/IsRevealed 사용.
-    [SerializeField] private bool savePointCheck;
-    [SerializeField] private bool portalCheck;
-    [SerializeField] private bool merchantCheck;
-    [SerializeField] private bool attributePointCheck;
-
     // 해당 미니맵 오브젝트가 발견되었는지 여부
     public bool IsRevealed(EMinimapObjectType type) => revealedMinimapObjects.Contains(type);
 
@@ -533,11 +494,14 @@ public class RoomInfo
     public List<EventNpc> eventNpc = new List<EventNpc>();
     public List<EventCustomObject> customObject = new List<EventCustomObject>();
     public List<ShortCut> shortCut = new List<ShortCut>();
-    public List<SkillAndPassive> skillAndPassive = new List<SkillAndPassive>();
-    public List<TreasureBox> treasureBox = new List<TreasureBox>();
-    public List<AttributePoint> attributePoint = new List<AttributePoint>();
-    public List<Relic> relic = new List<Relic>();
-    public List<Item> item = new List<Item>();
+    
+    public List<RoomObjectClass> skillAndPassive = new List<RoomObjectClass>();
+    public List<RoomObjectClass> treasureBox = new List<RoomObjectClass>();
+    public List<RoomObjectClass> item = new List<RoomObjectClass>();
+    public List<RoomObjectClass> attributePoint = new List<RoomObjectClass>();
+    public List<RoomObjectClass> relic = new List<RoomObjectClass>();
+    public List<RoomObjectClass> potion = new List<RoomObjectClass>();
+    
     public List<ElevatorData> elevators = new List<ElevatorData>();
     public List<LockDoorData> lockDoors = new List<LockDoorData>();
 }
@@ -609,6 +573,8 @@ public class SaveData
 
     public bool firstGetSkill;
     public bool firstGetAttribute;
+    public bool firstGetPotion;
+    public bool firstGetRelic;
     public bool firstDamaged;
     public bool firstPortal;
 
@@ -794,12 +760,6 @@ public class GameManager : Singleton<GameManager>
         get => saveData.gold;
         set => saveData.gold = value;
     }
-    
-    public int AdditionPotionCount
-    {
-        get => saveData.additionPotionCount;
-        set => saveData.additionPotionCount = value;
-    }
 
     public string SavePoint
     {
@@ -823,6 +783,18 @@ public class GameManager : Singleton<GameManager>
     {
         get => saveData.firstGetAttribute;
         set => saveData.firstGetAttribute = value;
+    }
+    
+    public bool FirstGetPotion
+    {
+        get => saveData.firstGetPotion;
+        set => saveData.firstGetPotion = value;
+    }
+    
+    public bool FirstGetRelic
+    {
+        get => saveData.firstGetRelic;
+        set => saveData.firstGetRelic = value;
     }
     
     public bool FirstDamaged
@@ -1176,7 +1148,7 @@ public class GameManager : Singleton<GameManager>
     {
         saveData.playerList.Clear();
         saveData.gold = 0;
-        saveData.additionPotionCount = 1;
+        saveData.additionPotionCount = 0;
         saveData.itemList.Clear();
     }
 
@@ -1184,6 +1156,8 @@ public class GameManager : Singleton<GameManager>
     {
         FirstGetSkill = false;
         FirstGetAttribute = false;
+        FirstGetPotion = false;
+        FirstGetRelic = false;
         saveData.playerInfoList = new List<PlayerInfo>();
         
         // 캐릭터가 3마리니까 이것도 3개
@@ -1759,7 +1733,7 @@ public class GameManager : Singleton<GameManager>
         switch (itemData.type)
         {
             case eItemType.Relic:
-                saveData.relicList.Add(storeItemData.id);
+                GetRelic(storeItemData.id);
                 break;
         }
         Gold -= storeItemData.cost;
@@ -1992,13 +1966,17 @@ public class GameManager : Singleton<GameManager>
     public void MovePlayer()
     {
         ControlStart = true;
-        CurPlayer.Immortal = false;
-        curPlayer.Dodge = false;
+        if (curPlayer)
+        {
+            curPlayer.Immortal = false;
+            curPlayer.Dodge = false;
+        }
     }
     public void StopPlayer()
     {
         ControlStart = false;
-        CurPlayer.Immortal = true;
+        if(curPlayer)
+            curPlayer.Immortal = true;
     }
 
     public void SetPlayerHp(int hp)
@@ -2889,6 +2867,16 @@ public class GameManager : Singleton<GameManager>
     {
         customAction.Invoke(count);
     }
+    
+    public void GetPotionProduct(Action customAction)
+    {
+        customAction.Invoke();
+    }
+
+    public void GetRelicProduct(string relicId, Action<string> customAction)
+    {
+        customAction.Invoke(relicId);
+    }
 
     public void GetGoldProduct(int count, Vector2 boxPos, Action<int> customAction)
     {
@@ -2987,6 +2975,12 @@ public class GameManager : Singleton<GameManager>
         saveData.totalAttributePoint += point;
         foreach (var playerInfo in saveData.playerInfoList)
             playerInfo.attributePoint += point;
+    }
+    
+    public void PlusPotion()
+    {
+        saveData.additionPotionCount += 1;
+        GameManager.Instance.SetPotionCount();
     }
     
     public bool IsHaveSkill(string skillId)
@@ -3609,6 +3603,11 @@ public class GameManager : Singleton<GameManager>
         // 해당 아이템을 포함하고 있지 않을 때만 추가
         if(!ItemList.Exists(x => x.id == id))
             ItemList.Add(itemInfo);
+    }
+
+    public void GetRelic(string id)
+    {
+        saveData.relicList.Add(id);
     }
 
     public string GetPlaceName(string place)

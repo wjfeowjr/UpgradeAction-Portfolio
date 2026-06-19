@@ -2,10 +2,19 @@ using System;
 using DG.Tweening;
 using UnityEngine;
 
-public class RoomAttributePoint : InteractionController
+public enum ERoomObjectType
 {
-    [SerializeField] private GameObject movingObject;
-    [SerializeField] private GameObject minimapObject;
+    Item,
+    AttributePoint,
+    Relic,
+    Potion,
+}
+
+public class RoomObject : InteractionController
+{
+    [SerializeField] private ERoomObjectType roomObjectType;
+    [SerializeField] protected GameObject movingObject;
+    [SerializeField] protected GameObject minimapObject;
 
     private float moveY = 0.5f;
     private float duration = 1.0f;
@@ -14,6 +23,10 @@ public class RoomAttributePoint : InteractionController
     private Action action;
     private bool isGet;
     
+    [SerializeField] private string itemId;
+    [SerializeField] private SpriteRenderer itemSpriteRenderer;
+
+    public ERoomObjectType RoomObjectType => roomObjectType;
     public GameObject MinimapObject => minimapObject;
 
     public bool IsGet
@@ -37,14 +50,15 @@ public class RoomAttributePoint : InteractionController
     
     public void SetInteractionAction()
     {
-        SetInteractionAction(GetItem, 30017, GameManager.Instance.upKey);
+        SetInteractionAction(GetObject, 30017, GameManager.Instance.upKey);
     }
     
-    private void GetItem()
+    private void GetObject()
     {
         action();
         gameObject.SetActive(false);
-        minimapObject.SetActive(false);
+        if(minimapObject)
+            minimapObject.SetActive(false);
     }
     
     public void SetAction(Action getAction)
@@ -54,6 +68,13 @@ public class RoomAttributePoint : InteractionController
 
     public void SetParents(Transform targetTransform)
     {
-        minimapObject.transform.SetParent(targetTransform);
+        if(minimapObject)
+            minimapObject.transform.SetParent(targetTransform);
+    }
+    
+    public void SetSprite(string id)
+    {
+        itemId = id;
+        itemSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite(itemId);
     }
 }

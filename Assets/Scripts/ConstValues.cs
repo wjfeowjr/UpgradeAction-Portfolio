@@ -345,6 +345,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";
     public const string GetAttributeEffect = "GetAttributeEffect";
+    public const string GetPotionEffect = "GetPotionEffect";
+    public const string GetItemEffect = "GetItemEffect";
+    public const string GetRelicEffect = "GetRelicEffect";
     public const string QuestClear = "QuestClear";
     public const string BossEvent1 = "BossEvent1";
     public const string ShortcutCrashEffect = "ShortcutCrashEffect";

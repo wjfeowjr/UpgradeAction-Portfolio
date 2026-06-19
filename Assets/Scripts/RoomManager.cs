@@ -502,31 +502,35 @@ public class RoomManager : Singleton<RoomManager>
                 imagNameList.Add($"{ConstValues.Guide}{0}");
                 break;
             case 1:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.potionKey));
                 imagNameList.Add($"{ConstValues.Guide}{1}");
                 break;
             case 2:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
                 imagNameList.Add($"{ConstValues.Guide}{2}");
                 break;
             case 3:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey));
                 imagNameList.Add($"{ConstValues.Guide}{3}");
                 break;
             case 4:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
                 imagNameList.Add($"{ConstValues.Guide}{4}");
-                imagNameList.Add($"{ConstValues.Guide}{5}");
                 break;
             case 5:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterKey));
+                imagNameList.Add($"{ConstValues.Guide}{5}");
                 imagNameList.Add($"{ConstValues.Guide}{6}");
-                imagNameList.Add($"{ConstValues.Guide}{7}");
                 break;
             case 6:
-                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.dashKey));
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.characterInfoKey));
+                imagNameList.Add($"{ConstValues.Guide}{7}");
                 imagNameList.Add($"{ConstValues.Guide}{8}");
+                break;
+            case 7:
+                guideMessage = string.Format(GameManager.Instance.GetTalk(talkIdx + explainIdx), GameManager.Instance.GetKeyCode(GameManager.Instance.dashKey));
                 imagNameList.Add($"{ConstValues.Guide}{9}");
+                imagNameList.Add($"{ConstValues.Guide}{10}");
                 break;
             default:
                 guideMessage = GameManager.Instance.GetTalk(talkIdx + 100);
