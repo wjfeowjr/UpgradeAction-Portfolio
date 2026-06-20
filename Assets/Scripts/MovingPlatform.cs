@@ -4,10 +4,9 @@ using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 
-public class MovingPlatform : Platform
+public class MovingPlatform : Platform, IMovingPlatform
 {
     [SerializeField] private Transform[] points;
-    [SerializeField] private bool isElevator;
     [SerializeField] private bool isMoving;
     [SerializeField] private bool isRepeat;
     [SerializeField] private float delay;
@@ -33,8 +32,6 @@ public class MovingPlatform : Platform
         get => platformObject;
         set => platformObject = value;
     }
-
-    public bool IsElevator => isElevator;
 
     public bool IsMoving
     {

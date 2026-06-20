@@ -1215,10 +1215,6 @@ public abstract class Player : Character
             return;
         }
 
-        var movingPlatform = lastStandPlatform.collider.GetComponent<MovingPlatform>();
-        if (movingPlatform != null && movingPlatform.IsElevator)
-            return;
-        
         // 플랫폼 위에서 '서있거나, 움직일때' 만 작동함
         if((normalState != ENormalState.Idle && normalState != ENormalState.Move) || downJumping || !isOnPlatform || IsDamaged() || normalState == ENormalState.JumpAttack)
             return;

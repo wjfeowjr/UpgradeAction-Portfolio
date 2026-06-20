@@ -200,7 +200,7 @@ public abstract class Character : InteractionController
     
     [SerializeField] protected PlatformObject lastStandPlatform;
     [SerializeField] protected List<PlatformObject> ignorePlatformList = new List<PlatformObject>();
-    [SerializeField] protected MovingPlatform currentMovingPlatform;
+    protected IMovingPlatform currentMovingPlatform;
 
     [SerializeField] protected List<GameObject> attackObject = new List<GameObject>();
     [SerializeField] protected List<GameObject> controlAttackObject = new List<GameObject>(); // 직접 관리하는 '공격 오브젝트'
@@ -543,11 +543,11 @@ public abstract class Character : InteractionController
             isOnPlatform = true;
             if (leftPlatform)
             {
-                var movingPlatform = downLeftHit.collider.GetComponent<MovingPlatform>();
-                if (movingPlatform)
+                var movingPlatform = downLeftHit.collider.GetComponentInParent<IMovingPlatform>();
+                if (movingPlatform != null)
                 {
                     currentMovingPlatform = movingPlatform;
-                    // MovingPlatform은 매 프레임 height를 갱신하므로 얕은 복사로 동기화시킴
+                    // 움직이는 발판은 매 프레임 height를 갱신하므로 얕은 복사로 동기화시킴
                     lastStandPlatform = movingPlatform.PlatformObject;
                 }
                 else
@@ -561,11 +561,11 @@ public abstract class Character : InteractionController
             }
             if (rightPlatform)
             {
-                var movingPlatform = downRightHit.collider.GetComponent<MovingPlatform>();
-                if (movingPlatform)
+                var movingPlatform = downRightHit.collider.GetComponentInParent<IMovingPlatform>();
+                if (movingPlatform != null)
                 {
                     currentMovingPlatform = movingPlatform;
-                    // MovingPlatform은 매 프레임 height를 갱신하므로 얕은 복사로 동기화시킴
+                    // 움직이는 발판은 매 프레임 height를 갱신하므로 얕은 복사로 동기화시킴
                     lastStandPlatform = movingPlatform.PlatformObject;
                 }
                 else
@@ -1026,11 +1026,10 @@ public abstract class Character : InteractionController
         {
             if (!ignorePlatformList.Exists(x => x.collider == col))
             {
-                var movingPlatform = col.GetComponent<MovingPlatform>();
-                if (movingPlatform)
+                var movingPlatform = col.GetComponentInParent<IMovingPlatform>();
+                if (movingPlatform != null)
                 {
-                    if (movingPlatform.IsElevator)
-                        return;
+                    // 이곳에 추가
                     ignorePlatformList.Add(movingPlatform.PlatformObject);
                     Physics2D.IgnoreCollision(physicsCollider, col, true);
                 }
@@ -1062,13 +1061,10 @@ public abstract class Character : InteractionController
         if (platformObject == null || !platformObject.collider)
             return;
 
-        var movingPlatform = platformObject.collider.GetComponent<MovingPlatform>();
-        if (movingPlatform != null && movingPlatform.IsElevator)
-            return;
-        
         var height = ColliderHeight(platformObject.collider);
         if (transform.position.y < height || forceIgnore)
         {
+            // 이곳에 추가
             Physics2D.IgnoreCollision(physicsCollider, platformObject.collider, true);
             if (!ignorePlatformList.Exists(x => x.collider == platformObject.collider))
             {
