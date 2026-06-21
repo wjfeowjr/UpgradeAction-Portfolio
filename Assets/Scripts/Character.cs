@@ -424,10 +424,21 @@ public abstract class Character : InteractionController
         // 오른쪽 벽 체크
         hitRight = Physics2D.BoxCast((Vector2)physicCenterPos.position + Vector2.right * horizontalOffset, horizontalBoxSize, 0f, Vector2.right, 0, groundLayerMask);
 
-        isWallLeft = hitLeft.collider != null;
-        isWallRight = hitRight.collider != null;
+        // 현재 타고 있는 발판(엘리베이터)의 콜라이더는 벽으로 취급하지 않는다.
+        // (차체 벽이 양쪽에서 벽으로 잡혀 좌우 입력이 0으로 막히는 문제 방지)
+        isWallLeft = hitLeft.collider != null && !IsRidingPlatformCollider(hitLeft.collider);
+        isWallRight = hitRight.collider != null && !IsRidingPlatformCollider(hitRight.collider);
     }
-    
+
+    // 콜라이더가 현재 타고 있는 움직이는 발판(엘리베이터)에 속하는지
+    private bool IsRidingPlatformCollider(Collider2D col)
+    {
+        if (currentMovingPlatform == null || !col)
+            return false;
+
+        return col.GetComponentInParent<IMovingPlatform>() == currentMovingPlatform;
+    }
+
     // 천장 체크
     protected virtual async void CeilingCheck()
     {
@@ -537,6 +548,15 @@ public abstract class Character : InteractionController
         bool leftGround = downLeftHit && downLeftHit.collider.CompareTag(ConstValues.Ground);
         bool rightGround = downRightHit && downRightHit.collider.CompareTag(ConstValues.Ground);
 
+        // 움직이는 발판(IMovingPlatform) 물리값 추종: Platform/Ground 태그와 무관하게 잡는다.
+        // 엘리베이터처럼 Ground 태그(솔리드)여도 속도 동기화로 같이 움직이게 하기 위함.
+        IMovingPlatform moving = null;
+        if (downLeftHit.collider)
+            moving = downLeftHit.collider.GetComponentInParent<IMovingPlatform>();
+        if (moving == null && downRightHit.collider)
+            moving = downRightHit.collider.GetComponentInParent<IMovingPlatform>();
+        currentMovingPlatform = moving;
+
         // 올라서있는 플랫폼 감지
         if ((leftPlatform || rightPlatform) && !leftGround && !rightGround)
         {
@@ -634,9 +654,18 @@ public abstract class Character : InteractionController
         {
             if (IsPlatformFollow())
             {
-                // 여기에 플랫폼별로 상하, 좌우인지 구별
+                // 정지 상태: 수평/수직 모두 플랫폼 속도로 동기화
                 var v = myRigidbody.linearVelocity;
-                v.x = currentMovingPlatform.Velocity.x; // 기본은 플랫폼 속도
+                v.x = currentMovingPlatform.Velocity.x;
+                v.y = currentMovingPlatform.Velocity.y;
+                myRigidbody.linearVelocity = v;
+            }
+            else if (landingState == ELandingState.Ground &&
+                     (normalState is ENormalState.Idle or ENormalState.Move))
+            {
+                // 발판 위에서 좌우 이동 중: 수평 입력 속도는 유지하고 수직만 플랫폼에 동기화.
+                // (FixedUpdate 마지막에 매번 적용되어 상승/하강 추종이 끊기지 않게 함)
+                var v = myRigidbody.linearVelocity;
                 v.y = currentMovingPlatform.Velocity.y;
                 myRigidbody.linearVelocity = v;
             }

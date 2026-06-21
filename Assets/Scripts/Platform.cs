@@ -16,22 +16,25 @@ public class Platform : MonoBehaviour
     protected virtual void Awake()
     {
         myBoxCollider = GetComponent<BoxCollider2D>();
-        var spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
-        foreach (var spriteRenderer in spriteRenderers)
+
+        if (spriteFirst.Length > 0)
         {
-            string split = spriteRenderer.name.Split(' ')[0];
-            if(split == ConstValues.Sprite)
-                platformSpriteList.Add(spriteRenderer);
-        }
-        
-        for (var i = 0; i < platformSpriteList.Count; i++)
-        {
-            if (i == 0)
-                platformSpriteList[i].sprite = spriteFirst[idx];
-            else if(i == platformSpriteList.Count - 1)
-                platformSpriteList[i].sprite = spriteEnd[idx];
-            else
-                platformSpriteList[i].sprite = spriteMiddle[idx];
+            var spriteRenderers = GetComponentsInChildren<SpriteRenderer>();
+            foreach (var spriteRenderer in spriteRenderers)
+            {
+                string split = spriteRenderer.name.Split(' ')[0];
+                if(split == ConstValues.Sprite)
+                    platformSpriteList.Add(spriteRenderer);
+            }
+            for (var i = 0; i < platformSpriteList.Count; i++)
+            {
+                if (i == 0)
+                    platformSpriteList[i].sprite = spriteFirst[idx];
+                else if(i == platformSpriteList.Count - 1)
+                    platformSpriteList[i].sprite = spriteEnd[idx];
+                else
+                    platformSpriteList[i].sprite = spriteMiddle[idx];
+            }
         }
     }
 

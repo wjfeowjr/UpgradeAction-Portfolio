@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
+using DG.Tweening;
 using UnityEngine;
 
 public class MovingPlatform : Platform, IMovingPlatform
@@ -14,8 +15,11 @@ public class MovingPlatform : Platform, IMovingPlatform
     [SerializeField] private float accelerateDistance = 1f;
     [SerializeField] private float slowDownDistance = 1f;
     [SerializeField, Range(0f, 1f)] private float minSpeedMultiplier = 0.2f;
-    
+    [SerializeField] private GameObject[] gearObjects;      // 톱니바퀴들 (짝수 인덱스: 반대, 홀수 인덱스: 기본 방향)
+    [SerializeField] private float gearRotateDuration = 1f; // 기어 1회전에 걸리는 시간
+
     private float curDelay;
+    private bool gearRotating;
     private Rigidbody2D myRigidbody;
     private int targetIdx;
     private Vector2 prevPos;
@@ -85,6 +89,13 @@ public class MovingPlatform : Platform, IMovingPlatform
         {
             myRigidbody.linearVelocity = Vector2.zero;
             platformVelocity = Vector2.zero;
+
+            // 멈췄으면 톱니바퀴도 정지 + 45도 스냅
+            if (gearRotating)
+            {
+                StopGearRotation();
+                gearRotating = false;
+            }
             return;
         }
 
@@ -121,6 +132,14 @@ public class MovingPlatform : Platform, IMovingPlatform
         }
 
         Vector2 direction = toTarget / distToTarget;
+
+        // 이동 시작 시 톱니바퀴 회전 시작 (이 구간의 방향 기준)
+        if (!gearRotating)
+        {
+            StartGearRotation(direction.y > 0f);
+            gearRotating = true;
+        }
+
         Vector2 velocity = direction * currentSpeed;
         myRigidbody.linearVelocity = velocity;
 
@@ -163,5 +182,47 @@ public class MovingPlatform : Platform, IMovingPlatform
     {
         arriveAction = action;
         platformVelocity = Vector2.zero;
+    }
+
+    // 톱니바퀴 회전 시작 (짝수 인덱스는 반대 방향, 홀수 인덱스는 기본 방향으로 무한 회전)
+    private void StartGearRotation(bool goingUp)
+    {
+        if (gearObjects == null)
+            return;
+
+        float baseDir = goingUp ? 1f : -1f;
+        for (int i = 0; i < gearObjects.Length; i++)
+        {
+            if (!gearObjects[i])
+                continue;
+
+            var t = gearObjects[i].transform;
+            t.DOKill();
+
+            float dir = (i % 2 == 0) ? -baseDir : baseDir;
+            t.DOLocalRotate(new Vector3(0f, 0f, 360f * dir), gearRotateDuration, RotateMode.LocalAxisAdd)
+                .SetEase(Ease.Linear)
+                .SetLoops(-1, LoopType.Incremental);
+        }
+    }
+
+    // 톱니바퀴 정지: 각각 가장 가까운 45도 배수로 0.2초에 걸쳐 스냅
+    private void StopGearRotation()
+    {
+        if (gearObjects == null)
+            return;
+
+        foreach (var gear in gearObjects)
+        {
+            if (!gear)
+                continue;
+
+            var t = gear.transform;
+            t.DOKill();
+
+            float z = t.localEulerAngles.z;
+            float snapped = Mathf.Round(z / 45f) * 45f;
+            t.DOLocalRotate(new Vector3(0f, 0f, snapped), 0.2f, RotateMode.Fast);
+        }
     }
 }

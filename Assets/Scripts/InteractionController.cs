@@ -197,7 +197,7 @@ public class InteractionController : MonoBehaviour
     }
     
     // 오브젝트 소환
-    public void SpawnAcquireEffect(string effectId, Vector2 pos)
+    public void SpawnEffect(string effectId, Vector2 pos)
     {
         var obj = GameManager.Instance.SpawnToObjectPool(effectId, pos);
         

@@ -38,8 +38,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string RoomFolder = "Assets/Room";
     
     public const string AtlasClone = "(Clone)";
-    public const string BgSunHill = "Bg_SunHill";
-    public const string BgSunHillNight = "Bg_SunHill_Night";
+    public const string BgForest = "Bg_Forest";
+    public const string BgForestNight = "Bg_Forest_Night";
 
     public const string TitleScene = "Title";
     public const string BattleScene = "Battle";
@@ -341,6 +341,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string AttributePoint = "AttributePoint";
     public const string HealingEffect = "HealingEffect";
     public const string HealEffect = "HealEffect";
+    public const string LeverEffect = "LeverEffect";
     
     public const string GetSkill = "GetSkill";
     public const string GetSkillExplosion = "GetSkillExplosion";

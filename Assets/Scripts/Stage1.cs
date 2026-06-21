@@ -700,7 +700,7 @@
 //         var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, fadePos).GetComponent<FadeSystem>();
 //         fadeBg.SetParameter(0, 1.0f, 1.5f, false);
 //         await fadeBg.Fade();
-//         BgSpriteChange(ConstValues.BgSunHillNight);
+//         BgSpriteChange(ConstValues.BgForestNight);
 //         if (await NormalDelay(dialogDelay2, dialogCancellation).SuppressCancellationThrow())
 //             return;
 //         
@@ -818,7 +818,7 @@
 //             var fadeBg = GameManager.Instance.SpawnToObjectPool(ConstValues.FadeBg, fadePos).GetComponent<FadeSystem>();
 //             fadeBg.SetParameter(0, 1.0f, 1.5f, false);
 //             await fadeBg.Fade();
-//             BgSpriteChange(ConstValues.BgSunHill);
+//             BgSpriteChange(ConstValues.BgForest);
 //             foreach (var stageWall in stageWalls)
 //                 stageWall.SetActive(false);
 //             GameManager.Instance.SetCameraTarget(null);

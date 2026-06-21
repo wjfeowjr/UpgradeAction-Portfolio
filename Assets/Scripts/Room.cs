@@ -795,7 +795,7 @@ public class Room : MonoBehaviour
                 var elevator = new ElevatorData()
                 {
                     id = elevators[idx].name,
-                    idx = 0
+                    idx = elevators[idx].StartIndex   // 최초 시작 인덱스 (엘리베이터별 설정)
                 };
                 roomInfo.elevators.Add(elevator);
             }
@@ -920,7 +920,7 @@ public class Room : MonoBehaviour
                     attributeList[idx].IsGet = true;
                     roomInfo.attributePoint[idx].alreadyGet = true;
                     attributeList[idx].ReduceInteractionObject();
-                    attributeList[idx].SpawnAcquireEffect(ConstValues.GetAttributeEffect, attributeList[idx].transform.position);
+                    attributeList[idx].SpawnEffect(ConstValues.GetAttributeEffect, attributeList[idx].transform.position);
                     GameManager.Instance.PlusAttributePoint(roomInfo.attributePoint[idx].count);
                     GameManager.Instance.GetAttributeProduct(roomInfo.attributePoint[idx].count, GetAttributeEvent);
                     GameManager.Instance.SaveGame();
@@ -945,7 +945,7 @@ public class Room : MonoBehaviour
                     potionList[idx].IsGet = true;
                     roomInfo.potion[idx].alreadyGet = true;
                     potionList[idx].ReduceInteractionObject();
-                    potionList[idx].SpawnAcquireEffect(ConstValues.GetPotionEffect, potionList[idx].transform.position);
+                    potionList[idx].SpawnEffect(ConstValues.GetPotionEffect, potionList[idx].transform.position);
                     GameManager.Instance.PlusPotion();
                     GameManager.Instance.GetPotionProduct(GetPotionEvent);
                     GameManager.Instance.SaveGame();
@@ -971,7 +971,7 @@ public class Room : MonoBehaviour
                     itemList[idx].IsGet = true;
                     roomInfo.item[idx].alreadyGet = true;
                     itemList[idx].ReduceInteractionObject();
-                    itemList[idx].SpawnAcquireEffect(ConstValues.GetItemEffect, itemList[idx].transform.position);
+                    itemList[idx].SpawnEffect(ConstValues.GetItemEffect, itemList[idx].transform.position);
                     GameManager.Instance.GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
                     GameManager.Instance.ProductObjectInfo(roomInfo.item[idx].id, GameManager.Instance.GetItemTalk(roomInfo.item[idx].id), roomInfo.item[idx].count);
                     GameManager.Instance.SaveGame();
@@ -997,7 +997,7 @@ public class Room : MonoBehaviour
                     relicList[idx].IsGet = true;
                     roomInfo.relic[idx].alreadyGet = true;
                     relicList[idx].ReduceInteractionObject();
-                    relicList[idx].SpawnAcquireEffect(ConstValues.GetRelicEffect, relicList[idx].transform.position);
+                    relicList[idx].SpawnEffect(ConstValues.GetRelicEffect, relicList[idx].transform.position);
                     GameManager.Instance.GetRelic(roomInfo.relic[idx].id);
                     GameManager.Instance.GetRelicProduct(roomInfo.relic[idx].id, GetRelicEvent);
                     GameManager.Instance.ProductObjectInfo(roomInfo.relic[idx].id, GameManager.Instance.GetItemTalk(roomInfo.relic[idx].id), roomInfo.relic[idx].count);
@@ -2482,7 +2482,7 @@ public class Room : MonoBehaviour
             SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10118));
         }
 
-        RoomManager.Instance.BgSpriteChange(ConstValues.BgSunHillNight);
+        RoomManager.Instance.BgSpriteChange(ConstValues.BgForestNight);
         RoomManager.Instance.BgDecoActive(false);
         
         fadeBg.SetParameter(1.0f, 0.0f, 1.5f, true);
@@ -2569,7 +2569,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        RoomManager.Instance.BgSpriteChange(ConstValues.BgSunHill);
+        RoomManager.Instance.BgSpriteChange(ConstValues.BgForest);
         RoomManager.Instance.BgDecoActive(true);
         
         berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;

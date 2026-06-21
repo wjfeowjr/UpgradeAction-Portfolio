@@ -34,11 +34,11 @@ public class Monster_Moon : Monster
         if (moveState != EMoveState.Moving)
             return;
 
-        // 왼쪽
-        if (myRigidbody.linearVelocityX < 0 && isWallLeft)
+        // 왼쪽 벽에 닿으면 오른쪽으로 전환 (실제 속도가 아닌 의도한 이동 방향 기준)
+        if (dir.x < 0 && isWallLeft)
             dir = Vector2.right;
-        // 오른쪽
-        if (myRigidbody.linearVelocityX > 0 && isWallRight)
+        // 오른쪽 벽에 닿으면 왼쪽으로 전환
+        else if (dir.x > 0 && isWallRight)
             dir = Vector2.left;
 
         myRigidbody.linearVelocity = dir * basicStat.moveSpeed;

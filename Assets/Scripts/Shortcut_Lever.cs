@@ -13,7 +13,9 @@ public class Shortcut_Lever : ShortcutObject
 
     private void OnEnable()
     {
-        if(!opened)
+        if(opened)
+            AnimTrigger(ConstValues.Right);
+        else
             AnimTrigger(ConstValues.Left);
     }
 
@@ -22,6 +24,7 @@ public class Shortcut_Lever : ShortcutObject
     {
         float delay1 = 1.0f;
         
+        SpawnEffect(ConstValues.LeverEffect, transform.position);
         GameManager.Instance.StopPlayer();
         delayCancellation = new CancellationTokenSource();
         if(await NormalDelay(delay1, delayCancellation).SuppressCancellationThrow())

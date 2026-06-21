@@ -22,10 +22,10 @@ public class ShortcutObject : Lever
     [SerializeField] private ShortcutType type;
     [SerializeField] protected Collider2D myCollider;
     [SerializeField] private GameObject[] shortcutBlockers;// 막고 있는 문/벽(콜라이더 포함)
-
+    [SerializeField] protected bool opened;
+    
     protected CancellationTokenSource delayCancellation;
     private Action<string, bool> openAction;
-    protected bool opened;
     private int startHp;
     private int hp;
     
