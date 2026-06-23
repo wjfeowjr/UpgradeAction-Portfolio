@@ -669,6 +669,8 @@ public class GameManager : Singleton<GameManager>
 
     [SerializeField] private bool inGame;
     [SerializeField] private bool controlStart;
+    // 방 이동(좌우) 연출 중에는 ControlStart=false 전환 시 속도 정리를 건너뛴다(이동 연속성 유지, 멈칫 방지)
+    private bool roomMoving;
     private bool standLock;
     private bool bossProduct;
     private bool timeProduct;
@@ -723,12 +725,19 @@ public class GameManager : Singleton<GameManager>
             // 연출 진입(false 전환) 시 누른 채였던 Move 상태/잔여 속도만 정리.
             // 입력 플래그(isLeftMove/isRightMove)는 유지 → 방 이동 후 ControlStart가 다시 true가 되면
             // 키를 다시 누르지 않아도 홀드 중인 방향으로 이동이 이어진다.
-            if (!value && CurPlayer)
+            // 단, 좌우 방 이동 연출 중(roomMoving)에는 정리를 건너뛰어 한 프레임 멈칫을 막는다.
+            if (!value && !roomMoving && CurPlayer)
             {
                 CurPlayer.Stop();
                 CurPlayer.StopVelocity_X();
             }
         }
+    }
+
+    public bool RoomMoving
+    {
+        get => roomMoving;
+        set => roomMoving = value;
     }
 
     public bool StandLock

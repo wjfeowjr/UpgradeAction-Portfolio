@@ -30,7 +30,7 @@ public class RoomEntrance : MonoBehaviour
     
     private void OnTriggerEnter2D(Collider2D col)
     {
-        if (col.CompareTag(ConstValues.Player) && !col.isTrigger)
+        if (GameManager.Instance.ControlStart && col.CompareTag(ConstValues.Player) && !col.isTrigger)
         {
             myAction?.Invoke();
             if (myAsyncAction != null)

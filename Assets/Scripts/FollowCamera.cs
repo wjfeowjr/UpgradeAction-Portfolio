@@ -174,6 +174,11 @@ public class FollowCamera : MonoBehaviour
         //transform.position = new Vector3(targetX + shakeVector.x, targetY + shakeVector.y, transform.position.z);
     }
 
+    public void SetPos(Vector2 targetVector)
+    {
+        transform.position = new Vector3(targetVector.x, targetVector.y, transform.position.z);
+    }
+
     public async UniTask SetZoom(float targetSize, float duration)
     {
         await DoZoom(Mathf.Clamp(targetSize, minZoom, maxZoom), duration);

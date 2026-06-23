@@ -73,6 +73,12 @@ public class Room : MonoBehaviour
     [SerializeField] private PortalObject portalObject;
     [SerializeField] private MerchantObject merchantObject;
 
+    // 퇴장 연출: 과거 방에서 진행 방향으로 더 걸어 나가는 거리.
+    // 너무 크면 문턱 밖(바닥 없는 곳/벽)으로 나가 떨어지거나 막히므로 바닥 안에서 작게 유지한다.
+    private const float ExitWalkOffsetX = 2.56f;
+    // 입장 연출: 새 방에서 도착위치(playerPos[idx])보다 바깥에서 시작해 걸어 들어오는 거리. 자유롭게 조절 가능.
+    private const float EnterWalkOffsetX = 2.56f;
+
     [Header("플레이어 도착위치")]
     [SerializeField] private List<Transform> leftPlayerPos;
     [SerializeField] private List<Transform> rightPlayerPos;
@@ -1230,25 +1236,55 @@ public class Room : MonoBehaviour
 
     private async void SettingRoom(int idx, EntranceDir dir, Room pastRoom)
     {
+        // 좌우 이동은 퇴장 걷기가 곧바로 속도를 이어받으므로, StopPlayer의 속도 정리(멈칫)를 한 번만 건너뛴다.
+        bool walkOver = dir is EntranceDir.Left or EntranceDir.Right;
+        if (walkOver)
+            GameManager.Instance.RoomMoving = true;
         GameManager.Instance.StopPlayer();
+        if (walkOver)
+            GameManager.Instance.RoomMoving = false;
         GameManager.Instance.RoomMoveSetting();
         GameManager.Instance.InitProductCancellation();
-        
+
         // 모든 몬스터들의 행동 정지
         foreach (var monster in monsters)
             monster.CancelMotion();
 
-        if (await GameManager.Instance.Fading(0, 1, 0.25f, false, ConstValues.BlackColor, false).SuppressCancellationThrow())
+        // 퇴장 연출: 페이드 아웃 전, 과거 방에서 진행 방향으로 더 걸어 나간다.
+        // dir은 새 방의 입구 방향이라 실제 진행 방향은 그 반대다.
+        // dir==Left  ← 오른쪽 문으로 진입 → 진행 방향 오른쪽(+)
+        // dir==Right ← 왼쪽   문으로 진입 → 진행 방향 왼쪽(-)
+        var curPlayer = GameManager.Instance.CurPlayer;
+        if (curPlayer.NormalState is ENormalState.Idle or ENormalState.Move)
+        {
+            switch (dir)
+            {
+                case EntranceDir.Left:
+                    curPlayer.EntranceWalk_X(curPlayer.transform.position.x + ExitWalkOffsetX).Forget();
+                    break;
+                case EntranceDir.Right:
+                    curPlayer.EntranceWalk_X(curPlayer.transform.position.x - ExitWalkOffsetX).Forget();
+                    break;
+            }
+        }
+        
+        if(await GameManager.Instance.Fading(0, 1, 0.1f, false, ConstValues.BlackColor, false).SuppressCancellationThrow())
             return;
 
         switch (dir)
         {
             case EntranceDir.Left:
                 SetLeftPlayerPos(idx);
+                // 점프/스킬로 공중 진입 시, 검은 화면 동안 잔여 속도/중력으로 시작 위치에서 떠내려가지 않도록 고정.
+                // (중력은 페이드 후 GravityChange(BasicGravity)에서 복원됨)
+                GameManager.Instance.CurPlayer.ZeroVelocity();
+                GameManager.Instance.CurPlayer.GravityChange(0);
                 GameManager.Instance.CurPlayer.ForceIdle();
                 break;
             case EntranceDir.Right:
                 SetRightPlayerPos(idx);
+                GameManager.Instance.CurPlayer.ZeroVelocity();
+                GameManager.Instance.CurPlayer.GravityChange(0);
                 GameManager.Instance.CurPlayer.ForceIdle();
                 break;
             case EntranceDir.Up:
@@ -1265,6 +1301,8 @@ public class Room : MonoBehaviour
                 break;
         }
         GameManager.Instance.CurPlayer.RoomMoveState();
+        var playerPos = GameManager.Instance.CurPlayer.transform.position;
+        GameManager.Instance.MainCamera.SetPos(playerPos);
 
         SetCameraLimit();
         pastRoom.ObjectActive(false);
@@ -1285,14 +1323,13 @@ public class Room : MonoBehaviour
         // 골드오브젝트 초기화
         RefreshGoldObject();
         
-        if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(0.1f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
-        
-        if (await GameManager.Instance.Fading(1, 0, 0.25f, true, ConstValues.BlackColor, false).SuppressCancellationThrow())
-            return;
-        
-        GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
 
+        GameManager.Instance.CurPlayer.GravityChange(ConstValues.BasicGravity);
+        GameManager.Instance.CurPlayer.ZeroVelocity();
+        GameManager.Instance.Fading(1, 0, 0.1f, true, ConstValues.BlackColor, false).Forget();
+        
         switch (dir)
         {
             case EntranceDir.Up:
@@ -1302,10 +1339,19 @@ public class Room : MonoBehaviour
             case EntranceDir.Down:
                 await GameManager.Instance.CurPlayer.EntranceJump();
                 break;
+
+            // 입장 연출: 도착위치(playerPos[idx])까지 걸어 들어온다.
+            case EntranceDir.Left:
+                await GameManager.Instance.CurPlayer.EntranceWalk_X(leftPlayerPos[idx].position.x);
+                break;
+
+            case EntranceDir.Right:
+                await GameManager.Instance.CurPlayer.EntranceWalk_X(rightPlayerPos[idx].position.x);
+                break;
         }
         GameManager.Instance.MovePlayer();
         GameManager.Instance.CurPlayer.ClearLastPlatform();
-
+        
         foreach (var entrance in leftEntrance)
             entrance.ResetCollider();
         foreach (var entrance in rightEntrance)
@@ -1325,12 +1371,20 @@ public class Room : MonoBehaviour
     
     private void SetLeftPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[idx].position;
+        // GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[idx].position;
+        // 입장 걷기 시작점: 도착위치에서 바깥(왼쪽)으로 떨어뜨려 두고, 이후 도착위치까지 걸어 들어온다.
+        var pos = leftPlayerPos[idx].position;
+        pos.x -= EnterWalkOffsetX;
+        GameManager.Instance.CurPlayer.transform.position = pos;
     }
 
     private void SetRightPlayerPos(int idx)
     {
-        GameManager.Instance.CurPlayer.transform.position = rightPlayerPos[idx].position;
+        // GameManager.Instance.CurPlayer.transform.position = rightPlayerPos[idx].position;
+        // 입장 걷기 시작점: 도착위치에서 바깥(오른쪽)으로 떨어뜨려 두고, 이후 도착위치까지 걸어 들어온다.
+        var pos = rightPlayerPos[idx].position;
+        pos.x += EnterWalkOffsetX;
+        GameManager.Instance.CurPlayer.transform.position = pos;
     }
 
     private void SetUpPlayerPos(int idx)
@@ -1544,6 +1598,9 @@ public class Room : MonoBehaviour
             }
         }
 
+        if (wallList.Count == 0)
+            return default;
+        
         return wallList[idx].name;
     }
 
@@ -3192,7 +3249,12 @@ public class Room : MonoBehaviour
         foreach (var child in allChildren)
         {
             if (child.CompareTag(ConstValues.Trap))
-                trapList.Add(child.GetComponent<Collider2D>());
+            {
+                var colliderList1 = child.GetComponentsInChildren<CompositeCollider2D>().ToList();
+                var colliderList2 = child.GetComponentsInChildren<BoxCollider2D>().ToList();
+                trapList.AddRange(colliderList1);
+                trapList.AddRange(colliderList2);
+            }
         }
 
         Transform playerPosArray = roomGameObject.transform.Find(ConstValues.PlayerPosArray);

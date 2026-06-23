@@ -369,6 +369,20 @@ public class Attack : MonoBehaviour
         gainedResource = false;
     }
 
+    public void ColliderActive(bool active)
+    {
+        if (myCollider)
+        {
+            myCollider.enabled = active;
+            if(active == false)
+                TargetColReset();
+        }
+    }
+    public void DirChange(int value)
+    {
+        dir = value;
+    }
+
     private bool GetCritical()
     {
         var critPercent = Random.Range(0, 100);

@@ -1306,6 +1306,37 @@ public abstract class Player : Character
         }
     }
 
+    // 좌우 방 이동 연출용 걷기: 목표 x좌표까지 CustomMoving_X로 걸어서 이동한다.
+    // EpisodeMove와 달리 IsLeftMove/IsRightMove를 건드리지 않으므로,
+    // 연출 도중 방향키를 계속 누르고 있으면 연출 종료 후 이동이 끊기지 않고 이어진다.
+    public async UniTask EntranceWalk_X(float targetX)
+    {
+        // 점프/스킬 등 진행 중인 행동 코루틴(stateCancellation·jumpCancellation)을 확실히 종료한다.
+        // 그러지 않으면 살아남은 코루틴이 걷기 연출을 덮어쓰거나 걷기 토큰을 취소해 연출이 건너뛰어진다.
+        // velocity0:false → 잔여 속도를 유지하므로 이동 중 진입 시 멈칫이 생기지 않는다.
+        CancelMotion(velocity0: false);
+        stateCancellation = new CancellationTokenSource();
+
+        bool toRight = transform.position.x < targetX;
+        Vector2 moveDir = toRight ? Vector2.right : Vector2.left;
+        transform.localScale = toRight ? defaultScale : reverseScale;
+
+        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+
+        while (toRight ? transform.position.x < targetX : transform.position.x > targetX)
+        {
+            if (normalState == ENormalState.Idle)
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+
+            CustomMoving_X(moveDir, basicStat.moveSpeed);
+            if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
+                return;
+        }
+
+        transform.position = new Vector2(targetX, transform.position.y);
+        StopVelocity_X();
+    }
+
     public void SetJumpState()
     {
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
