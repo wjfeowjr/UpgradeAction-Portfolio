@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro.EditorUtilities;
 using UnityEngine;
 
 public class ConstValues : Singleton<ConstValues>
@@ -549,6 +550,7 @@ public class ConstValues : Singleton<ConstValues>
 
     // 함정
     public const string TrapPillar = "Trap_Pillar";
+    public const string TrapCrusherEffect = "Trap_Crusher_Effect";
     
     public static readonly Color WhiteColor = Color.white;
     public static readonly Color WhiteColorAlpha0 = new Color(1, 1, 1, 0);
