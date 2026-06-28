@@ -972,6 +972,7 @@ public class Room : MonoBehaviour
             else
             {
                 itemList[idx].SetInteractionAction();
+                itemList[idx].SetSprite(roomInfo.item[idx].id);
                 itemList[idx].SetAction(() =>
                 {
                     itemList[idx].IsGet = true;
@@ -998,6 +999,7 @@ public class Room : MonoBehaviour
             else
             {
                 relicList[idx].SetInteractionAction();
+                relicList[idx].SetSprite(roomInfo.relic[idx].id);
                 relicList[idx].SetAction(() =>
                 {
                     relicList[idx].IsGet = true;
@@ -1815,6 +1817,9 @@ public class Room : MonoBehaviour
                 break;
             case 12:
                 Product12();
+                break;
+            case 13:
+                Product13();
                 break;
         }
     }
@@ -2723,14 +2728,60 @@ public class Room : MonoBehaviour
         GameManager.Instance.SaveGame();
     }
     
+    // 거대 권투맨 대결
+    private async void Product7()
+    {
+        GameManager.Instance.CurPlayer.ForceProduct();
+        GameManager.Instance.InitProductCancellation();
+        
+        UIOff();
+        BgmManager.Instance.DelayStop(0.1f);
+        float productDelay = 1.0f;
+        if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        // 문 닫기
+        BossTileMapActive(true);
+        
+        float productDelay2 = 1.5f;
+        if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        PlayBGM(ConstValues.BGMMiniBoss, true);
+        
+        // 거대권투 보스 소환
+        SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.Boss);
+        
+        UIOn();
+        
+        // 보스 죽음
+        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        GameManager.Instance.ControlStart = false;
+        StopBGM();
+        
+        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        // 연출이 있다면 이곳에 넣기
+
+        // 문 열기
+        PlayBGM(roomsData.bgm, true);
+        BossTileMapActive(false);
+        roomInfo.roomProduct[0].isFinish = true;
+        GameManager.Instance.SaveGame();
+        UIOn();
+    }
+    
     // 아레나 대전
-    private void Product7()
+    private void Product8()
     {
         StartArena();
     }
     
     // 암살자와 대결
-    private async void Product8()
+    private async void Product9()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2842,7 +2893,7 @@ public class Room : MonoBehaviour
     }
     
     // 광부를 만남
-    private async void Product9()
+    private async void Product10()
     {
         GameManager.Instance.InitProductCancellation();
         UIOff();
@@ -2945,12 +2996,12 @@ public class Room : MonoBehaviour
         UIOn();
     }
     
-    private void Product10()
+    private void Product11()
     {
         StartArena();
     }
     
-    private async void Product11()
+    private async void Product12()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2993,7 +3044,7 @@ public class Room : MonoBehaviour
         UIOn();
     }
 
-    private async void Product12()
+    private async void Product13()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();

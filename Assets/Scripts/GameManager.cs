@@ -1183,24 +1183,32 @@ public class GameManager : Singleton<GameManager>
                     playerInfo.playerId = ConstValues.Berserker;
                     AddDashSkill(ConstValues.BerserkerDash, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey1));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey2));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey3));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey4));
                     break;
                 
                 case 1:
                     playerInfo.playerId = ConstValues.Gunner;
                     AddDashSkill(ConstValues.GunnerDash, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.GunnerDash, dashKey));
+                    playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey1));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey2));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey3));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey4));
                     break;
                 
                 case 2:
                     playerInfo.playerId = ConstValues.Fighter;
                     AddDashSkill(ConstValues.FighterDash, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterDash, dashKey));
+                    playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterLightningKick, skillKey1));
+                    playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterLightningPunch, skillKey2));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey3));
+                    playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey4));
                     break;
             }
-            playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey1));
-            playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey2));
-            playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey3));
-            playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey4));
             saveData.playerInfoList.Add(playerInfo);
         }
     }

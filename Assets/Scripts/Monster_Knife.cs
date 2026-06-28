@@ -469,7 +469,6 @@ public class Monster_Knife : Monster
         MoveStateSetting(EMoveState.Stopping);
             
         dieCancellation = new CancellationTokenSource();
-
         for (int i = 0; i < count; i++)
         {
             SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);

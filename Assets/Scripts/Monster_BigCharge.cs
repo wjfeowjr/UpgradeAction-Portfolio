@@ -124,87 +124,79 @@ public class Monster_BigCharge : Monster
     // 등장(연출 포함)
     public override async void Appear(Action<string, EMonsterType> bossProduct)
     {
-        if (true)
-        {
-            stateCancellation = new CancellationTokenSource();
-            await UniTask.WaitUntil(() => TableManager.Instance.monsterTable.Monster.Count > 0);
-            await UniTask.WaitUntil(() => basicStat.id != default);
-
-            StandHitBox();
-            StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
-            MoveStateSetting(EMoveState.Stopping);
-            LandingStateSetting(ELandingState.Air);
-            immortal = true;
-            GravityChange(myGravity);
-
-            foreach (var mySpriteRenderer in mySpriteRenderers)
-                mySpriteRenderer.enabled = false;
-
-            var meteor = SpawnObject($"{basicStat.id}_{ConstValues.Meteor}", centerPos);
-            float dropForce = 20.0f;
-            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
-            await UniTask.WaitUntil(() => landingState == ELandingState.Ground);
-
-            foreach (var mySpriteRenderer in mySpriteRenderers)
-                mySpriteRenderer.enabled = true;
+        stateCancellation = new CancellationTokenSource();
             
-            meteor.SetActive(false);
-            
-            LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+        StandHitBox();
+        StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
+        MoveStateSetting(EMoveState.Stopping);
+        LandingStateSetting(ELandingState.Air);
+        immortal = true;
+        GravityChange(myGravity);
 
-            SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
-            StateSetting(ENormalState.AppearEnd, ConstValues.AppearEnd, ConstValues.AppearEnd);
-            if (await NormalDelay(1.0f, stateCancellation).SuppressCancellationThrow())
-                return;
+        foreach (var mySpriteRenderer in mySpriteRenderers)
+            mySpriteRenderer.enabled = false;
+
+        transform.position = new Vector2(transform.position.x, transform.position.y + 10);
+
+        var meteor = SpawnObject($"{basicStat.id}_{ConstValues.Meteor}", centerPos);
+        float dropForce = 20.0f;
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
+        if(await WaitUntilDelay(()=> landingState == ELandingState.Ground, stateCancellation).SuppressCancellationThrow())
+            return;
+
+        foreach (var mySpriteRenderer in mySpriteRenderers)
+            mySpriteRenderer.enabled = true;
+            
+        meteor.SetActive(false);
+            
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+
+        SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
+        StateSetting(ENormalState.AppearEnd, ConstValues.AppearEnd, ConstValues.AppearEnd);
+        if (await NormalDelay(1.0f, stateCancellation).SuppressCancellationThrow())
+            return;
                 
-            CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
-            await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
-            FirstCoolTimeReduce();
-            IdleOrMove();
-            immortal = false;
-            bossProduct?.Invoke(basicStat.name, monsterType);
-        }
+        CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
+        await UniTask.WaitUntil(() => GameManager.Instance.ControlStart);
+        FirstCoolTimeReduce();
+        IdleOrMove();
+        immortal = false;
+        bossProduct?.Invoke(basicStat.name, monsterType);
     }
     
     public override async void Die()
     {
         base.Die();
         
-        if (true)
+        CancelMotion();
+        ClearObjectList(buffObject);
+        isDie = true;
+
+        int count = 15;
+        var delay = 0.12f;
+        StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
+        MoveStateSetting(EMoveState.Stopping);
+            
+        dieCancellation = new CancellationTokenSource();
+        for (int i = 0; i < count; i++)
         {
-            CancelMotion();
-            ClearObjectList(buffObject);
-            isDie = true;
-            //removeAction?.Invoke();
-            //GameManager.Instance.RemoveMonster(this);
-            
-            var delay = 0.12f;
-            StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
-            MoveStateSetting(EMoveState.Stopping);
-            
-            dieCancellation = new CancellationTokenSource();
-            while (true)
-            {
-                SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
-                GameManager.Instance.CameraShake(0.1f, 0.1f, 0.1f);
-                if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
-                    return;
-            }
+            SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
+            GameManager.Instance.CameraShake(0.1f, 0.1f, 0.1f);
+            if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
+                return;
         }
+        DieAirborne(new Vector2(transform.position.x, transform.position.y));
     }
 
-    public void DieAirborne(Vector2 endPos)
+    private void DieAirborne(Vector2 endPos)
     {
         dieCancellation?.Cancel();
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-        //removeAction?.Invoke();
-        //GameManager.Instance.RemoveMonster(this);
         Vector2 start = transform.position;
         Vector2 end = endPos;
         float travelTime = 0.6f;
         Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
         Airborne(velocity.x, velocity.y, true);
-        //myRigidbody.linearVelocity = velocity;
         goldAction?.Invoke(myStat.gold, centerPos.position);
     }
 }
