@@ -3357,7 +3357,7 @@ public class Room : MonoBehaviour
     {
         switch (keyId)
         {
-            case ConstValues.KeyForest:
+            case ConstValues.KeyDungeon:
                 await OpenDoorProduct1(openAction);
                 break;
             case ConstValues.KeyMine:
@@ -3377,14 +3377,14 @@ public class Room : MonoBehaviour
         UIOff();
         GameManager.Instance.CurPlayer.ForceProduct();
         
-        if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
+        if (await GameManager.Instance.DialogueMove(-1.5f).SuppressCancellationThrow())
             return; 
         
         var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker);
         var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner);
         
-        berserker.Flip(-1);
-        gunner.Flip(-1);
+        berserker.Flip(1);
+        gunner.Flip(1);
         
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;

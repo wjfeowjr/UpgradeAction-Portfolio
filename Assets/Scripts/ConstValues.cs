@@ -595,7 +595,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string Mine = "Mine";
     
     // 아이템
-    public const string KeyForest = "Key_Forest";
+    public const string KeyDungeon = "Key_Dungeon";
     public const string KeyMine = "Key_Mine";
     public const string SteelPlate = "SteelPlate";
     public const string IronWheel = "IronWheel";

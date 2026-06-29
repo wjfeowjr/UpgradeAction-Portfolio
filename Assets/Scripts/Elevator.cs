@@ -495,7 +495,7 @@ public class Elevator : InteractionController, IMovingPlatform
             return;
 
         isPlayerTouch = false;
-        GameManager.Instance.SaveGame();
+        //GameManager.Instance.SaveGame();
     }
 
     // 레버: 해당 층으로 직행 호출 (현재 층과 다를 때만 작동)
