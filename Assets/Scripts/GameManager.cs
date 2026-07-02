@@ -477,6 +477,9 @@ public class RoomInfo
     public string visitedInCells;                                    // 방문한 구역 내부
     public List<string> visitedShortcutCells = new List<string>();   // 방문한 숏컷
 
+    public List<bool> hiddenAreaDiscovered = new List<bool>();       // 숨겨진 구역 발견 여부
+    public List<string> visitedHiddenCells = new List<string>();     // 발견 후 카메라 시야로 공개된 숨겨진 구역 셀
+
     // 발견(공개)된 미니맵 오브젝트 종류 집합. 종류가 늘어도 이 리스트 하나로 관리한다.
     public List<EMinimapObjectType> revealedMinimapObjects = new List<EMinimapObjectType>();
 

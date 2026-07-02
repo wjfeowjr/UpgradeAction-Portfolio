@@ -287,7 +287,7 @@ public abstract class Player : Character
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
-        UpdateCameraLimit();
+        //UpdateCameraLimit();
         UpdateJumpDown();
     }
 

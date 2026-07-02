@@ -69,6 +69,15 @@ public class Room : MonoBehaviour
 
     [SerializeField] private Transform[] eventCameraPos;
 
+    [Header("카메라 시야 확장 존")]
+    [SerializeField] private CameraExpandZone[] cameraExpandZones;
+
+    [Header("미니맵 숨겨진 구역")]
+    [SerializeField] private HiddenArea[] hiddenAreas;
+
+    [Header("투명벽")]
+    [SerializeField] private TransparentWall[] transparentWalls;
+
     [SerializeField] private SaveObject saveObject;
     [SerializeField] private PortalObject portalObject;
     [SerializeField] private MerchantObject merchantObject;
@@ -194,6 +203,20 @@ public class Room : MonoBehaviour
                 targetMap.ClearAllTiles();
             }
         }
+
+        // 숨겨진 구역 미니맵 타일 캐싱 및 숨김
+        if (hiddenAreas != null)
+        {
+            foreach (var hiddenArea in hiddenAreas)
+                hiddenArea.CacheTiles();
+        }
+
+        // 투명벽 타일 좌표 캐싱 및 색상 잠금 해제
+        if (transparentWalls != null)
+        {
+            foreach (var wall in transparentWalls)
+                wall.Init();
+        }
     }
 
     private void Update()
@@ -201,7 +224,72 @@ public class Room : MonoBehaviour
         if (roomGameObject.activeSelf)
         {
             RevealCellsInView();
+            UpdateCameraExpandZones();
+            CheckHiddenAreas();
+            CheckTransparentWalls();
         }
+    }
+
+    // 플레이어가 숨겨진 구역에 들어서는 순간 발견 처리한다
+    private void CheckHiddenAreas()
+    {
+        if (hiddenAreas == null || hiddenAreas.Length == 0)
+            return;
+
+        var curPlayer = GameManager.Instance.CurPlayer;
+        if (!curPlayer || !curPlayer.gameObject.activeSelf)
+            return;
+
+        foreach (var hiddenArea in hiddenAreas)
+        {
+            if (hiddenArea.CheckDiscover(curPlayer.CenterPos.position))
+            {
+                SaveHiddenAreaData();
+                GameManager.Instance.SaveGame();
+            }
+        }
+    }
+
+    // 플레이어가 투명벽에 닿아 있는 동안 반투명 처리한다 (순수 연출, 발견 처리는 CheckHiddenAreas가 담당)
+    private void CheckTransparentWalls()
+    {
+        if (transparentWalls == null || transparentWalls.Length == 0)
+            return;
+
+        var curPlayer = GameManager.Instance.CurPlayer;
+        if (!curPlayer || !curPlayer.gameObject.activeSelf)
+            return;
+
+        foreach (var wall in transparentWalls)
+            wall.CheckTouch(curPlayer.CenterPos.position);
+    }
+
+    // 플레이어가 시야 확장 존 안에 있으면 해당 방향의 카메라 리밋을 서서히 넓히고, 벗어나면 되돌린다
+    private void UpdateCameraExpandZones()
+    {
+        if (cameraExpandZones == null || cameraExpandZones.Length == 0)
+            return;
+
+        var curPlayer = GameManager.Instance.CurPlayer;
+        if (!curPlayer || !curPlayer.gameObject.activeSelf)
+            return;
+
+        // 오프셋이 변하는 동안에만 리밋을 다시 계산한다
+        bool changed = false;
+        foreach (var zone in cameraExpandZones)
+            changed |= zone.UpdateExpand(curPlayer.CenterPos.position);
+
+        if (!changed)
+            return;
+
+        var maxLimit = firstMaxLimit;
+        var minLimit = firstMinLimit;
+        foreach (var zone in cameraExpandZones)
+        {
+            minLimit.x -= zone.LeftOffset;
+            maxLimit.x += zone.RightOffset;
+        }
+        GameManager.Instance.MainCamera.SetCameraLimit(maxLimit, minLimit);
     }
 
     // 빠른 세이브 이동
@@ -281,6 +369,7 @@ public class Room : MonoBehaviour
         SaveVisitedFrameCells();
         SaveVisitedInCells();
         SaveVisitedShortcutCells();
+        SaveHiddenAreaData();
     }
 
     public void ObjectActive(bool active)
@@ -1407,6 +1496,13 @@ public class Room : MonoBehaviour
         firstMaxLimit = maxLimit;
         firstMinLimit = minLimit;
         GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
+
+        // 방 진입 시 리밋이 초기화되므로, 시야 확장 존 오프셋도 같이 초기화한다
+        if (cameraExpandZones != null)
+        {
+            foreach (var zone in cameraExpandZones)
+                zone.ResetExpand();
+        }
     }
 
     public float SetCenterX()
@@ -1904,6 +2000,18 @@ public class Room : MonoBehaviour
                 }
             }
         }
+
+        // 숨겨진 구역: 발견 여부와 공개됐던 셀 복원
+        if (hiddenAreas != null)
+        {
+            for (int i = 0; i < hiddenAreas.Length; i++)
+            {
+                if (i < roomInfo.hiddenAreaDiscovered.Count)
+                    hiddenAreas[i].SetDiscovered(roomInfo.hiddenAreaDiscovered[i]);
+                if (i < roomInfo.visitedHiddenCells.Count)
+                    hiddenAreas[i].LoadVisitedCells(roomInfo.visitedHiddenCells[i]);
+            }
+        }
     }
     // 3. 카메라 뷰 영역에 조금이라도 겹치면 활성화
     private void RevealCellsInView()
@@ -2074,6 +2182,17 @@ public class Room : MonoBehaviour
         }
         if (shortcutNew)
             SaveVisitedShortcutCells();
+
+        // 숨겨진 구역: 발견된 구역만 카메라 시야에 들어온 타일부터 점진 공개
+        if (hiddenAreas != null)
+        {
+            bool hiddenNew = false;
+            foreach (var hiddenArea in hiddenAreas)
+                hiddenNew |= hiddenArea.RevealCellsInView(viewRect, halfFrameCell);
+
+            if (hiddenNew)
+                SaveHiddenAreaData();
+        }
     }
 
     // 방문 테두리 저장
@@ -2148,6 +2267,20 @@ public class Room : MonoBehaviour
             }
             // 각 인덱스별로 하나의 문자열로 묶어 리스트에 추가
             roomInfo.visitedShortcutCells.Add(sb.ToString());
+        }
+    }
+    // 숨겨진 구역 저장 (발견 여부 + 공개된 셀)
+    private void SaveHiddenAreaData()
+    {
+        if (roomInfo == null || hiddenAreas == null)
+            return;
+
+        roomInfo.hiddenAreaDiscovered.Clear();
+        roomInfo.visitedHiddenCells.Clear();
+        foreach (var hiddenArea in hiddenAreas)
+        {
+            roomInfo.hiddenAreaDiscovered.Add(hiddenArea.IsDiscovered);
+            roomInfo.visitedHiddenCells.Add(hiddenArea.SaveVisitedCells());
         }
     }
     // 숏컷 셀 로드
@@ -2820,10 +2953,10 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
-            if (await GameManager.Instance.DialogueMove(-1.5f).SuppressCancellationThrow())
+            if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
                 return; 
             
-            gunner.Flip(1);
+            gunner.Flip(-1);
             berserkerSpeechPos = berserker.SpeechPos.position;
             gunnerSpeechPos = gunner.SpeechPos.position;
             knifeSpeechPos = bosses[0].SpeechPos.position;
