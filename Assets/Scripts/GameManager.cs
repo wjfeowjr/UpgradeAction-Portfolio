@@ -3568,6 +3568,8 @@ public class GameManager : Singleton<GameManager>
 
             if (await gunner.EpisodeMove(gunnerPos, gunner.BasicStat.moveSpeed, finishDir).SuppressCancellationThrow())
                 return;
+            
+            gunner.Flip(-finishDir);
         }
 
         if (fighter.gameObject.activeSelf)
@@ -3578,6 +3580,8 @@ public class GameManager : Singleton<GameManager>
 
             if (await fighter.EpisodeMove(fighterPos, fighter.BasicStat.moveSpeed, finishDir).SuppressCancellationThrow())
                 return;
+            
+            fighter.Flip(-finishDir);
         }
     }
     

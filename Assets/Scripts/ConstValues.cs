@@ -166,6 +166,11 @@ public class ConstValues : Singleton<ConstValues>
     public const string Fail = "Fail";
     public const string Start = "Start";
     
+    public const string Upset1 = "Upset1";
+    public const string Upset2 = "Upset2";
+    public const string FightPose1 = "FightPose1";
+    public const string FightPose2 = "FightPose2";
+    
     // 하드코딩으로 적용되는 특성 ID
     public const string SwordBeam = "SwordBeam";
     public const string ComboSlash = "ComboSlash";

@@ -1775,8 +1775,8 @@ public class Room : MonoBehaviour
     
     private async void SetBgm(bool immediately)
     {
-        if (isBossRoom)
-            return;
+        // if (isBossRoom)
+        //     return;
         
         roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
         if (roomsData == null)
@@ -2824,27 +2824,27 @@ public class Room : MonoBehaviour
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10130));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10200));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10131));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10201));
         await NextDialog(speechFrame1);
         
         npc[0].Flip(-1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10132));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10202));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10133));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10203));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10134));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10204));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10135));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10205));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10136));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10206));
         await NextDialog(speechFrame1);
         
         npc[0].SpawnObject(ConstValues.BangEffect, npc[0].CenterPos.position);
@@ -2885,19 +2885,99 @@ public class Room : MonoBehaviour
         // 거대권투 보스 소환
         SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.Boss);
         
-        UIOn();
+        // 대화하는 주체들
+        Vector2 berserkerSpeechPos;
+        Vector2 gunnerSpeechPos;
+        Vector2 chargeSpeechPos;
         
+        var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+        var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+        var chargeMonster = bosses[0].GetComponent<Monster_BigCharge>();
+
+        var speechFrame1 = SpeechFrame1();
+        speechFrame1.gameObject.SetActive(false);
+
+        if (roomInfo.roomProduct[0].count == 0)
+        {
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+
+            if (await GameManager.Instance.DialogueMove(-1.5f).SuppressCancellationThrow())
+                return; 
+            
+            berserkerSpeechPos = berserker.SpeechPos.position;
+            gunnerSpeechPos = gunner.SpeechPos.position;
+            chargeSpeechPos = bosses[0].SpeechPos.position;
+            
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+
+            SpawnSpeechFrame(speechFrame1, chargeSpeechPos, GameManager.Instance.GetTalk(10300));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, chargeSpeechPos, GameManager.Instance.GetTalk(10301));
+            await NextDialog(speechFrame1);
+
+            SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10302));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10303));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10304));
+            await NextDialog(speechFrame1);
+            
+            // 음악 끊기고 정적 + 권투맨 표정변화
+            speechFrame1.gameObject.SetActive(false);
+            StopBGM();
+            chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Upset1);
+            if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+
+            // 권투맨 표정변화2
+            chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.Upset2);
+            SpawnSpeechFrame(speechFrame1, chargeSpeechPos, GameManager.Instance.GetTalk(10305));
+            await NextDialog(speechFrame1);
+            
+            // 권투맨 준비자세
+            PlayBGM(ConstValues.BGMMiniBoss, true);
+            PlaySound(ConstValues.PlayerScream);
+            CameraShake(0.3f, 0.4f, 1.0f);
+            chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.FightPose2);
+            SpawnSpeechFrame(speechFrame1, chargeSpeechPos, GameManager.Instance.GetTalk(10306));
+            await NextDialog(speechFrame1);
+
+            // 게임 시작
+            GameManager.Instance.DialogueEnd();
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+            
+            roomInfo.roomProduct[0].count += 1;
+            GameManager.Instance.SaveGame();
+        }
+        else
+        {
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+        }
+        
+        UIOn();
         // 보스 죽음
         if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
-
+        
         GameManager.Instance.ControlStart = false;
+        GameManager.Instance.CurPlayer.ForceProduct();
         StopBGM();
         
         if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        // 연출이 있다면 이곳에 넣기
+        chargeSpeechPos = bosses[0].SpeechPos2.position;
+        SpawnSpeechFrame(speechFrame1, chargeSpeechPos, GameManager.Instance.GetTalk(10307));
+        if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        speechFrame1.gameObject.SetActive(false);
 
         // 문 열기
         PlayBGM(roomsData.bgm, true);
@@ -2956,7 +3036,6 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
                 return; 
             
-            gunner.Flip(-1);
             berserkerSpeechPos = berserker.SpeechPos.position;
             gunnerSpeechPos = gunner.SpeechPos.position;
             knifeSpeechPos = bosses[0].SpeechPos.position;
@@ -2964,20 +3043,26 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
 
-            SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10143));
+            SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10500));
             await NextDialog(speechFrame1);
             
-            SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10144));
+            SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10501));
             await NextDialog(speechFrame1);
             
-            SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10145));
+            SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10502));
             await NextDialog(speechFrame1);
             
-            SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10146));
+            SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10503));
             await NextDialog(speechFrame1);
             
             bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
-            SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10147));
+            SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10504));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10505));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10506));
             await NextDialog(speechFrame1);
 
             // 게임 시작
@@ -3000,6 +3085,7 @@ public class Room : MonoBehaviour
             return;
 
         GameManager.Instance.ControlStart = false;
+        GameManager.Instance.CurPlayer.ForceProduct();
         StopBGM();
         if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
@@ -3007,10 +3093,10 @@ public class Room : MonoBehaviour
         bosses[0].EventStand();
         knifeSpeechPos = bosses[0].SpeechPos.position;
         bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
-        SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10148));
+        SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10507));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10149));
+        SpawnSpeechFrame(speechFrame1, knifeSpeechPos, GameManager.Instance.GetTalk(10508));
         await NextDialog(speechFrame1);
         await knife.EventExit();
         
@@ -3048,10 +3134,6 @@ public class Room : MonoBehaviour
         var berserkerSpeechPos = berserker.SpeechPos.position;
         var gunnerSpeechPos = gunner.SpeechPos.position;
         var fighterSpeechPos = fighter.SpeechPos.position;
-        
-        berserker.Flip(-1);
-        gunner.Flip(-1);
-        fighter.Flip(-1);
 
         var miner = npc[0];
         var minerSpeechPos = npc[0].SpeechPos.position;
@@ -3059,31 +3141,31 @@ public class Room : MonoBehaviour
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10161));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10700));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10162));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10701));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10163));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10702));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10164));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10703));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10165));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10704));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10166));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10705));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10167));
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10706));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10168));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10707));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10169));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10708));
         await NextDialog(speechFrame1);
         
         // 입구 보여줌, 카메라 위치 조정
@@ -3098,28 +3180,28 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10170));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10709));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10171));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10710));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10172));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10711));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10173));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10712));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10174));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10713));
         await NextDialog(speechFrame1);
 
         var itemName1 = GameManager.Instance.GetItemTalk(ConstValues.SteelPlate);
         var itemName2 = GameManager.Instance.GetItemTalk(ConstValues.IronWheel);
         var itemName3 = GameManager.Instance.GetItemTalk(ConstValues.MiniBooster);
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, string.Format(GameManager.Instance.GetTalk(10175), itemName1, itemName2, itemName3));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, string.Format(GameManager.Instance.GetTalk(10714), itemName1, itemName2, itemName3));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10176));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10715));
         await NextDialog(speechFrame1);
         
         // 연출 종료
@@ -3515,10 +3597,7 @@ public class Room : MonoBehaviour
         
         var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker);
         var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner);
-        
-        berserker.Flip(1);
-        gunner.Flip(1);
-        
+
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
@@ -3528,24 +3607,24 @@ public class Room : MonoBehaviour
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10137));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10400));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10138));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10401));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10139));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10402));
         await NextDialog(speechFrame1);
         
         await openAction();
 
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10140));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10403));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10141));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10404));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10142));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10405));
         await NextDialog(speechFrame1);
         
         GameManager.Instance.DialogueEnd();
@@ -3565,9 +3644,6 @@ public class Room : MonoBehaviour
         var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker);
         var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner);
 
-        berserker.Flip(-1);
-        gunner.Flip(-1);
-        
         if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
@@ -3578,42 +3654,42 @@ public class Room : MonoBehaviour
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10150));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10600));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10151));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10601));
         await NextDialog(speechFrame1);
 
         await openAction();
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10152));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10602));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10153));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10603));
         await NextDialog(speechFrame1);
 
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10154));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10604));
         await NextDialog(speechFrame1);
         
         npc[0].Flip(-1);
-        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10155));
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10605));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10156));
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10606));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10157));
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10607));
         await NextDialog(speechFrame1);
         
         berserker.Flip(1);
         gunner.Flip(1);
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10158));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10608));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10159));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10609));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10160));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10610));
         await NextDialog(speechFrame1);
         
         npc[0].SpawnObject(ConstValues.BangEffect, npc[0].CenterPos.position);
@@ -3707,16 +3783,16 @@ public class Room : MonoBehaviour
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10177));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10800));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10178));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10801));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10179));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10802));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10180));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10803));
         await NextDialog(speechFrame1);
         
         UIOn();
@@ -3769,17 +3845,17 @@ public class Room : MonoBehaviour
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
 
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10181));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10900));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10182));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10901));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10183));
+        SpawnSpeechFrame(speechFrame1, fighterSpeechPos, GameManager.Instance.GetTalk(10902));
         await NextDialog(speechFrame1);
         
         miner.CustomAnimTrigger(ENormalState.Idle, ConstValues.Point);
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10184));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10903));
         await NextDialog(speechFrame1);
         
         // 지진이 일어나는데 아무 일도 안 일어남
@@ -3793,10 +3869,10 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(delay4, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10185));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10904));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10186));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10905));
         if (await GameManager.Instance.NormalDelay(delay5, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
@@ -3819,7 +3895,7 @@ public class Room : MonoBehaviour
             return;
         
         miner.CustomAnimTrigger(ENormalState.Idle, ConstValues.Good);
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10187));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10906));
         if (await GameManager.Instance.NormalDelay(delay4, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
@@ -3907,35 +3983,35 @@ public class Room : MonoBehaviour
         var strongFrame = StrongFrame();
         strongFrame.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10188));
+        SpawnSpeechFrame(speechFrame1, minerSpeechPos, GameManager.Instance.GetTalk(10907));
         await NextDialog(speechFrame1);
 
         PlaySound($"{monsterBomb.BasicStat.id}_{ConstValues.Pattern}");
-        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10189));
+        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10908));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10190));
+        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10909));
         monsterBomb.EventThrowBomb(npc);
         if (await GameManager.Instance.NormalDelay(delay3, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
         PlaySound($"{monsterBomb.BasicStat.id}_{ConstValues.Pattern}");
-        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10191));
+        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10910));
         await NextDialog(speechFrame1);
         speechFrame1.SpeechEnd();
         
-        SpawnSpeechFrame(speechFrame2, monsterBomb.SpeechPos2.position, GameManager.Instance.GetTalk(10192));
+        SpawnSpeechFrame(speechFrame2, monsterBomb.SpeechPos2.position, GameManager.Instance.GetTalk(10911));
         await NextDialog(speechFrame2);
         speechFrame2.SpeechEnd();
         
         PlaySound($"{monsterBomb.BasicStat.id}_{ConstValues.Pattern}");
-        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10193));
+        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10912));
         await NextDialog(speechFrame1);
         speechFrame1.SpeechEnd();
         
         // 이벤트 쿵쿵
         monsterBomb.EventSmashGround();
-        SpawnSpeechFrame(strongFrame, new Vector2(monsterBomb.SpeechPos2.position.x - 2.0f, monsterBomb.SpeechPos2.position.y + 1.0f), GameManager.Instance.GetTalk(10194));
+        SpawnSpeechFrame(strongFrame, new Vector2(monsterBomb.SpeechPos2.position.x - 2.0f, monsterBomb.SpeechPos2.position.y + 1.0f), GameManager.Instance.GetTalk(10913));
 
         if (await GameManager.Instance.NormalDelay(delay4, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
@@ -3953,7 +4029,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(delay6, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10195));
+        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10914));
         await NextDialog(speechFrame1);
         speechFrame1.SpeechEnd();
 
@@ -4006,7 +4082,7 @@ public class Room : MonoBehaviour
             return;
         
         miner.CustomAnimTrigger(ENormalState.Idle, ConstValues.Point);
-        SpawnSpeechFrame(strongFrame, new Vector2(miner.SpeechPos.position.x, miner.SpeechPos.position.y + 2.0f), GameManager.Instance.GetTalk(10196));
+        SpawnSpeechFrame(strongFrame, new Vector2(miner.SpeechPos.position.x, miner.SpeechPos.position.y + 2.0f), GameManager.Instance.GetTalk(10915));
         await NextDialog(strongFrame);
         strongFrame.SpeechEnd();
 
@@ -4040,7 +4116,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(delay10, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        SpawnSpeechFrame(speechFrame1, fighter.SpeechPos.position, GameManager.Instance.GetTalk(10197));
+        SpawnSpeechFrame(speechFrame1, fighter.SpeechPos.position, GameManager.Instance.GetTalk(10916));
         await NextDialog(speechFrame1);
         speechFrame1.SpeechEnd();
 
@@ -4051,16 +4127,16 @@ public class Room : MonoBehaviour
             return;
         
         PlaySound($"{monsterBomb.BasicStat.id}_{ConstValues.Pattern}");
-        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10198));
+        SpawnSpeechFrame(speechFrame1, monsterBomb.SpeechPos.position, GameManager.Instance.GetTalk(10917));
         await NextDialog(speechFrame1);
         speechFrame1.SpeechEnd();
         
         PlaySound($"{monsterBomb.BasicStat.id}_laugh");
-        SpawnSpeechFrame(speechFrame3, monsterBomb.SpeechPos2.position, GameManager.Instance.GetTalk(10199));
+        SpawnSpeechFrame(speechFrame3, monsterBomb.SpeechPos2.position, GameManager.Instance.GetTalk(10918));
         await NextDialog(speechFrame3);
         speechFrame3.SpeechEnd();
         
-        SpawnSpeechFrame(speechFrame1, fighter.SpeechPos.position, GameManager.Instance.GetTalk(10200));
+        SpawnSpeechFrame(speechFrame1, fighter.SpeechPos.position, GameManager.Instance.GetTalk(10919));
         await NextDialog(speechFrame1);
         speechFrame1.SpeechEnd();
 

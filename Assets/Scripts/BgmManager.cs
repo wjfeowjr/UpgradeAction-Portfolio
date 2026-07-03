@@ -61,7 +61,10 @@ public class BgmManager : Singleton<BgmManager>
         myAudioSource.Stop();
 
         if (string.IsNullOrWhiteSpace(uniqueId))
+        {
+            myAudioSource.volume = firstVolume;
             return;
+        }
         
         if(!immediately)
             await UniTask.Delay(TimeSpan.FromSeconds(0.5f));

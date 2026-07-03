@@ -476,22 +476,19 @@ public class Monster_Knife : Monster
             if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
                 return;
         }
-        DieAirborne();
+        DieAirborne(new Vector2(RayCenterVector().x, transform.position.y));
     }
 
-    private void DieAirborne()
+    private void DieAirborne(Vector2 endPos)
     {
         dieCancellation?.Cancel();
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
-        float xVelocity = 6.0f;
-        float yVelocity = 8.0f;
-
-        if (transform.localScale.x > 0)
-            xVelocity = -6.0f;
-        
-        Airborne(xVelocity, yVelocity, true);
+        Vector2 start = transform.position;
+        Vector2 end = endPos;
+        float travelTime = 0.6f;
+        Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
+        Airborne(velocity.x, velocity.y, true);
         goldAction?.Invoke(myStat.gold, centerPos.position);
-        isDie = true;
     }
 
     public async UniTask EventExit()

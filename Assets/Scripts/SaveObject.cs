@@ -126,8 +126,8 @@ public class SaveObject : InteractionController
     {
         List<int> selectIdx = new List<int>
         {
-            20011,
-            20012
+            25400,
+            25401
         };
         SpawnInteractionSelect(selectIdx);
     }

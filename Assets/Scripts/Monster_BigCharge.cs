@@ -185,7 +185,7 @@ public class Monster_BigCharge : Monster
             if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
                 return;
         }
-        DieAirborne(new Vector2(transform.position.x, transform.position.y));
+        DieAirborne(new Vector2(RayCenterVector().x, transform.position.y));
     }
 
     private void DieAirborne(Vector2 endPos)
@@ -194,7 +194,7 @@ public class Monster_BigCharge : Monster
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", diePos);
         Vector2 start = transform.position;
         Vector2 end = endPos;
-        float travelTime = 0.6f;
+        float travelTime = 0.4f;
         Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
         Airborne(velocity.x, velocity.y, true);
         goldAction?.Invoke(myStat.gold, centerPos.position);

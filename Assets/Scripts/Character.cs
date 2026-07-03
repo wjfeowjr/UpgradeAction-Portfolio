@@ -352,7 +352,6 @@ public abstract class Character : InteractionController
 
     // 상태 설정
     protected abstract void StateSetting(ENormalState changeNormalState, string triggerName, string animId);
-
     protected abstract void StateCheck();
     protected abstract void StateRecovery();
 
