@@ -11,6 +11,7 @@ public class HiddenArea : MonoBehaviour
 {
     [Header("구역 진입 판정")]
     [SerializeField] private BoxCollider2D areaCollider;
+    [SerializeField] private bool ignoreHeight;   // 세로 범위 무시: 어떤 높이로 지나가든 x축만 걸치면 발견
 
     [Header("이 구역 전용 미니맵 타일맵(테두리/내부)")]
     [SerializeField] private Tilemap[] hiddenTileMaps;
@@ -43,13 +44,14 @@ public class HiddenArea : MonoBehaviour
         }
     }
 
-    // 플레이어가 구역에 처음 들어온 순간 발견 처리하고 true를 반환
-    public bool CheckDiscover(Vector2 playerPos)
+    // 플레이어가 구역을 처음 지나가는 순간 발견 처리하고 true를 반환.
+    // 콜라이더 안에 있을 때뿐 아니라, 빠르게 지나쳐 넘어가기만 해도 판정된다
+    public bool CheckDiscover(Vector2 prevPos, Vector2 curPos)
     {
         if (isDiscovered || !areaCollider)
             return false;
 
-        if (!areaCollider.OverlapPoint(playerPos))
+        if (!ColliderCrossUtil.CrossedOrInside(areaCollider, prevPos, curPos, ignoreHeight))
             return false;
 
         return Discover();

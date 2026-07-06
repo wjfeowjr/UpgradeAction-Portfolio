@@ -2663,8 +2663,8 @@ public abstract class Character : InteractionController
     
     public async void ForceIdle()
     {
-        if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-            return;
+        // if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+        //     return;
         
         MoveStateSetting(EMoveState.Stopping);
         CancelMotion();

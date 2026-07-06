@@ -1184,7 +1184,7 @@ public class GameManager : Singleton<GameManager>
             {
                 case 0:
                     playerInfo.playerId = ConstValues.Berserker;
-                    AddDashSkill(ConstValues.BerserkerDash, playerInfo);
+                    AddDefaultSkill(ConstValues.BerserkerDash, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.BerserkerDash, dashKey));
                     playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey1));
                     playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey2));
@@ -1194,7 +1194,8 @@ public class GameManager : Singleton<GameManager>
                 
                 case 1:
                     playerInfo.playerId = ConstValues.Gunner;
-                    AddDashSkill(ConstValues.GunnerDash, playerInfo);
+                    AddDefaultSkill(ConstValues.GunnerDash, playerInfo);
+                    AddDefaultSkill(ConstValues.GunnerGrenade, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.GunnerDash, dashKey));
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.GunnerGrenade, skillKey1));
                     playerInfo.skillKeyList.Add(SetSkillKey(default, skillKey2));
@@ -1204,7 +1205,9 @@ public class GameManager : Singleton<GameManager>
                 
                 case 2:
                     playerInfo.playerId = ConstValues.Fighter;
-                    AddDashSkill(ConstValues.FighterDash, playerInfo);
+                    AddDefaultSkill(ConstValues.FighterDash, playerInfo);
+                    AddDefaultSkill(ConstValues.FighterLightningKick, playerInfo);
+                    AddDefaultSkill(ConstValues.FighterLightningPunch, playerInfo);
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterDash, dashKey));
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterLightningKick, skillKey1));
                     playerInfo.skillKeyList.Add(SetSkillKey(ConstValues.FighterLightningPunch, skillKey2));
@@ -1365,8 +1368,10 @@ public class GameManager : Singleton<GameManager>
     
     private void DefaultRelicSetting()
     {
+        // 최초에 슬롯 두 개 추가
         foreach (var playerInfo in saveData.playerInfoList)
         {
+            playerInfo.relicList.Add(default);
             playerInfo.relicList.Add(default);
         }
     }
@@ -1410,24 +1415,12 @@ public class GameManager : Singleton<GameManager>
         return keyCode;
     }
 
-    private void AddDashSkill(string id, PlayerInfo playerInfo)
+    private void AddDefaultSkill(string id, PlayerInfo playerInfo)
     {
-        // 이미 가지고 있는 스킬이라면 무시해버린다
-        if (playerInfo.skillList.Exists(x => x.skillId == id))
-            return;
-
         Skill newSkill = new Skill();
         newSkill.skillId = id;
         newSkill.attributeList = new List<string>();
         playerInfo.skillList.Add(newSkill);
-        
-        var dashSkill = playerInfo.skillList[^1];
-        playerInfo.skillList.RemoveAt(playerInfo.skillList.Count - 1);
-        playerInfo.skillList.Insert(0, dashSkill);
-        
-        RefreshSkill();
-        // 게임 저장
-        SaveGame();
     }
 
     public void AddNewSkill(string id)

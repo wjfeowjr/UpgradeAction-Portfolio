@@ -476,10 +476,13 @@ public class Attack : MonoBehaviour
         // 3. 무적/사망 상태 필터링
         if (!IsHittable(hitTarget))
         {
-            // 지속형(duplicate) 공격에서 무적/회피 타겟이 안으로 들어온 경우,
+            // 무적/회피 타겟이 판정 안으로 들어온 경우,
             // 무적/회피가 풀릴 때까지 myCollider를 비활성화해 두고 CheckImmortalWait에서 재활성화한다.
-            // (무적 돌진 등으로 레이저 내부에 안착했을 때 무적/회피 해제 후에도 피격 갱신이 가능하도록)
-            if (attackInfo.duplicate && !attackInfo.ignoreImmortal && (hitTarget.Immortal || hitTarget.Dodge))
+            // (무적 대시로 판정 내부에 안착했을 때 무적/회피 해제 후에도 피격 갱신이 가능하도록)
+            // 지속형(duplicate) 공격은 모든 대상에 적용, 단발성 공격은 플레이어 한정
+            // (플레이어의 공격이 무적 몬스터 하나 때문에 콜라이더를 꺼서 다른 몬스터를 못 때리는 부작용 방지)
+            if (!attackInfo.ignoreImmortal && (hitTarget.Immortal || hitTarget.Dodge) &&
+                (attackInfo.duplicate || hitTarget is Player))
             {
                 immortalWaitTarget = hitTarget;
                 if (myCollider)

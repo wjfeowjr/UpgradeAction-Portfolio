@@ -137,6 +137,10 @@ public class Room : MonoBehaviour
     private Vector2 firstMaxLimit;
     private Vector2 firstMinLimit;
 
+    // 존 판정용 이전 프레임 플레이어 위치 (이동 선분 통과 검사에 사용)
+    private Vector2 prevPlayerPos;
+    private bool hasPrevPlayerPos;
+
     public string Id    => roomInfo.roomId;
     public string Place => GameManager.Instance.GetPlaceName(roomsData.place);
 
@@ -224,25 +228,44 @@ public class Room : MonoBehaviour
         if (roomGameObject.activeSelf)
         {
             RevealCellsInView();
-            UpdateCameraExpandZones();
-            CheckHiddenAreas();
-            CheckTransparentWalls();
+
+            // 존 판정은 이동 선분(이전 위치 → 현재 위치) 기준이므로 이전 위치를 함께 추적한다.
+            // 플레이어가 꺼져 있으면(포탈/패스트 트래블 연출 중) 추적을 끊어서,
+            // 텔레포트 전후 위치가 하나의 이동 선분으로 이어져 가짜 통과 판정이 생기는 것을 막는다
+            var curPlayer = GameManager.Instance.CurPlayer;
+            if (curPlayer && curPlayer.gameObject.activeSelf)
+            {
+                Vector2 playerPos = curPlayer.CenterPos.position;
+                if (!hasPrevPlayerPos)
+                    prevPlayerPos = playerPos;
+
+                UpdateCameraExpandZones(prevPlayerPos, playerPos);
+                CheckHiddenAreas(prevPlayerPos, playerPos);
+                CheckTransparentWalls(playerPos);
+
+                prevPlayerPos = playerPos;
+                hasPrevPlayerPos = true;
+            }
+            else
+            {
+                hasPrevPlayerPos = false;
+            }
+        }
+        else
+        {
+            hasPrevPlayerPos = false;
         }
     }
 
-    // 플레이어가 숨겨진 구역에 들어서는 순간 발견 처리한다
-    private void CheckHiddenAreas()
+    // 플레이어가 숨겨진 구역을 지나가는 순간 발견 처리한다
+    private void CheckHiddenAreas(Vector2 prevPos, Vector2 curPos)
     {
         if (hiddenAreas == null || hiddenAreas.Length == 0)
             return;
 
-        var curPlayer = GameManager.Instance.CurPlayer;
-        if (!curPlayer || !curPlayer.gameObject.activeSelf)
-            return;
-
         foreach (var hiddenArea in hiddenAreas)
         {
-            if (hiddenArea.CheckDiscover(curPlayer.CenterPos.position))
+            if (hiddenArea.CheckDiscover(prevPos, curPos))
             {
                 SaveHiddenAreaData();
                 GameManager.Instance.SaveGame();
@@ -251,45 +274,30 @@ public class Room : MonoBehaviour
     }
 
     // 플레이어가 투명벽에 닿아 있는 동안 반투명 처리한다 (순수 연출, 발견 처리는 CheckHiddenAreas가 담당)
-    private void CheckTransparentWalls()
+    private void CheckTransparentWalls(Vector2 playerPos)
     {
         if (transparentWalls == null || transparentWalls.Length == 0)
             return;
 
-        var curPlayer = GameManager.Instance.CurPlayer;
-        if (!curPlayer || !curPlayer.gameObject.activeSelf)
-            return;
-
         foreach (var wall in transparentWalls)
-            wall.CheckTouch(curPlayer.CenterPos.position);
+            wall.CheckTouch(playerPos);
     }
 
     // 플레이어가 시야 확장 존 안에 있으면 해당 방향의 카메라 리밋을 서서히 넓히고, 벗어나면 되돌린다
-    private void UpdateCameraExpandZones()
+    private void UpdateCameraExpandZones(Vector2 prevPos, Vector2 curPos)
     {
         if (cameraExpandZones == null || cameraExpandZones.Length == 0)
-            return;
-
-        var curPlayer = GameManager.Instance.CurPlayer;
-        if (!curPlayer || !curPlayer.gameObject.activeSelf)
             return;
 
         // 오프셋이 변하는 동안에만 리밋을 다시 계산한다
         bool changed = false;
         foreach (var zone in cameraExpandZones)
-            changed |= zone.UpdateExpand(curPlayer.CenterPos.position);
+            changed |= zone.UpdateExpand(prevPos, curPos);
 
         if (!changed)
             return;
 
-        var maxLimit = firstMaxLimit;
-        var minLimit = firstMinLimit;
-        foreach (var zone in cameraExpandZones)
-        {
-            minLimit.x -= zone.LeftOffset;
-            maxLimit.x += zone.RightOffset;
-        }
-        GameManager.Instance.MainCamera.SetCameraLimit(maxLimit, minLimit);
+        ApplyCameraLimit();
     }
 
     // 빠른 세이브 이동
@@ -1495,14 +1503,26 @@ public class Room : MonoBehaviour
         
         firstMaxLimit = maxLimit;
         firstMinLimit = minLimit;
-        GameManager.Instance.MainCamera.SetCameraLimit(firstMaxLimit, firstMinLimit);
 
-        // 방 진입 시 리밋이 초기화되므로, 시야 확장 존 오프셋도 같이 초기화한다
+        // 확장 존 상태는 초기화하지 않는다. 확장된 채 방을 나갔다 들어와도
+        // 복귀 존을 지나기 전까지는 넓혀진 시야가 유지된다
+        ApplyCameraLimit();
+    }
+
+    // 시야 확장 존의 현재 오프셋을 반영해 카메라 리밋을 적용
+    private void ApplyCameraLimit()
+    {
+        var maxLimit = firstMaxLimit;
+        var minLimit = firstMinLimit;
         if (cameraExpandZones != null)
         {
             foreach (var zone in cameraExpandZones)
-                zone.ResetExpand();
+            {
+                minLimit.x -= zone.LeftOffset;
+                maxLimit.x += zone.RightOffset;
+            }
         }
+        GameManager.Instance.MainCamera.SetCameraLimit(maxLimit, minLimit);
     }
 
     public float SetCenterX()
@@ -1637,9 +1657,12 @@ public class Room : MonoBehaviour
         {
             if (shortCutObjects[i].GetComponent<Shortcut_Crush>())
             {
-                var crush = shortCutObjects[i].GetComponent<Shortcut_Crush>();
-                crush.TargetRoom = shortCutRoom[idx];
-                idx += 1;
+                if(shortCutRoom.Length > 0)
+                {
+                    var crush = shortCutObjects[i].GetComponent<Shortcut_Crush>();
+                    crush.TargetRoom = shortCutRoom[idx];
+                    idx += 1;
+                }
             }
         }
         for (int i = 0; i < shortCutObjects.Length; i++)
@@ -1916,6 +1939,9 @@ public class Room : MonoBehaviour
                 break;
             case 13:
                 Product13();
+                break;
+            case 14:
+                Product14();
                 break;
         }
     }
@@ -2520,8 +2546,114 @@ public class Room : MonoBehaviour
         StartArena();
     }
     
-    // 태양과 대결
+    // 트리엔트와 대결
     private async void Product5()
+    {
+        GameManager.Instance.CurPlayer.ForceProduct();
+        GameManager.Instance.InitProductCancellation();
+        
+        UIOff();
+        BgmManager.Instance.DelayStop(0.1f);
+        float productDelay = 1.0f;
+        if (await GameManager.Instance.NormalDelay(productDelay, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        // 문 닫기
+        BossTileMapActive(true);
+        
+        float productDelay2 = 1.5f;
+        if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        PlayBGM(ConstValues.BGMBoss, true);
+        
+        // 트리엔트 소환
+        SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.Boss);
+
+        // // 대화하는 주체들
+        // Vector2 berserkerSpeechPos;
+        // Vector2 treeSpeechPos;
+        //
+        // var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+        // var tree = bosses[0].GetComponent<Monster_Tree>();
+        //
+        // var speechFrame1 = SpeechFrame1();
+        // speechFrame1.gameObject.SetActive(false);
+
+        // if (roomInfo.roomProduct[0].count == 0)
+        // {
+        //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        //         return;
+        //
+        //     if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
+        //         return; 
+        //     
+        //     berserkerSpeechPos = berserker.SpeechPos.position;
+        //     treeSpeechPos = bosses[0].SpeechPos.position;
+        //     
+        //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        //         return;
+        //
+        //     SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10500));
+        //     await NextDialog(speechFrame1);
+        //     
+        //     SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10501));
+        //     await NextDialog(speechFrame1);
+        //     
+        //     SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10502));
+        //     await NextDialog(speechFrame1);
+        //
+        //     bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+        //     SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10504));
+        //     await NextDialog(speechFrame1);
+        //     
+        //     SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10505));
+        //     await NextDialog(speechFrame1);
+        //     
+        //     SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10506));
+        //     await NextDialog(speechFrame1);
+        //
+        //     // 게임 시작
+        //     GameManager.Instance.DialogueEnd();
+        //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        //         return;
+        //     
+        //     roomInfo.roomProduct[0].count += 1;
+        //     GameManager.Instance.SaveGame();
+        // }
+        // else
+        // {
+        //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        //         return;
+        // }
+        
+        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        UIOn();
+        
+        // 보스 죽음
+        if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+
+        GameManager.Instance.ControlStart = false;
+        GameManager.Instance.CurPlayer.ForceProduct();
+        StopBGM();
+        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        // 연출이 있다면 이곳에 넣기
+
+        // 문 열기
+        PlayBGM(roomsData.bgm, true);
+        BossTileMapActive(false);
+        roomInfo.roomProduct[0].isFinish = true;
+        GameManager.Instance.SaveGame();
+        UIOn();
+    }
+    
+    // 태양과 대결
+    private async void Product6()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2809,7 +2941,7 @@ public class Room : MonoBehaviour
     }
 
     // 거너를 만남
-    private async void Product6()
+    private async void Product7()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2862,7 +2994,7 @@ public class Room : MonoBehaviour
     }
     
     // 거대 권투맨 대결
-    private async void Product7()
+    private async void Product8()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -2988,13 +3120,13 @@ public class Room : MonoBehaviour
     }
     
     // 아레나 대전
-    private void Product8()
+    private void Product9()
     {
         StartArena();
     }
     
     // 암살자와 대결
-    private async void Product9()
+    private async void Product10()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -3112,7 +3244,7 @@ public class Room : MonoBehaviour
     }
     
     // 광부를 만남
-    private async void Product10()
+    private async void Product11()
     {
         GameManager.Instance.InitProductCancellation();
         UIOff();
@@ -3211,12 +3343,12 @@ public class Room : MonoBehaviour
         UIOn();
     }
     
-    private void Product11()
+    private void Product12()
     {
         StartArena();
     }
     
-    private async void Product12()
+    private async void Product13()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();
@@ -3259,7 +3391,7 @@ public class Room : MonoBehaviour
         UIOn();
     }
 
-    private async void Product13()
+    private async void Product14()
     {
         GameManager.Instance.CurPlayer.ForceProduct();
         GameManager.Instance.InitProductCancellation();

@@ -1709,6 +1709,47 @@ public class Monster : Character
 
         return new Vector2(vx, vy);
     }
+    // 같은 높이 착지 전용
+    protected Vector2 CalculateLaunchVelocityByHeight(Vector2 start, Vector2 end, float jumpHeight)
+    {
+        float g = -Physics2D.gravity.y * myRigidbody.gravityScale;
+
+        // 원하는 정점 높이에 필요한 수직 속도
+        float vy = Mathf.Sqrt(2 * g * jumpHeight);
+        // 그 높이로 올라갔다 내려오는 총 체공시간
+        float flightTime = 2 * vy / g;
+        // 체공시간 안에 x거리를 이동하는 수평 속도
+        float vx = (end.x - start.x) / flightTime;
+
+        return new Vector2(vx, vy);
+    }
+    // 공중좌표로 점프하기
+    protected Vector2 CalculateAirVelocity(Vector2 start, Vector2 target, float height)
+    {
+        // 1. 올라갈 때의 물리 정보 (기본 중력)
+        float gravityUp = Physics2D.gravity.y * myGravity;
+
+        // 2. 내려갈 때의 물리 정보 (강한 중력)
+        float gravityDown = Physics2D.gravity.y * myGravity;
+
+        float maxY = Mathf.Max(start.y, target.y) + height;
+
+        // [상승 구간]
+        float displacementY_up = maxY - start.y;
+        Vector2 velocityY = Vector2.up * Mathf.Sqrt(-2 * gravityUp * displacementY_up);
+        float timeUp = Mathf.Sqrt(-2 * displacementY_up / gravityUp);
+
+        // [하강 구간] - 강한 중력 적용
+        float displacementY_down = maxY - target.y;
+        float timeDown = Mathf.Sqrt(-2 * displacementY_down / gravityDown);
+
+        // [수평 이동]
+        float totalTime = timeUp + timeDown;
+        Vector2 displacementX = new Vector2(target.x - start.x, 0);
+        Vector2 velocityX = displacementX / totalTime;
+
+        return velocityX + velocityY;
+    }
 
     // 위험영역 소환
     private FadeSystem WarningAreaSpawn(float duration, Color color, Vector2 pos, Vector3 angle, Vector2 scale)

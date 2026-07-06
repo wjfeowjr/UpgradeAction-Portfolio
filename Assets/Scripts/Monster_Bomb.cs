@@ -323,8 +323,9 @@ public class Monster_Bomb : Monster
         immortal = true;
         GravityChange(myGravity);
         myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -15);
-        await UniTask.WaitUntil(() => isGrounded);
-        
+        if(await WaitUntilDelay(()=> isGrounded, stateCancellation).SuppressCancellationThrow())
+            return;
+
         PlaySound($"{basicStat.id}_laugh");
         SpawnObject($"{basicStat.id}_{ConstValues.Appear}", transform);
         StateSetting(ENormalState.AppearEnd, ConstValues.Landing, ConstValues.Landing);

@@ -78,6 +78,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string MasterVolume = "MasterVolume";
     public const string SFXVolume = "SFXVolume";
     public const string BGMVolume = "BGMVolume";
+
+    public const string Voice = "Voice";
     
     // 해상도 및 풀스크린
     public const string ResolutionX = "ResolutionX";
@@ -134,6 +136,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string Attack1 = "Attack1";
     public const string Attack2 = "Attack2";
     public const string Attack3 = "Attack3";
+    public const string Attack4 = "Attack4";
+    public const string Attack5 = "Attack5";
+
     public const string Attack3Ready = "Attack3_Ready";
     public const string JumpAttack = "JumpAttack";
     public const string JumpAttackEnd = "JumpAttack_End";
@@ -141,6 +146,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string JumpAttack2 = "JumpAttack2";
     public const string Event = "Event";
     public const string Buff = "Buff";
+    public const string Trail = "Trail";
 
     // 대화 애니메이션
     public const string DialogJump = "DialogJump";
@@ -546,6 +552,9 @@ public class ConstValues : Singleton<ConstValues>
     public const string Meteor = "Meteor";
     
     public const string MonsterMouseCursorWarning = "Monster_MouseCursor_Warning";
+
+    public const string Fragments = "Fragments";
+    public const string End = "End";
 
     // Npc
     public const string NpcCitizen = "Npc_Citizen";

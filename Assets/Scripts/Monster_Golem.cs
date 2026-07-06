@@ -128,7 +128,7 @@ public class Monster_Golem : Monster
         
         SetTriggerAnimator(ConstValues.Pattern);
         SpawnObject($"{basicStat.id}_{ConstValues.Jump}{ConstValues.Effect}", transform);
-        myRigidbody.linearVelocity = CalculateVelocity(transform.position, arrivePos, 0);
+        myRigidbody.linearVelocity = CalculateAirVelocity(transform.position, arrivePos, 0);
         if(await WaitUntilDelay(()=> myRigidbody.linearVelocityY < -0.1f, stateCancellation).SuppressCancellationThrow())
             return;
 
@@ -246,33 +246,6 @@ public class Monster_Golem : Monster
         SpawnAttack($"{basicStat.id}_{ConstValues.Attack}7", rockVector);
     }
 
-    private Vector2 CalculateVelocity(Vector2 start, Vector2 target, float height)
-    {
-        // 1. 올라갈 때의 물리 정보 (기본 중력)
-        float gravityUp = Physics2D.gravity.y * myGravity;
-
-        // 2. 내려갈 때의 물리 정보 (강한 중력)
-        float gravityDown = Physics2D.gravity.y * myGravity;
-
-        float maxY = Mathf.Max(start.y, target.y) + height;
-
-        // [상승 구간]
-        float displacementY_up = maxY - start.y;
-        Vector2 velocityY = Vector2.up * Mathf.Sqrt(-2 * gravityUp * displacementY_up);
-        float timeUp = Mathf.Sqrt(-2 * displacementY_up / gravityUp);
-
-        // [하강 구간] - 강한 중력 적용
-        float displacementY_down = maxY - target.y;
-        float timeDown = Mathf.Sqrt(-2 * displacementY_down / gravityDown);
-
-        // [수평 이동]
-        float totalTime = timeUp + timeDown;
-        Vector2 displacementX = new Vector2(target.x - start.x, 0);
-        Vector2 velocityX = displacementX / totalTime;
-
-        return velocityX + velocityY;
-    }
-    
     // 등장(연출 포함)
     public override async void Appear(Action<string, EMonsterType> bossProduct)
     {

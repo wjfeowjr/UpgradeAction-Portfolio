@@ -21,6 +21,7 @@ public class CameraExpandZone : MonoBehaviour
     [Header("판정 콜라이더")]
     [SerializeField] private BoxCollider2D expandCollider;   // 들어오면 확장 시작
     [SerializeField] private BoxCollider2D returnCollider;   // 확장 상태에서 여기에 닿으면 복귀 (비우면 확장 존을 벗어날 때 복귀)
+    [SerializeField] private bool ignoreHeight;              // 세로 범위 무시: 어떤 높이로 지나가든 x축만 걸치면 판정
 
     private bool isExpanded;
     private float curOffset;
@@ -42,30 +43,32 @@ public class CameraExpandZone : MonoBehaviour
             returnCollider.isTrigger = true;
     }
 
-    // 플레이어 위치 기준으로 오프셋을 갱신하고, 값이 변했으면 true를 반환
-    public bool UpdateExpand(Vector2 playerPos)
+    // 플레이어 이동(이전 위치 → 현재 위치) 기준으로 오프셋을 갱신하고, 값이 변했으면 true를 반환.
+    // 콜라이더 안에 있을 때뿐 아니라, 빠르게 지나쳐 넘어가기만 해도 판정된다
+    public bool UpdateExpand(Vector2 prevPos, Vector2 curPos)
     {
         if (!expandCollider)
             return false;
 
-        // 평상시에는 확장 존 진입으로 확장한다.
-        // 확장 상태에서는 어디에 있든 유지되다가, 복귀 존에 닿아야만 복귀한다.
-        // (확장 존 안에 있을 때는 복귀 존과 겹쳐 있어도 확장을 유지)
+        // 평상시에는 확장 존을 지나가면 확장한다.
+        // 확장 상태에서는 어디에 있든 유지되다가, 복귀 존을 지나가야만 복귀한다.
+        // (확장 존을 지나는 중일 때는 복귀 존과 겹쳐 있어도 확장을 유지)
         if (isExpanded)
         {
             if (returnCollider)
             {
-                if (returnCollider.OverlapPoint(playerPos) && !expandCollider.OverlapPoint(playerPos))
+                if (ColliderCrossUtil.CrossedOrInside(returnCollider, prevPos, curPos, ignoreHeight)
+                    && !ColliderCrossUtil.CrossedOrInside(expandCollider, prevPos, curPos, ignoreHeight))
                     isExpanded = false;
             }
             else
             {
-                isExpanded = expandCollider.OverlapPoint(playerPos);
+                isExpanded = ColliderCrossUtil.CrossedOrInside(expandCollider, prevPos, curPos, ignoreHeight);
             }
         }
         else
         {
-            isExpanded = expandCollider.OverlapPoint(playerPos);
+            isExpanded = ColliderCrossUtil.CrossedOrInside(expandCollider, prevPos, curPos, ignoreHeight);
         }
 
         float targetOffset = isExpanded ? expandDistance : 0;
@@ -74,12 +77,5 @@ public class CameraExpandZone : MonoBehaviour
 
         curOffset = Mathf.MoveTowards(curOffset, targetOffset, expandSpeed * Time.deltaTime);
         return true;
-    }
-
-    // 방 재진입 등 리밋이 초기화될 때 오프셋도 즉시 복구
-    public void ResetExpand()
-    {
-        isExpanded = false;
-        curOffset = 0;
     }
 }
