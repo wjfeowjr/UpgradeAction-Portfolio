@@ -448,6 +448,7 @@ public class ElevatorData
 {
     public string id;
     public int idx;
+    public int startIdx;   // 게임오버 리셋 시 돌아갈 최초 시작 인덱스
 }
 
 [Serializable]
@@ -2718,6 +2719,16 @@ public class GameManager : Singleton<GameManager>
         potionSkill.playerSkill.curCoolTime[2] = saveData.additionPotionCount;
     }
 
+    // 게임오버 후 재시작 시: 모든 엘리베이터를 최초 시작 위치로 되돌리고 포션을 다시 채운다
+    public void GameOverReset()
+    {
+        foreach (var roomInfo in saveData.roomInfoList)
+            foreach (var elevator in roomInfo.elevators)
+                elevator.idx = elevator.startIdx;
+
+        SetPotionCount();
+    }
+
     // 해당 아이템을 가지고 있는가?
     public bool IsHaveItem(string id)
     {
@@ -3631,13 +3642,13 @@ public class GameManager : Singleton<GameManager>
     {
         switch (place)
         {
-            case ConstValues.SunHill:
+            case ConstValues.Forest:
                 return GetTalk(130000);
 
             case ConstValues.BaseCamp:
                 return GetTalk(130001);
 
-            case ConstValues.Forest:
+            case ConstValues.Dungeon:
                 return GetTalk(130002);
 
             case ConstValues.Mine:

@@ -415,6 +415,7 @@ public class RoomManager : Singleton<RoomManager>
     {
         await uiBase.FadeClose(true, true, 0.75f, true);
         GameManager.instance.FadeObjectActiveImmediately(true);
+        GameManager.Instance.GameOverReset();
         GameManager.Instance.GoScene(ConstValues.BattleScene);
     }
 

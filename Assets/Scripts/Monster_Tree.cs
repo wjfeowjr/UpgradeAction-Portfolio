@@ -329,7 +329,7 @@ public class Monster_Tree : Monster
 
         // 밑쪽 기준 약 150도(±75도) 범위의 랜덤 각도로 가시 15발 발사
         // (프리팹 기본 방향이 위쪽이므로 180도를 더해 아래쪽 기준으로 만든다)
-        int spikeCount = 20;
+        int spikeCount = 30;
         for (int i = 0; i < spikeCount; i++)
         {
             int angleZ = 180 + Random.Range(-75, 76);
@@ -368,7 +368,7 @@ public class Monster_Tree : Monster
         
         BigRootAttack(transform.position, -15, 14.5f, 0.5f);
 
-        if (await NormalDelay(1.25f, stateCancellation).SuppressCancellationThrow())
+        if (await NormalDelay(1.15f, stateCancellation).SuppressCancellationThrow())
             return;
         
         foreach (var mySpriteRenderer in mySpriteRenderers)
@@ -406,17 +406,19 @@ public class Monster_Tree : Monster
         
         SpawnObject($"{basicStat.id}_{ConstValues.Attack1}_{ConstValues.Warning}", pos, angleZ);
 
-        if (await NormalDelay(1.25f, rootCancellation).SuppressCancellationThrow())
+        if (await NormalDelay(1.15f, rootCancellation).SuppressCancellationThrow())
             return;
         
         SpawnObject($"{basicStat.id}_{ConstValues.Attack1}_{ConstValues.Effect}", pos, angleZ);
         var attack1Object = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack1}", pos, angleZ).GetComponent<Monster_Tree_Attack1>();
         attack1Object.Grow(height, duration);
         if (await NormalDelay(0.65f, rootCancellation).SuppressCancellationThrow())
+        {
+            attack1Object.gameObject.SetActive(false);
             return;
-        
+        }
+
         attack1Object.gameObject.SetActive(false);
-        
         SpawnObject($"{basicStat.id}_{ConstValues.Attack1}_{ConstValues.Fragments}1", attack1Object.FragmentsPos[0]);
         SpawnObject($"{basicStat.id}_{ConstValues.Attack1}_{ConstValues.Fragments}2", attack1Object.FragmentsPos[1]);
         SpawnObject($"{basicStat.id}_{ConstValues.Attack1}_{ConstValues.Fragments}3", attack1Object.FragmentsPos[2]);
@@ -464,24 +466,30 @@ public class Monster_Tree : Monster
     public override async void Die()
     {
         base.Die();
-        
+
+        rootCancellation?.Cancel();
         CancelMotion();
         ClearObjectList(buffObject);
         isDie = true;
 
         int count = 15;
-        var delay = 0.12f;
+        var delay1 = 0.12f;
+        var delay2 = 0.25f;
         StateSetting(ENormalState.Die, ConstValues.Die, ConstValues.Die);
         MoveStateSetting(EMoveState.Stopping);
-            
+
         dieCancellation = new CancellationTokenSource();
         for (int i = 0; i < count; i++)
         {
             SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
             GameManager.Instance.CameraShake(0.1f, 0.1f, 0.1f);
-            if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
+            if (await NormalDelay(delay1, dieCancellation).SuppressCancellationThrow())
                 return;
         }
+        
+        if (await NormalDelay(delay2, dieCancellation).SuppressCancellationThrow())
+            return;
+        GameManager.Instance.CameraShake(0.5f, 0.5f, 0.3f);
         DieAirborne(transform.position);
     }
 

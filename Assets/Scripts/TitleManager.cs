@@ -389,7 +389,7 @@ public class TitleManager : MonoBehaviour
 
     private void StartBGM()
     {
-        BgmManager.Instance.PlayBgm(ConstValues.BGMTitle, true);
+        BgmManager.Instance.PlayBgm($"{ConstValues.BGM}_{ConstValues.Title}", true);
     }
 
     // private async void TextFade()

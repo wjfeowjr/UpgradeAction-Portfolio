@@ -592,20 +592,21 @@ public class ConstValues : Singleton<ConstValues>
     public const string IconAttributePoint = "Icon_AttributePoint";
 
     // BGM
-    public const string BGMTitle = "BGM_Title";
-    public const string BGMEpisodeStart = "BGM_EpisodeStart";
-    public const string BGMSunHill = "BGM_SunHill";
-    public const string BGMUnderGround = "BGM_Underground";
-    public const string BGMEpisode2 = "BGM_Episode2";
-    public const string BGMEpisode2Battle = "BGM_Episode2Battle";
-    public const string BGMArena = "BGM_Arena";
-    public const string BGMBoss = "BGM_Boss";
-    public const string BGMMiniBoss = "BGM_MiniBoss";
+    public const string BGM = "BGM";
+    public const string Title = "Title";
+    public const string EpisodeStart = "EpisodeStart";
+    public const string Tree = "Tree";
+    public const string Charge = "Charge";
+    public const string Golem = "Golem";
+    
+    public const string Sun = "Sun";
+    public const string Knife = "Knife";
+    public const string Bomb = "Bomb";
     
     // 지역
-    public const string SunHill = "SunHill";
-    public const string BaseCamp = "BaseCamp";
     public const string Forest = "Forest";
+    public const string BaseCamp = "BaseCamp";
+    public const string Dungeon = "Dungeon";
     public const string Mine = "Mine";
     
     // 아이템
@@ -647,4 +648,6 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterBigGhostEarthQuake = "Monster_BigGhost_EarthQuake";
     public const string TrolleyStart = "Trolley_Start";
     public const string Lose = "Lose";
+    public const string DoorOpen = "DoorOpen";
+    public const string DoorClose = "DoorClose";
 }

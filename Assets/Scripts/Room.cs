@@ -898,7 +898,8 @@ public class Room : MonoBehaviour
                 var elevator = new ElevatorData()
                 {
                     id = elevators[idx].name,
-                    idx = elevators[idx].StartIndex   // 최초 시작 인덱스 (엘리베이터별 설정)
+                    idx = elevators[idx].StartIndex,   // 최초 시작 인덱스 (엘리베이터별 설정)
+                    startIdx = elevators[idx].StartIndex
                 };
                 roomInfo.elevators.Add(elevator);
             }
@@ -1115,7 +1116,10 @@ public class Room : MonoBehaviour
         for (int i = 0; i < roomInfo.elevators.Count; i++)
         {
             int idx = i;
-            
+
+            // 기존 세이브 보정 + 프리팹의 startIndex 변경 반영: 시작 인덱스를 항상 최신으로 유지
+            roomInfo.elevators[idx].startIdx = elevators[i].StartIndex;
+
             elevators[i].SetUpDown(roomInfo.elevators[idx].idx);
             elevators[i].PosSetting();
             elevators[i].SetInteractionAction();
@@ -1882,9 +1886,9 @@ public class Room : MonoBehaviour
     {
         BgmManager.Instance.PlayBgm(bgmName, immediately);
     }
-    private void PlaySound(string bgmName)
+    private void PlaySound(string soundName)
     {
-        SoundManager.Instance.PlaySound(bgmName);
+        SoundManager.Instance.PlaySound(soundName);
     }
     private void CameraShake(float amountX, float amountY, float time)
     {
@@ -2410,27 +2414,45 @@ public class Room : MonoBehaviour
         GameManager.Instance.InitProductCancellation();
         
         firstStart = true;
-        roomCustomObjects[0].SetActive(false);
+        roomCustomObjects[1].SetActive(false);
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+
+        GameManager.Instance.CurPlayer.SetSprite(false);
         
         bosses[0].enabled = false;
         bosses[0].transform.position = bossPos[0].position;
         bosses[0].gameObject.SetActive(true);
         bosses[0].Flip(-1);
         
+        GameManager.Instance.CurPlayer.SetSprite(false);
+        
         // 에피소드 팝업부터 시작
         GameManager.Instance.ControlStart = false;
-        
         if(await WaitUntil(() => !GameManager.Instance.FadeSystem.gameObject.activeSelf, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
-        
+
         StopBGM();
-        PlayBGM(ConstValues.BGMEpisodeStart, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.EpisodeStart}", true);
         if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
-
-        //await RoomManager.Instance.ProductEpisode(title);
+        
         GameManager.Instance.GetUI(eUIType.UI_Interface).SetActive(false);
+        
+        if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        // 문 열기
+        PlaySound(ConstValues.DoorOpen);
+        roomCustomObjects[0].SetActive(false);
+        GameManager.Instance.CurPlayer.SetSprite(true);
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
+        
+        // 문 닫기
+        PlaySound(ConstValues.DoorClose);
+        roomCustomObjects[0].SetActive(true);
+        if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+            return;
 
         var berserkerPos = GameManager.Instance.CurPlayer.SpeechPos.position;
         var speechFrame1 = SpeechFrame1();
@@ -2445,7 +2467,7 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1, berserkerPos, GameManager.Instance.GetTalk(10101));
         await NextDialog(speechFrame1);
 
-        PlayBGM(ConstValues.BGMSunHill, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Forest}", true);
         PlaySound(ConstValues.PlayerScream);
         CameraShake(0.1f, 0.4f, 1.0f);
         SpawnSpeechFrame(speechFrame1, new Vector2(berserkerPos.x, berserkerPos.y + 0.5f), GameManager.Instance.GetTalk(10102));
@@ -2476,7 +2498,7 @@ public class Room : MonoBehaviour
             return;
 
         // 게임 시작
-        roomCustomObjects[0].SetActive(true);
+        roomCustomObjects[1].SetActive(true);
         UIOn();
 
         roomInfo.roomProduct[0].isFinish = true;
@@ -2565,10 +2587,10 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        PlayBGM(ConstValues.BGMBoss, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Tree}", true);
         
         // 트리엔트 소환
-        SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.Boss);
+        SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.HiddenBoss);
 
         // // 대화하는 주체들
         // Vector2 berserkerSpeechPos;
@@ -2635,7 +2657,7 @@ public class Room : MonoBehaviour
         // 보스 죽음
         if(await GameManager.Instance.WaitUntilDelay(() => bosses[0].IsDie, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
-
+        
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.ForceProduct();
         StopBGM();
@@ -2671,7 +2693,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        PlayBGM(ConstValues.BGMBoss, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Sun}", true);
         // 태양 보스 소환
         SpawnBoss(bosses[0], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y + 3.5f), EMonsterType.Boss);
 
@@ -2816,7 +2838,7 @@ public class Room : MonoBehaviour
         await fadeBg.Fade(false);
         fadeBg.gameObject.SetActive(false);
         BgmManager.Instance.Play();
-        PlayBGM(ConstValues.BGMBoss, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Sun}", true);
 
         // 달 보스 소환
         SpawnBoss(bosses[1], new Vector2(bossPos[0].transform.position.x, bossPos[0].transform.position.y + 3.5f), EMonsterType.Boss);
@@ -2951,19 +2973,19 @@ public class Room : MonoBehaviour
             return;
         
         var berserkerSpeechPos = GameManager.Instance.CurPlayer.SpeechPos.position;
-        var gunnerSpeechPos = ((Character)npc[0]).SpeechPos.position;
+        var gunnerSpeechPos = npc[0].SpeechPos.position;
         
         var speechFrame1 = SpeechFrame1();
         speechFrame1.gameObject.SetActive(false);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10200));
+        npc[0].Flip(-1);
+        
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10200));
         await NextDialog(speechFrame1);
         
         SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10201));
         await NextDialog(speechFrame1);
-        
-        npc[0].Flip(-1);
-        
+
         SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10202));
         await NextDialog(speechFrame1);
         
@@ -2973,10 +2995,13 @@ public class Room : MonoBehaviour
         SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10204));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10205));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10205));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10206));
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10206));
+        await NextDialog(speechFrame1);
+        
+        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10207));
         await NextDialog(speechFrame1);
         
         npc[0].SpawnObject(ConstValues.BangEffect, npc[0].CenterPos.position);
@@ -3012,10 +3037,10 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
         
-        PlayBGM(ConstValues.BGMMiniBoss, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Charge}", true);
         
         // 거대권투 보스 소환
-        SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.Boss);
+        SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.HiddenBoss);
         
         // 대화하는 주체들
         Vector2 berserkerSpeechPos;
@@ -3072,7 +3097,7 @@ public class Room : MonoBehaviour
             await NextDialog(speechFrame1);
             
             // 권투맨 준비자세
-            PlayBGM(ConstValues.BGMMiniBoss, true);
+            PlayBGM($"{ConstValues.BGM}_{ConstValues.Charge}", true);
             PlaySound(ConstValues.PlayerScream);
             CameraShake(0.3f, 0.4f, 1.0f);
             chargeMonster.CustomAnimTrigger(ENormalState.Idle, ConstValues.FightPose2);
@@ -3144,7 +3169,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        PlayBGM(ConstValues.BGMBoss, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Knife}", true);
         
         // 암살자 보스 소환
         SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.Boss);
@@ -3366,7 +3391,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        PlayBGM(ConstValues.BGMMiniBoss, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Golem}", true);
         
         // 스톤골렘 소환
         SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.MiniBoss);
@@ -3409,7 +3434,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(productDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        PlayBGM(ConstValues.BGMBoss, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Bomb}", true);
         
         // 폭탄전차 소환
         SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.Boss);
@@ -3451,7 +3476,7 @@ public class Room : MonoBehaviour
         if (await GameManager.Instance.NormalDelay(1.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
-        PlayBGM(ConstValues.BGMArena, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Arena}", true);
         
         GameManager.Instance.MovePlayer();
         
@@ -4280,7 +4305,7 @@ public class Room : MonoBehaviour
             return;
         
         GameManager.Instance.StandLock = false;
-        PlayBGM(ConstValues.BGMBoss, true);
+        PlayBGM($"{ConstValues.BGM}_{ConstValues.Bomb}", true);
         GameManager.Instance.ControlStart = true;
         bosses[0].EventAppear(SpawnBossMessage);
         UIOn();

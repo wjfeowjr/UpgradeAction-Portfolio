@@ -2691,6 +2691,13 @@ public abstract class Character : InteractionController
         }
     }
     
+    // 스프라이트 껐다 켜기
+    public void SetSprite(bool active)
+    {
+        foreach (var mySpriteRenderer in mySpriteRenderers)
+            mySpriteRenderer.enabled = active;
+    }
+    
     // 깜빡이며 사라지기
     public virtual async void BlinkDelete()
     {

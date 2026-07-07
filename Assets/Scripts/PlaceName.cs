@@ -3,9 +3,9 @@ using UnityEngine;
 
 public enum ePlace
 {
-    SunHill,
-    BaseCamp,
     Forest,
+    BaseCamp,
+    Dungeon,
     Mine,
 }
 
@@ -20,7 +20,7 @@ public class PlaceName : MonoBehaviour
     {
         switch (ePlace)
         {
-            case ePlace.SunHill:
+            case ePlace.Forest:
                 nameText.text = GameManager.Instance.GetTalk(130000);
                 break;
             
@@ -28,7 +28,7 @@ public class PlaceName : MonoBehaviour
                 nameText.text = GameManager.Instance.GetTalk(130001);
                 break;
             
-            case ePlace.Forest:
+            case ePlace.Dungeon:
                 nameText.text = GameManager.Instance.GetTalk(130002);
                 break;
             

@@ -84,6 +84,7 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private Gauge hpGauge;
     [SerializeField] private Gauge staggerGauge;
+    private Character staggerCharacter;   // 무력화 게이지가 현재 표시 중인 보스
 
     public void HideHp()
     {
@@ -133,10 +134,16 @@ public class UIBossHpView : MonoBehaviour, IUIBossHpView
         if (character.BasicStat.bodyType != EBodyType.StrongArmor && character.BasicStat.bodyType != EBodyType.HyperArmor)
             return;
 
-        if (!staggerGauge.gameObject.activeSelf)
+        // 게이지가 새로 켜지거나, 다른 보스로 바뀌거나, 수치가 가득 찼을 때(무력화 회복)만 fill을 즉시 고정.
+        // 전투 중 매 타격마다 고정하면 reduce 트레일 연출이 지워진다
+        bool gaugeOff = !staggerGauge.gameObject.activeSelf;
+        bool changedBoss = staggerCharacter != character;
+        bool fullStagger = character.BasicStat.stagger >= character.BasicStat.maxStagger;
+        if (gaugeOff || changedBoss || fullStagger)
         {
             staggerGauge.gameObject.SetActive(true);
             staggerGauge.GaugeSetting(character.BasicStat.stagger, character.BasicStat.maxStagger);
+            staggerCharacter = character;
         }
         
         character.ImmuneStagger = false;

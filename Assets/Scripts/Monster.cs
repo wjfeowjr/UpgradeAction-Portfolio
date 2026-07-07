@@ -188,6 +188,7 @@ public class Monster : Character
         {
             Trace();
             Move();
+            IdleToMoveCheck();
         }
         else
         {
@@ -972,29 +973,7 @@ public class Monster : Character
                 patrolTimer = 0;
             }
 
-            if (normalState == ENormalState.Idle)
-                LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-
-            if (normalState == ENormalState.Idle && moveState == EMoveState.Stopping)
-            {
-                if (myStat.standMotion)
-                {
-                    if (!patternInfo[0].playerInAttackRange)
-                    {
-                        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-                        MoveStateSetting(EMoveState.Moving);
-                    }
-                }
-                // 근접몹
-                else
-                {
-                    if (basicStat.moveSpeed != 0)
-                    {
-                        StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
-                        MoveStateSetting(EMoveState.Moving);
-                    }
-                }
-            }
+            IdleToMoveCheck();
         }
         else if (agroState == EAgroState.Agro)
         {
@@ -1017,6 +996,36 @@ public class Monster : Character
                         TotalBarOff();
                     }
                     break;
+            }
+        }
+    }
+
+    // Idle 상태에 갇힌 몬스터를 다시 Move 상태로 전환(standMotion 몹이 공격범위 밖 플레이어를 추적하도록)
+    private void IdleToMoveCheck()
+    {
+        if (normalState != ENormalState.Idle)
+            return;
+
+        LookAt(GameManager.Instance.CurPlayer.transform.position.x);
+
+        if (moveState != EMoveState.Stopping)
+            return;
+
+        if (myStat.standMotion)
+        {
+            if (!patternInfo[0].playerInAttackRange)
+            {
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                MoveStateSetting(EMoveState.Moving);
+            }
+        }
+        // 근접몹
+        else
+        {
+            if (basicStat.moveSpeed != 0)
+            {
+                StateSetting(ENormalState.Move, ConstValues.Move, ConstValues.Move);
+                MoveStateSetting(EMoveState.Moving);
             }
         }
     }
@@ -1174,6 +1183,10 @@ public class Monster : Character
 
     private void SetStagger()
     {
+        // 죽은 보스의 버프 만료가 숨겨진 무력화 게이지를 되살리지 않도록
+        if (isDie)
+            return;
+
         var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
         if (uiInterfaceObj == null)
             return;
