@@ -142,8 +142,6 @@ public class ConstValues : Singleton<ConstValues>
     public const string Attack3Ready = "Attack3_Ready";
     public const string JumpAttack = "JumpAttack";
     public const string JumpAttackEnd = "JumpAttack_End";
-    public const string JumpAttack1 = "JumpAttack1";
-    public const string JumpAttack2 = "JumpAttack2";
     public const string Event = "Event";
     public const string Buff = "Buff";
     public const string Trail = "Trail";
@@ -334,7 +332,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string ComboEnd = "ComboEnd";
     public const string ComboAttack = "ComboAttack";
     public const string ComboAttack2 = "ComboAttack2";
-    public const string FinalAttack = "FinalAttack";
+    public const string CycleAttack = "CycleAttack";
     public const string ChangeAttack = "ChangeAttack";
     
     public const string Ground = "Ground";
@@ -463,6 +461,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string GunnerAttack2Object = "Gunner_Attack2_Object";
     public const string GunnerAttack2Effect = "Gunner_Attack2_Effect";
     public const string GunnerAttackHitCrit = "Gunner_Attack_Hit_Crit";
+    public const string GunnerJumpAttack = "Gunner_JumpAttack";
 
     public const string GunnerDash = "Gunner_Dash";
     public const string GunnerDashShot = "Gunner_DashShot";

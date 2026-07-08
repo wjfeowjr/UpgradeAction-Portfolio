@@ -313,6 +313,7 @@ public class GrenadeCopy
     public string id;
     public string minForce;
     public string maxForce;
+    public float timer;
     public bool spinGrenade;
     public bool dirObject;
     public string hitTag;
@@ -1935,6 +1936,7 @@ public class GameManager : Singleton<GameManager>
             data.id = grenade.id;
             data.minForce = grenade.minForce;
             data.maxForce = grenade.maxForce;
+            data.timer = grenade.timer;
             data.spinGrenade = grenade.spinGrenade;
             data.dirObject = grenade.dirObject;
             data.hitTag = grenade.hitTag;

@@ -37,8 +37,8 @@ public class MissileInfo
 public class Missile : MonoBehaviour, IProjectile
 {
     [SerializeField] private Vector2 dir;
-    private float limitPosX;
-    private float limitPosY;
+    private Vector2 limitStartPos;   // 사거리 측정 기준점 (출발 위치)
+    private bool hasLimit;
     private bool isDelete;
     private Rigidbody2D myRigidbody;
     private BoxCollider2D myCollider;
@@ -197,16 +197,15 @@ public class Missile : MonoBehaviour, IProjectile
     
     public void SetLimit()
     {
-        if (missileInfo.limitLength == 0)
-            return;
+        // 사거리는 출발점 기준 누적 이동거리로 판정한다 (회전된 미사일도 정확)
+        hasLimit = missileInfo.limitLength != 0;
+        limitStartPos = transform.position;
 
         switch (missileInfo.type)
         {
             case MissileType.Horizontal:
-                limitPosX = transform.position.x;
                 if (dir == Vector2.left)
                 {
-                    limitPosX -= missileInfo.limitLength;
                     if (missileSprite)
                         missileSprite.flipX = true;
                     if (mySpin)
@@ -214,7 +213,6 @@ public class Missile : MonoBehaviour, IProjectile
                 }
                 else if (dir == Vector2.right)
                 {
-                    limitPosX += missileInfo.limitLength;
                     if (missileSprite)
                         missileSprite.flipX = false;
                     if (mySpin)
@@ -223,10 +221,8 @@ public class Missile : MonoBehaviour, IProjectile
 
                 break;
             case MissileType.Vertical:
-                limitPosY = transform.position.y;
                 if (missileInfo.speed > 0)
                 {
-                    limitPosY += missileInfo.limitLength;
                     if (missileSprite)
                         missileSprite.flipY = false;
                     if (mySpin)
@@ -234,7 +230,6 @@ public class Missile : MonoBehaviour, IProjectile
                 }
                 else
                 {
-                    limitPosY -= missileInfo.limitLength;
                     if (missileSprite)
                         missileSprite.flipY = true;
                     if (mySpin)
@@ -260,52 +255,22 @@ public class Missile : MonoBehaviour, IProjectile
         {
             case MissileType.Horizontal:
                 transform.Translate(dir * (missileInfo.speed * Time.deltaTime));
-
-                if (limitPosX == 0)
-                    return;
-
-                if (dir == Vector2.left)
-                {
-                    if (transform.position.x <= limitPosX)
-                    {
-                        transform.position = new Vector2(limitPosX, transform.position.y);
-                        Explosion(false);
-                    }
-                }
-                else if (dir == Vector2.right)
-                {
-                    if (transform.position.x >= limitPosX)
-                    {
-                        transform.position = new Vector2(limitPosX, transform.position.y);
-                        Explosion(false);
-                    }
-                }
-
                 break;
             case MissileType.Vertical:
                 transform.Translate(Vector2.up * (missileInfo.speed * Time.deltaTime));
-
-                if (limitPosY == 0)
-                    return;
-
-                if (missileInfo.speed > 0)
-                {
-                    if (transform.position.y >= limitPosY)
-                    {
-                        transform.position = new Vector2(transform.position.x, limitPosY);
-                        Explosion(false);
-                    }
-                }
-                else
-                {
-                    if (transform.position.y <= limitPosY)
-                    {
-                        transform.position = new Vector2(transform.position.x, limitPosY);
-                        Explosion(false);
-                    }
-                }
-
                 break;
+        }
+
+        if (!hasLimit)
+            return;
+
+        // 사거리 체크: 출발점 기준 누적 이동거리 (회전된 미사일도 각도와 무관하게 정확)
+        Vector2 moved = (Vector2)transform.position - limitStartPos;
+        if (moved.magnitude >= missileInfo.limitLength)
+        {
+            // 사거리 끝 지점으로 스냅 후 폭발
+            transform.position = limitStartPos + moved.normalized * missileInfo.limitLength;
+            Explosion(false);
         }
     }
 
@@ -388,20 +353,21 @@ public class Missile : MonoBehaviour, IProjectile
                     return;
             }
 
-            // 미사일의 방향에 따라 충돌한 지점 기준으로 미사일의 위치에 따른 충돌무시(벽을 등질 때 오작동 방지)
+            // 충돌 지점이 미사일의 실제 진행 방향 앞쪽일 때만 폭발로 인정한다
+            // (뒤쪽 벽에 겹쳐 생성된 경우, 벽 위에서 발사해 발밑 지형에 스치는 경우 오작동 방지.
+            //  회전(zAngle)된 미사일도 진행 방향 기준이라 올바르게 판정된다)
             Vector2 myPoint = transform.position;
             Vector2 contactPoint = col.ClosestPoint(myPoint);
 
             if (missileInfo.id.Split('_')[0] != ConstValues.Monster && hitTag == ConstValues.Ground)
             {
-                if (dir == Vector2.right && myPoint.x > contactPoint.x)
-                    return;
+                // Move1의 Translate(Space.Self)와 동일한 월드 기준 진행 방향
+                Vector2 moveDir = missileInfo.type == MissileType.Horizontal
+                    ? (Vector2)transform.TransformDirection(dir)
+                    : (Vector2)transform.TransformDirection(Vector2.up * Mathf.Sign(missileInfo.speed));
 
-                if (dir == Vector2.left && myPoint.x < contactPoint.x)
-                    return;
-
-                // 수정될 수 있음. 벽 위에서 투사체를 날린 경우
-                if (Math.Abs(contactPoint.x - myPoint.x) < 0.01f)
+                // 진행 방향 성분이 없거나 뒤쪽이면 무시 (수직 아래 스침 포함)
+                if (Vector2.Dot(contactPoint - myPoint, moveDir.normalized) < 0.01f)
                     return;
             }
 

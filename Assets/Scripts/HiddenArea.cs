@@ -68,7 +68,7 @@ public class HiddenArea : MonoBehaviour
 
         // 최초 발견 1회에 한해 사운드 재생. 사운드 리소스가 준비되면 SoundManager 호출로 교체
         if (playSound)
-            SoundManager.Instance.PlaySound(ConstValues.Upgrade);
+            SoundManager.Instance.PlaySound(ConstValues.RewardPage);
 
         return true;
     }

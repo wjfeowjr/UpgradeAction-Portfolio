@@ -12,6 +12,7 @@ public class GrenadeInfo
     public string id;
     public Vector2 minForce;
     public Vector2 maxForce;
+    public float timer;
     public bool spinGrenade;
     public bool dirObject;
     public List<string> hitTagList;
@@ -103,6 +104,8 @@ public class Grenade : MonoBehaviour, IProjectile
             
         var maxForceSplit = grenadeCopy.maxForce.Split(';');
         grenadeInfo.maxForce = new Vector2(float.Parse(maxForceSplit[0]), float.Parse(maxForceSplit[1]));
+
+        grenadeInfo.timer = grenadeCopy.timer;
 
         grenadeInfo.spinGrenade = grenadeCopy.spinGrenade;
 
@@ -295,7 +298,7 @@ public class Grenade : MonoBehaviour, IProjectile
             if (!col.gameObject.CompareTag(hitTag))
                 continue;
             
-            if(hitTag is ConstValues.Ground or ConstValues.Platform && timer < 0.1f)
+            if(hitTag is ConstValues.Ground or ConstValues.Platform && timer < grenadeInfo.timer)
                 continue;
 
             // 캐릭터들이 회피상태라면 무시한다

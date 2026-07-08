@@ -1478,7 +1478,7 @@ public abstract class Character : InteractionController
                 var finalAngle = zAngle;
                 if (transform.localScale.x < 0)
                     finalAngle = -zAngle;
-            
+
                 var objectAngle = spawnedObject.transform.eulerAngles;
                 spawnedObject.transform.eulerAngles = new Vector3(objectAngle.x, objectAngle.y, objectAngle.z + finalAngle);
             }

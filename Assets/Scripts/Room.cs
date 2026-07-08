@@ -1077,6 +1077,12 @@ public class Room : MonoBehaviour
                     roomInfo.item[idx].alreadyGet = true;
                     itemList[idx].ReduceInteractionObject();
                     itemList[idx].SpawnEffect(ConstValues.GetItemEffect, itemList[idx].transform.position);
+                    switch (roomInfo.item[idx].id)
+                    {
+                        case ConstValues.SaveTravel:
+                            GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30218)).Forget();
+                            break;
+                    }
                     GameManager.Instance.GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
                     GameManager.Instance.ProductObjectInfo(roomInfo.item[idx].id, GameManager.Instance.GetItemTalk(roomInfo.item[idx].id), roomInfo.item[idx].count);
                     GameManager.Instance.SaveGame();

@@ -184,7 +184,7 @@ public abstract class Player : Character
     [SerializeField] protected bool canAttack;
     [SerializeField] protected bool didJumpAttack;
     [SerializeField] private bool canFlip;
-    [SerializeField] private bool canMove;
+    [SerializeField] protected bool canMove;
     [SerializeField] private float moveRatio;
     [SerializeField] private GameObject dashEffectUI;
     [SerializeField] private GameObject dashFrameUI;

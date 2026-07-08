@@ -111,7 +111,7 @@ public class SpawnedObject : MonoBehaviour
         spawnObjectInfo.shakeTime = objectData.shakeTime;
         dir = dirX;
     }
-    
+
     public void EnableSetting(bool ignoreSoundCondition = false)
     {
         leftObjectTime = 0;
@@ -127,6 +127,11 @@ public class SpawnedObject : MonoBehaviour
         
         if (spawnObjectInfo.zFlip && dir < 0)
             zScale = -defaultScale.z;
+
+        // 풀 재사용 시 이전 회전이 남지 않도록 부모 회전(스폰 각도 포함)/스케일을 확정한다.
+        // 자식 각도는 로컬 기준이라 부모 회전과 무관하게 항상 basicAngle/flipAngle 값 그대로 유지된다
+        transform.eulerAngles = new Vector3(defaultAngle.x, defaultAngle.y, defaultAngle.z);
+        transform.localScale = new Vector3(xScale, yScale, zScale);
 
         if (transform.childCount > 0)
         {
@@ -149,7 +154,7 @@ public class SpawnedObject : MonoBehaviour
             {
                 if (dir > 0)
                 {
-                    firstChildTransform.eulerAngles = spawnObjectInfo.basicAngle;
+                    firstChildTransform.localEulerAngles = spawnObjectInfo.basicAngle;
                     if (boxCollider2D)
                         boxCollider2D.offset = defaultBoxColOffset;
                     if (circleCollider2D)
@@ -157,8 +162,8 @@ public class SpawnedObject : MonoBehaviour
                 }
                 else
                 {
-                    firstChildTransform.eulerAngles = spawnObjectInfo.flipAngle;
-                    if (boxCollider2D) 
+                    firstChildTransform.localEulerAngles = spawnObjectInfo.flipAngle;
+                    if (boxCollider2D)
                         boxCollider2D.offset = reverseBoxColOffset;
                     if (circleCollider2D)
                         circleCollider2D.offset = reverseCircleColOffset;
@@ -166,9 +171,6 @@ public class SpawnedObject : MonoBehaviour
             }
         }
 
-        transform.eulerAngles = defaultAngle;
-        transform.localScale = new Vector3(xScale, yScale, zScale);
-        
         foreach (var sound  in spawnObjectInfo.soundList)
             SoundManager.Instance.PlaySound(sound, ignoreSoundCondition);
         

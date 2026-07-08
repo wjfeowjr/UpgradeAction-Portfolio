@@ -218,7 +218,7 @@ public class Player_Berserker : Player
         if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow()) 
             return false;
 
-        SpawnAttackObject(ConstValues.BerserkerJumpAttack, jumpAttackPos);
+        SpawnAttack(ConstValues.BerserkerJumpAttack, jumpAttackPos);
 
         float timer = 0.0f;
         while (GetJumpState() && timer < jumpAttackDelay2 && !isGrounded)
