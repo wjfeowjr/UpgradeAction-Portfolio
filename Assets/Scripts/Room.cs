@@ -2761,7 +2761,11 @@ public class Room : MonoBehaviour
             if (await GameManager.Instance.NormalDelay(0.5f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
                 return;
             bosses[0].Flip(-1);
-            
+
+            // 전투 잔여 동작(공격 후딜·피격 회복 등) 코루틴을 강제 정리 —
+            // 남은 코루틴의 CancelMotion이 EpisodeMove의 토큰을 끊어 이동이 중단되거나(위치·방향 미적용),
+            // Idle 복구가 유실되어 WaitUntil이 무한 대기(소프트락)하는 것을 방지
+            GameManager.Instance.CurPlayer.ForceProduct();
             if(await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1).SuppressCancellationThrow())
                 return;
 
@@ -2902,8 +2906,12 @@ public class Room : MonoBehaviour
             return;
         
         moonSpeechPos = new Vector2(bosses[1].CenterPos.position.x - 2.0f, bosses[1].CenterPos.position.y);
-        
+
         bosses[1].Flip(-1);
+        // 전투 잔여 동작(공격 후딜·피격 회복 등) 코루틴을 강제 정리 —
+        // 남은 코루틴의 CancelMotion이 EpisodeMove의 토큰을 끊어 이동이 중단되거나(위치·방향 미적용),
+        // Idle 복구가 유실되어 WaitUntil이 무한 대기(소프트락)하는 것을 방지
+        GameManager.Instance.CurPlayer.ForceProduct();
         if (await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1).SuppressCancellationThrow())
             return;
 

@@ -1091,8 +1091,6 @@ public abstract class Player : Character
             Debug.Log("물약을 사용 할 수 있는 상태가 아님");
             return false;
         }
-        
-        targetSkill.SetCoolTime();
         return true;
     }
 
@@ -1811,6 +1809,11 @@ public abstract class Player : Character
             SpawnHealFont(healValue);
         }
         SpawnObject(ConstValues.HealEffect, centerPos.position);
+        
+        // 일단 이렇게 편의성 봐주기
+        var targetSkill = GameManager.Instance.PotionSkill.playerSkill;
+        targetSkill.SetCoolTime();
+        
         if (await AttackDelay(delay2).SuppressCancellationThrow())
         {
             Debug.Log("물약먹기 후딜 캔슬");
