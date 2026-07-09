@@ -222,7 +222,8 @@ public class Player_Fighter : Player
                 return false;
         }
         myRigidbody.linearVelocity = Vector2.zero;
-        jumpAttackObject.GetComponent<Attack>().DisActiveCollider();
+        
+        //jumpAttackObject.GetComponent<Attack>().DisActiveCollider();
         trailObject.SetTarget(null);
         if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow()) 
             return false;

@@ -601,6 +601,9 @@ public class Attack : MonoBehaviour
     // 피격이 가능한 상태인지(무적/사망 필터)
     private bool IsHittable(Character hitTarget)
     {
+        // 함정 리스폰 연출 중인 플레이어는 ignoreImmortal 공격(함정 포함)도 통하지 않는다 — 함정 2회 피격 방지
+        if (hitTarget is Player { TrapRespawning: true })
+            return false;
         if ((hitTarget.Immortal || hitTarget.Dodge) && !attackInfo.ignoreImmortal)
             return false;
         if (hitTarget.IsDie)

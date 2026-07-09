@@ -987,7 +987,8 @@ public class GameManager : Singleton<GameManager>
 
     private void FirstStart()
     {
-        DefaultDataSetting();
+        // 이전 파일의 데이터가 메모리에 남아 새 파일로 새어 들어가지 않도록 통째로 교체
+        saveData = new SaveData();
         DefaultSkillSetting();
         DefaultRelicSetting();
         DefaultMapSetting();
@@ -1156,14 +1157,6 @@ public class GameManager : Singleton<GameManager>
     public void GoScene(string sceneName)
     {
         SceneManager.LoadScene(sceneName);
-    }
-
-    private void DefaultDataSetting()
-    {
-        saveData.playerList.Clear();
-        saveData.gold = 0;
-        saveData.additionPotionCount = 0;
-        saveData.itemList.Clear();
     }
 
     private void DefaultSkillSetting()
@@ -3663,6 +3656,8 @@ public class GameManager : Singleton<GameManager>
 
     public async void PlayerRespawn()
     {
+        // 함정 피해를 입은 그 프레임에 즉시 완전 무적 — ignoreImmortal인 함정도 막아 2회 피격 방지
+        curPlayer.TrapRespawning = true;
         curPlayer.Immortal = true;
         ControlStart = false;
 
@@ -3691,6 +3686,7 @@ public class GameManager : Singleton<GameManager>
         
         curPlayer.Immortal = false;
         curPlayer.Dodge = false;
+        curPlayer.TrapRespawning = false;
         ControlStart = true;
     }
 }

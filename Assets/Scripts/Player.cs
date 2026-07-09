@@ -172,6 +172,10 @@ public abstract class Player : Character
     private const float CoyoteTime = 0.10f;
     private const float JumpBufferTime = 0.12f;
 
+    // 2단 점프 (WingedBoots 보유 시)
+    private bool hasAirJumped;                          // 공중 점프 사용 여부 (착지 시 초기화)
+    private const float DoubleJumpHeightRatio = 0.5f;   // 기본 점프 대비 높이 비율
+
     private CancellationTokenSource dashDelayCancellation;
     private CancellationTokenSource attackDelayCancellation;
 
@@ -193,6 +197,9 @@ public abstract class Player : Character
     [SerializeField] private bool hasLastMarker;
     [SerializeField] private Vector2 lastMarkerPosition;
 
+    // 함정 피격 리스폰 연출 중 — ignoreImmortal 공격(함정 포함)도 막는 완전 무적
+    private bool trapRespawning;
+
     protected float globalCoolTime;
     protected float curGlobalCoolTime;
     
@@ -213,6 +220,12 @@ public abstract class Player : Character
     }
 
     public PlayerStat PlayerStat => playerStat;
+
+    public bool TrapRespawning
+    {
+        get => trapRespawning;
+        set => trapRespawning = value;
+    }
 
     // 스킬
     public abstract void Skill(KeyCode skillKey);
@@ -370,6 +383,7 @@ public abstract class Player : Character
         var myName = name.Split('(')[0];
         var targetStat = TableManager.Instance.playerTable.Player.Find(x => x.id == myName);
         immortal = false;
+        trapRespawning = false;
         
         basicStat = new BasicStat()
         {
@@ -459,6 +473,11 @@ public abstract class Player : Character
     public void GainResource(int gainResource)
     {
         if (gainResource <= 0)
+            return;
+
+        // 교체로 비활성화된 캐릭터는 잔여 투사체가 적중해도 자원을 얻지 않는다
+        // (비활성 상태에서 AddBuff가 실행되면 이팩트가 허공에 남는 문제도 함께 차단)
+        if (!gameObject.activeInHierarchy)
             return;
 
         playerStat.resource += gainResource;
@@ -1155,7 +1174,21 @@ public abstract class Player : Character
     }
 
     // 점프 (실제 발동) — 상태 검증은 호출자(UpdateJumpAssist)가 담당
-    public async void Jump()
+    public void Jump()
+    {
+        JumpMotion(1.0f);
+    }
+
+    // 2단 점프 — WingedBoots 보유 시 공중에서 1회, 기본 점프 높이의 50%
+    private void DoubleJump()
+    {
+        hasAirJumped = true;
+        // 높이 ∝ 속도² 이므로 속도·상승시간을 √비율 배로 줄이면 궤적 모양은 그대로 유지하며 높이만 비율만큼 낮아진다
+        JumpMotion(Mathf.Sqrt(DoubleJumpHeightRatio));
+    }
+
+    // scale: 점프 속도/상승시간 배율 (1 = 기본 점프)
+    private async void JumpMotion(float scale)
     {
         PlaySound(ConstValues.Jump1, 2.0f);
         jumpAttackCount = 0;
@@ -1163,15 +1196,15 @@ public abstract class Player : Character
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         LandingStateSetting(ELandingState.Air);
 
-        jumpLimitY = transform.position.y + playerStat.jumpHeight;
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 17.5f);
+        jumpLimitY = transform.position.y + playerStat.jumpHeight * scale * scale;
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 17.5f * scale);
 
         // 코요테/버퍼 소비
         coyoteTimer = 0f;
         jumpBufferTimer = 0f;
 
         float timer = 0.0f;
-        float jumpTime = 0.125f;
+        float jumpTime = 0.125f * scale;
         jumpCancellation = new CancellationTokenSource();
         while (timer < jumpTime)
         {
@@ -1184,7 +1217,7 @@ public abstract class Player : Character
         }
 
         if (myRigidbody.linearVelocityY > 0)
-            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f);
+            myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 6.0f * scale);
     }
 
     // 점프 어시스트: 코요테 타임 + 점프 버퍼
@@ -1192,18 +1225,31 @@ public abstract class Player : Character
     {
         // 코요테 타이머: 땅에 있으면 매 프레임 갱신, 공중이면 감소
         if (landingState == ELandingState.Ground)
+        {
             coyoteTimer = CoyoteTime;
+            hasAirJumped = false;
+        }
         else
             coyoteTimer = Mathf.Max(0f, coyoteTimer - Time.deltaTime);
 
         // 점프 버퍼 감소
         jumpBufferTimer = Mathf.Max(0f, jumpBufferTimer - Time.deltaTime);
 
+        if (jumpBufferTimer <= 0f || downJumping || IsDamaged())
+            return;
+
         // 버퍼된 점프 소비 — 절벽에서 걸어 떨어진 경우(state=Jump이지만 코요테 잔여)도 허용
-        if (jumpBufferTimer > 0f && coyoteTimer > 0f && !downJumping && !IsDamaged()
-            && normalState is ENormalState.Idle or ENormalState.Move or ENormalState.Attack or ENormalState.Jump)
+        if (coyoteTimer > 0f && normalState is ENormalState.Idle or ENormalState.Move or ENormalState.Attack or ENormalState.Jump)
         {
             Jump();
+        }
+        // 2단 점프 — 코요테가 소진된 공중에서 '하강 중'일 때만 점프 입력 시 (WingedBoots 보유, 착지 전 1회)
+        else if (coyoteTimer <= 0f && landingState == ELandingState.Air && !hasAirJumped
+                 && myRigidbody.linearVelocityY < 0.01f
+                 && normalState == ENormalState.Jump
+                 && GameManager.Instance.IsHaveItem(ConstValues.WingedBoots))
+        {
+            DoubleJump();
         }
     }
     // 아랫점프
@@ -1781,6 +1827,7 @@ public abstract class Player : Character
         currentMovingPlatform = player.currentMovingPlatform;
         hasLastMarker = player.hasLastMarker;
         lastMarkerPosition = player.lastMarkerPosition;
+        hasAirJumped = player.hasAirJumped;
         if (player.landingState == ELandingState.Ground)
             landingState = ELandingState.Ground;
     }

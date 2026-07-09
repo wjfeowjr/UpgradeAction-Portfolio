@@ -573,8 +573,8 @@ public class Player_Gunner : Player
 
             if (unstoppableThrow)
             {
-                Vector2 min = new Vector2(10, 8);
-                Vector2 max = new Vector2(10, 8);
+                Vector2 min = new Vector2(10, 9);
+                Vector2 max = new Vector2(10, 9);
                 grenadeObject.ThrowForceChange(min, max);
                 grenadeObject.Throw();
             }

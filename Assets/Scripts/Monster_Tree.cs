@@ -36,7 +36,7 @@ public class Monster_Tree : Monster
     private async void Step()
     {
         float delay1 = 0.15f;
-        float delay2 = 0.2f;
+        float delay2 = 0.1f;
         
         float stepDistance = 3.0f;
         float travelTime = 0.2f;
@@ -152,7 +152,7 @@ public class Monster_Tree : Monster
         // 플레이어를 먼저 바라본 뒤 '뒤쪽'을 계산
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
 
-        int rand = Random.Range(0, 4);
+        int rand = Random.Range(0, 5);
 
         switch (rand)
         {
@@ -166,6 +166,10 @@ public class Monster_Tree : Monster
                 UpperRoot();
                 break;
             case 3:
+                DropRoot();
+                break;
+            case 4:
+                UpperRoot();
                 DropRoot();
                 break;
         }
@@ -374,11 +378,15 @@ public class Monster_Tree : Monster
         foreach (var mySpriteRenderer in mySpriteRenderers)
             mySpriteRenderer.enabled = true;
         
-        transform.position = new Vector2(transform.position.x, transform.position.y + 0.5f);
-        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 12);
         StateSetting(ENormalState.Appear, ConstValues.Appear, ConstValues.Appear);
         MoveStateSetting(EMoveState.Stopping);
         LandingStateSetting(ELandingState.Air);
+        
+        transform.position = new Vector2(transform.position.x, transform.position.y + 0.5f);
+        myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 12);
+        
+        if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
+            return;
         
         if(await WaitUntilDelay(()=> isGrounded, stateCancellation).SuppressCancellationThrow())
             return;

@@ -2597,66 +2597,69 @@ public class Room : MonoBehaviour
         
         // 트리엔트 소환
         SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.HiddenBoss);
-
-        // // 대화하는 주체들
-        // Vector2 berserkerSpeechPos;
-        // Vector2 treeSpeechPos;
-        //
-        // var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
-        // var tree = bosses[0].GetComponent<Monster_Tree>();
-        //
-        // var speechFrame1 = SpeechFrame1();
-        // speechFrame1.gameObject.SetActive(false);
-
-        // if (roomInfo.roomProduct[0].count == 0)
-        // {
-        //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-        //         return;
-        //
-        //     if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
-        //         return; 
-        //     
-        //     berserkerSpeechPos = berserker.SpeechPos.position;
-        //     treeSpeechPos = bosses[0].SpeechPos.position;
-        //     
-        //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-        //         return;
-        //
-        //     SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10500));
-        //     await NextDialog(speechFrame1);
-        //     
-        //     SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10501));
-        //     await NextDialog(speechFrame1);
-        //     
-        //     SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10502));
-        //     await NextDialog(speechFrame1);
-        //
-        //     bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
-        //     SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10504));
-        //     await NextDialog(speechFrame1);
-        //     
-        //     SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10505));
-        //     await NextDialog(speechFrame1);
-        //     
-        //     SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10506));
-        //     await NextDialog(speechFrame1);
-        //
-        //     // 게임 시작
-        //     GameManager.Instance.DialogueEnd();
-        //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-        //         return;
-        //     
-        //     roomInfo.roomProduct[0].count += 1;
-        //     GameManager.Instance.SaveGame();
-        // }
-        // else
-        // {
-        //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
-        //         return;
-        // }
         
         if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
+
+        if (roomInfo.roomProduct[0].count == 0)
+        {
+            // 대화하는 주체들
+            Vector2 berserkerSpeechPos;
+            Vector2 gunnerSpeechPos;
+            Vector2 treeSpeechPos;
+        
+            var berserker = GameManager.Instance.GetPlayer(ConstValues.Berserker).GetComponent<Player_Berserker>();
+            var gunner = GameManager.Instance.GetPlayer(ConstValues.Gunner).GetComponent<Player_Gunner>();
+            var tree = bosses[0].GetComponent<Monster_Tree>();
+        
+            var speechFrame1 = SpeechFrame1();
+            speechFrame1.gameObject.SetActive(false);
+
+            if (await GameManager.Instance.DialogueMove(1.5f).SuppressCancellationThrow())
+                return; 
+            
+            berserkerSpeechPos = berserker.SpeechPos.position;
+            gunnerSpeechPos = gunner.SpeechPos.position;
+            treeSpeechPos = bosses[0].SpeechPos.position;
+            
+            bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+        
+            // 화난 포즈
+            berserker.CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
+            PlaySound(ConstValues.PlayerScream);
+            SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10250));
+            await NextDialog(speechFrame1);
+            
+            // 우워얽 포즈
+            bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.DialogPose);
+            CameraShake(0.3f, 0.3f, 1.0f);
+            PlaySound($"{ConstValues.MonsterTree}_{ConstValues.Voice}1");
+            SpawnSpeechFrame(speechFrame1, treeSpeechPos, GameManager.Instance.GetTalk(10251));
+            if (await GameManager.Instance.NormalDelay(dialogDelay1, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+            
+            SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10252));
+            await NextDialog(speechFrame1);
+
+            SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10253));
+            await NextDialog(speechFrame1);
+            
+            SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10254));
+            await NextDialog(speechFrame1);
+            
+            berserker.CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+            bosses[0].CustomAnimTrigger(ENormalState.Idle, ConstValues.Idle);
+            
+            // 게임 시작
+            GameManager.Instance.DialogueEnd();
+            if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+                return;
+            
+            roomInfo.roomProduct[0].count += 1;
+            GameManager.Instance.SaveGame();
+        }
         
         UIOn();
         
@@ -2901,7 +2904,8 @@ public class Room : MonoBehaviour
         moonSpeechPos = new Vector2(bosses[1].CenterPos.position.x - 2.0f, bosses[1].CenterPos.position.y);
         
         bosses[1].Flip(-1);
-        await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1);
+        if (await GameManager.Instance.CurPlayer.EpisodeMove(customMovePos[0].position, GameManager.Instance.CurPlayer.BasicStat.moveSpeed, 1).SuppressCancellationThrow())
+            return;
 
         PlaySound($"{ConstValues.Scream}12");
         bosses[1].DieShake();

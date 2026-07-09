@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using TMPro.EditorUtilities;
 using UnityEngine;
 
 public class ConstValues : Singleton<ConstValues>
@@ -529,7 +528,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string MonsterCharge = "Monster_Charge";
     public const string MonsterChargeEventJumpEffect = "Monster_Charge_EventJumpEffect";
     public const string MonsterIceWizardAttack = "Monster_IceWizard_Attack";
-
+    public const string MonsterTree = "Monster_Tree";
+    
     public const string MonsterSun = "Monster_Sun";
     public const string MonsterSunAttack1 = "Monster_Sun_Attack1";
     public const string MonsterSunAttack2 = "Monster_Sun_Attack2";
@@ -615,6 +615,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string IronWheel = "IronWheel";
     public const string MiniBooster = "MiniBooster";
     public const string SaveTravel = "SaveTravel";
+    public const string WingedBoots = "WingedBoots";
     
     // 사운드
     public const string Laugh = "Laugh";

@@ -522,6 +522,11 @@ public class Monster : Character
             if(await GameManager.Instance.WaitUntilDelay(() => GameManager.Instance.ControlStart, delayCancellation).SuppressCancellationThrow())
                 return;
 
+            // 대기 중 토큰이 교체되면 취소가 닿지 않는 고아 태스크가 될 수 있으므로,
+            // 깨어난 뒤 보스가 여전히 유효한지 재검증 (사망→부활 후 죽은 세션의 HP바가 되살아나는 것 방지)
+            if (isDie || !gameObject.activeInHierarchy)
+                return;
+
             var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
             if (uiInterfaceObj == null)
                 return;
