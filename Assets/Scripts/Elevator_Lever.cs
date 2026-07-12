@@ -7,7 +7,7 @@ public class Elevator_Lever : Lever
     private bool isTouch;
 
     private Elevator elevator;
-    private Action elevatorActon;
+    private Func<bool> elevatorActon;
     private Collider2D myCollider;
 
     private void Awake()
@@ -32,7 +32,7 @@ public class Elevator_Lever : Lever
         AnimTrigger(isTouch ? ConstValues.SwitchRight : ConstValues.SwitchLeft);
     }
 
-    public void SetAction(Action action)
+    public void SetAction(Func<bool> action)
     {
         elevatorActon = action;
     }
@@ -52,8 +52,11 @@ public class Elevator_Lever : Lever
         if (attack == null || !(attack.CastChar is Player))   // 플레이어의 공격만 인정
             return;
 
+        // 실제로 엘리베이터가 작동했을 때만 연출 재생 (이동 중이면 무반응)
+        if (elevatorActon == null || !elevatorActon.Invoke())
+            return;
+
         SpawnEffect(ConstValues.LeverEffect, transform.position);
-        elevatorActon?.Invoke();
         SoundManager.Instance.PlaySound(ConstValues.Lever);
     }
 }

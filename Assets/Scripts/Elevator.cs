@@ -344,17 +344,17 @@ public class Elevator : InteractionController, IMovingPlatform
         MoveTo(destIdx);
     }
 
-    // 지정한 층(포인트)으로 직행 이동 (한 번에 그 층까지 이동 후 정지)
-    private void MoveTo(int target)
+    // 지정한 층(포인트)으로 직행 이동 (한 번에 그 층까지 이동 후 정지). 실제로 출발했는지 반환
+    private bool MoveTo(int target)
     {
         if (isMoving)
-            return;
+            return false;
         if (PointCount <= 1)
-            return;
+            return false;
 
         target = Mathf.Clamp(target, 0, PointCount - 1);
         if (target == curIdx)
-            return;
+            return false;
 
         int prevIdx = curIdx;
 
@@ -380,6 +380,7 @@ public class Elevator : InteractionController, IMovingPlatform
         SoundManager.Instance.PlaySound(ConstValues.Lever);
         //GameManager.Instance.ControlStart = false;
         myAudioSource.Play();
+        return true;
     }
 
     // 출발 연출: wallObjects 활성화 → 마지막 오브젝트 먼저 펼치고(0.825), 끝나면 나머지를 펼친다(1)
@@ -498,16 +499,16 @@ public class Elevator : InteractionController, IMovingPlatform
         //GameManager.Instance.SaveGame();
     }
 
-    // 레버: 해당 층으로 직행 호출 (현재 층과 다를 때만 작동)
-    private void LeverAction(int floorIdx)
+    // 레버: 해당 층으로 직행 호출 (현재 층과 다를 때만 작동). 실제로 작동했는지 반환
+    private bool LeverAction(int floorIdx)
     {
         if (isMoving)
-            return;
+            return false;
         if (floorIdx == curIdx)
-            return;
+            return false;
 
         playWallEffect = false;  // 레버 → 벽 연출 OFF
-        MoveTo(floorIdx);
+        return MoveTo(floorIdx);
     }
 
     public void SetAction(Action getAction)

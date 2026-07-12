@@ -1648,7 +1648,7 @@ public abstract class Player : Character
         
         foreach (var skill in skillList)
         {
-            var passiveList = GameManager.Instance.GetAttributePassive(skill.id);
+            var passiveList = GameManager.Instance.GetAttributeCasterPassive(skill.id);
             foreach (var passive in passiveList)
             {
                 switch (passive)

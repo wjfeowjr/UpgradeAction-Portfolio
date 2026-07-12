@@ -6,10 +6,6 @@ using Random = UnityEngine.Random;
 
 public class Monster_Tree : Monster
 {
-    [SerializeField] private Transform attackPos;
-    [SerializeField] private Transform upperCutPos;
-    [SerializeField] private Transform readyEffectPos;
-    
     private CancellationTokenSource rootCancellation;
 
     protected override void MonsterPattern(int idx)
@@ -511,6 +507,12 @@ public class Monster_Tree : Monster
         Vector2 velocity = CalculateLaunchVelocity(start, end, travelTime);
         Airborne(velocity.x, velocity.y, true);
         goldAction?.Invoke(myStat.gold, centerPos.position);
+    }
+    
+    public override void CancelMotion(bool cancelJump = true, bool velocity0 = true, bool zeroLandingAttack = true)
+    {
+        base.CancelMotion(cancelJump, velocity0, zeroLandingAttack);
+        rootCancellation?.Cancel();
     }
     
     // private async void Step()

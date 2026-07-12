@@ -335,6 +335,8 @@ public class Room : MonoBehaviour
         targetRoom.SetActionGoldObject();
         // 골드오브젝트 초기화
         targetRoom.RefreshGoldObject();
+        // 도착한 방의 모든 입구 콜라이더 활성화
+        targetRoom.ResetEntranceColliders();
 
         RoomManager.Instance.CurrentRoom = targetRoom;
         RoomManager.Instance.CurrentRoom.SetGroundVector();
@@ -368,7 +370,7 @@ public class Room : MonoBehaviour
         if(roomsData.place != targetRoom.roomsData.place)
             GameManager.Instance.RefreshPlaceName();
         
-        GameManager.Instance.SavePoint = name;
+        GameManager.Instance.SavePoint = roomId;
         GameManager.Instance.SaveGame();
     }
 
@@ -1308,6 +1310,8 @@ public class Room : MonoBehaviour
         targetRoom.SetCameraLimit();
         targetRoom.SetPortal();
         targetRoom.PortalSoundActive(false);
+        // 도착한 방의 모든 입구 콜라이더 활성화
+        targetRoom.ResetEntranceColliders();
 
         RoomManager.Instance.CurrentRoom = targetRoom;
         RoomManager.Instance.CurrentRoom.SetGroundVector();
@@ -1461,14 +1465,7 @@ public class Room : MonoBehaviour
         GameManager.Instance.MovePlayer();
         GameManager.Instance.CurPlayer.ClearLastPlatform();
         
-        foreach (var entrance in leftEntrance)
-            entrance.ResetCollider();
-        foreach (var entrance in rightEntrance)
-            entrance.ResetCollider();
-        foreach (var entrance in upEntrance)
-            entrance.ResetCollider();
-        foreach (var entrance in downEntrance)
-            entrance.ResetCollider();
+        ResetEntranceColliders();
 
         // 여기서 BGM재생
         SetBgm(false);
@@ -1478,6 +1475,19 @@ public class Room : MonoBehaviour
             GameManager.Instance.RefreshPlaceName();
     }
     
+    // 방의 모든 입구 콜라이더를 다시 활성화
+    public void ResetEntranceColliders()
+    {
+        foreach (var entrance in leftEntrance)
+            entrance.ResetCollider();
+        foreach (var entrance in rightEntrance)
+            entrance.ResetCollider();
+        foreach (var entrance in upEntrance)
+            entrance.ResetCollider();
+        foreach (var entrance in downEntrance)
+            entrance.ResetCollider();
+    }
+
     private void SetLeftPlayerPos(int idx)
     {
         // GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[idx].position;
@@ -2598,7 +2608,7 @@ public class Room : MonoBehaviour
         // 트리엔트 소환
         SpawnBoss(bosses[0], new Vector2(bosses[0].transform.position.x, bosses[0].transform.position.y), EMonsterType.HiddenBoss);
         
-        if (await GameManager.Instance.NormalDelay(5.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
+        if (await GameManager.Instance.NormalDelay(4.0f, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 
         if (roomInfo.roomProduct[0].count == 0)

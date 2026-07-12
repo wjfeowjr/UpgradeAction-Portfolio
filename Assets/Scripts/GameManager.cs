@@ -894,6 +894,25 @@ public class GameManager : Singleton<GameManager>
         // Alt+Enter: 전체화면 <-> 창모드 토글
         if (InputHelper.IsAltPressed && (Input.GetKeyDown(confirmKey) || Input.GetKeyDown(KeyCode.KeypadEnter)))
             ToggleFullScreen();
+
+        // 테스터 용
+        // if (Input.GetKeyDown(KeyCode.F11))
+        // {
+        //     AddNewSkill(ConstValues.BerserkerSwordCounter);
+        //     AddNewSkill(ConstValues.BerserkerCrash);
+        //     AddNewSkill(ConstValues.GunnerCrazyShot);
+        //     AddNewSkill(ConstValues.GunnerElementalInfusion);
+        //     AddNewSkill(ConstValues.FighterLightningSmash);
+        //     AddNewSkill(ConstValues.FighterStrongPunch);
+        //     
+        //     foreach (var skillAttributeCopy in skillAttributeCopyList)
+        //         UnLockAttributeSlot(skillAttributeCopy.id);
+        //
+        //     PlusAttributePoint(100);
+        //     RefreshSkill();
+        //     
+        //     SaveGame();
+        // }
     }
 
     // 전체화면 상태를 토글하고 저장 (Alt+Enter)
@@ -1050,10 +1069,12 @@ public class GameManager : Singleton<GameManager>
         {
             saveData = LoadGame(curSaveFileName);
             DataPatch(saveData);
+            // 저장된 위치와 무관하게, 불러오기 시 엘리베이터는 항상 시작 인덱스에서 시작
+            ResetElevatorIdx();
         }
         else
         {
-            FirstStart(); 
+            FirstStart();
         }
         
         LockAttributeSetting();
@@ -2714,13 +2735,18 @@ public class GameManager : Singleton<GameManager>
         potionSkill.playerSkill.curCoolTime[2] = saveData.additionPotionCount;
     }
 
-    // 게임오버 후 재시작 시: 모든 엘리베이터를 최초 시작 위치로 되돌리고 포션을 다시 채운다
-    public void GameOverReset()
+    // 모든 엘리베이터를 최초 시작 인덱스로 되돌린다
+    public void ResetElevatorIdx()
     {
         foreach (var roomInfo in saveData.roomInfoList)
             foreach (var elevator in roomInfo.elevators)
                 elevator.idx = elevator.startIdx;
+    }
 
+    // 게임오버 후 재시작 시: 모든 엘리베이터를 최초 시작 위치로 되돌리고 포션을 다시 채운다
+    public void GameOverReset()
+    {
+        ResetElevatorIdx();
         SetPotionCount();
     }
 
@@ -3155,7 +3181,25 @@ public class GameManager : Singleton<GameManager>
         }
         return idList;
     }
-    
+
+    // 시전자(플레이어)에게 적용되는 passive 조회
+    // targetObject 지정 여부와 무관하게, 해당 스킬의 특성이면 모두 가져온다(내가 해당 특성을 가지고 있어야 함)
+    public List<string> GetAttributeCasterPassive(string skillId)
+    {
+        List<string> idList = new List<string>();
+
+        var attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId);
+        foreach (var attribute in attributeData)
+        {
+            if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
+                continue;
+
+            foreach (var passive in attribute.passiveId)
+                idList.Add(passive);
+        }
+        return idList;
+    }
+
     // 해당 스킬의 추가 생성 리스트(내가 해당 특성을 가지고 있어야 함)
     public List<SkillAttributeAddObjectInfo> GetAttributeAddObject(string id)
     {

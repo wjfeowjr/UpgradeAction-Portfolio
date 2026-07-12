@@ -21,6 +21,7 @@ public class PopupGameOverPresenter
 {
     private IPopupGameOverView _gameOverView;
     private PopupGameOverModel _model;
+    private bool _isRestarted;
 
     public PopupGameOverPresenter(IPopupGameOverView gameOverView,  PopupGameOverModel model)
     {
@@ -45,8 +46,14 @@ public class PopupGameOverPresenter
     
     public void Restart()
     {
+        if (_isRestarted)
+            return;
+
         if (Input.GetKeyDown(GameManager.Instance.spaceKey))
+        {
+            _isRestarted = true;
             _model.replayAction?.Invoke();
+        }
     }
 }
 
