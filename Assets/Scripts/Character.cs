@@ -531,10 +531,13 @@ public abstract class Character : InteractionController
         isAirborneGrounded = airborneLeftHit || airborneRightHit;
 
         // 무시된 플랫폼 감지
-        if ((airborneLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == airborneLeftHit.collider)) || 
-            (airborneRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == airborneRightHit.collider)))
-            isAirborneGrounded = false;
-        
+        if (!testing)
+        {
+            if ((airborneLeftHit.collider != null && ignorePlatformList.Exists(x => x.collider == airborneLeftHit.collider)) || 
+                (airborneRightHit.collider != null && ignorePlatformList.Exists(x => x.collider == airborneRightHit.collider)))
+                isAirborneGrounded = false;
+        }
+
         if (isAirborneGrounded)
             AirborneState();
     }

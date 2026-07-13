@@ -34,24 +34,28 @@ public class Monster_Golem : Monster
     // 땅치기
     private async void GroundAttack()
     {
-        float delay1 = 1.0f;
-        float delay2 = 0.3f;
-        float delay3 = 0.8f;
+        float delay1 = 0.05f;
+        float delay2 = 0.95f;
+        float delay3 = 0.3f;
+        float delay4 = 0.8f;
 
         // 준비자세 취하기
-        GameObject readyObject = SpawnObject($"{basicStat.id}_Ready", readyEffectPos);
         if(await AttackDelay(delay1).SuppressCancellationThrow())
+            return;
+        GameObject readyObject = SpawnObject($"{basicStat.id}_Ready", readyEffectPos);
+        
+        if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
         readyObject.SetActive(false);
         
         SetTriggerAnimator(ConstValues.Pattern);
-        if(await AttackDelay(delay2).SuppressCancellationThrow())
+        if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
 
         // 공격
         SetTriggerAnimator(ConstValues.Pattern);
         SpawnAttack($"{basicStat.id}_{ConstValues.Attack}1", transform);
-        if(await AttackDelay(delay3).SuppressCancellationThrow())
+        if(await AttackDelay(delay4).SuppressCancellationThrow())
             return;
         
         PatternEnd();
@@ -217,6 +221,7 @@ public class Monster_Golem : Monster
         float delay4 = 0.8f;
 
         // 준비자세 취하기
+        GameManager.Instance.CameraShake(0.1f, 0.1f, 1.0f);
         SpawnObject(ConstValues.GreenFlash, CenterPos);
         if(await AttackDelay(delay1).SuppressCancellationThrow())
             return;
@@ -302,15 +307,15 @@ public class Monster_Golem : Monster
     {
         dieCancellation?.Cancel();
         SpawnObject($"{basicStat.id}_{ConstValues.Die}", centerPos);
-        // float xVelocity = 6.0f;
-        // float yVelocity = 8.0f;
-        //
-        // if (transform.localScale.x > 0)
-        //     xVelocity = -6.0f;
-        //
-        // Airborne(xVelocity, yVelocity, true);
+        float xVelocity = 6.0f;
+        float yVelocity = 8.0f;
         
-        gameObject.SetActive(false);
+        if (transform.localScale.x > 0)
+            xVelocity = -6.0f;
+        
+        Airborne(xVelocity, yVelocity, true);
+        
+        //gameObject.SetActive(false);
         goldAction?.Invoke(myStat.gold, centerPos.position);
         isDie = true;
     }
