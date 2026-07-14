@@ -1171,6 +1171,7 @@ public class GameManager : Singleton<GameManager>
             KeyCode.Escape => "Esc",
             KeyCode.Return => "Enter",
             KeyCode.LeftShift => "Shift",
+            KeyCode.BackQuote => "`",
             _ => keycode.ToString()
         };
     }
@@ -2521,7 +2522,9 @@ public class GameManager : Singleton<GameManager>
         var skillPresenter = new UISkillPresenter(changeInterface, potionInterface, skillInterfaces, skillModel);
         uiInterface.SetSkillPresenter(skillPresenter);
         skillPresenter.SetSkillInfo();
-        
+
+        RefreshPotionActive();
+
         //ChangingFalse();
     }
 
@@ -2733,6 +2736,16 @@ public class GameManager : Singleton<GameManager>
     {
         potionSkill.playerSkill.maxCoolTime[2] = saveData.additionPotionCount;
         potionSkill.playerSkill.curCoolTime[2] = saveData.additionPotionCount;
+        RefreshPotionActive();
+    }
+
+    // 추가 포션을 하나라도 획득했을 때만 포션 UI를 노출
+    public void RefreshPotionActive()
+    {
+        if (!uiInterface)
+            return;
+
+        uiInterface.PotionSkillView.gameObject.SetActive(saveData.additionPotionCount > 0);
     }
 
     // 모든 엘리베이터를 최초 시작 인덱스로 되돌린다
@@ -3677,22 +3690,25 @@ public class GameManager : Singleton<GameManager>
         saveData.relicList.Add(id);
     }
 
-    public string GetPlaceName(string place)
+    public string GetPlaceName(ePlace place)
     {
         switch (place)
         {
-            case ConstValues.Forest:
+            case ePlace.Forest:
                 return GetTalk(130000);
 
-            case ConstValues.BaseCamp:
+            case ePlace.BaseCamp:
                 return GetTalk(130001);
 
-            case ConstValues.Dungeon:
+            case ePlace.Dungeon:
                 return GetTalk(130002);
 
-            case ConstValues.Mine:
+            case ePlace.Mine:
                 return GetTalk(130003);
-            
+
+            case ePlace.SnowField:
+                return GetTalk(130004);
+
             default:
                 return "Non";
         }

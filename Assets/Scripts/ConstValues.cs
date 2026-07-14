@@ -607,6 +607,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string BaseCamp = "BaseCamp";
     public const string Dungeon = "Dungeon";
     public const string Mine = "Mine";
+    public const string SnowField = "SnowField";
     
     // 아이템
     public const string KeyDungeon = "Key_Dungeon";

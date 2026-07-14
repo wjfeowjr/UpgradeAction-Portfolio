@@ -65,7 +65,7 @@ public class UI_Interface : UIBase
     
     public Vector3 GetDashSkillPos()
     {
-        return new Vector2(skillViews[0].transform.position.x, skillViews[0].transform.position.y - 0.06f);
+        return new Vector2(skillViews[0].transform.position.x, skillViews[0].transform.position.y - 0.1f);
     }
 
     public Vector3 GetWaitingCharacterPos()

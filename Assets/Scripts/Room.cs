@@ -142,7 +142,7 @@ public class Room : MonoBehaviour
     private bool hasPrevPlayerPos;
 
     public string Id    => roomInfo.roomId;
-    public string Place => GameManager.Instance.GetPlaceName(roomsData.place);
+    public string Place => GameManager.Instance.GetPlaceName((ePlace)Enum.Parse(typeof(ePlace), roomsData.place));
 
     // 패스트 트래블용: 세이브 포인트 활성화 여부와 세이브 오브젝트 접근자
     public bool SavePointCheck => roomInfo != null && roomInfo.IsRevealed(EMinimapObjectType.SavePoint);

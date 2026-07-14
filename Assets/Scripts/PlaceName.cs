@@ -7,6 +7,7 @@ public enum ePlace
     BaseCamp,
     Dungeon,
     Mine,
+    SnowField,
 }
 
 public class PlaceName : MonoBehaviour
@@ -34,6 +35,10 @@ public class PlaceName : MonoBehaviour
             
             case ePlace.Mine:
                 nameText.text = GameManager.Instance.GetTalk(130003);
+                break;
+            
+            case ePlace.SnowField:
+                nameText.text = GameManager.Instance.GetTalk(130004);
                 break;
         }
     }

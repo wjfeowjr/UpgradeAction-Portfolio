@@ -544,11 +544,12 @@ public class Attack : MonoBehaviour
         // 14. 상태이상(디버프) 적용
         ApplyDeBuffs(hitTarget, critical);
 
-        // 15. 피격 리액션 (Airborne / Damaged)
-        ApplyHitReaction(hitTarget, upperPowerX, knockBackX);
-
-        // 16. 리스폰 어택 (트랩 등) — 플레이어가 맞았을 때만 안전 위치로 복귀
+        // 15. 리스폰 어택 (트랩 등) — 플레이어가 맞았을 때만 안전 위치로 복귀
+        // 피격 리액션보다 먼저 호출해 TrapRespawning 플래그를 세워둔다 (함정 피격 시 피격 가이드 예외처리용)
         TryRespawnPlayer(hitTarget);
+
+        // 16. 피격 리액션 (Airborne / Damaged)
+        ApplyHitReaction(hitTarget, upperPowerX, knockBackX);
     }
 
     // respawnAttack 옵션이 켜져 있고, 맞은 대상이 Player일 때 리스폰 수행

@@ -1,3 +1,4 @@
+using System;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -36,8 +37,7 @@ public class SaveFrame : ExpansionUiObject
             else
             {
                 var roomTableData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == saveData.savePoint);
-                var place = roomTableData.place;
-                placeText.text = GameManager.Instance.GetPlaceName(place);
+                placeText.text = GameManager.Instance.GetPlaceName((ePlace)Enum.Parse(typeof(ePlace), roomTableData.place));
             }
             
             goldText.text = GameManager.Instance.GetThousandCommaText(saveData.gold);

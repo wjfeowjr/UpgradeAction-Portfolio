@@ -1032,7 +1032,11 @@ public abstract class Player : Character
     {
         if (GameManager.Instance.FirstDamaged)
             return;
-        
+
+        // 함정 피격(리스폰 연출 후 안전발판 이동) 상황에서는 가이드를 띄우지 않음
+        if (trapRespawning)
+            return;
+
         RoomManager.Instance.Guide(7);
         GameManager.Instance.FirstDamaged = true;
         GameManager.Instance.SaveGame();
