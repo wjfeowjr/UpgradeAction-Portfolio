@@ -4067,6 +4067,7 @@ public class Room : MonoBehaviour
         var trolleyArrivePos = new Vector2(obstacle.DestroyPos.position.x - 10.0f, trolley.transform.position.y);
         Tween moveTween = trolley.transform.DOMove(trolleyArrivePos, 0.3f).SetEase(Ease.Linear);
         miner.CustomAnimTrigger(ENormalState.Idle, ConstValues.Afraid);
+        PlaySound(ConstValues.PlayerScream);
         if(await GameManager.Instance.WaitUntilDelay(() => trolley.transform.position.x < obstacle.DestroyPos.position.x, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
             return;
 

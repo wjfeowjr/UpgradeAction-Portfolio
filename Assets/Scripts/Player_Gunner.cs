@@ -16,6 +16,7 @@ public class Player_Gunner : Player
     
     [SerializeField] private Transform grenadePos;
     [SerializeField] private Transform knockBackShotPos;
+    [SerializeField] private Transform knockBackShotObjectPos;
     [SerializeField] private Transform crazyShotPos;
     [SerializeField] private Transform elementalInfusionPos;
     [SerializeField] private Transform bigShotPos;
@@ -701,12 +702,12 @@ public class Player_Gunner : Player
         }
 
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
-        SpawnObject(objectId, knockBackShotPos);
-        int angleZ = 12;
+        SpawnObject(objectId, knockBackShotObjectPos);
+        int angleZ = 10;
         for (int i = 0; i < 5; i++)
         {
             SpawnAttack(attackId, knockBackShotPos, angleZ);
-            angleZ -= 6;
+            angleZ -= 5;
         }
 
         if (await AttackDelay(delay2).SuppressCancellationThrow())
@@ -714,29 +715,7 @@ public class Player_Gunner : Player
 
         return true;
     }
-    // 넉백샷(이벤트)
-    public async UniTask<bool> EventKnockBackShot()
-    {
-        var delay1 = 0.1f;
-        var delay2 = 0.2f;
-        
-        if(landingState == ELandingState.Ground)
-            myRigidbody.linearVelocity = Vector2.zero;
-        
-        StateSetting(ENormalState.Skill, ConstValues.GunnerKnockBackShot, ConstValues.GunnerKnockBackShotReady);
-        
-        if (await AttackDelay(delay1).SuppressCancellationThrow())
-            return false;
 
-        StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
-        SpawnAttack($"{ConstValues.GunnerKnockBackShot}_{ConstValues.Event}", knockBackShotPos);
-
-        if (await AttackDelay(delay2).SuppressCancellationThrow())
-            return false;
-
-        return true;
-    }
-    
     // 정신나간 난사
     private async UniTask<bool> CrazyShot()
     {
