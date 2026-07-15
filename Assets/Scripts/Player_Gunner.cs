@@ -701,12 +701,12 @@ public class Player_Gunner : Player
         }
 
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
-        SpawnAttackObject(attackId, knockBackShotPos);
-        int angleZ = 10;
+        SpawnObject(objectId, knockBackShotPos);
+        int angleZ = 12;
         for (int i = 0; i < 5; i++)
         {
-            SpawnObject(objectId, knockBackShotPos, angleZ);
-            angleZ -= 5;
+            SpawnAttack(attackId, knockBackShotPos, angleZ);
+            angleZ -= 6;
         }
 
         if (await AttackDelay(delay2).SuppressCancellationThrow())
