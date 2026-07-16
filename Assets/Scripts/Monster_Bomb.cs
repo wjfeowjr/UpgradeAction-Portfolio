@@ -264,7 +264,7 @@ public class Monster_Bomb : Monster
 
         for (int i = 0; i < blueFireBlastCount; i++)
         {
-            if (await FireSpawn(i).SuppressCancellationThrow())
+            if (await FireSpawn(i))
                 return;
         }
 
@@ -282,7 +282,8 @@ public class Monster_Bomb : Monster
         return isHalf;
     }
     
-    private async UniTask FireSpawn(int count)
+    // 화염 1발 발사. 도중에 캔슬(스태거 등)되면 true 반환
+    private async UniTask<bool> FireSpawn(int count)
     {
         float delay = 1.0f;
         // 짝수
@@ -300,8 +301,9 @@ public class Monster_Bomb : Monster
             SpawnAttack($"{basicStat.id}_{ConstValues.Attack}8_{ConstValues.Object}", blueFirePos[1]);
         }
         if(await AttackDelay(delay).SuppressCancellationThrow())
-            return;
+            return true;
         SetTriggerAnimator(ConstValues.Pattern4);
+        return false;
     }
     
     public override void Stagger()

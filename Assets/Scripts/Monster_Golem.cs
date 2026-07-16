@@ -34,8 +34,8 @@ public class Monster_Golem : Monster
     // 땅치기
     private async void GroundAttack()
     {
-        float delay1 = 0.05f;
-        float delay2 = 0.95f;
+        float delay1 = 0.15f;
+        float delay2 = 0.85f;
         float delay3 = 0.3f;
         float delay4 = 0.8f;
 
@@ -48,7 +48,6 @@ public class Monster_Golem : Monster
             return;
         readyObject.SetActive(false);
         
-        SetTriggerAnimator(ConstValues.Pattern);
         if(await AttackDelay(delay3).SuppressCancellationThrow())
             return;
 

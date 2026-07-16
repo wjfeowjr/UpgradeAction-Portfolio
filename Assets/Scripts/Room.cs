@@ -3868,13 +3868,13 @@ public class Room : MonoBehaviour
         
         berserker.Flip(1);
         gunner.Flip(1);
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10608));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10608));
         await NextDialog(speechFrame1);
         
         SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10609));
         await NextDialog(speechFrame1);
         
-        SpawnSpeechFrame(speechFrame1, berserkerSpeechPos, GameManager.Instance.GetTalk(10610));
+        SpawnSpeechFrame(speechFrame1, gunnerSpeechPos, GameManager.Instance.GetTalk(10610));
         await NextDialog(speechFrame1);
         
         npc[0].SpawnObject(ConstValues.BangEffect, npc[0].CenterPos.position);

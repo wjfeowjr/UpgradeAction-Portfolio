@@ -31,7 +31,9 @@ public class Player_Fighter : Player
         
         stateCancellation = new CancellationTokenSource();
         var finishSuccess = await FighterChangeAttack();
-        ResetBodyType();
+        // 스킬로 캔슬된 경우, 새 스킬이 설정한 바디타입(예: 반격기의 Counter)을 덮어쓰지 않는다
+        if (normalState != ENormalState.Skill)
+            ResetBodyType();
         if (!finishSuccess)
         {
             Debug.Log($"교체 공격 캔슬");
@@ -81,7 +83,9 @@ public class Player_Fighter : Player
         if (!finishSuccess)
         {
             Debug.Log($"{type}공격 캔슬");
-            ResetBodyType();
+            // 스킬로 캔슬된 경우, 새 스킬이 설정한 바디타입(예: 반격기의 Counter)을 덮어쓰지 않는다
+            if (normalState != ENormalState.Skill)
+                ResetBodyType();
             return false;
         }
 
