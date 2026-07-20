@@ -175,6 +175,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string FightPose2 = "FightPose2";
     
     // 하드코딩으로 적용되는 특성 ID
+    public const string SwiftSlash = "SwiftSlash";
     public const string SwordBeam = "SwordBeam";
     public const string ComboSlash = "ComboSlash";
     public const string ChargingFire = "ChargingFire";
@@ -425,9 +426,10 @@ public class ConstValues : Singleton<ConstValues>
     
     public const string BerserkerAttackHitCrit = "Berserker_Attack_Hit_Crit";
     public const string BerserkerCrashHitEffect = "Berserker_Crash_HitEffect";
-
+    
     public const string BerserkerDash = "Berserker_Dash";
     public const string BerserkerUpperSlash = "Berserker_UpperSlash";
+    public const string BerserkerUpperSlashSwift = "Berserker_UpperSlash_Swift";
     public const string BerserkerUpperSlashComboAttack = "Berserker_UpperSlash_ComboAttack";
     public const string BerserkerUpperSlashSwordBeam = "Berserker_UpperSlash_SwordBeam";
     public const string BerserkerCrash = "Berserker_Crash";
@@ -618,7 +620,8 @@ public class ConstValues : Singleton<ConstValues>
     public const string SaveTravel = "SaveTravel";
     public const string WingedBoots = "WingedBoots";
     
-    // 사운드
+    // 효과음
+    public const string PlayerDash = "Player_Dash";
     public const string Laugh = "Laugh";
     public const string Scream = "Scream";
     public const string GunnerLaugh = "Gunner_Laugh";

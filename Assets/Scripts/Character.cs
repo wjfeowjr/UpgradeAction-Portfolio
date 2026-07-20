@@ -245,6 +245,7 @@ public abstract class Character : InteractionController
     protected int agroLayerMask;
     protected int bossLayerMask;
     protected int wallBodyLayerMask;
+    protected int playerChargeLayerMask;
     protected bool isCeilingHang;
     
     [SerializeField] protected bool immortal;
@@ -769,6 +770,7 @@ public abstract class Character : InteractionController
         agroLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Platform)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
         bossLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Player));
         wallBodyLayerMask = 1 << LayerMask.NameToLayer(ConstValues.WallBody);
+        playerChargeLayerMask = (1 << LayerMask.NameToLayer(ConstValues.Ground)) | (1 << LayerMask.NameToLayer(ConstValues.Monster));
     }
     
     private void ScaleSetting()
@@ -1764,14 +1766,16 @@ public abstract class Character : InteractionController
     {
         if(!GameManager.Instance.InGame)
             return;
-        
+
+        // 예약 시점의 목록만 정리 대상으로 확정 (대기 중 새로 추가된 오브젝트 보호)
+        var targets = new List<GameObject>(list);
+        list.Clear();
+
         if (timer > 0)
             await UniTask.WaitForSeconds(timer);
 
-        foreach (var obj in list)
+        foreach (var obj in targets)
             obj.gameObject.SetActive(false);
-
-        list.Clear();
     }
 
     public void Flip(int dir)
@@ -1981,27 +1985,6 @@ public abstract class Character : InteractionController
             ignorePlatformList.Remove(p);
 
         LandingStateSetting(ELandingState.Ground);
-    }
-
-    private void ChargeTest()
-    {
-        Vector2 dir = Vector2.right;
-        if(transform.localScale.x < 0)
-            dir = Vector2.left;
-
-        float distance = 5;
-
-        var physicsColSize = physicsCollider.size;
-        var boxSize = new Vector2(0.1f, physicsColSize.y); // 좌우 (세로로 긴 박스)  * 0.8f
-
-        var boxVector = physicCenterPos.position;
-        var boxRay = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, distance, groundAndPlatformLayerMask);
-
-        if (boxRay.collider != null)
-        {
-            if (boxRay.collider.CompareTag(ConstValues.Platform))
-                IgnorePlatformCheck(boxRay.collider, true);
-        }
     }
 
     /// <summary>

@@ -403,10 +403,9 @@ public class Player_Berserker : Player
     {
         // 특성 체크
         var skillId = ConstValues.BerserkerUpperSlash;
+        bool swiftSlash = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.SwiftSlash);
         bool swordBeam = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.SwordBeam);
         bool comboSlash = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.ComboSlash);
-
-        StateSetting(ENormalState.Skill, ConstValues.BerserkerUpperSlash, ConstValues.BerserkerUpperSlash);
 
         var delay1 = 0.2f;
         var delay2 = 0.2f;
@@ -416,15 +415,39 @@ public class Player_Berserker : Player
         // if(landingState == ELandingState.Ground)
         //     myRigidbody.linearVelocity = Vector2.zero;
 
+        // 신속한 베기 : 보는 방향으로 감지된 거리만큼 돌진 후 공격
+        if (swiftSlash)
+        {
+            var dashSpeed = 20;
+            float dashLength = 4;
+
+            Vector2 dir = transform.localScale.x > 0 ? Vector2.right : Vector2.left;
+            var boxSize = new Vector2(0.1f, physicsCollider.size.y);
+            var boxHit = Physics2D.BoxCast(physicCenterPos.position, boxSize, 0f, dir, dashLength, playerChargeLayerMask);
+            if (boxHit.collider)
+                dashLength = boxHit.distance;
+
+            chargeVector = new Vector2(transform.position.x + dir.x * dashLength, transform.position.y);
+
+            if (dashLength > 1)
+            {
+                PlaySound(ConstValues.PlayerDash);
+                StateSetting(ENormalState.Skill, ConstValues.BerserkerUpperSlashSwift, ConstValues.BerserkerUpperSlash);
+                if (await Charge(dashSpeed, 1.0f, dashLength, 1.0f) == false)
+                    return false;
+            }
+        }
+
+        StateSetting(ENormalState.Skill, ConstValues.BerserkerUpperSlash, ConstValues.BerserkerUpperSlash);
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
-        
+
         //Leap(6, 20, 1.6f);
         //Leap(0, 20, 0.8f);
         
         SpawnAttackObject(ConstValues.BerserkerUpperSlash, upperSlashPos).GetComponent<Attack>();
-        if (swordBeam)
-            SpawnAttackObject(ConstValues.BerserkerUpperSlashSwordBeam, upperSlashPos);
+        // if (swordBeam)
+        //     SpawnAttackObject(ConstValues.BerserkerUpperSlashSwordBeam, upperSlashPos);
         
         // 후딜동안 스킬버튼 한번 더 누르면 추가타격
         float addTime = 0;
@@ -488,7 +511,7 @@ public class Player_Berserker : Player
         if (chargingFlame)
         {
             float addTime = 0;
-            float originChargeTime = 0.75f;
+            float originChargeTime = 0.35f;
             float plusAttackSpeed = basicStat.attackSpeed - originStat.attackSpeed;
             float chargeTime = originChargeTime - (originChargeTime * plusAttackSpeed);
 
@@ -521,7 +544,7 @@ public class Player_Berserker : Player
             if (isCharge)
             {
                 float addTime2 = 0;
-                float extraChargeTime = 0.5f;
+                float extraChargeTime = 0.35f;
                 while (addTime2 < extraChargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))
                 {
                     addTime2 += Time.deltaTime * basicStat.attackSpeed;

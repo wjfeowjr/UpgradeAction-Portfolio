@@ -982,7 +982,16 @@ public class GameManager : Singleton<GameManager>
 
     private void DataPatch(SaveData data)
     {
-        
+        ResetSkillAttribute();
+        // 특성 개편 패치: 한국 시간 2026-07-21 00:00(UTC+9) 이전에 저장된 세이브가 대상
+        // lastSavedAt이 없는 구버전 세이브도 개편 이전 저장본이므로 패치 대상에 포함한다
+        DateTime patchTimeUtc = new DateTime(2026, 7, 21, 0, 0, 0, DateTimeKind.Utc).AddHours(-9);
+        bool hasSavedTime = DateTime.TryParse(data.lastSavedAt, CultureInfo.InvariantCulture,
+            DateTimeStyles.RoundtripKind, out DateTime lastSaved);
+        if (hasSavedTime && lastSaved.ToUniversalTime() >= patchTimeUtc)
+            return;
+
+        ResetSkillAttribute();
     }
     
     public void DeleteData()
@@ -1263,6 +1272,21 @@ public class GameManager : Singleton<GameManager>
                     targetAttribute.isLock = false;
             }
         }
+    }
+
+    private void ResetSkillAttribute()
+    {
+        // 특성 잠금 목록을 새 테이블 기준으로 다시 구성
+        saveData.lockAttributeList.Clear();
+        LockAttributeSetting();
+        // 모든 캐릭터의 특성을 초기화하고 특성 포인트를 전액 환급
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            playerInfo.attributePoint = saveData.totalAttributePoint;
+            foreach (var skill in playerInfo.skillList)
+                skill.attributeList.Clear();
+        }
+        SaveGame();
     }
 
     public void UnLockAttributeSlot(string attributeId)
@@ -3137,19 +3161,6 @@ public class GameManager : Singleton<GameManager>
         }
     }
 
-    public async void ResetAttribute()
-    {
-        foreach (var playerInfo in saveData.playerInfoList)
-        {
-            foreach (var skillList in playerInfo.skillList)
-                        skillList.attributeList.Clear();
-            
-            playerInfo.attributePoint = saveData.totalAttributePoint;
-        }
-        
-        await SpawnWarningPopup(GameManager.Instance.GetTalk(30205));
-    }
-    
     // 해당 스킬의 Id찾기(내가 해당 특성을 가지고 있어야 함)
     public List<string> GetAttributePassive(string id)
     {
