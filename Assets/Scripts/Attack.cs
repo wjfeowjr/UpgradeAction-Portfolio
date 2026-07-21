@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
@@ -473,7 +473,13 @@ public class Attack : MonoBehaviour
         if (hitTarget == null)
             return;
 
-        // 3. 무적/사망 상태 필터링
+        // 3. 진영 검증 — 자신(시전자와 같은 진영)의 공격에는 맞지 않는다.
+        //    무적 필터링보다 먼저 해야, 판정 안에 들어와 있는 시전자 본인 때문에
+        //    아래의 무적 대기 처리가 myCollider를 꺼버리는 일이 없다.
+        if (!IsTargetFaction(col))
+            return;
+
+        // 4. 무적/사망 상태 필터링
         if (!IsHittable(hitTarget))
         {
             // 무적/회피 타겟이 판정 안으로 들어온 경우,
@@ -491,25 +497,25 @@ public class Attack : MonoBehaviour
             return;
         }
 
-        // 4. 캐스터-타깃 관계 유효성 검증 (트랩 여부 산출)
+        // 5. 캐스터-타깃 관계 유효성 검증 (트랩 여부 산출)
         if (!IsValidTarget(col, hitTarget, out bool isTrapAttack))
             return;
 
-        // 5. 카메라 셰이크
+        // 6. 카메라 셰이크
         GameManager.Instance.CameraShake(attackInfo.hitShake[0], attackInfo.hitShake[1], attackInfo.shakeTime);
 
-        // 6. 카운터 처리 — 성공 시 데미지 들어가지 않고 종료
+        // 7. 카운터 처리 — 성공 시 데미지 들어가지 않고 종료
         if (TryHandleCounter(hitTarget))
             return;
 
-        // 7. 기본 데미지 적용
+        // 8. 기본 데미지 적용
         bool critical = GetCritical();
         int finalDamage = ApplyDamage(hitTarget, critical, isTrapAttack);
 
-        // 8. 감전 추가 피해
+        // 9. 감전 추가 피해
         TryApplyShockBonus(hitTarget, finalDamage, critical, isTrapAttack);
         
-        // 9. 피격 이팩트
+        // 10. 피격 이팩트
         if (hitTarget.BasicStat.shield > 0)
         {
             hitTarget.SpawnHitEffect(ConstValues.ShieldAppearEffect, 0.5f);
@@ -520,35 +526,35 @@ public class Attack : MonoBehaviour
                 hitTarget.SpawnHitEffect(attackInfo.hitEffectId, 0.5f);
         }
         
-        // 10. 자원 획득 (플레이어 공격이 피해를 줬을 때, 공격당 1회)
+        // 11. 자원 획득 (플레이어 공격이 피해를 줬을 때, 공격당 1회)
         TryGainResource();
 
-        // 10. 사망 체크
+        // 12. 사망 체크
         if (hitTarget.BasicStat.hp <= 0)
         {
             hitTarget.Die();
             return;
         }
 
-        // 11. 넉백/공중치 방향 계산
+        // 13. 넉백/공중치 방향 계산
         CalculateDirectionalForces(hitTarget, out float upperPowerX, out float knockBackX);
 
-        // 12. 중복 타격 방지 (다시 충돌하지 않도록 콜라이더 무시)
+        // 14. 중복 타격 방지 (다시 충돌하지 않도록 콜라이더 무시)
         if (!attackInfo.duplicate)
             IgnoreCol(col);
 
-        // 13. 스태거 누적 / 무력화 — 무력화 발생 시 종료
+        // 15. 스태거 누적 / 무력화 — 무력화 발생 시 종료
         if (TryApplyStagger(hitTarget))
             return;
 
-        // 14. 상태이상(디버프) 적용
+        // 16. 상태이상(디버프) 적용
         ApplyDeBuffs(hitTarget, critical);
 
-        // 15. 리스폰 어택 (트랩 등) — 플레이어가 맞았을 때만 안전 위치로 복귀
+        // 17. 리스폰 어택 (트랩 등) — 플레이어가 맞았을 때만 안전 위치로 복귀
         // 피격 리액션보다 먼저 호출해 TrapRespawning 플래그를 세워둔다 (함정 피격 시 피격 가이드 예외처리용)
         TryRespawnPlayer(hitTarget);
 
-        // 16. 피격 리액션 (Airborne / Damaged)
+        // 18. 피격 리액션 (Airborne / Damaged)
         ApplyHitReaction(hitTarget, upperPowerX, knockBackX);
     }
 
@@ -622,26 +628,44 @@ public class Attack : MonoBehaviour
     {
         isTrapAttack = false;
 
+        if (!IsTargetFaction(col))
+            return false;
+
+        // 트랩
+        if (!castChar)
+        {
+            isTrapAttack = true;
+            return true;
+        }
+
+        // 플레이어의 공격 — 스프라이트가 점멸한다
+        if (castChar.GetComponent<Player>())
+            hitTarget.HitMaterial();
+
+        return true;
+    }
+
+    // 진영 판정만 담당하는 부수효과 없는 버전.
+    // 시전자가 때릴 수 있는 대상인지만 판별하므로 피격 처리 전 어느 시점에서든 호출할 수 있다.
+    private bool IsTargetFaction(Collider2D col)
+    {
         // 트랩
         if (!castChar)
         {
             if (col.GetComponent<Player>() == null && col.GetComponent<Monster>() == null)
                 return false;
-            isTrapAttack = true;
             return true;
         }
 
-        // 플레이어의 공격
+        // 플레이어의 공격 — 자기 자신을 포함한 플레이어는 때리지 않는다
         if (castChar.GetComponent<Player>())
         {
             if (col.GetComponent<Monster>() == null && col.GetComponent<Npc>() == null)
                 return false;
-            // 스프라이트가 점멸한다
-            hitTarget.HitMaterial();
             return true;
         }
 
-        // 몬스터의 공격
+        // 몬스터의 공격 — 몬스터끼리는 때리지 않는다
         if (castChar.GetComponent<Monster>())
         {
             if (col.GetComponent<Player>() == null && col.GetComponent<Npc>() == null)
