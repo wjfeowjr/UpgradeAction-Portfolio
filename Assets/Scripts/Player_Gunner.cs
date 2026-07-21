@@ -546,8 +546,6 @@ public class Player_Gunner : Player
                 Scream();
                 SpawnObject(flashId, centerPos);
             }
-            for (int i = 0; i < count - 1; i++)
-                delay1 += 0.1f;
         }
         
         if (await AttackDelay(delay1).SuppressCancellationThrow())
@@ -584,7 +582,7 @@ public class Player_Gunner : Player
                 grenadeObject.Throw();
             }
             
-            if (madBomber && count > 1 && i > 1)
+            if (madBomber && count > 1 && i > 0)
                 grenadeObject.RandomForceThrow(4.0f, 2.0f);
         }
         if (madBomber)
@@ -754,18 +752,19 @@ public class Player_Gunner : Player
         }
         SpawnObject(flashId, centerPos);
 
-        if (longShot)
-        {
-            StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot2, ConstValues.GunnerCrazyShot);
-        }
-        else
-        {
-            StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot, ConstValues.GunnerCrazyShot);
-            // 딜레이가 만약 있다면 여기다가
-            if (await AttackDelay(delay1).SuppressCancellationThrow())
-                return false;
-            StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerCrazyShot);
-        }
+        // if (longShot)
+        // {
+        //     StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot2, ConstValues.GunnerCrazyShot);
+        // }
+        // else
+        // {
+        //     StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot, ConstValues.GunnerCrazyShot);
+        //     // 딜레이가 만약 있다면 여기다가
+        //     if (await AttackDelay(delay1).SuppressCancellationThrow())
+        //         return false;
+        //     StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerCrazyShot);
+        // }
+        StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot2, ConstValues.GunnerCrazyShot);
         Scream();
 
         // 난사 시작

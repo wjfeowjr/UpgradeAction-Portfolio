@@ -724,13 +724,13 @@ public class Player_Berserker : Player
             immortal = false;
             isCounterAttack = false;
         }
-        else
-        {
-            // 동작 되돌아옴
-            StateSetting(ENormalState.Skill, ConstValues.ComboEnd, ConstValues.BerserkerSwordCounter);
-            if (await AttackDelay(delay3).SuppressCancellationThrow())
-                return false;
-        }
+        // else
+        // {
+        //     // 동작 되돌아옴
+        //     StateSetting(ENormalState.Skill, ConstValues.ComboEnd, ConstValues.BerserkerSwordCounter);
+        //     if (await AttackDelay(delay3).SuppressCancellationThrow())
+        //         return false;
+        // }
         return true;
     }
     

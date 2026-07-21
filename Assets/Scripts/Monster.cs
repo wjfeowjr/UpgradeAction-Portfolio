@@ -887,7 +887,19 @@ public class Monster : Character
                     currentTraceDelay = 0;
                     break;
             }
-            
+            switch (MonsterCheckLimit())
+            {
+                case 0:
+                    Flip(-1);
+                    currentTraceDelay = 0;
+                    break;
+
+                case 1:
+                    Flip(1);
+                    currentTraceDelay = 0;
+                    break;
+            }
+
             if (!myStat.hovering)
             {
                 switch (MonsterCheckFall())
@@ -1651,6 +1663,29 @@ public class Monster : Character
         else
         {
             if (isWallLeft)
+            {
+                return 1;
+            }
+        }
+
+        return -1;
+    }
+
+    // 몬스터 이동제한범위 감지
+    private int MonsterCheckLimit()
+    {
+        // 오른쪽
+        if (transform.localScale.x > 0)
+        {
+            if (transform.position.x > limitRight)
+            {
+                return 0;
+            }
+        }
+        // 왼쪽
+        else
+        {
+            if (transform.position.x < limitLeft)
             {
                 return 1;
             }
