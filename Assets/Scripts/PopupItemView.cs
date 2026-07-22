@@ -123,7 +123,7 @@ public class PopupItemView : MonoBehaviour, IPopupItemView
 
     private void HandleKeyInput()
     {
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
         {
             HandleEscape();
             return;

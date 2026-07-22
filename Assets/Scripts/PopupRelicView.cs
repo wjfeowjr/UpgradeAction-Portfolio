@@ -177,7 +177,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
         }
 
         // Esc
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
         {
             HandleEscape();
             return;

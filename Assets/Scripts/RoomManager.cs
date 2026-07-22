@@ -316,7 +316,7 @@ public class RoomManager : Singleton<RoomManager>
         var minimapInterface = popupMinimap.MinimapView.ConvertTo<IPopupMinimapView>();
         var minimapModel = new PopupMinimapModel()
         {
-            checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey)),
+            checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey)),
             closeString = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
             moveAction = MinimapCameraMove,
             checkAction = SpawnCheckMark,
@@ -396,7 +396,7 @@ public class RoomManager : Singleton<RoomManager>
             var gameOverModel = new PopupGameOverModel()
             {
                 title = GameManager.Instance.GetTalk(30019),
-                message = string.Format(GameManager.Instance.GetTalk(30106), GameManager.Instance.GetKeyCode(GameManager.Instance.spaceKey)),
+                message = string.Format(GameManager.Instance.GetTalk(30106), GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey)),
                 replayAction = () =>
                 {
                     CloseGameOverAsync(uiBase).Forget();

@@ -21,7 +21,7 @@ public class Popup_Pause : UIBase
         // 기존 PopupPauseView.Update의 입력(방향키/Enter)을 이곳에서 처리
         pauseView.HandleInput();
 
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
         {
             if (pauseView._IsSettingOpen)
                 return;

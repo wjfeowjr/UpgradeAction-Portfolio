@@ -95,7 +95,7 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
             SetSkillIndex(curSkillIndex + 1);
             _actions?.PlayMoveSound?.Invoke();
         }
-        else if (Input.GetKeyDown(KeyCode.Escape))
+        else if (Input.GetKeyDown(GameManager.Instance.escKey))
         {
             CloseAction();
             _actions?.PlayCancelSound?.Invoke();

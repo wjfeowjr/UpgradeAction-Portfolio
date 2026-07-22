@@ -115,15 +115,11 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     private const int AttributeCols = 4;
     private const int AttributeRows = 2;
-
-    private void Start()
-    {
-        noHaveSkillText.text = GameManager.Instance.GetTalk(91001);
-    }
-
+    
     private void OnEnable()
     {
         isPointChange = false;
+        noHaveSkillText.text = GameManager.Instance.GetTalk(91001);
     }
 
     private void Update()
@@ -162,7 +158,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             EnterAttributeSelect();
             _actions?.PlaySelectSound?.Invoke();
         }
-        else if (Input.GetKeyDown(KeyCode.Escape))
+        else if (Input.GetKeyDown(GameManager.Instance.escKey))
         {
             CloseAction();
             _actions?.PlayMoveSound?.Invoke();
@@ -278,7 +274,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         {
             EnterPointAdjust();
         }
-        else if (Input.GetKeyDown(KeyCode.Escape))
+        else if (Input.GetKeyDown(GameManager.Instance.escKey))
         {
             BackToSkillSelect();
         }
@@ -564,7 +560,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         sellText.text = GameManager.Instance.GetTalk(30009);
 
         foreach (var enterText in enterTexts)
-            enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey); 
+            enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey); 
     }
     
     public void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action, bool> popupAction, Action closeAction)

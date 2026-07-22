@@ -93,6 +93,12 @@ public class ConstValues : Singleton<ConstValues>
     // 언어
     public const string Korean = "Korean";
     public const string English = "English";
+    public const string Japanese = "Japanese";
+    public const string ChineseSimplified = "ChineseSimplified";
+    public const string ChineseTraditional = "ChineseTraditional";
+    public const string Spanish = "Spanish";
+    public const string Russian = "Russian";
+    public const string PortugueseBrazil = "PortugueseBrazil";
     
     public const string TotalBar = "TotalBar";
     public const string TextFont = "TextFont";

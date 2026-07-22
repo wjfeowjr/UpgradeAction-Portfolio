@@ -29,7 +29,7 @@ public class InteractionSelect : MonoBehaviour
 
     private void Awake()
     {
-        selectKey.text = GameManager.Instance.GetKeyCode(GameManager.Instance.spaceKey);
+        selectKey.text = GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey);
     }
 
     private void OnEnable()
@@ -55,13 +55,13 @@ public class InteractionSelect : MonoBehaviour
             SoundManager.Instance.PlaySound(ConstValues.Jump2);
         }
         
-        if (Input.GetKeyDown(KeyCode.Space))
+        if (Input.GetKeyDown(GameManager.Instance.enterKey))
         {
             dialogueAction?.Invoke(choiceIdList[currentIdx]);
             normalAction?.Invoke(currentIdx);
         }
         
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
         {
             closeAction.Invoke();
         }

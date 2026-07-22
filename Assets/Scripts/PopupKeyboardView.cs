@@ -121,7 +121,7 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
             HandleArrow(-1, 0);
         if (Input.GetKeyDown(GameManager.Instance.rightKey))
             HandleArrow(+1, 0);
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
             _presenter.HandleEsc();
     }
 
@@ -137,7 +137,7 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
 
         if (!_isRebinding)
         {
-            if (e.keyCode == GameManager.Instance.confirmKey)
+            if (e.keyCode == GameManager.Instance.enterKey)
             {
                 // Alt+Enter(전체화면 토글)는 무시
                 if (e.alt)

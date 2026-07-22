@@ -10,7 +10,7 @@ public class SpeechFrame : MonoBehaviour
 
     private void Awake()
     {
-        nextText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.spaceKey);
+        nextText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey);
     }
 
     public void SetPos(Vector2 pos)

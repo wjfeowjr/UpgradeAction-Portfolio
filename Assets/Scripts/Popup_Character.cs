@@ -62,7 +62,7 @@ public class Popup_Character : UIBase
     public void InitPresenters(string initialPlayerId, Action close)
     {
         curPlayerId = initialPlayerId;
-        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
+        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey));
         backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
         leftKeyText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterLeftKey);
         rightKeyText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.changeCharacterRightKey);
@@ -167,7 +167,7 @@ public class Popup_Character : UIBase
             }
         }
 
-        if (popupState == ePopupState.Character && Input.GetKeyDown(KeyCode.Escape))
+        if (popupState == ePopupState.Character && Input.GetKeyDown(GameManager.Instance.escKey))
         {
             await ReductionClose(true, true);
             closeAction?.Invoke();

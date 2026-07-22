@@ -320,7 +320,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
             itemExplainText.text = GameManager.Instance.GetTalk(itemInfo.explain);
 
             selectText.text = string.Format(GameManager.Instance.GetTalk(30110), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey), GameManager.Instance.GetKeyCode(GameManager.Instance.downKey));
-            backText.text   = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(KeyCode.Escape));
+            backText.text   = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
         }
 
         foreach (var statObject in statObjects)

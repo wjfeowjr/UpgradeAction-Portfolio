@@ -16,6 +16,8 @@ public class Player_Fighter : Player
     [SerializeField] private Transform lightningKickPos;
     [SerializeField] private Transform lightningPunchPos;
     [SerializeField] private Transform lightningPunchFinishPos;
+    [SerializeField] private Transform lightningPunchMissilePos;
+    [SerializeField] private Transform lightningPunchMissileFinishPos;
     [SerializeField] private Transform lightningSmashPos;
     [SerializeField] private Transform strongPunchPos;
     [SerializeField] private Transform punchTrailPos;
@@ -395,7 +397,7 @@ public class Player_Fighter : Player
             float randPos2 = Random.Range(-0.75f, 0.75f);
 
             if (movingPunch)
-                SpawnAttack(ConstValues.FighterLightningPunchMissile, lightningPunchPos);
+                SpawnAttack(ConstValues.FighterLightningPunchMissile, lightningPunchMissilePos);
             else
                 SpawnAttack(skillId, lightningPunchPos);
             
@@ -412,7 +414,7 @@ public class Player_Fighter : Player
 
         if (movingPunch)
         {
-            SpawnAttack(ConstValues.FighterLightningPunchFinishMissile, lightningPunchFinishPos);
+            SpawnAttack(ConstValues.FighterLightningPunchFinishMissile, lightningPunchMissileFinishPos);
         }
         else
         {

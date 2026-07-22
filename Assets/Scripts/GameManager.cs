@@ -8,6 +8,7 @@ using Cysharp.Threading.Tasks;
 using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.SceneManagement;
+using UnityEngine.Serialization;
 using UnityEngine.U2D;
 
 public static class SaveSystem
@@ -583,6 +584,11 @@ public class SaveData
     public bool firstDamaged;
     public bool firstPortal;
 
+    // 전체 보스 수 (모든 Room의 bosses 배열 크기 합)
+    public int bossCount;
+    // 처치한 보스 수 (보스방/미니보스방의 첫 연출이 끝난 방의 bosses 크기 합)
+    public int curBossCount;
+
     public List<string> playerList = new List<string>();
     public List<HaveItemInfo> itemList = new List<HaveItemInfo>();
     public List<string> relicList = new List<string>();
@@ -603,8 +609,7 @@ public class GameManager : Singleton<GameManager>
     public GameObject inGameDebugConsole;
     
     public KeyCode escKey;
-    public KeyCode spaceKey;
-    public KeyCode confirmKey;
+    public KeyCode enterKey;
     public KeyCode deleteKey;
     public KeyCode copyKey;
     
@@ -780,6 +785,10 @@ public class GameManager : Singleton<GameManager>
         get => saveData.savePoint;
         set => saveData.savePoint = value;
     }
+    
+    public int BossCount => saveData.bossCount;
+
+    public int CurBossCount => saveData.curBossCount;
 
     public bool FirstPortal
     {
@@ -892,7 +901,7 @@ public class GameManager : Singleton<GameManager>
             inGameDebugConsole.SetActive(!inGameDebugConsole.activeSelf);
 
         // Alt+Enter: 전체화면 <-> 창모드 토글
-        if (InputHelper.IsAltPressed && (Input.GetKeyDown(confirmKey) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+        if (InputHelper.IsAltPressed && (Input.GetKeyDown(enterKey) || Input.GetKeyDown(KeyCode.KeypadEnter)))
             ToggleFullScreen();
 
         // 테스터 용
@@ -936,8 +945,40 @@ public class GameManager : Singleton<GameManager>
         // 저장 시각 갱신 (UTC, 로케일 무관 round-trip 포맷)
         saveData.lastSavedAt = DateTime.UtcNow.ToString("o", CultureInfo.InvariantCulture);
 
+        // 보스 처치 집계 갱신
+        RefreshBossCount();
+
         // json화
         SaveSystem.Save(curSaveFileName, saveData);
+    }
+
+    // 전체 보스 수(bossCount)와 처치한 보스 수(curBossCount)를 다시 집계한다
+    public void RefreshBossCount()
+    {
+        if (!RoomManager.Instance)
+            return;
+
+        var roomArray = RoomManager.Instance.RoomArray;
+        if (roomArray == null || roomArray.Length == 0)
+            return;
+
+        saveData.bossCount = 0;
+        saveData.curBossCount = 0;
+
+        foreach (var room in roomArray)
+        {
+            // 보스방/미니보스방만 집계한다
+            if (!room.name.StartsWith("Room_Boss") && !room.name.StartsWith("Room_MiniBoss"))
+                continue;
+
+            // 1. 보스방/미니보스방의 bosses 배열 크기를 더한다
+            saveData.bossCount += room.BossCount;
+
+            // 2. 첫 연출(보스전)이 끝났으면 처치한 것으로 더한다
+            var roomInfo = saveData.roomInfoList.Find(x => x.roomId == room.name);
+            if (roomInfo?.roomProduct.Count > 0 && roomInfo.roomProduct[0].isFinish)
+                saveData.curBossCount += room.BossCount;
+        }
     }
 
     public SaveData LoadGame(string fileName)
@@ -1121,6 +1162,30 @@ public class GameManager : Singleton<GameManager>
             case ConstValues.English:
                 talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).en;
                 break;
+
+            case ConstValues.Japanese:
+                talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).ja;
+                break;
+
+            case ConstValues.ChineseSimplified:
+                talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).cn;
+                break;
+
+            case ConstValues.ChineseTraditional:
+                talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).tw;
+                break;
+
+            case ConstValues.Spanish:
+                talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).es;
+                break;
+
+            case ConstValues.Russian:
+                talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).ru;
+                break;
+
+            case ConstValues.PortugueseBrazil:
+                talk = TableManager.Instance.talkTable.Talk.Find(x => x.idx == idx).pt;
+                break;
         }
         
         return talk;
@@ -1298,8 +1363,7 @@ public class GameManager : Singleton<GameManager>
     private void DefaultKeySetting()
     {
         escKey = KeyCode.Escape;
-        spaceKey = KeyCode.Space;
-        confirmKey = KeyCode.Return;
+        enterKey = KeyCode.Return;
         deleteKey = KeyCode.X;
         copyKey = KeyCode.C;
         
@@ -2552,7 +2616,8 @@ public class GameManager : Singleton<GameManager>
         //ChangingFalse();
     }
 
-    public async UniTask SpawnWarningPopup(string message)
+    // delay: 경고 문구가 유지되는 시간. 기본 1.2초, 더 길거나 짧게 보여주고 싶을 때만 지정한다
+    public async UniTask SpawnWarningPopup(string message, float delay = 1.2f)
     {
         if (popupWarning)
         {
@@ -2562,11 +2627,12 @@ public class GameManager : Singleton<GameManager>
         {
             popupWarning = SpawnToHighestPool(eUIType.Popup_Warning, Vector3.zero).GetComponent<Popup_Warning>();
         }
-        
+
         var warningInterface = popupWarning.WarningView.ConvertTo<IPopupWarningView>();
         var warningModel = new PopupWarningModel()
         {
             message = message,
+            delay = delay,
         };
         var warningPresenter = new PopupWarningPresenter(warningInterface, warningModel);
         popupWarning.SetWarningPresenter(warningPresenter);
@@ -3578,7 +3644,7 @@ public class GameManager : Singleton<GameManager>
     {
         speechFrame.NextObjectActive();
         // 스페이스바를 누르면 넘어간다
-        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.ProductCancellation.Token).SuppressCancellationThrow())
+        if (await UniTask.WaitUntil(() => Input.GetKeyDown(enterKey), cancellationToken: GameManager.Instance.ProductCancellation.Token).SuppressCancellationThrow())
         {
             speechFrame.SpeechEnd();
             return;

@@ -82,7 +82,7 @@ public class TitleManager : MonoBehaviour
         }
         if (InputHelper.GetEnterDown())
             HandleEnter();
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
             HandleEsc();
     }
 
@@ -377,7 +377,7 @@ public class TitleManager : MonoBehaviour
     {
         titleText.text = GameManager.Instance.GetTalk(10000);
         saveSelectText.text = GameManager.Instance.GetTalk(30062);
-        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey));
+        selectText.text = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey));
         backText.text = string.Format(GameManager.Instance.GetTalk(30104), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey));
         deleteText.text = string.Format(GameManager.Instance.GetTalk(30111), GameManager.Instance.GetKeyCode(GameManager.Instance.deleteKey));
         copyText.text = string.Format(GameManager.Instance.GetTalk(30112), GameManager.Instance.GetKeyCode(GameManager.Instance.copyKey));

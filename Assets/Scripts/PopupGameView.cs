@@ -38,7 +38,17 @@ public class PopupGamePresenter
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupGameView : MonoBehaviour, IPopupGameView
 {
-    private static readonly string[] LanguageOptions = { ConstValues.Korean, ConstValues.English };
+    private static readonly string[] LanguageOptions =
+    {
+        ConstValues.Korean,
+        ConstValues.English,
+        ConstValues.Japanese,
+        ConstValues.ChineseSimplified,
+        ConstValues.ChineseTraditional,
+        ConstValues.Spanish,
+        //ConstValues.Russian,          // 텍스트 길이 문제로 보류
+        //ConstValues.PortugueseBrazil, // 보류
+    };
 
     [SerializeField] private ExpansionUiObject[] gameFrames;
 
@@ -71,7 +81,7 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
             HandleOption(+1);
         if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
             HandleEnter();
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
             _presenter.HandleEsc();
     }
 
@@ -98,7 +108,6 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
                 langIdx = (langIdx + dir + LanguageOptions.Length) % LanguageOptions.Length;
                 GameManager.Instance.language = LanguageOptions[langIdx];
                 SettingStringBinding.SaveGameSetting(ConstValues.Language, LanguageOptions[langIdx]);
-                gameFrames[0].GetComponent<GameFrame>().SetData(GameManager.Instance.language);
                 _languageChangeAction?.Invoke();
                 SetTextGameFrames();
                 RefreshGameData();

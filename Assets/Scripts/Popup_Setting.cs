@@ -149,7 +149,7 @@ public class Popup_Setting : UIBase
 
     private void Update()
     {
-        if (openComplete && Input.GetKeyDown(KeyCode.Escape) && settingState == eSettingState.Setting)
+        if (openComplete && Input.GetKeyDown(GameManager.Instance.escKey) && settingState == eSettingState.Setting)
             ClosePopup();
     }
 

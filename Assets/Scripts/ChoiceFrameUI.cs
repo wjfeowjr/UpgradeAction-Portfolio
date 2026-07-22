@@ -9,7 +9,7 @@ public class ChoiceFrameUI : ExpansionUiObject
 
     private void Awake()
     {
-        selectKeyText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey);
+        selectKeyText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey);
         selectKeyObject.SetActive(false);
     }
 

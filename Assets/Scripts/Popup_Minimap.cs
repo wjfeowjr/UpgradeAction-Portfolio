@@ -48,7 +48,7 @@ public class Popup_Minimap : UIBase
         popupMinimapPresenter.CheckAction();
 
         // 기존 PopupMinimapView.Update의 닫기 입력을 openComplete 게이팅하여 이곳에서 처리
-        if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(KeyCode.Tab) || Input.GetKeyDown(GameManager.Instance.escKey))
             CloseAction();
     }
 }

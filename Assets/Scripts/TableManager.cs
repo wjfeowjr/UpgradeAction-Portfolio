@@ -426,6 +426,13 @@ public class TalkData
     public int idx;
     public string kr;
     public string en;
+    public string ja;
+    public string cn;
+    public string tw;
+    public string es;
+    public string ru;
+    public string pt;
+    
 }
 [Serializable]
 public class TalkDataList

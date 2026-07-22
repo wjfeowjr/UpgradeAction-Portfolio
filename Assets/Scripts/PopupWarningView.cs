@@ -7,12 +7,14 @@ using UnityEngine;
 
 public interface IPopupWarningView
 {
-    UniTask SetMessage(string message);
+    UniTask SetMessage(string message, float delay);
 }
 
 public class PopupWarningModel
 {
     public string message;
+    // 경고 문구가 유지되는 시간 (기본 1.2초)
+    public float delay;
 }
 
 public class PopupWarningPresenter
@@ -28,7 +30,7 @@ public class PopupWarningPresenter
     
     public UniTask SetMessage()
     {
-        return _warningView.SetMessage(_model.message);
+        return _warningView.SetMessage(_model.message, _model.delay);
     }
 }
 
@@ -38,13 +40,12 @@ public class PopupWarningView : MonoBehaviour, IPopupWarningView
     private Tween scaleTween;
     private Vector3 expansionScale = new Vector3(1, 1, 1);
     private Vector3 reduceScale = new Vector3(1, 0, 1);
-    private float delay = 1.2f;
     private float duration = 0.3f;
-    
+
     [SerializeField] private TMP_Text messageText;
     [SerializeField] private GameObject warningLineObject;
 
-    public async UniTask SetMessage(string message)
+    public async UniTask SetMessage(string message, float delay)
     {
         warningCancellation?.Cancel();
         if(scaleTween != null)

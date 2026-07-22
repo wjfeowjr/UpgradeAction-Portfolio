@@ -73,7 +73,7 @@ public class SaveObject : InteractionController
             var fastTravelModel = new PopupFastTravelModel()
             {
                 moveText = string.Format(GameManager.Instance.GetTalk(30110), GameManager.Instance.GetKeyCode(GameManager.Instance.upKey), GameManager.Instance.GetKeyCode(GameManager.Instance.downKey)),
-                selectText = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.confirmKey)),
+                selectText = string.Format(GameManager.Instance.GetTalk(30103), GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey)),
                 cancelText = string.Format(GameManager.Instance.GetTalk(30102), GameManager.Instance.GetKeyCode(GameManager.Instance.escKey)),
 
                 targetPositions = targetPositions,

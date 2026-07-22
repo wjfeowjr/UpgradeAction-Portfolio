@@ -599,7 +599,7 @@ public class Player_Gunner : Player
     }
     
     // 넉백샷
-    public async UniTask<bool> KnockBackShot()
+    private async UniTask<bool> KnockBackShot()
     {
         // 특성 체크
         var skillId = ConstValues.GunnerKnockBackShot;
@@ -706,6 +706,9 @@ public class Player_Gunner : Player
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerKnockBackShot);
         SpawnObject(objectId, knockBackShotObjectPos);
         int angleZ = 10;
+        if (isCharge)
+            angleZ = 12;
+        
         for (int i = 0; i < 5; i++)
         {
             SpawnAttack(attackId, knockBackShotPos, angleZ);

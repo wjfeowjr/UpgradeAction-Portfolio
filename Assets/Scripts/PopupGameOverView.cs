@@ -49,7 +49,7 @@ public class PopupGameOverPresenter
         if (_isRestarted)
             return;
 
-        if (Input.GetKeyDown(GameManager.Instance.spaceKey))
+        if (Input.GetKeyDown(GameManager.Instance.enterKey))
         {
             _isRestarted = true;
             _model.replayAction?.Invoke();

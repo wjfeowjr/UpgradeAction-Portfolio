@@ -81,6 +81,8 @@ public class Room : MonoBehaviour
     [SerializeField] private SaveObject saveObject;
     [SerializeField] private PortalObject portalObject;
     [SerializeField] private MerchantObject merchantObject;
+    
+    [SerializeField] private DemoText demoText;
 
     // 퇴장 연출: 과거 방에서 진행 방향으로 더 걸어 나가는 거리.
     // 너무 크면 문턱 밖(바닥 없는 곳/벽)으로 나가 떨어지거나 막히므로 바닥 안에서 작게 유지한다.
@@ -151,6 +153,9 @@ public class Room : MonoBehaviour
     // 포탈 이동용: 포탈 발견 여부와 포탈 오브젝트 접근자
     public bool PortalCheck => roomInfo != null && roomInfo.IsRevealed(EMinimapObjectType.Portal);
     public PortalObject PortalObject => portalObject;
+
+    // 보스 처치 집계용: 이 방의 bosses 배열 크기
+    public int BossCount => bosses?.Length ?? 0;
 
     private void Awake()
     {
@@ -1082,7 +1087,10 @@ public class Room : MonoBehaviour
                     switch (roomInfo.item[idx].id)
                     {
                         case ConstValues.SaveTravel:
-                            GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30218)).Forget();
+                            GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30218), 3.5f).Forget();
+                            break;
+                        case ConstValues.WingedBoots:
+                            GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30219), 3.5f).Forget();
                             break;
                     }
                     GameManager.Instance.GetItem(roomInfo.item[idx].id, roomInfo.item[idx].count);
@@ -1215,10 +1223,14 @@ public class Room : MonoBehaviour
         // 세이브 오브젝트
         if(saveObject)
             saveObject.RefreshTalkText();
-        
+
         // 가이드 오브젝트
         foreach (var guideObject in guideObjects)
             guideObject.Setting();
+        
+        // 데모 텍스트
+        if(demoText)
+            demoText.RefreshTalkText();
     }
 
     // 키설정 직후 키
@@ -1881,7 +1893,7 @@ public class Room : MonoBehaviour
     {
         speechFrame.NextObjectActive();
         // 스페이스바를 누르면 넘어간다
-        if (await UniTask.WaitUntil(() => Input.GetKeyDown(KeyCode.Space), cancellationToken: GameManager.Instance.ProductCancellation.Token).SuppressCancellationThrow())
+        if (await UniTask.WaitUntil(() => Input.GetKeyDown(GameManager.Instance.enterKey), cancellationToken: GameManager.Instance.ProductCancellation.Token).SuppressCancellationThrow())
         {
             speechFrame.SpeechEnd();
             return;

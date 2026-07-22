@@ -91,7 +91,7 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
             HandleOption(+1);
         if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
             HandleEnter();
-        if (Input.GetKeyDown(KeyCode.Escape))
+        if (Input.GetKeyDown(GameManager.Instance.escKey))
             _presenter.HandleEsc();
     }
 

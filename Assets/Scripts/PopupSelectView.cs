@@ -106,7 +106,7 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
             else
                 noAction();
         }
-        else if (Input.GetKeyDown(KeyCode.Escape))
+        else if (Input.GetKeyDown(GameManager.Instance.escKey))
         {
             escAction();
         }
