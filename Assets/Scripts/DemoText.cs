@@ -14,6 +14,7 @@ public class DemoText : MonoBehaviour
 
     private void Start()
     {
+        GameManager.Instance.RefreshBossCount();
         RefreshTalkText();
     }
 

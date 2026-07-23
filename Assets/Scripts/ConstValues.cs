@@ -29,6 +29,9 @@ public class ConstValues : Singleton<ConstValues>
     public const float DialogDelay2 = 1.0f;
 
     public const string User = "user";
+    public const string Demo = "Demo";
+    public const string Editor = "Editor";
+    
     public const string Foot = "foot";
     public const string Center = "center";
     public const string Sprite = "Sprite";

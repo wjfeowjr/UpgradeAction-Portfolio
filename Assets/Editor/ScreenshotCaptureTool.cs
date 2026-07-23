@@ -14,6 +14,12 @@ public static class ScreenshotCaptureTool
     [MenuItem("Tools/스크린샷 찍기 _F5")]
     private static void CaptureScreenshot()
     {
+        if (GameManager.Instance.isDemo)
+        {
+            Debug.Log($"데모버전은 스크린샷이 찍히지 않음");
+            return;
+        }
+        
         if (!Directory.Exists(saveFolder))
             Directory.CreateDirectory(saveFolder);
 

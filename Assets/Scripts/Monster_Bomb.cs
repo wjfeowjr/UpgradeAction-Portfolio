@@ -153,7 +153,7 @@ public class Monster_Bomb : Monster
         float delay2 = 0.5f;
         int bombCount = 20;
         if (HalfHp())
-            bombCount = 25;
+            bombCount = 30;
 
         PlaySound($"{basicStat.id}_laugh");
         SpawnObject(ConstValues.BlueFlash, facePos);
@@ -167,18 +167,19 @@ public class Monster_Bomb : Monster
             int randX = Random.Range(0, 2);
             Vector2 bombVector = new Vector2(crazyBombPos[randX].position.x, crazyBombPos[randX].position.y);
 
-            if (HalfHp() && i % 3 == 0)
-            {
-                var targetPos = GameManager.Instance.CurPlayer.CenterPos.position;
-                float randomX = Random.Range(-2.0f, 2.0f);
-                targetPos.y += randomX;
-                SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}_Homing", bombVector, 0, targetPos);
-            }
-            else
-            {
-                SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}", bombVector);
-            }
-
+            // if (HalfHp() && i % 3 == 0)
+            // {
+            //     var targetPos = GameManager.Instance.CurPlayer.CenterPos.position;
+            //     float randomX = Random.Range(-2.0f, 2.0f);
+            //     targetPos.y += randomX;
+            //     SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}_Homing", bombVector, 0, targetPos);
+            // }
+            // else
+            // {
+            //     SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}", bombVector);
+            // }
+            SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}", bombVector);
+            
             if(await AttackDelay(delay1).SuppressCancellationThrow())
                 return;
         }

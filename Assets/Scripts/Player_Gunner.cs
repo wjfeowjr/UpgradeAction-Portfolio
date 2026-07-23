@@ -624,7 +624,9 @@ public class Player_Gunner : Player
         if (powerfulGunpowder)
         {
             float addTime = 0;
-            float chargeTime = 1.0f - Mathf.Abs(1.0f - basicStat.attackSpeed);
+            float originChargeTime = 0.35f;
+            float plusAttackSpeed = basicStat.attackSpeed - originStat.attackSpeed;
+            float chargeTime = originChargeTime - (originChargeTime * plusAttackSpeed);
 
             bool isSpawnedEffect = false;
             while (addTime < chargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))
@@ -680,7 +682,7 @@ public class Player_Gunner : Player
             if (isCharge)
             {
                 float addTime2 = 0;
-                float extraChargeTime = 0.5f;
+                float extraChargeTime = 0.35f;
                 while (addTime2 < extraChargeTime && Input.GetKey(GameManager.Instance.GetSkillKey(ConstValues.BerserkerFireStrike)))
                 {
                     addTime2 += Time.deltaTime * basicStat.attackSpeed;
