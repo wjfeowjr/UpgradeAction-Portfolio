@@ -9,7 +9,9 @@ public class DemoText : MonoBehaviour
 
     private void OnEnable()
     {
+        // 방을 떠났다 돌아오면 Start는 다시 불리지 않으므로 여기서 텍스트까지 갱신한다
         GameManager.Instance.RefreshBossCount();
+        RefreshTalkText();
     }
 
     private void Start()

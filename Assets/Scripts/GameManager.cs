@@ -614,6 +614,9 @@ public class SaveData
     public bool firstDamaged;
     public bool firstPortal;
 
+    // 데모 마지막 구역에서 위시리스트 유도 팝업을 이미 띄웠는지 (예/아니오 무관, 최초 1회)
+    public bool isWishlistPopupShown;
+
     // 전체 보스 수 (모든 Room의 bosses 배열 크기 합)
     public int bossCount;
     // 처치한 보스 수 (보스방/미니보스방의 첫 연출이 끝난 방의 bosses 크기 합)
@@ -825,6 +828,12 @@ public class GameManager : Singleton<GameManager>
     {
         get => saveData.firstPortal;
         set => saveData.firstPortal = value;
+    }
+
+    public bool IsWishlistPopupShown
+    {
+        get => saveData.isWishlistPopupShown;
+        set => saveData.isWishlistPopupShown = value;
     }
 
     public bool FirstGetSkill
@@ -1056,7 +1065,7 @@ public class GameManager : Singleton<GameManager>
 
     private void DataPatch(SaveData data)
     {
-        ResetSkillAttribute();
+        // ResetSkillAttribute();
         // 특성 개편 패치: 한국 시간 2026-07-21 00:00(UTC+9) 이전에 저장된 세이브가 대상
         // lastSavedAt이 없는 구버전 세이브도 개편 이전 저장본이므로 패치 대상에 포함한다
         DateTime patchTimeUtc = new DateTime(2026, 7, 21, 0, 0, 0, DateTimeKind.Utc).AddHours(-9);

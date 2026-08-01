@@ -1774,14 +1774,40 @@ public class Room : MonoBehaviour
             saveObject.InteractionObject.FadeOut();
             SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
             GameManager.Instance.SaveGame();
-            
-            // 이곳
-            if (GameManager.Instance.IsHaveItem(ConstValues.SaveTravel))
+
+            // 데모 마지막 구역에서는 세이브가 끝난 뒤 최초 1회 위시리스트를 유도하고,
+            // 팝업이 닫힌 다음에 패스트 트래블 선택지를 연다
+            if (GameManager.Instance.isDemo && name == ConstValues.DemoLastSaveRoom &&
+                SteamWorksManager.Instance.TryShowWishlistPopup(OnWishlistPopupClosed))
             {
+                // 팝업의 방향키 입력과 플레이어 조작이 겹치지 않도록 잠근다
                 GameManager.Instance.ControlStart = false;
-                saveObject.SetFastTravelAction();
+                return;
             }
+
+            OpenFastTravel();
         });
+    }
+
+    // 위시리스트 팝업이 닫힌 뒤: 패스트 트래블이 이어지면 조작 잠금을 유지하고, 아니면 되돌린다
+    private void OnWishlistPopupClosed()
+    {
+        if (GameManager.Instance.IsHaveItem(ConstValues.SaveTravel))
+        {
+            OpenFastTravel();
+            return;
+        }
+
+        GameManager.Instance.ControlStart = true;
+    }
+
+    private void OpenFastTravel()
+    {
+        if (!GameManager.Instance.IsHaveItem(ConstValues.SaveTravel))
+            return;
+
+        GameManager.Instance.ControlStart = false;
+        saveObject.SetFastTravelAction();
     }
     
     private void SetActionGoldObject()

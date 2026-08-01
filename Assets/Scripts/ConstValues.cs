@@ -4,6 +4,8 @@ using UnityEngine;
 
 public class ConstValues : Singleton<ConstValues>
 {
+    public const uint AppId = 4972100;
+    
     public const float BasicGravity = 1.0f;
     public const float DownSecond = 0.9f;
     public const float ReboundSecond = 0.05f;
@@ -285,6 +287,7 @@ public class ConstValues : Singleton<ConstValues>
     public const string SavePoint = "SavePoint";
     public const string PortalObject = "PortalObject";
     public const string FirstPortalRoom = "Room_3_2";   // 첫 포탈 사용 시 강제 이동 대상
+    public const string DemoLastSaveRoom = "Room_4_2";  // 데모 마지막 구역: 위시리스트 유도 세이브 포인트
     public const string Interaction = "Interaction";
     public const string InteractionUI = "InteractionUI";
     public const string InteractionSelectUI = "InteractionSelectUI";
