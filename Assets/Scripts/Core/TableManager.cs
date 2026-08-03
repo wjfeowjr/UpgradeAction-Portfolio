@@ -497,7 +497,6 @@ public class TableManager : SingletonMono<TableManager>
             return default;
         }
         
-        //Debug.Log(jsonText.text);
         var data = JsonUtility.FromJson<T>(jsonText.text);
         return data;
     }

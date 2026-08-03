@@ -46,7 +46,6 @@ public class TitleManager : MonoBehaviour
             SceneChanger.Instance.TitleScene = true;
 
         StartSetting();
-        //SetMouseInteraction(); // 마우스 상호작용 (보류)
 
         if (await GameManager.Instance.Fading(1, 0, 0.5f, true, ConstValues.BlackColor).SuppressCancellationThrow())
             return;
@@ -394,41 +393,6 @@ public class TitleManager : MonoBehaviour
         BgmManager.Instance.PlayBgm($"{ConstValues.BGM}_{ConstValues.Title}", true);
     }
 
-    // private async void TextFade()
-    // {
-    //     fadeCancellation = new CancellationTokenSource();
-    //     float fadeTime = 1.0f;
-    //     while (true)
-    //     {
-    //         startText.DOFade(0, fadeTime);
-    //         if (await NormalDelay(fadeTime, fadeCancellation).SuppressCancellationThrow())
-    //             return;
-    //
-    //         startText.DOFade(1, fadeTime);
-    //         if (await NormalDelay(fadeTime, fadeCancellation).SuppressCancellationThrow())
-    //             return;
-    //     }
-    // }
-
-    // private void AnyKeyStart()
-    // {
-    //     if (Input.GetKeyDown(KeyCode.F1))
-    //     {
-    //         //PlayerPrefs.DeleteAll();
-    //         GameManager.Instance.DefaultSkillKeySetting();
-    //         GameManager.Instance.FirstStart();
-    //     }
-    //
-    //     // 아무 키 누르기
-    //     if (!Input.anyKeyDown)
-    //         return;
-    //
-    //     // 마우스 클릭은 제외
-    //     if (Input.GetMouseButtonDown(0) || Input.GetMouseButtonDown(1) || Input.GetMouseButtonDown(2))
-    //         return;
-    //
-    //     GameManager.Instance.GoScene(ConstValues.BattleScene);
-    // }
 
     private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
     {

@@ -49,7 +49,6 @@ public class Monster_Moon : Monster
     {
         float delay1 = 0.7f;
         float delay2 = 0.3f;
-        //float fadeSpeed = 0.4f;
         
         var playerPos = GameManager.Instance.CurPlayer.transform.position;
         var firePos = new Vector2(playerPos.x, RoomManager.Instance.GroundPosY + 9.0f);
@@ -59,7 +58,6 @@ public class Monster_Moon : Monster
         var moonEffect = SpawnObject(ConstValues.MonsterMoonEffect, CenterPos);
         
         // 예전꺼
-        // await WarningAreaSpawnTrajectory(firePos, endPos, warningAngle, fadeSpeed, ConstValues.RedColor, targetCollider.size.x);
 
         // 지금꺼
         SpawnObject($"{basicStat.id}_{ConstValues.Warning}", firePos);
@@ -187,8 +185,6 @@ public class Monster_Moon : Monster
         CancelMotion();
         MoveStateSetting(EMoveState.Stopping);
         isDie = true;
-        //removeAction?.Invoke();
-        //GameManager.Instance.RemoveMonster(this);
     }
 
     public async void DieBomb()
@@ -198,7 +194,6 @@ public class Monster_Moon : Monster
         while (true)
         {
             SpawnHitEffect(myStat.dyingMiniEffect, 1.0f, 1.5f);
-            //GameManager.Instance.CameraShake(0.1f, 0.1f);
             if (await NormalDelay(delay, dieCancellation).SuppressCancellationThrow())
                 return;
         }

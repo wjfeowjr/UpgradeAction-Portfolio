@@ -112,7 +112,6 @@ public class Monster_Bomb : Monster
             return;
     
         // 플래시 발동
-        // SpawnObject($"{basicStat.id}_Flash", rockPunchPos);
         if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
     
@@ -167,17 +166,6 @@ public class Monster_Bomb : Monster
             int randX = Random.Range(0, 2);
             Vector2 bombVector = new Vector2(crazyBombPos[randX].position.x, crazyBombPos[randX].position.y);
 
-            // if (HalfHp() && i % 3 == 0)
-            // {
-            //     var targetPos = GameManager.Instance.CurPlayer.CenterPos.position;
-            //     float randomX = Random.Range(-2.0f, 2.0f);
-            //     targetPos.y += randomX;
-            //     SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}_Homing", bombVector, 0, targetPos);
-            // }
-            // else
-            // {
-            //     SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}", bombVector);
-            // }
             SpawnAttack($"{basicStat.id}_{ConstValues.Attack}4_{ConstValues.Object}", bombVector);
             
             if(await AttackDelay(delay1).SuppressCancellationThrow())

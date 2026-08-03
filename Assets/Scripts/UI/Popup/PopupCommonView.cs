@@ -38,7 +38,6 @@ public class PopupCommonPresenter
 
     private void OnClose()
     {
-        //UIManager.Instance.Close(eUIType.Popup_Common);
     }
 }
 

@@ -666,10 +666,6 @@ public class GameManager : Singleton<GameManager>
     public KeyCode skillKey2;
     public KeyCode skillKey3;
     public KeyCode skillKey4;
-    //public KeyCode skillKey5;
-    //public KeyCode skillKey6;
-    //public KeyCode skillKey7;
-    //public KeyCode skillKey8;
     
     public KeyCode potionKey;
 
@@ -938,8 +934,6 @@ public class GameManager : Singleton<GameManager>
     protected override void Awake()
     {
         base.Awake();
-        //QualitySettings.vSyncCount = 0;
-        //Application.targetFrameRate = 60;
         
         InitManager();
         SetCopyData();
@@ -948,7 +942,6 @@ public class GameManager : Singleton<GameManager>
         SetPrefabActive(false);
         DefaultKeySetting();
         FirstCashing();
-        //CashingSpeechFrame();
     }
 
     private void Update()
@@ -962,24 +955,6 @@ public class GameManager : Singleton<GameManager>
         if (InputHelper.IsAltPressed && (Input.GetKeyDown(enterKey) || Input.GetKeyDown(KeyCode.KeypadEnter)))
             ToggleFullScreen();
 
-        // 테스터 용
-        // if (Input.GetKeyDown(KeyCode.F11))
-        // {
-        //     AddNewSkill(ConstValues.BerserkerSwordCounter);
-        //     AddNewSkill(ConstValues.BerserkerCrash);
-        //     AddNewSkill(ConstValues.GunnerCrazyShot);
-        //     AddNewSkill(ConstValues.GunnerElementalInfusion);
-        //     AddNewSkill(ConstValues.FighterLightningSmash);
-        //     AddNewSkill(ConstValues.FighterStrongPunch);
-        //     
-        //     foreach (var skillAttributeCopy in skillAttributeCopyList)
-        //         UnLockAttributeSlot(skillAttributeCopy.id);
-        //
-        //     PlusAttributePoint(100);
-        //     RefreshSkill();
-        //     
-        //     SaveGame();
-        // }
     }
 
     // 전체화면 상태를 토글하고 저장 (Alt+Enter)
@@ -1081,7 +1056,6 @@ public class GameManager : Singleton<GameManager>
 
     private void DataPatch(SaveData data)
     {
-        // ResetSkillAttribute();
         // 특성 개편 패치: 한국 시간 2026-07-21 00:00(UTC+9) 이전에 저장된 세이브가 대상
         // lastSavedAt이 없는 구버전 세이브도 개편 이전 저장본이므로 패치 대상에 포함한다
         DateTime patchTimeUtc = new DateTime(2026, 7, 21, 0, 0, 0, DateTimeKind.Utc).AddHours(-9);
@@ -1199,8 +1173,6 @@ public class GameManager : Singleton<GameManager>
         curPlayer = GetPlayer(saveData.playerList[0]);
         
 #if UNITY_EDITOR
-        // if(!saveData.playerList.Contains(ConstValues.Fighter))
-        //     AddPlayer(ConstValues.Fighter);
 #endif
     }
 
@@ -1665,7 +1637,6 @@ public class GameManager : Singleton<GameManager>
             skillKey.skillId = skillId;
 
         // 저장
-        //SaveGame();
     }
     public List<SettingSkill> GetSettingSkillList()
     {
@@ -2311,7 +2282,6 @@ public class GameManager : Singleton<GameManager>
     {
         monster.MonsterType = monsterType;
         monster.IsExplosion = isExplosion;
-        //monster.SpawnHpBar();
         monsterList.Add(monster);
     }
 
@@ -2492,29 +2462,8 @@ public class GameManager : Singleton<GameManager>
         foreach (Transform child in popupPool)
             Destroy(child.gameObject);
 
-        // foreach (Transform child in highestPool)
-        //     Destroy(child.gameObject);
     }
     
-    // private void CashingSpeechFrame()
-    // {
-    //     int count = 3;
-    //     for (int i = 0; i < count; i++)
-    //     {
-    //         speechFrame1.Add(GetSpeechFrame(ConstValues.SpeechFrame1));
-    //         speechFrame2.Add(GetSpeechFrame(ConstValues.SpeechFrame2));
-    //     }
-    //     for (int i = 0; i < count; i++)
-    //     {
-    //         speechFrame1[i].gameObject.SetActive(false);
-    //         speechFrame2[i].gameObject.SetActive(false); 
-    //     }
-    //     speechFrameStrong = GetSpeechFrame(ConstValues.SpeechFrameStrong);
-    //     speechFrameStrong.gameObject.SetActive(false);
-    //     
-    //     speechFrameTitle = GetSpeechFrame(ConstValues.SpeechFrameTitle);
-    //     speechFrameTitle.gameObject.SetActive(false);
-    // }
 
     private GameObject SpawnToPool(string id, Transform pool, Transform objTransform)
     {
@@ -2681,7 +2630,6 @@ public class GameManager : Singleton<GameManager>
 
         RefreshPotionActive();
 
-        //ChangingFalse();
     }
 
     // delay: 경고 문구가 유지되는 시간. 기본 1.2초, 더 길거나 짧게 보여주고 싶을 때만 지정한다
@@ -3167,7 +3115,6 @@ public class GameManager : Singleton<GameManager>
                 },
                 escAction = ()=>
                 {
-                    //uiBase.ReductionClose(false, false);
                     uiBase.Close();
                     noAction();
                 },

@@ -457,13 +457,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         GameManager.Instance.HideHighestObjects();
         YesAction();
 
-        // 팝업으로 구매
-        // playSelectSound();
-        // string message = $"구매 하시겠습니까?";
-        // if(curAdjust == eAdjust.Sell)
-        //     message = $"판매 하시겠습니까?";
-        // Sprite goodsSprite = GameManager.Instance.GetAtlasSprite(ConstValues.IconAttributePoint);
-        // popupAction(message, goodsSprite, curCost, YesAction, NoAction);
     }
 
     private void YesAction()
@@ -576,9 +569,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
         SetupSkillNavigation();
         RefreshLeftPoint();
         
-        //berserkerObject.SetActive(curPlayerId == ConstValues.Berserker);
-        //gunnerObject.SetActive(curPlayerId == ConstValues.Gunner);
-        //fighterObject.SetActive(curPlayerId == ConstValues.Fighter);
 
         // 초기 상태: 스킬 선택 단계, 0번 선택
         curStep = eStep.SkillSelect;
@@ -625,7 +615,6 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             return;
         }
 
-        //attributeText.gameObject.SetActive(true);
         attributeList = GameManager.Instance.skillAttributeCopyList.FindAll(x => x.skill == curSkillId);
         BuildAttributeIdList();
 

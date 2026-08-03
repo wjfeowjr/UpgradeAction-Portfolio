@@ -34,9 +34,5 @@ public class LateTrace : MonoBehaviour
         else if (target.position.y >= centerY)
             transform.position = new Vector2(transform.position.x, targetPosition.y - magY);
         
-        // if (target.position.x < centerX)
-        //     transform.position = new Vector2(targetPosition.x + magX, targetPosition.y + 1);
-        // else if (target.position.x >= centerX)
-        //     transform.position = new Vector2(targetPosition.x - magX, targetPosition.y + 1);
     }  
 }

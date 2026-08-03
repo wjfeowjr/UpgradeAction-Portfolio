@@ -318,7 +318,6 @@ public class Monster_Golem : Monster
         
         Airborne(xVelocity, yVelocity, true);
         
-        //gameObject.SetActive(false);
         goldAction?.Invoke(myStat.gold, centerPos.position);
         isDie = true;
     }

@@ -129,9 +129,6 @@ public class Missile : MonoBehaviour, IProjectile
         // 박스 캐스트
         if (missileInfo.type == MissileType.Horizontal)
         {
-            // var colSize = myCollider.size;
-            // var boxSize = new Vector2(0.1f, colSize.y * 0.8f); // 좌우 (세로로 긴 박스)
-            // var boxVector = new Vector2(myCollider.transform.position.x + myCollider.offset.x, myCollider.transform.position.y + myCollider.offset.y);
 
             if (dir == Vector2.left)
             {
@@ -139,7 +136,6 @@ public class Missile : MonoBehaviour, IProjectile
                 var rayVector = new Vector2(transform.position.x, transform.position.y);
                 var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
                 Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
-                //var ray = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, defaultLimit, missileLayerMask);
 
                 if (ray.collider == null || !myCollider)
                     missileInfo.limitLength = defaultLimit;
@@ -153,7 +149,6 @@ public class Missile : MonoBehaviour, IProjectile
                 var rayVector = new Vector2(transform.position.x, transform.position.y);
                 var ray = Physics2D.Raycast(rayVector, rayDir, defaultLimit, missileLayerMask);
                 Debug.DrawRay(rayVector, rayDir * defaultLimit, ConstValues.OrangeColor, 0.02f);
-                //var ray = Physics2D.BoxCast(boxVector, boxSize, 0f, dir, defaultLimit, missileLayerMask);
 
                 if (ray.collider == null || !myCollider)
                     missileInfo.limitLength = defaultLimit;
@@ -303,7 +298,6 @@ public class Missile : MonoBehaviour, IProjectile
             }
         }
 
-        //myRigidbody.linearVelocity = Vector2.zero;
         if(myCollider)
             myCollider.enabled = false;
         if (missileSprite)

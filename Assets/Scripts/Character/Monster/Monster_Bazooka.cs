@@ -32,9 +32,6 @@ public class Monster_Bazooka : Monster
         if (GameManager.Instance.CurPlayer.CenterPos.position.x < transform.position.x)
             missileDir = -1;
         
-        // var missileObject = SpawnAttackObject($"{basicStat.id}_{ConstValues.Attack}_{ConstValues.Object}", attackPos, 0, missileDir).GetComponent<Missile>();
-        // missileObject.LookAtTarget(GameManager.Instance.CurPlayer.CenterPos.position);
-        // missileObject.gameObject.SetActive(false);
         
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return;
@@ -65,7 +62,6 @@ public class Monster_Bazooka : Monster
                 missileObject.LookAtTarget(targetPos);
         }
         
-        //missileObject.gameObject.SetActive(true);
         
         SetTriggerAnimator(ConstValues.Pattern);
         if (await AttackDelay(delay2).SuppressCancellationThrow())

@@ -13,7 +13,6 @@ public class TotalBar : MonoBehaviour
 
     [SerializeField] private Gauge hpBar;
     [SerializeField] private Gauge staggerBar;
-    //[SerializeField] private Gauge passiveBar;
 
     private void OnEnable()
     {
@@ -35,8 +34,6 @@ public class TotalBar : MonoBehaviour
         if(!castCharacter)
             return;
 
-        // if(passiveBar) 
-        //     passiveBar.SettingColorAndObject(castPlayer.UniqueId);
     }
 
     // 체력 게이지 감소
@@ -75,8 +72,6 @@ public class TotalBar : MonoBehaviour
 
         if (currentValue > 0)
             staggerBar.GaugeReduce(currentValue, maxValue, speed);
-        // else
-        //     staggerBar.CrashStaggerBar();
     }
     
     // 무력화 게이지 재생성

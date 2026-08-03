@@ -26,7 +26,6 @@ public class Player_Fighter : Player
 
     public override async void ChangeAttack()
     {
-        //Debug.Log("교체 공격 시작");
         CancelMotion();
         
         curGlobalCoolTime = 0;
@@ -43,8 +42,6 @@ public class Player_Fighter : Player
         }
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
         
-        // StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
-        // FighterChangeAttackNotMotion();
     }
     private async UniTask<bool> FighterChangeAttack()
     {
@@ -229,7 +226,6 @@ public class Player_Fighter : Player
         }
         myRigidbody.linearVelocity = Vector2.zero;
         
-        //jumpAttackObject.GetComponent<Attack>().DisActiveCollider();
         trailObject.SetTarget(null);
         if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow()) 
             return false;
@@ -446,9 +442,6 @@ public class Player_Fighter : Player
             myRigidbody.linearVelocity = Vector2.zero;
         
         SpawnObject(ConstValues.FighterFlash, centerPos);
-        // if (await AttackDelay(delay1).SuppressCancellationThrow()) 
-        //     return false;
-        // StateSetting(ENormalState.Skill, ConstValues.ComboAttack, skillId);
         
         // 도움닫기
         var leapHeight = 8.0f; // transform.localScale.x * leapHeight 12.0f;

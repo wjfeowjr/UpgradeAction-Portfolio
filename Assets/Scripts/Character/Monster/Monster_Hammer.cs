@@ -32,10 +32,8 @@ public class Monster_Hammer : Monster
         
         readyObject.SetActive(false);
         SetTriggerAnimator(ConstValues.Pattern);
-        //var fireObject = SpawnAttackObject($"{basicStat.id}_Attack1", firePos);
         if(await AttackDelay(delay2).SuppressCancellationThrow())
             return;
-        //fireObject.SetActive(false);
         SpawnAttack($"{basicStat.id}_Attack2", attackPos);
         
         if(await AttackDelay(delay3).SuppressCancellationThrow())

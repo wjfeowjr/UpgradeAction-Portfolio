@@ -13,17 +13,6 @@ public class VolumeManager : Singleton<VolumeManager>
         SetBGMVolume(GameManager.Instance.bgmVolume);
     }
 
-    // private void Update()
-    // {
-    //     if (Input.GetKeyDown(KeyCode.F1))
-    //     {
-    //         SetMasterVolume(GameManager.Instance.masterVolume);
-    //     }
-    //     if (Input.GetKeyDown(KeyCode.F2))
-    //     {
-    //         SetMasterVolume(1.0f);
-    //     }
-    // }
 
     private float ToDecibel(float volume) =>
         volume > 0f ? Mathf.Log10(volume) * 20f : -80f;

@@ -378,7 +378,6 @@ public class Elevator : InteractionController, IMovingPlatform
             WallOpen();
 
         SoundManager.Instance.PlaySound(ConstValues.Lever);
-        //GameManager.Instance.ControlStart = false;
         myAudioSource.Play();
         return true;
     }
@@ -496,7 +495,6 @@ public class Elevator : InteractionController, IMovingPlatform
             return;
 
         isPlayerTouch = false;
-        //GameManager.Instance.SaveGame();
     }
 
     // 레버: 해당 층으로 직행 호출 (현재 층과 다를 때만 작동). 실제로 작동했는지 반환
@@ -522,29 +520,6 @@ public class Elevator : InteractionController, IMovingPlatform
         platformVelocity = Vector2.zero;
     }
 
-    // private void SetPlatformObject()
-    // {
-    //     platformObject = new PlatformObject
-    //     {
-    //         collider = bottomCollider,
-    //         height = PlatformHeight(),
-    //     };
-    // }
-    //
-    // private void SetHeight()
-    // {
-    //     if (platformObject != null)
-    //         platformObject.height = PlatformHeight();
-    // }
-    //
-    // private float PlatformHeight()
-    // {
-    //     if (!bottomCollider)
-    //         return 0f;
-    //
-    //     var t = bottomCollider.transform;
-    //     return t.position.y + bottomCollider.size.y * 0.5f + bottomCollider.offset.y - 0.2f;
-    // }
     
     // 일반 딜레이
     private async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)

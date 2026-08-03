@@ -30,12 +30,10 @@ public class Player_Gunner : Player
 
     public override async void ChangeAttack()
     {
-        //Debug.Log("교체 공격 시작");
         CancelMotion();
 
         curGlobalCoolTime = 0;
 
-        //BodyTypeSetting(EBodyType.SuperArmor);
         stateCancellation = new CancellationTokenSource();
         var finishSuccess = await GunnerChangeAttack();
         // 스킬로 캔슬된 경우, 새 스킬이 설정한 바디타입(예: 반격기의 Counter)을 덮어쓰지 않는다
@@ -49,8 +47,6 @@ public class Player_Gunner : Player
 
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
 
-        // StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
-        // GunnerChangeAttackNotMotion();
     }
     private async UniTask<bool> GunnerChangeAttack()
     {
@@ -84,8 +80,6 @@ public class Player_Gunner : Player
             return false;
         
         // 점프 공격횟수를 다 쓰면 점프공격을 할 수 없다
-        // if (landingState == ELandingState.Air && jumpAttackCount > maxBullet)
-        //     return false;
         
         bool finishSuccess = true;
         string type = "지상";
@@ -205,7 +199,6 @@ public class Player_Gunner : Player
                 StateSetting(ENormalState.Attack, ConstValues.CycleAttack, ConstValues.Attack3);
                 SpawnObject(finalEffectId, landingEffectPos);
                 SpawnObject(finalObjectId, landingAttackPos);
-                //Rebound(2.0f);
             
                 if (await AttackDelay(delay6).SuppressCancellationThrow())
                     return false;
@@ -216,115 +209,6 @@ public class Player_Gunner : Player
         return true;
     }
     
-    // private async UniTask<bool> GunnerLandingAttack()
-    // {
-    //     string effectId = ConstValues.GunnerAttack1Effect;
-    //     string objectId = ConstValues.GunnerAttack1Object;
-    //     string finalEffectId = ConstValues.GunnerAttack2Effect;
-    //     string finalObjectId = ConstValues.GunnerAttack2Object;
-    //     string elemental = BuffElemental(false);
-    //
-    //     if (!string.IsNullOrWhiteSpace(elemental))
-    //     {
-    //         effectId = $"{effectId}_{elemental}";
-    //         objectId = $"{objectId}_{elemental}";
-    //         finalEffectId = $"{finalEffectId}_{elemental}";
-    //         finalObjectId = $"{finalObjectId}_{elemental}";
-    //     }
-    //
-    //     if (moveState == EMoveState.Moving)
-    //         MoveStateSetting(EMoveState.Stopping);
-    //
-    //     float afterDelay = 0.35f;
-    //     attackBuffer = false;
-    //     
-    //     if (landingAttackCount < maxBullet)
-    //         landingAttackCount += 1;
-    //     
-    //     float delay1 = 0.16f; // 0.066f
-    //     float delay2 = 0.2f; // 0.016f
-    //     
-    //     int bullet = 0;
-    //     int cycle = 1; // 4
-    //     switch (landingAttackCount)
-    //     {
-    //         case 1:
-    //             AttackChecker(0.1f, (delay1 + delay2) * cycle + afterDelay);
-    //             for (int i = 0; i < cycle; i++)
-    //             {
-    //                 AttackMotionFlip();
-    //                 bullet += 1;
-    //                 if(bullet == 1)
-    //                     StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
-    //                 else if(bullet % 2 == 0)
-    //                     StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack1);
-    //                 else if(bullet % 2 == 1)
-    //                     StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
-    //         
-    //                 if (await AttackDelay(delay1).SuppressCancellationThrow())
-    //                     return false;
-    //         
-    //                 SpawnObject(effectId, landingEffectPos);
-    //                 SpawnObject(objectId, landingAttackPos);
-    //                 
-    //                 if (await AttackDelay(delay2).SuppressCancellationThrow())
-    //                     return false;
-    //             }
-    //             if (await BufferDelay(delay2, afterDelay).SuppressCancellationThrow())
-    //                 return false;
-    //             break;
-    //         
-    //         case 2:
-    //             AttackChecker(0.1f, (delay1 + delay2) * cycle + afterDelay);
-    //             for (int i = 0; i < cycle; i++)
-    //             {
-    //                 AttackMotionFlip();
-    //                 bullet += 1;
-    //                 if(bullet == 1)
-    //                     StateSetting(ENormalState.Attack, ConstValues.Attack, ConstValues.Attack1);
-    //                 else if(bullet % 2 == 0)
-    //                     StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack1);
-    //                 else if(bullet % 2 == 1)
-    //                     StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack2);
-    //         
-    //                 if (await AttackDelay(delay1).SuppressCancellationThrow())
-    //                     return false;
-    //         
-    //                 SpawnObject(effectId, landingEffectPos);
-    //                 SpawnObject(objectId, landingAttackPos);
-    //                 
-    //                 if (await AttackDelay(delay2).SuppressCancellationThrow())
-    //                     return false;
-    //             }
-    //             if (await BufferDelay(delay2, afterDelay).SuppressCancellationThrow())
-    //                 return false;
-    //             break;
-    //         
-    //         case 3:
-    //             float delay3 = 0.1f;
-    //             float delay4 = 0.3f;
-    //             
-    //             AttackMotionFlip();
-    //             StateSetting(ENormalState.Attack, ConstValues.CycleAttack, ConstValues.Attack3Ready);
-    //             if (await AttackDelay(delay4).SuppressCancellationThrow())
-    //                 return false;
-    //         
-    //             StateSetting(ENormalState.Attack, ConstValues.ComboAttack, ConstValues.Attack3);
-    //             if (await AttackDelay(delay3).SuppressCancellationThrow())
-    //                 return false;
-    //     
-    //             SpawnObject(finalEffectId, landingEffectPos);
-    //             SpawnObject(finalObjectId, landingAttackPos);
-    //             Rebound(2.0f);
-    //         
-    //             if (await AttackDelay(delay4).SuppressCancellationThrow())
-    //                 return false;
-    //             landingAttackCount = 0;
-    //             break;
-    //     }
-    //     canAttack = true;
-    //     return true;
-    // }
     
     private async UniTask<bool> GunnerJumpAttack()
     {
@@ -350,7 +234,6 @@ public class Player_Gunner : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        //myRigidbody.linearVelocity = new Vector2(0, 0.1f);
         SpawnObject(objectId, jumpAttackPos, -45);
         SpawnObject(effectId, jumpAttackPos, -45);
         StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack);
@@ -366,56 +249,6 @@ public class Player_Gunner : Player
         return true;
     }
     
-    // private async UniTask<bool> GunnerJumpAttack()
-    // {
-    //     string effectId = ConstValues.GunnerAttack1Effect;
-    //     string objectId = ConstValues.GunnerAttack1Object;
-    //     string elemental = BuffElemental(false);
-    //     
-    //     if (!string.IsNullOrWhiteSpace(elemental))
-    //     {
-    //         effectId = $"{effectId}_{elemental}";
-    //         objectId = $"{objectId}_{elemental}";
-    //     }
-    //
-    //     ResetTriggerAnimator(ConstValues.JumpDown);
-    //     attackBuffer = false;
-    //
-    //     float delay1 = 0.066f; // 0.066f
-    //     float delay2 = 0.016f; // 0.016f
-    //
-    //     // 메탈슬러그 버전
-    //     int bullet = 0;
-    //     int cycle = 4;
-    //     
-    //     AttackChecker(0.1f, (delay1 + delay2) * cycle);
-    //     for (int i = 0; i < cycle; i++)
-    //     {
-    //         if(bullet == 0)
-    //             StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
-    //         else if(bullet % 2 == 0)
-    //             StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2);
-    //         else if(bullet % 2 == 1)
-    //             StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack1);
-    //
-    //         if (!GetJumpState())
-    //             break;
-    //         if (await AttackDelay(delay1).SuppressCancellationThrow())
-    //             return false;
-    //         
-    //         SpawnObject(effectId, landingEffectPos);
-    //         SpawnObject(objectId, landingAttackPos);
-    //         bullet++;
-    //         
-    //         if (!GetJumpState())
-    //             break;
-    //         if (await AttackDelay(delay2).SuppressCancellationThrow())
-    //             return false;
-    //     }
-    //     canAttack = true;
-    //     didJumpAttack = true;
-    //     return true;
-    // }
     
     public override async void Skill(KeyCode skillKey)
     {
@@ -757,18 +590,6 @@ public class Player_Gunner : Player
         }
         SpawnObject(flashId, centerPos);
 
-        // if (longShot)
-        // {
-        //     StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot2, ConstValues.GunnerCrazyShot);
-        // }
-        // else
-        // {
-        //     StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot, ConstValues.GunnerCrazyShot);
-        //     // 딜레이가 만약 있다면 여기다가
-        //     if (await AttackDelay(delay1).SuppressCancellationThrow())
-        //         return false;
-        //     StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.GunnerCrazyShot);
-        // }
         StateSetting(ENormalState.Skill, ConstValues.GunnerCrazyShot2, ConstValues.GunnerCrazyShot);
         Scream();
 

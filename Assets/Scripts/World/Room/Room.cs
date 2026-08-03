@@ -1502,7 +1502,6 @@ public class Room : MonoBehaviour
 
     private void SetLeftPlayerPos(int idx)
     {
-        // GameManager.Instance.CurPlayer.transform.position = leftPlayerPos[idx].position;
         // 입장 걷기 시작점: 도착위치에서 바깥(왼쪽)으로 떨어뜨려 두고, 이후 도착위치까지 걸어 들어온다.
         var pos = leftPlayerPos[idx].position;
         pos.x -= EnterWalkOffsetX;
@@ -1511,7 +1510,6 @@ public class Room : MonoBehaviour
 
     private void SetRightPlayerPos(int idx)
     {
-        // GameManager.Instance.CurPlayer.transform.position = rightPlayerPos[idx].position;
         // 입장 걷기 시작점: 도착위치에서 바깥(오른쪽)으로 떨어뜨려 두고, 이후 도착위치까지 걸어 들어온다.
         var pos = rightPlayerPos[idx].position;
         pos.x += EnterWalkOffsetX;
@@ -1636,7 +1634,6 @@ public class Room : MonoBehaviour
                 break;
             }
         }
-        //SetShortCut();
     }
 
     private async void SpawnMonster(bool isExplosion = true)
@@ -1768,7 +1765,6 @@ public class Room : MonoBehaviour
         {
             RoomManager.Instance.AllMonsterArrive();
             GameManager.Instance.SavePoint = name;
-            //GameManager.Instance.SpawnWarningPopup(GameManager.Instance.GetTalk(30206)).Forget();
             GameManager.Instance.RefillPlayerHp();
             GameManager.Instance.SetPotionCount();
             saveObject.InteractionObject.FadeOut();
@@ -1862,8 +1858,6 @@ public class Room : MonoBehaviour
     
     private async void SetBgm(bool immediately)
     {
-        // if (isBossRoom)
-        //     return;
         
         roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
         if (roomsData == null)
@@ -2926,18 +2920,6 @@ public class Room : MonoBehaviour
             SpawnSpeechFrame(speechFrame2, moonSpeechPos, GameManager.Instance.GetTalk(10120)); 
             await NextDialog(speechFrame2);
         
-            // PlaySound(ConstValues.PlayerScream);
-            // CameraShake(0.4f, 0.4f, 1.0f);
-            // SpawnSpeechFrame(speechFrame1[0], berserkerSpeechPos, talkList[14]);
-            // for (int i = 0; i < 2; i++)
-            // {
-            //     GameManager.Instance.CurPlayer.CustomJump(new Vector2(0, 6.0f));
-            //     GameManager.Instance.CurPlayer.CustomAnimTrigger(ENormalState.Jump, ConstValues.DialogJump);
-            //
-            //     if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.DialogCancellation).SuppressCancellationThrow())
-            //         return;
-            // }
-            // await NextDialog(speechFrame1[0]);
             
             roomInfo.roomProduct[0].count += 1;
             GameManager.Instance.SaveGame();
@@ -3579,11 +3561,9 @@ public class Room : MonoBehaviour
     // 스킬 획득 후 이벤트
     private async void GetSkillEvent(string skillId, string skillName, int count = 1)
     {
-        //string getMessage = string.Format(GameManager.Instance.GetTalk(30200), skillName);;
         
         if (GameManager.Instance.FirstGetSkill)
         {
-            //await GameManager.Instance.SpawnWarningPopup(getMessage);
             GameManager.Instance.ProductObjectInfo(skillId, skillName, count);
         }
         else
@@ -3592,7 +3572,6 @@ public class Room : MonoBehaviour
             GameManager.Instance.StopPlayer();
             GameManager.Instance.CurPlayer.ForceProduct();
             GameManager.Instance.ProductObjectInfo(skillId, skillName, count);
-            //await GameManager.Instance.SpawnWarningPopup(getMessage);
             
             GameManager.Instance.InitProductCancellation();
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())
@@ -3606,11 +3585,9 @@ public class Room : MonoBehaviour
     // 마력석 획득 후 이벤트
     private async void GetAttributeEvent(int pointCount)
     {
-        //string getMessage = string.Format(GameManager.Instance.GetTalk(30201), pointCount.ToString());
         
         if (GameManager.Instance.FirstGetAttribute)
         {
-            //await GameManager.Instance.SpawnWarningPopup(getMessage);
             GameManager.Instance.ProductObjectInfo(ConstValues.AttributePoint, GameManager.Instance.GetTalk(99001), pointCount);
         }
         else
@@ -3619,7 +3596,6 @@ public class Room : MonoBehaviour
             GameManager.Instance.StopPlayer();
             GameManager.Instance.CurPlayer.ForceProduct();
             GameManager.Instance.ProductObjectInfo(ConstValues.AttributePoint, GameManager.Instance.GetTalk(99001), pointCount);
-            //await GameManager.Instance.SpawnWarningPopup(getMessage);
             
             GameManager.Instance.InitProductCancellation();
             if (await GameManager.Instance.NormalDelay(dialogDelay2, GameManager.Instance.ProductCancellation).SuppressCancellationThrow())

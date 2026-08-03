@@ -59,36 +59,9 @@ public class Monster_Knife : Monster
     // 패턴 1. 연속 찌르기
     private async void KnifeStab()
     {
-        //float delay1 = 0.4f;
-        //float delay2 = 0.3f;
         float delay3 = 0.4f;
         float delay4 = 0.5f;
 
-        // 준비자세 취하기
-        // LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-        // if(await AttackDelay(delay1).SuppressCancellationThrow())
-        //     return;
-        //
-        // int attackCount = 4;
-        // for (int i = 0; i < attackCount; i++)
-        // {
-        //     SpawnAttack($"{basicStat.id}_{ConstValues.Attack}1", knifeStabPos);
-        //     SetTriggerAnimator(ConstValues.Pattern);
-        //     
-        //     float chargeLength1 = 0.35f;
-        //     float chargeSpeed1 = 3.5f;
-        //     if(transform.localScale.x > 0)
-        //         chargeVector = new Vector2(transform.position.x + chargeLength1, transform.position.y);
-        //     else
-        //         chargeVector = new Vector2(transform.position.x - chargeLength1, transform.position.y);
-        //     if (await Charge(chargeSpeed1, 0.5f, chargeLength1, 0.5f) == false)
-        //         return;
-        //     
-        //     LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-        //     SetTriggerAnimator($"{ConstValues.Attack}_0");
-        //     if(await AttackDelay(delay2).SuppressCancellationThrow())
-        //         return;
-        // }
 
         LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         if(await AttackDelay(delay3).SuppressCancellationThrow())

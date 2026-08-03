@@ -56,7 +56,6 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
 
     private PopupVideoPresenter _presenter;
     private PopupCommonActions  _commonActions;
-    //private UIBase _ownerPopup; // 마우스 상호작용 (보류)
     private int _cursor = 0;
     private int _lastFullScreen;
 
@@ -274,7 +273,6 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
     {
         _presenter     = presenter;
         _commonActions = commonActions;
-        //SetMouseInteraction(); // 마우스 상호작용 (보류)
     }
 
     // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제

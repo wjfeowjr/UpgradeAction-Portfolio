@@ -629,7 +629,6 @@ public abstract class Character : InteractionController
             if (lastStandPlatform.collider)
             {
                 IgnorePlatformCheck(lastStandPlatform, true);
-                //downJumping = true;
             }
             
             StateSetting(ENormalState.Jump, ConstValues.JumpDown, ConstValues.JumpDown);
@@ -1908,7 +1907,6 @@ public abstract class Character : InteractionController
         
         float elapsed = 0f;
 
-        //Debug.Log($"totalDuration:{totalDuration}, realDuration{realDuration}");
         
         // 3) FixedUpdate 루프: elapsed < duration 동안 실행
         while (elapsed < realDuration)
@@ -1942,8 +1940,6 @@ public abstract class Character : InteractionController
         // 대시 종료 시점에 발 밑이 플랫폼/지형이면 즉시 Ground 상태로 인식 (1프레임 떠있는 현상 방지)
         DashEndLandingCheck();
 
-        // if(totalDuration - realDuration > 0)
-        //     Debug.Log($"{totalDuration - realDuration}만큼 대기시간 추가");
 
         // 추가 시간 만큼 정지
         while (elapsed < totalDuration)
@@ -2649,8 +2645,6 @@ public abstract class Character : InteractionController
     
     public async void ForceIdle()
     {
-        // if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
-        //     return;
         
         MoveStateSetting(EMoveState.Stopping);
         CancelMotion();
@@ -2710,8 +2704,6 @@ public abstract class Character : InteractionController
         // 점프 착지
         if (normalState is ENormalState.Jump)
         {
-            // myRigidbody.bodyType = RigidbodyType2D.Dynamic;
-            // myRigidbody.linearVelocity = Vector2.zero;
             StateSetting(ENormalState.Idle, ConstValues.Idle, ConstValues.Idle);
         }
     }

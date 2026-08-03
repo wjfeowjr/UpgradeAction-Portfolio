@@ -115,6 +115,5 @@ public class UI_Interface : UIBase
 
     private void OnDisable()
     {
-        //uiSkillPresenter?.OnSkillDroppedCleanUp();
     }
 }

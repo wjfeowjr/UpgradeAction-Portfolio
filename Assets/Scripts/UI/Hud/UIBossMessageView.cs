@@ -88,8 +88,6 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
 
         // 페이드 인
         fadeImage.DOFade(0.7f, fadeTime).SetEase(Ease.Linear).SetUpdate(true);
-        // if (await BossMessageDelay(fadeTime).SuppressCancellationThrow())
-        //     return;
         
         // 텍스트 이동 후 정지
         soundAction?.Invoke();
@@ -102,15 +100,11 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
         
         // 텍스트 화면 바깥으로 이동
         bossMessageTransform.DOMove(endTransform.position, moveSecond).SetUpdate(true);
-        // if (await BossMessageDelay(moveSecond).SuppressCancellationThrow())
-        //     return;
         
         fadeImage.DOFade(0, fadeTime).SetEase(Ease.Linear).SetUpdate(true);
         if (await BossMessageDelay(fadeTime).SuppressCancellationThrow())
             return;
         
-        // if (await BossMessageDelay(finish).SuppressCancellationThrow())
-        //     return;
         
         Time.timeScale = 1;
         gameObject.SetActive(false);

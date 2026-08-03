@@ -70,7 +70,6 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
     private Action noAction;
     private Action escAction;
     private PopupCommonActions popupCommonActions;
-    //private UIBase ownerPopup; // 마우스 상호작용 (보류)
 
     private void OnEnable()
     {
@@ -142,7 +141,6 @@ public class PopupSelectView : MonoBehaviour, IPopupSelectView
         escAction = esc;
         popupCommonActions = common;
 
-        //SetMouseInteraction(); // 마우스 상호작용 (보류)
     }
 
     // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제

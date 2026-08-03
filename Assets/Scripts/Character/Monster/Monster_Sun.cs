@@ -46,7 +46,6 @@ public class Monster_Sun : Monster
     {
         float delay1 = 0.8f; // 0.2f
         float delay2 = 0.5f;
-        //float fadeSpeed = 0.4f;
         
         var firePos = new Vector2(GameManager.Instance.CurPlayer.transform.position.x, RoomManager.Instance.GroundPosY);
         var targetCollider = GameManager.Instance.ObjectCollider(ConstValues.MonsterSunAttack1);
@@ -55,9 +54,6 @@ public class Monster_Sun : Monster
         faceSpin.SpinSwitchOn(true);
 
         // 예전꺼
-        // await WarningAreaSpawnCollider(firePos, Vector3.zero, targetCollider, fadeSpeed, ConstValues.RedColor);
-        // if(await AttackDelay(delay1).SuppressCancellationThrow())
-        //     return;
         
         // 지금꺼
         SpawnObject($"{basicStat.id}_{ConstValues.Warning}", firePos);

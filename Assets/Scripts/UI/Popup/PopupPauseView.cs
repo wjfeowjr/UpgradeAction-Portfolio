@@ -66,7 +66,6 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
     [SerializeField] private ExpansionUiObject settingButton;
     [SerializeField] private ExpansionUiObject returnButton;
 
-    //private UIBase _ownerPopup; // 마우스 상호작용 (보류)
 
     public bool _IsSettingOpen => _isSettingOpen;
     
@@ -150,7 +149,6 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
 
         SetButtonText();
         RefreshCursors();
-        //SetMouseInteraction(); // 마우스 상호작용 (보류)
     }
 
     // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제

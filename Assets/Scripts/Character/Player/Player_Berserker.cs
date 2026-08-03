@@ -34,12 +34,10 @@ public class Player_Berserker : Player
 
     public override async void ChangeAttack()
     {
-        //Debug.Log("교체 공격 시작");
         CancelMotion();
 
         curGlobalCoolTime = 0;
 
-        //BodyTypeSetting(EBodyType.SuperArmor);
         stateCancellation = new CancellationTokenSource();
         var finishSuccess = await BerserkerChangeAttack();
         // 스킬로 캔슬된 경우, 새 스킬이 설정한 바디타입(예: 반격기의 Counter)을 덮어쓰지 않는다
@@ -53,8 +51,6 @@ public class Player_Berserker : Player
 
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
 
-        // StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
-        // BerserkerChangeAttackNotMotion();
     }
     private async UniTask<bool> BerserkerChangeAttack()
     {
@@ -217,7 +213,6 @@ public class Player_Berserker : Player
         float jumpAttackDelay1 = 0.16f;
         float jumpAttackDelay2 = 0.25f;
         
-        //AttackMotionFlip();
         StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack, ConstValues.JumpAttack);
         if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow()) 
             return false;
@@ -245,66 +240,6 @@ public class Player_Berserker : Player
         didJumpAttack = true;
         return true;
         
-        // ResetTriggerAnimator(ConstValues.JumpDown);
-        // attackBuffer = false;
-        // if (jumpAttackCount <= 0)
-        // {
-        //     float jumpAttackDelay1 = 0.16f;
-        //     float jumpAttackDelay2 = 0.2f;
-        //     float jumpAttackForce = 6;
-        //
-        //     float checkDelay1 = jumpAttackDelay1 + (jumpAttackDelay2 * 2);
-        //
-        //     AttackChecker(0.1f, checkDelay1);
-        //     StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack1, ConstValues.JumpAttack1);
-        //     if (await AttackDelay(jumpAttackDelay1).SuppressCancellationThrow())
-        //         return false;
-        //     
-        //     jumpAttackCount += 1;
-        //     
-        //     myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
-        //     SpawnAttack(ConstValues.BerserkerJumpAttack1Old, jumpAttack1Pos);
-        //     if (await AttackDelay(jumpAttackDelay2).SuppressCancellationThrow())
-        //         return false;
-        //     
-        //     SpawnAttack(ConstValues.BerserkerJumpAttack1Old, jumpAttack1Pos);
-        //     if (await AttackDelay(jumpAttackDelay2).SuppressCancellationThrow())
-        //         return false;
-        // }
-        // else
-        // {
-        //     jumpAttackCount += 1;
-        //
-        //     float jumpAttackDelay3 = 0.12f;
-        //     float jumpAttackDelay4 = 0.6f;
-        //     float jumpAttackForce = 6;
-        //
-        //     MotionFlip();
-        //     GravityChange(myGravity);
-        //     StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack2, ConstValues.JumpAttack2Start);
-        //     myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, jumpAttackForce);
-        //     if (await AttackDelay(jumpAttackDelay3).SuppressCancellationThrow())
-        //         return false;
-        //
-        //     StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2Drop);
-        //     SpawnAttack(ConstValues.BerserkerJumpAttack2Old, jumpAttack2Pos);
-        //     float dropForce = 30.0f;
-        //     myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
-        //     while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f && !isGrounded)
-        //     {
-        //         if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-        //             return false;
-        //     }
-        //     jumpAttackCount = 0;
-        //     StateSetting(ENormalState.JumpAttack, ConstValues.ComboAttack, ConstValues.JumpAttack2End);
-        //     SpawnAttack(ConstValues.BerserkerJumpAttack2EffectOld, jumpAttack2Pos);
-        //     
-        //     if (await AttackDelay(jumpAttackDelay4).SuppressCancellationThrow())
-        //         return false;
-        //     ClearObjectList(controlAttackObject);
-        // }
-        // canAttack = true;
-        // return true;
     }
 
     public override async void Skill(KeyCode skillKey)
@@ -412,8 +347,6 @@ public class Player_Berserker : Player
         var delay3 = 0.2f;
         var delay4 = 0.1f;
         
-        // if(landingState == ELandingState.Ground)
-        //     myRigidbody.linearVelocity = Vector2.zero;
 
         // 신속한 베기 : 보는 방향으로 감지된 거리만큼 돌진 후 공격
         if (swiftSlash)
@@ -442,12 +375,8 @@ public class Player_Berserker : Player
         if (await AttackDelay(delay1).SuppressCancellationThrow())
             return false;
 
-        //Leap(6, 20, 1.6f);
-        //Leap(0, 20, 0.8f);
         
         SpawnAttackObject(ConstValues.BerserkerUpperSlash, upperSlashPos).GetComponent<Attack>();
-        // if (swordBeam)
-        //     SpawnAttackObject(ConstValues.BerserkerUpperSlashSwordBeam, upperSlashPos);
         
         // 후딜동안 스킬버튼 한번 더 누르면 추가타격
         float addTime = 0;
@@ -724,13 +653,6 @@ public class Player_Berserker : Player
             immortal = false;
             isCounterAttack = false;
         }
-        // else
-        // {
-        //     // 동작 되돌아옴
-        //     StateSetting(ENormalState.Skill, ConstValues.ComboEnd, ConstValues.BerserkerSwordCounter);
-        //     if (await AttackDelay(delay3).SuppressCancellationThrow())
-        //         return false;
-        // }
         return true;
     }
     
@@ -813,38 +735,6 @@ public class Player_Berserker : Player
 
         return true;
         
-        // float delay1 = 0.5f;
-        // float delay2 = 0.05f;
-        // float delay3 = 0.5f;
-        //
-        // SpawnAttack(ConstValues.BerserkerFlash, centerPos);
-        // StateSetting(ENormalState.Skill, ConstValues.BerserkerCrash, ConstValues.BerserkerCrash);
-        // BodyTypeSetting(EBodyType.SuperArmor);
-        //
-        // // 도움닫기
-        // myRigidbody.linearVelocity = new Vector2(0, 8.0f);
-        // if (await AttackDelay(delay1).SuppressCancellationThrow())
-        //     return false;
-        //
-        // float dropForce = 30.0f;
-        // myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
-        // while (GetJumpState() && myRigidbody.linearVelocity.y < -0.05f && !isGrounded)
-        // {
-        //     if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-        //         return false;
-        // }
-        //
-        // StateSetting(ENormalState.Skill, ConstValues.ComboAttack, ConstValues.BerserkerCrashSmash);
-        // if (await AttackDelay(delay2).SuppressCancellationThrow())
-        //     return false;
-        //
-        // SpawnAttack(ConstValues.BerserkerCrash, crashPos);
-        // SpawnAttack(ConstValues.BerserkerCrashExplosion, crashExplosionPos);
-        //
-        // if (await AttackDelay(delay3).SuppressCancellationThrow())
-        //     return false;
-        //
-        // return true;
     }
 
     private async void MagmaEruption(int count)
@@ -922,7 +812,6 @@ public class Player_Berserker : Player
         var dashSpeed = 16;
         var dashLength = 5;
         // 대시 레이캐스트 체크
-        //chargeVector = RayCheckLength(dashLength, 0);
         if(transform.localScale.x > 0)
             chargeVector = new Vector2(transform.position.x + dashLength, transform.position.y);
         else

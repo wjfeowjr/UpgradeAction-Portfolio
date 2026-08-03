@@ -21,13 +21,6 @@ public class GoldObject : MonoBehaviour
         myBoxCollider = GetComponent<BoxCollider2D>();
     }
 
-    // private void OnEnable()
-    // {
-    //     ResetObject();
-    //     myBoxCollider.enabled = !isBreak;
-    //     if (isBreak)
-    //         myAnimator.SetTrigger(ConstValues.BreakImmediate);
-    // }
 
     public void ResetObject()
     {

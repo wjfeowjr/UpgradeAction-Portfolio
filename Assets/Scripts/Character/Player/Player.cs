@@ -272,38 +272,11 @@ public abstract class Player : Character
         UpdateBuff();
         UpdateJumpAssist();
 
-        // // 스킬 추가 테스트
-        // if (Input.GetKeyDown(KeyCode.P))
-        // {
-        //     GameManager.Instance.AddNewSkill(ConstValues.BerserkerCrash);
-        //     GameManager.Instance.AddNewSkill(ConstValues.GunnerGrenade);
-        //     GameManager.Instance.AddNewSkill(ConstValues.GunnerKnockBackShot);
-        //     GameManager.Instance.AddNewSkill(ConstValues.GunnerCrazyShot);
-        //     GameManager.Instance.AddNewSkill(ConstValues.GunnerElementalInfusion);
-        //     GameManager.Instance.AddNewSkill(ConstValues.FighterLightningKick);
-        //     GameManager.Instance.AddNewSkill(ConstValues.FighterLightningPunch);
-        //     GameManager.Instance.AddNewSkill(ConstValues.FighterLightningSmash);
-        //     GameManager.Instance.AddNewSkill(ConstValues.FighterStrongPunch);
-        // }
-        //
-        // if (Input.GetKeyDown(KeyCode.O))
-        // {
-        //     GameManager.Instance.RemoveSkill(ConstValues.BerserkerChargeCrash);
-        //     GameManager.Instance.RemoveSkill(ConstValues.GunnerGrenade);
-        //     GameManager.Instance.RemoveSkill(ConstValues.GunnerKnockBackShot);
-        //     GameManager.Instance.RemoveSkill(ConstValues.GunnerCrazyShot);
-        //     GameManager.Instance.RemoveSkill(ConstValues.GunnerElementalInfusion);
-        //     GameManager.Instance.RemoveSkill(ConstValues.FighterLightningKick);
-        //     GameManager.Instance.RemoveSkill(ConstValues.FighterLightningPunch);
-        //     GameManager.Instance.RemoveSkill(ConstValues.FighterLightningSmash);
-        //     GameManager.Instance.RemoveSkill(ConstValues.FighterStrongPunch);
-        // }
     }
 
     protected override void FixedUpdate()
     {
         base.FixedUpdate();
-        //UpdateCameraLimit();
         UpdateJumpDown();
     }
 
@@ -810,8 +783,6 @@ public abstract class Player : Character
             return;
         
         // 1) 플레이어 절반 크기
-        // float halfWidth  = physicsCollider.size.x * 0.5f;
-        // float halfHeight = physicsCollider.size.y * 0.5f;
         float halfWidth  = 0;
         float halfHeight = 0;
 
@@ -848,7 +819,6 @@ public abstract class Player : Character
                 vel.y = 0;
         }
         
-        //transform.position = pos;
         myRigidbody.linearVelocity = vel;
     }
 
@@ -904,15 +874,9 @@ public abstract class Player : Character
             return false;
         }
 
-        // if(!GetGlobalCoolTime())
-        // {
-        //     Debug.Log("글로벌 쿨타임이 지나지 않음");
-        //     return false;
-        // }
         
         if ((normalState is ENormalState.Attack or ENormalState.JumpAttack) && !canAttack)
         {
-            //Debug.Log("공격 진행중임");
             return false;
         }
 
@@ -923,7 +887,6 @@ public abstract class Player : Character
 
         canAttack = false;
         curGlobalCoolTime = 0;
-        //Debug.Log("공격 시작");
         return true;
     }
 
@@ -1289,21 +1252,12 @@ public abstract class Player : Character
         
         IgnorePlatformCheck(lastStandPlatform, true);
         GravityChange(myGravity);
-        //myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
         
         StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
         LandingStateSetting(ELandingState.Air);
         
         jumpCancellation = new CancellationTokenSource();
 
-        // 짧은 시간동안 좌우 움직임 봉인
-        // canMove = false;
-        // if (await NormalDelay(0.1f, jumpCancellation).SuppressCancellationThrow())
-        // {
-        //     canMove = true;
-        //     return;
-        // }
-        // canMove = true;
         
         while (transform.position.y >= lastStandPlatform.height - 0.64f)
         {
@@ -1434,14 +1388,11 @@ public abstract class Player : Character
     protected async UniTask AttackDelay(float attackDelay)
     {
         float delay = 0;
-        //float real = 0;
         while (delay < attackDelay)
         {
             delay += Time.deltaTime * basicStat.attackSpeed;
-            //real += Time.deltaTime;
             await UniTask.Yield(cancellationToken: stateCancellation.Token);
         }
-        //Debug.Log(real);
     }
     // 공격 딜레이(공속의 영향을 받지 않음)
     protected async UniTask AttackDelayNonAttackSpeed(float attackDelay)
@@ -1976,16 +1927,6 @@ public abstract class Player : Character
         if (!GameManager.Instance.ControlStart)
             return;
 
-        // 상호작용
-        // if (col.CompareTag(ConstValues.Interaction))
-        // {
-        //     if (col.GetComponent<InteractionController>())
-        //     {
-        //         var controller = col.GetComponent<InteractionController>();
-        //         controller.SpawnInteractionObject();
-        //         controller.IsPlayerTouch = true;
-        //     }
-        // }
 
         // Npc 상호작용
         

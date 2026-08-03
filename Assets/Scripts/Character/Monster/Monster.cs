@@ -200,11 +200,9 @@ public class Monster : Character
                 case EAgroState.Agro:
                     Trace();
                     Move();
-                    //MonsterLeap();
                     break;
                 case EAgroState.Return:
                     ReturnMoving();
-                    //MonsterLeap();
                     break;
             }
             AgroSystem();
@@ -218,9 +216,6 @@ public class Monster : Character
         PatternCycle();
 
         // 점프 관련
-        //MonsterJump();
-        //MonsterDownJump();
-        //MonsterBridgeJump();
         JumpCoolTimeReduce();
         DownJumpCoolTimeReduce();
     }
@@ -240,7 +235,6 @@ public class Monster : Character
             PlayerInJumpRangeCheck();
             PlayerInDropRangeCheck();
         }
-        // UpdateStandingCheck();
         
         UpdateRoomLimit();
     }
@@ -281,19 +275,6 @@ public class Monster : Character
             Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + CenterPos.localPosition.y), agroRange);
         }
 
-        // if (myStat.jumpRange != Vector2.zero)
-        // {
-        //     Vector2 jumpRange = new Vector2(myStat.jumpRange.x * 2, myStat.jumpRange.y * 2);
-        //     Gizmos.color = ConstValues.CyanColor;
-        //     Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y + myStat.jumpRange.y), jumpRange);
-        // }
-        //
-        // if (myStat.dropRange != Vector2.zero)
-        // {
-        //     Vector2 dropRange = new Vector2(myStat.dropRange.x * 2, myStat.dropRange.y * 2);
-        //     Gizmos.color = ConstValues.MagentaColor;
-        //     Gizmos.DrawWireCube(new Vector2(myPosition.x, myPosition.y - myStat.dropRange.y), dropRange);
-        // }
 
         if (patternInfo == null)
             return;
@@ -650,7 +631,6 @@ public class Monster : Character
 
         if (armorBreakOrStagger.Count == 0)
         {
-            //immuneStagger = false;
             basicStat.bodyType = originStat.bodyType;
             basicStat.stagger = basicStat.maxStagger;
             curGlobalCoolTime = 0;
@@ -697,33 +677,6 @@ public class Monster : Character
         StandHitBox();
     }
 
-    // 아랫점프
-    // private async void DownJump()
-    // {
-    //     // 플랫폼 위에서만 작동함
-    //     if (downJumping || groundObject == null || !groundObject.CompareTag(ConstValues.Platform) || IsDamaged())
-    //         return;
-    //
-    //     PlaySound(ConstValues.Jump2, 2.0f);
-    //     CancelMotion();
-    //
-    //     downJumping = true;
-    //
-    //     IgnorePlatformCheck(lastStandPlatform);
-    //     myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, 3.0f);
-    //
-    //     StateSetting(ENormalState.Jump, ConstValues.Jump, ConstValues.Jump);
-    //     LandingStateSetting(ELandingState.Air);
-    //
-    //     stateCancellation = new CancellationTokenSource();
-    //     while (transform.position.y >= groundObject.transform.position.y)
-    //     {
-    //         if (await FixedYieldDelay(stateCancellation).SuppressCancellationThrow())
-    //             return;
-    //     }
-    //
-    //     downJumping = false;
-    // }
 
     // 등장(연출 포함)
     public virtual async void Appear(Action<string, EMonsterType> bossProduct)
@@ -849,11 +802,6 @@ public class Monster : Character
     // 이동
     protected virtual void Move()
     {
-        // 호버링몹 위아래로 움직이게 하기
-        // if (myStat.hovering && normalState == ENormalState.Idle)
-        // {
-        //     
-        // }
         if (basicStat.moveSpeed == 0)
             return;
         
@@ -1251,8 +1199,6 @@ public class Monster : Character
     public override void Die()
     {
         base.Die();
-        //removeAction?.Invoke();
-        //GameManager.Instance.RemoveMonster(this);
         if (!IsBoss)
             goldAction?.Invoke(myStat.gold, centerPos.position);
 
@@ -1295,7 +1241,6 @@ public class Monster : Character
         float delay = 0;
         while (delay < attackDelay)
         {
-            //float totalAttackSpeed = finalAttackSpeed;
             delay += Time.deltaTime * basicStat.attackSpeed;
             if (lookAtPlayer)
                 LookAt(GameManager.Instance.CurPlayer.transform.position.x);

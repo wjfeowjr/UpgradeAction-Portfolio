@@ -37,7 +37,6 @@ public class Controller : Singleton<Controller>
         if(!GameManager.Instance.ControlStart)
             return;
         
-        // DirControl();
         PlayerControl();
         MovingControl();
     }
@@ -72,11 +71,6 @@ public class Controller : Singleton<Controller>
         isRightMove = false;
     }
 
-    // private void AttackControl()
-    // {
-    //     if (Input.GetKeyDown(GameManager.Instance.attackKey))
-    //         isAttackHeld = true;
-    // }
 
     // 방향 컨트롤(좌,우 동시입력 방지)
     private void DirControl()
@@ -169,14 +163,6 @@ public class Controller : Singleton<Controller>
             GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey3);
         if (Input.GetKeyDown(GameManager.Instance.skillKey4))
             GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey4);
-        // if (Input.GetKeyDown(GameManager.Instance.skillKey5))
-        //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey5);
-        // if (Input.GetKeyDown(GameManager.Instance.skillKey6))
-        //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey6);
-        // if (Input.GetKeyDown(GameManager.Instance.skillKey7))
-        //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey7);
-        // if (Input.GetKeyDown(GameManager.Instance.skillKey8))
-        //     GameManager.Instance.CurPlayer.Skill(GameManager.Instance.skillKey8);
 
         if(GameManager.Instance.CurPlayer && !isLeftMove && !isRightMove)
             GameManager.Instance.CurPlayer.Stop();

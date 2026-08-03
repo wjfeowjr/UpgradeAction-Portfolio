@@ -171,7 +171,6 @@ public class FollowCamera : MonoBehaviour
         transform.position = newPos;
 
         // 동일한 z 구성 요소를 사용하여 카메라의 위치를 ​​목표 위치로 설정하십시오.
-        //transform.position = new Vector3(targetX + shakeVector.x, targetY + shakeVector.y, transform.position.z);
     }
 
     public void SetPos(Vector2 targetVector)

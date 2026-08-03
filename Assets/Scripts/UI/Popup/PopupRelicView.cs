@@ -131,13 +131,6 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
         // ── 장착 슬롯 초기화 ────────────────────────────
         RefreshSlotFrames();
 
-        // ── 커서 초기화 ─────────────────────────────────
-        // 규칙 5: 최초 진입 시 첫 번째 유물 선택
-        // _zone             = Zone.Grid;
-        // _gridCursor       = 0;
-        // _slotCursor       = 0;
-        // _selectedRelicIdx = -1;
-        // _pendingSlot      = -1;
         _stolenFromChar   = "";
         _confirmActive    = false;
 

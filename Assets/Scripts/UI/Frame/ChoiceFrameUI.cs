@@ -15,7 +15,6 @@ public class ChoiceFrameUI : ExpansionUiObject
 
     public override void SelectObjectActive(bool active)
     {
-        //selectKeyObject.SetActive(active);
         base.SelectObjectActive(active);
     }
 }

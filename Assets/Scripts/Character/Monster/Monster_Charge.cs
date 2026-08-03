@@ -101,7 +101,5 @@ public class Monster_Charge : Monster
     // 깜빡이며 사라지기
     public override void BlinkDelete()
     {
-        // if (GameManager.Instance.EpisodeName != ConstValues.Episode2)
-        //     base.BlinkDelete();
     }
 }

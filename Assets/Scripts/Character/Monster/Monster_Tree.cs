@@ -135,7 +135,6 @@ public class Monster_Tree : Monster
         if (await AttackDelay(delay2).SuppressCancellationThrow())
             return;
 
-        //LookAt(GameManager.Instance.CurPlayer.transform.position.x);
         PatternEnd();
     }
     
@@ -342,7 +341,6 @@ public class Monster_Tree : Monster
         // 낙하
         SetTriggerAnimator(ConstValues.Pattern);
         GravityChange(myGravity);
-        //myRigidbody.linearVelocity = new Vector2(myRigidbody.linearVelocity.x, -dropForce);
         if(await WaitUntilDelay(()=> myRigidbody.linearVelocityY >= 0, stateCancellation).SuppressCancellationThrow())
             return;
 
@@ -519,90 +517,4 @@ public class Monster_Tree : Monster
         rootCancellation?.Cancel();
     }
     
-    // private async void Step()
-    // {
-    //     float delay1 = 0.2f;
-    //     float delay2 = 0.3f;
-    //     
-    //     float stepDistance = 3.0f;
-    //     float travelTime = 0.25f;
-    //     float xDistanceLimit = 4.0f;
-    //     
-    //     LookAt(GameManager.Instance.CurPlayer.transform.position.x);
-    //
-    //     // 플레이어와 x축 거리가 멀면 프론트스탭, 가까우면 백스탭
-    //     float xDistance = Mathf.Abs(GameManager.Instance.CurPlayer.transform.position.x - transform.position.x);
-    //     bool isFrontStep = xDistance > xDistanceLimit;
-    //     float forward = transform.localScale.x > 0 ? 1f : -1f;
-    //     float stepDirection;
-    //
-    //     if (await AttackDelay(delay1).SuppressCancellationThrow())
-    //         return;
-    //     
-    //     if (isFrontStep)
-    //     {
-    //         // 프론트스탭: 바라보는 방향(플레이어 쪽)으로 이동
-    //         stepDirection = forward;
-    //     }
-    //     else
-    //     {
-    //         // 백스탭: 플레이어 반대 방향으로 이동
-    //         stepDirection = -forward;
-    //     }
-    //     
-    //     // 스탭 방향으로 벽(Ground) 감지
-    //     RaycastHit2D wallHit = Physics2D.Raycast(centerPos.position, Vector2.right * stepDirection, stepDistance, groundLayerMask);
-    //
-    //     // 살짝 점프하며 스탭 이동
-    //     LandingStateSetting(ELandingState.Air);
-    //     Vector2 start = transform.position;
-    //     Vector2 end = new Vector2(start.x + stepDirection * stepDistance, start.y);
-    //
-    //     // 벽이 감지되면 방 중앙으로 스탭(체공시간을 늘려서 크게 점프)
-    //     if (wallHit.collider)
-    //     {
-    //         end = new Vector2(RayCenterVector().x, start.y);
-    //         SetTriggerAnimator(ConstValues.Pattern);
-    //         LookAt(RayCenterVector().x);
-    //         
-    //         float jumpHeight = 4.0f;  // travelTime 대신 높이로 제어
-    //         myRigidbody.linearVelocity = CalculateLaunchVelocityByHeight(start, end, jumpHeight);
-    //     }
-    //     else
-    //     {
-    //         if (isFrontStep)
-    //             SetTriggerAnimator(ConstValues.Pattern);
-    //         else
-    //             SetTriggerAnimator(ConstValues.Pattern2);
-    //         
-    //         myRigidbody.linearVelocity = CalculateLaunchVelocity(start, end, travelTime);
-    //     }
-    //
-    //     // 지면에서 떨어진 뒤 다시 착지할 때까지 대기
-    //     if (await WaitUntilDelay(() => !isGrounded, stateCancellation).SuppressCancellationThrow())
-    //         return;
-    //     
-    //     if (await WaitUntilDelay(() => isGrounded, stateCancellation).SuppressCancellationThrow())
-    //         return;
-    //
-    //     // 착지
-    //     if (wallHit.collider)
-    //     {
-    //         SetTriggerAnimator(ConstValues.Pattern);
-    //     }
-    //     else
-    //     {
-    //         if (isFrontStep)
-    //             SetTriggerAnimator(ConstValues.Pattern);
-    //         else
-    //             SetTriggerAnimator(ConstValues.Pattern2);
-    //     }
-    //
-    //     LandingStateSetting(ELandingState.Ground);
-    //     myRigidbody.linearVelocity = new Vector2(0, myRigidbody.linearVelocity.y);
-    //     if (await AttackDelay(delay2).SuppressCancellationThrow())
-    //         return;
-    //
-    //     PatternEnd();
-    // }
 }

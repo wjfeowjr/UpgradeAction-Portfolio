@@ -50,7 +50,6 @@ public class TotalRoom : MonoBehaviour
             {
                 playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
                 targetPlayer = GameManager.Instance.CurPlayer;
-                //playerSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}_{ConstValues.UI}");
             }
         }
         else
@@ -59,7 +58,6 @@ public class TotalRoom : MonoBehaviour
             {
                 playerPoint.SetTarget(GameManager.Instance.CurPlayer.CenterPos);
                 targetPlayer = GameManager.Instance.CurPlayer;
-                //playerSpriteRenderer.sprite = GameManager.Instance.GetAtlasSprite($"{GameManager.Instance.PlayerList[0]}_{ConstValues.Face}_{ConstValues.UI}");
             }
         }
     }
@@ -158,14 +156,7 @@ public class TotalRoom : MonoBehaviour
 
     private void SaveCheckerPos()
     {
-        // for (int i = 0; i < GameManager.Instance.MiniMapCheckers.Count; i++)
-        // {
-        //     Vector3 p = GameManager.Instance.MiniMapCheckers[i];
-        //     PlayerPrefs.SetFloat($"Target_{i}_X", p.x);
-        //     PlayerPrefs.SetFloat($"Target_{i}_Y", p.y);
-        // }
         
-        //GameManager.Instance.SaveGame();
         Debug.Log($"[{GameManager.Instance.MiniMapCheckers.Count}]개 오브젝트 위치 저장 완료");
     }
 

@@ -130,7 +130,6 @@ public class TextFont : MonoBehaviour
         
         if(await NormalDelay(upSecond, delayCancellation).SuppressCancellationThrow())
             return;
-        //await UniTask.Delay(upSecondTime, cancellationToken: delayCancellation);
 
         transform.DOScale(startScale, stopSecond);
         transform.DOMove(secondVector, stopSecond);

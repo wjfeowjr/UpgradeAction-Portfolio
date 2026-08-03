@@ -64,7 +64,6 @@ public class WindowFrameWatcher : MonoBehaviour
         _wndProcDelegate = WndProc;
         _originalWndProc = SetWindowLongPtr(hWnd, GWLP_WNDPROC, Marshal.GetFunctionPointerForDelegate(_wndProcDelegate));
         _hookedWindow    = hWnd;
-        //Debug.Log($"[WindowFrameWatcher] WndProc 후킹 완료: hwnd=0x{hWnd.ToInt64():X}");
     }
 
     [AOT.MonoPInvokeCallback(typeof(WndProcDelegate))]

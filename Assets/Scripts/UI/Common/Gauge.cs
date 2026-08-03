@@ -66,8 +66,6 @@ public class Gauge : MonoBehaviour
     // 게이치 풀로 채우기
     public void GaugeMax()
     {
-        // if(mainGauge) 
-        //     mainGauge.value = 1;
         if(reduceGauge) 
             reduceGauge.value = 1;
     }

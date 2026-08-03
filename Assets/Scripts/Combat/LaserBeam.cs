@@ -116,7 +116,6 @@ public class LaserBeam : MonoBehaviour
         if (beamLineRendererPrefab)
         {
             beamLineRendererPrefab.transform.position = transform.position;
-            //beamLineRendererPrefab.transform.parent = transform;
             beamLineRendererPrefab.transform.rotation = transform.rotation;
 
             myLineRenderer.useWorldSpace = true;

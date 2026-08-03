@@ -36,31 +36,6 @@ public class SkillDragHandler : MonoBehaviour, IPointerMoveHandler, IBeginDragHa
     
     public void OnPointerMove(PointerEventData eventData)
     {
-        // skillTooltipView = GetSkillView(eventData, false);
-        // if (skillTooltipView == null || string.IsNullOrEmpty(skillTooltipView.GetSkillId()) || !GameManager.Instance.ControlStart || isDrag)
-        // {
-        //     if (toolTip != null)
-        //         toolTip.gameObject.SetActive(false);
-        //     return;
-        // }
-        //
-        // var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
-        // if (uiInterfaceObj == null)
-        //     return;
-        //
-        // var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
-        // if (toolTip == null)
-        // {
-        //     Debug.Log($"{skillTooltipView.GetSkillId()}스킬 툴팁 최초 생성");
-        //     toolTip = GameManager.Instance.SpawnToUIPool(ConstValues.SkillTooltip, uiInterface.GetTooltipPos()).GetComponent<SkillTooltip>();
-        // }
-        // toolTip.SetTooltip(GameManager.Instance.CurPlayer.GetSkill(skillTooltipView.GetSkillId()));
-        //
-        // if (toolTip.gameObject.activeSelf)
-        //     return;
-        //
-        // // 툴팁 표시 및 설명 추가
-        // toolTip.gameObject.SetActive(true);
     }
 
     public void OnBeginDrag(PointerEventData eventData)
@@ -83,7 +58,6 @@ public class SkillDragHandler : MonoBehaviour, IPointerMoveHandler, IBeginDragHa
     public void OnDrag(PointerEventData eventData)
     {
         // Canvas 스케일에 맞춰 이동
-        //Debug.Log("드래그 중");
 
         if (mySkillView == null || string.IsNullOrEmpty(mySkillView.GetSkillId()) || !GameManager.Instance.ControlStart)
             return;
@@ -97,7 +71,6 @@ public class SkillDragHandler : MonoBehaviour, IPointerMoveHandler, IBeginDragHa
 
     public void OnEndDrag(PointerEventData eventData)
     {
-        //Debug.Log("드래그 끝");
 
         if (skillImageTransform == null)
             return;
