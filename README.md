@@ -36,7 +36,7 @@
 | **엔진** | Unity `6000.3.10f1` / C# |
 | **개발 기간** | 2025.04 ~ 진행 중 (16개월 이상, 커밋 229회) |
 | **개발 인원** | 1인 (기획·프로그래밍·연출) |
-| **코드 규모** | C# 스크립트 199개 / 약 39,800줄 |
+| **코드 규모** | C# 스크립트 212개 / 약 40,200줄 (테스트 31개 포함) |
 | **컨텐츠 규모** | 룸 59개 · 몬스터 21종 · 플레이어블 3종 |
 | **지원 언어** | 8개 (한/영/일/중간체/중번체/스페인/러시아/포르투갈) |
 | **플랫폼** | PC (Steam / Steamworks.NET 연동) |
@@ -195,17 +195,47 @@ public class Buff
 스킬 설명(`explainTalk`), NPC 대사, UI 라벨이 모두 같은 경로를 탑니다.
 언어 추가 시 **컬럼 하나만 늘리면** 됩니다.
 
-### 6. 로딩·메모리 최적화
+### 6. 조회 경로에서 힙 할당 제거
 
-- **Addressables** — 3개 그룹(Default / UI / Popup)으로 분리해 필요 시점에 로드.
-  동기(`LoadAsset`) / 비동기(`LoadAssetAsync`) 로더를 모두 제공하고,
-  키 존재 여부를 먼저 확인해 예외 대신 `default`를 반환합니다.
-- **SpriteAtlas 2종**(UI / 배경)을 초기화 시 `Dictionary<string, Sprite>`로 펼쳐 캐싱 →
-  런타임 스프라이트 조회를 O(1)로 처리.
-- **오브젝트 풀 5종** — 일반 오브젝트 / UI 오브젝트 / UI 화면 / 팝업 / 최상위를
-  분리 운영해 계층 정리와 렌더 순서를 동시에 관리.
-- **`GameObject.Find` 계열 호출을 전 코드베이스에서 2회로 억제**.
-  참조는 인스펙터 주입과 매니저 경유로 해결합니다.
+스폰 경로가 **`GameObject.name` 으로 인스턴스를 식별**하고 있었습니다.
+`.name` 은 네이티브 접근이라 **읽을 때마다 문자열을 새로 할당**합니다.
+인스턴스 수만큼 이걸 반복하고 있었으니, 비용이 조회 시간이 아니라 GC 부담으로 돌아왔습니다.
+
+```csharp
+// 이전 — 전체 인스턴스를 훑으며 이름 비교
+var found = objectList.FindAll(x => x.name == $"{id}(Clone)");
+
+// 현재 — id 를 키로 해당 인스턴스만
+instancesById.TryGetValue(id, out var list);
+```
+
+같은 방식으로 스폰 1회당 사라진 할당: `$"{id}(Clone)"` 문자열, `FindAll` 이 만들던 `List`,
+람다가 캡처하던 클로저 3~4개.
+
+조회 로직만 격리해 측정한 결과입니다
+([`PoolLookupBenchmark`](Assets/Tests/Editor/PoolLookupBenchmark.cs), 프리팹 200종 / 인스턴스 3,000개 / 조회 20,000회).
+
+| | 시간 | 호출당 할당 |
+|---|---|---|
+| 이전 | 36,122 ms | 3,565 B |
+| 이후 | 69 ms | **0 B** |
+
+> 시간 차이는 인스턴스 수에 비례하므로 이 게임 규모에서는 체감되지 않습니다.
+> **규모와 무관하게 유효한 것은 할당이 0이 되었다는 점**입니다.
+
+같은 패턴을 데이터 조회에도 적용했습니다.
+
+- **다국어** — `Talk` 502개를 매번 선형 탐색하던 `GetTalk` (293곳에서 호출) → `Dictionary`
+- **데이터 테이블 9종** — `SpawnedObject` 428개는 이펙트 생성마다,
+  `Attack` 152개는 공격 판정마다 조회되고 있었습니다 → id 인덱스
+- **런타임 복제본 6종** — 특히 특성 조회는 `FindAll` 이라 **호출마다 결과 `List` 를 새로 할당**했습니다
+
+그 외 기존부터 적용된 것들:
+
+- **Addressables** 3개 그룹(Default / UI / Popup) 분리 로드, 키 존재 확인 후 반환
+- **SpriteAtlas 2종**을 초기화 시 `Dictionary<string, Sprite>` 로 펼쳐 캐싱
+- **오브젝트 풀 5종** 분리 운영 (계층 정리 + 렌더 순서 동시 관리)
+- **`GameObject.Find` 계열 호출을 전 코드베이스에서 2회로 억제**
 
 ### 7. UniTask 기반 비동기 연출
 
@@ -261,13 +291,18 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    GM[GameManager<br/>플레이어 상태·스탯·재화·세이브·오브젝트 풀]
+    GM[GameManager<br/>플레이어 상태·세이브·성장]
     RM[RoomManager<br/>룸 이동·카메라·미니맵]
     CT[Controller<br/>입력]
     RES[ResourceManager<br/>Addressable 로딩]
-    TM[TableManager<br/>JSON 테이블]
+    TM[TableManager<br/>JSON 테이블 + id 인덱스]
     AUD[BgmManager / SoundManager]
     STM[SteamWorksManager<br/>플랫폼 연동]
+
+    subgraph SVC["분리된 서비스 (MonoBehaviour 아님 · 테스트 가능)"]
+        POOL[ObjectPoolService<br/>오브젝트 풀]
+        LOC[LocalizationService<br/>다국어 조회]
+    end
 
     GM --> RM
     GM --> CT
@@ -275,6 +310,21 @@ flowchart TD
     GM --> TM
     GM --> AUD
     GM --> STM
+    GM --> SVC
+```
+
+`GameManager` 는 역할별 `partial` 파일로 나뉘어 있습니다.
+
+```
+GameManager.cs              378줄   필드 · 초기화
+GameManager.Progression.cs 1178줄   스킬 · 특성 · 유물
+GameManager.Save.cs         413줄   세이브 · 로드
+GameManager.Player.cs       319줄   캐릭터 교체
+GameManager.Npc.cs          279줄   대화 · 퀘스트
+GameManager.Ui.cs           278줄   UI 스폰 · 갱신
+GameManager.Pool.cs         182줄   풀 서비스 위임
+GameManager.World.cs        149줄   몬스터 · 카메라 · 딜레이
+GameManager.Text.cs          32줄   다국어 서비스 위임
 ```
 
 ### 캐릭터 상속 구조
@@ -388,8 +438,9 @@ public class PopupCommonView : UIBase, IPopupCommonView { … }   // uGUI 구현
 ### 담긴 것
 
 ```
-Assets/Scripts/     게임 로직 193개 파일
+Assets/Scripts/     게임 로직
 Assets/Editor/      직접 만든 에디터 툴 6개
+Assets/Tests/       EditMode 테스트 31개
 docs/               설계 문서 · 기술 노트 · UI 목업
 ```
 
@@ -410,6 +461,8 @@ docs/               설계 문서 · 기술 노트 · UI 목업
 커밋 날짜와 메시지가 실제 개발 시점을 반영합니다.
 
 - **2025-04-07 ~ 진행 중**
+- 최근 커밋들은 구조 개선 작업입니다.
+  각 커밋 메시지에 **왜 그렇게 했는지와 측정 결과**를 적어두었습니다.
 - 실제 개발 저장소는 리소스 라이선스 문제로 비공개입니다
 
 ### 개발 환경
@@ -450,22 +503,34 @@ docs/               설계 문서 · 기술 노트 · UI 목업
 
 | # | 현재 상태 | 문제 | 개선 방향 |
 |---|---|---|---|
-| 1 | `GameManager.cs` 3,840줄 / public 메서드 199개 | 책임이 과도하게 집중된 **God Object**. 협업 시 충돌 지점이 됨 | 세이브 / 재화 / 스탯 / 스폰 / 입력키 도메인별 분리 |
-| 2 | `Room.cs` 4,445줄 | 스폰·미니맵·카메라·상호작용이 한 클래스에 혼재 | 책임별 컴포넌트로 분해 |
-| 3 | 팝업 생성 경로가 `GameManager` 의 풀 API에 묶여 있음 | MVP 인프라(인터페이스 33개)는 갖췄으나 이를 조립하는 관리자가 없음 | UI 전용 관리자를 새로 만들어 생성 경로 일원화 |
-| 4 | 주석 처리된 코드 1,904줄 | 남은 것 대부분은 대안 구현·실험 흔적 | 파일별로 판단해 순차 정리 |
-| 5 | 오브젝트 풀이 전체 리스트 선형 탐색(`FindAll`) | 풀 규모가 커질수록 스폰 비용 증가 | 프리팹 ID를 키로 하는 `Dictionary<string, Queue<GameObject>>` 로 전환 |
-| 6 | 자동화 테스트 없음 | 리팩터링 시 회귀 검증 불가 | 데미지 계산·버프 만료·실드 소비 등 순수 로직부터 EditMode 테스트 도입 |
+| 1 | `GameManager` 전체 3,208줄 (9개 파일) | 파일은 나눴지만 **클래스는 여전히 하나**다. `partial` 은 결합도를 낮추지 못한다 | 측정 결과에 따라 서비스 추출을 이어간다 (아래 참고) |
+| 2 | `Progression` 1,178줄이 `saveData` 에 깊게 묶임 | 성장 로직의 인덱스가 `MonoBehaviour` 안에 있어 **단위 테스트 불가** | `GameState` 를 만들어 주입하고 `ProgressionService` 추출 |
+| 3 | `Room.cs` 4,445줄 | 스폰·미니맵·카메라·상호작용이 한 클래스에 혼재 | 책임별 컴포넌트로 분해. 룸 프리팹 59개의 인스펙터 참조가 걸려 있어 마지막에 다룬다 |
+| 4 | 팝업 생성 경로가 `GameManager` 의 풀 API에 묶여 있음 | MVP 인프라(인터페이스 33개)는 갖췄으나 이를 조립하는 관리자가 없음 | UI 전용 관리자를 새로 만들어 생성 경로 일원화 |
+| 5 | 주석 처리된 코드 2,023줄 | 남은 것 대부분은 대안 구현·실험 흔적 | 파일별로 판단해 순차 정리 |
+| 6 | 테스트가 순수 클래스에만 있음 | `MonoBehaviour` 에 남은 로직은 여전히 검증 불가 | 서비스 추출과 함께 범위를 넓힌다 |
 
 ### 정리한 것
 
-이 문서에 적어둔 계획을 순서대로 처리하고 있습니다.
+이 문서에 적어둔 계획을 순서대로 처리했습니다. 상세한 과정은
+[`docs/TECH-NOTES.md`](docs/TECH-NOTES.md) 에 사례로 정리해 두었습니다.
 
 | 항목 | 조치 |
 |---|---|
-| 스크립트 195개가 단일 폴더에 평면 배치 | **15개 폴더로 재구성** (`Core` / `Character` / `Combat` / `World` / `UI` / `Audio` / `Util`) |
-| 주석 처리된 죽은 코드 약 5,200줄 | **832줄 삭제 + 미사용 클래스 제거 → 1,904줄** (63% 감소) |
+| 스크립트 195개가 단일 폴더에 평면 배치 | **15개 폴더로 재구성** |
+| 주석 처리된 죽은 코드 약 5,200줄 | **832줄 삭제 + 미사용 클래스 제거 → 2,023줄** |
 | 쓰이지 않는 클래스 잔존 | `Stage` 계열 4개 · `UIManager` 제거 |
+| `GameManager.cs` **3,840줄** | 타입 32개 분리 → `partial` 역할 분할 → 서비스 추출. 본체 **378줄** |
+| 오브젝트 풀이 전체 인스턴스를 `.name` 으로 선형 탐색 | `ObjectPoolService` 로 분리 + `Dictionary` 전환. **스폰당 힙 할당 3,565B → 0B** |
+| 다국어 조회가 502개 항목 선형 탐색 (293곳에서 호출) | `LocalizationService` 로 분리 + `Dictionary` 전환 |
+| 데이터 테이블·복제본 조회가 매번 선형 탐색 | 15종에 id 인덱스 도입, **호출부 65곳** 전환 |
+| 자동화 테스트 없음 | **EditMode 테스트 31개** + 조회 방식 A/B 벤치마크 |
+
+부수적으로 드러난 데이터 문제도 함께 정리했습니다.
+
+- `Monster` 테이블 중복 id 2건 — 뒤쪽 몬스터 2종이 한 번도 사용되지 않고 있었음
+- `SpawnedObject` 테이블에 id 가 비어 조회 불가능하던 행 11건
+- 없는 프리팹 / 없는 텍스트 id 조회 시 발생하던 `NullReferenceException` 2건
 
 > 진행 상황은 커밋 히스토리에 반영됩니다.
 
