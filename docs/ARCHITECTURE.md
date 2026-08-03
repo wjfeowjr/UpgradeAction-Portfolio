@@ -12,7 +12,7 @@
 5. [전투 판정 시스템](#5-전투-판정-시스템)
 6. [버프 · 실드 시스템](#6-버프--실드-시스템)
 7. [스킬 & 특성 트리](#7-스킬--특성-트리)
-8. [룸 & 스테이지](#8-룸--스테이지)
+8. [룸 구성](#8-룸-구성)
 9. [UI 계층](#9-ui-계층)
 10. [리소스 · 메모리 관리](#10-리소스--메모리-관리)
 11. [비동기 정책](#11-비동기-정책)
@@ -41,14 +41,12 @@ flowchart TB
         TM[TableManager]
         RES[ResourceManager]
         CT[Controller]
-        UM[UIManager]
         SND[SoundManager / BgmManager]
         STM[SteamWorksManager]
     end
 
     subgraph Scene["씬 종속 계층"]
         RM[RoomManager]
-        SM[StageManager]
         ROOM[Room · TotalRoom]
     end
 
@@ -73,7 +71,7 @@ flowchart TB
 | `Singleton<T>` | `FindObjectOfType` 기반 | 씬에 이미 배치된 매니저 |
 | `SingletonMono<T>` | 스레드 세이프, 인스턴스 자동 생성 | 씬 배치가 필요 없는 순수 매니저 |
 
-`ResourceManager`, `UIManager`, `TableManager` 등은 `SingletonMono<T>` 를 사용합니다.
+`ResourceManager`, `TableManager` 등은 `SingletonMono<T>` 를 사용합니다.
 
 ---
 
@@ -83,9 +81,7 @@ flowchart TB
 |---|---|
 | `GameManager` | 플레이어 상태 · 스탯 · 재화 · 세이브/로드 · 오브젝트 풀 · 아틀라스 캐시 · 키 바인딩 |
 | `RoomManager` | 룸 이동, 카메라 경계, 미니맵, 페이드 전환, 게임오버 흐름 |
-| `StageManager` | 에피소드 / 스테이지 진행 상태 |
 | `Controller` | 입력 폴링 및 플레이어 액션 디스패치 |
-| `UIManager` | 패널 · 팝업 라이프사이클 (⚠️ 현재 비활성 — [9절 참고](#현재-상태-주의)) |
 | `ResourceManager` | Addressables 로딩 (동기 / 비동기) |
 | `TableManager` | JSON 데이터 테이블 로드 및 조회 |
 | `BgmManager` / `SoundManager` | 오디오 재생 |
@@ -521,7 +517,7 @@ private async UniTask<bool> SwordCounter()
 
 ---
 
-## 8. 룸 & 스테이지
+## 8. 룸 구성
 
 ### 구성 요소
 
@@ -530,8 +526,12 @@ private async UniTask<bool> SwordCounter()
 | `Room` | 몬스터 스폰, NPC 배치, 보물상자, 지름길, 카메라 경계, 미니맵 타일 |
 | `RoomManager` | 룸 간 비동기 페이드 전환, 카메라 인계, 게임오버 흐름 |
 | `TotalRoom` | 전체 룸 컨테이너, 미니맵 방문 상태 보관 |
-| `Stage` / `Stage1` / `Stage2` | 에피소드 시퀀싱 — 인트로 대사, 보스 스폰, 카메라 연출, 클리어 조건 |
-| `StageManager` | 에피소드 · 스테이지 진행 상태 |
+| `Arena` | 라운드 기반 전투 구역 (`Arena.json` 으로 웨이브 구성) |
+| `RoomEntrance` / `ShortcutObject` | 룸 출입구, 지름길 개통 |
+
+> 에피소드 연출을 담당하던 `Stage` / `Stage1` / `Stage2` / `StageManager` 는
+> **2챕터 컨셉 변경 과정에서 제거**했습니다 (커밋 `사용 않는 스크립트 제거`).
+> 연출 시퀀싱은 재설계 중이며, 현재 룸 단위 흐름은 `RoomManager` 가 담당합니다.
 
 ### 룸 전환 흐름
 
@@ -643,12 +643,16 @@ View를 인터페이스로만 알고 있으므로 **Unity 런타임 없이 테�
 
 ### 현재 상태 주의
 
-> ⚠️ `UIManager.cs` 는 **전체가 주석 처리된 상태**입니다.
-> 인터페이스·Presenter 인프라는 갖춰져 있으나 생성·라이프사이클 관리자가 비활성이라,
-> 현재 팝업 생성은 `GameManager` 의 풀 API(`SpawnToPopupPool` 등)를 통해 이뤄집니다.
+> ⚠️ **UI 전용 관리자가 없습니다.**
+> 인터페이스·Model·Presenter 인프라는 갖춰져 있지만, 이를 조립하고 라이프사이클을
+> 관리하는 계층이 비어 있어 현재 팝업 생성은 `GameManager` 의 풀 API
+> (`SpawnToPopupPool` 등)를 경유합니다.
 >
-> 즉 **MVP 전환이 진행 중인 과도기 상태**입니다.
-> 개선 계획은 [README의 알려진 한계](../README.md#알려진-한계와-개선-계획) 7번 표를 참고해 주세요.
+> 초기에 `UIManager` 를 두었으나 기존 팝업이 이미 풀 API로 동작하고 있어 전환을 미뤘고,
+> 오래 방치된 끝에 제거했습니다(커밋 `사용 않는 스크립트 제거`).
+> 인프라가 남아 있으므로 **관리자를 다시 세우는 것이 다음 과제**입니다.
+>
+> 개선 계획은 [README의 알려진 한계](../README.md#알려진-한계와-개선-계획) 3번 항목을 참고해 주세요.
 
 ---
 
@@ -766,8 +770,8 @@ private GameObject SpawnToPool(string id, Transform pool, Vector3 pos)
 
 코루틴 대신 `UniTask` 를 전면 사용합니다.
 
-- 사용 파일 **62개**
-- `CancellationToken` 전파 파일 **49개**
+- 사용 파일 **58개**
+- `CancellationToken` 전파 파일 **46개**
 
 | 코루틴 대비 이점 | 이 프로젝트에서의 의미 |
 |---|---|
