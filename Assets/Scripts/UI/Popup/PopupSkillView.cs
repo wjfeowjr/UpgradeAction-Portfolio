@@ -300,7 +300,7 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
         if (playerData == null)
             return;
 
-        var passiveData = GameManager.Instance.passiveCopyList.Find(x => x.id == playerData.passive);
+        var passiveData = GameManager.Instance.GetPassiveCopy(playerData.passive);
         if(passiveData == null)
             return;
 

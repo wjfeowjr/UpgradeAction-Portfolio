@@ -42,7 +42,7 @@ public class Npc : Character
     private void DataSetting()
     {
         if(npcCopyData == null)
-            npcCopyData = GameManager.Instance.npcCopyList.Find(x => x.id == name);
+            npcCopyData = GameManager.Instance.GetNpcCopy(name);
     }
 
     public void SetInteractionAction()

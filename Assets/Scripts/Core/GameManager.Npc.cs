@@ -127,7 +127,7 @@ public partial class GameManager
 
     private void ConsumeQuestItems(string npcId)
     {
-        var data = npcCopyList.Find(x => x.id == npcId);
+        var data = GetNpcCopy(npcId);
         if (data == null || data.questItemId == null)
             return;
 

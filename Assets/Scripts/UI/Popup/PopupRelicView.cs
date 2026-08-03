@@ -583,7 +583,7 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
             relicNameText.text = GameManager.Instance.GetItemTalk(_curRelicId);
             relicExplainText.text = GameManager.Instance.GetItemExplain(_curRelicId);
             
-            var relicInfo = GameManager.Instance.relicCopyList.Find(x => x.id == _curRelicId);
+            var relicInfo = GameManager.Instance.GetRelicCopy(_curRelicId);
             for (int i = 0; i < relicInfo.statList.Count; i++)
             {
                 relicValueFrames[i].gameObject.SetActive(true);

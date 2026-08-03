@@ -175,7 +175,7 @@ public partial class GameManager
             if (string.IsNullOrWhiteSpace(playerInfo.relicList[i]))
             {
                 playerInfo.relicList[i] = relicId;
-                var itemData = itemCopyList.Find(x => x.id == relicId);
+                var itemData = GetItemCopy(relicId);
                 var relicName = GetTalk(itemData.name);
                 Debug.Log($"{relicName}장착");
                 break;
@@ -194,7 +194,7 @@ public partial class GameManager
         var playerInfo = saveData.playerInfoList.Find(x => x.playerId == playerId);
 
         playerInfo.relicList[idx] = relicId;
-        var itemData = itemCopyList.Find(x => x.id == relicId);
+        var itemData = GetItemCopy(relicId);
         var relicName = GetTalk(itemData.name);
         Debug.Log($"{relicName}장착");
         
@@ -220,7 +220,7 @@ public partial class GameManager
             if (playerInfo.relicList[i] == relicId)
             {
                 playerInfo.relicList[i] = default;
-                var itemData = itemCopyList.Find(x => x.id == relicId);
+                var itemData = GetItemCopy(relicId);
                 var relicName = GetTalk(itemData.name);
                 Debug.Log($"{relicName}해제");
                 
@@ -376,7 +376,7 @@ public partial class GameManager
     // 구매 성공 시 true, 골드 부족 등으로 실패 시 false 반환
     public bool BuyItem(StoreItemData storeItemData)
     {
-        var itemData = itemCopyList.Find(x => x.id == storeItemData.id);
+        var itemData = GetItemCopy(storeItemData.id);
         if (Gold < storeItemData.cost)
         {
             SpawnWarningPopup(GetTalk(30212)).Forget();
@@ -461,6 +461,8 @@ public partial class GameManager
             var data = new RelicCopy();
             data.id = relic.id;
             
+            // 인덱스는 SetCopyData 가 끝난 뒤에 만들어지므로 여기서는 쓸 수 없다.
+            // 복제본을 만드는 중이라 원본 리스트를 직접 조회한다.
             var itemData = itemCopyList.Find(x => x.id == relic.id);
             data.name = itemData.name;
             data.explain = itemData.explain;
@@ -579,7 +581,133 @@ public partial class GameManager
             data.passiveExplain = passive.passiveExplain;
             passiveCopyList.Add(data);
         }
+
+        BuildCopyIndexes();
     }
+
+    #region 복제본 조회 인덱스
+    // 복제본은 SetCopyData 에서 한 번 만들어지고 이후 변하지 않으므로
+    // 조회용 사전을 함께 만들어 둔다. 원본 List 는 순회를 위해 그대로 둔다.
+    //
+    // skillAttribute 는 하나의 키에 여러 항목이 대응하고(스킬 하나에 특성 여럿),
+    // 조회 키도 skill / targetObject / id 세 가지라 List 값 사전 3개를 만든다.
+    // 기존 FindAll 은 호출마다 결과 List 를 새로 할당했는데, 특성 조회는
+    // 스킬을 쓸 때마다 여러 번 일어나므로 그 할당이 반복되고 있었다.
+
+    private Dictionary<string, ItemCopy> itemCopyById;
+    private Dictionary<string, RelicCopy> relicCopyById;
+    private Dictionary<string, NpcCopy> npcCopyById;
+    private Dictionary<string, GrenadeCopy> grenadeCopyById;
+    private Dictionary<string, PassiveCopy> passiveCopyById;
+
+    private Dictionary<string, List<SkillAttributeCopy>> attributeById;
+    private Dictionary<string, List<SkillAttributeCopy>> attributeBySkill;
+    private Dictionary<string, List<SkillAttributeCopy>> attributeByTarget;
+    // 스킬 본체에 붙는 특성(대상 오브젝트가 지정되지 않은 것)만 모아둔 것
+    private Dictionary<string, List<SkillAttributeCopy>> attributeBySkillNoTarget;
+
+    private static readonly List<SkillAttributeCopy> EmptyAttributes = new List<SkillAttributeCopy>();
+
+    private void BuildCopyIndexes()
+    {
+        itemCopyById = BuildCopyIndex(itemCopyList, x => x.id, nameof(ItemCopy));
+        relicCopyById = BuildCopyIndex(relicCopyList, x => x.id, nameof(RelicCopy));
+        npcCopyById = BuildCopyIndex(npcCopyList, x => x.id, nameof(NpcCopy));
+        grenadeCopyById = BuildCopyIndex(grenadeCopyList, x => x.id, nameof(GrenadeCopy));
+        passiveCopyById = BuildCopyIndex(passiveCopyList, x => x.id, nameof(PassiveCopy));
+
+        attributeById = BuildMultiIndex(skillAttributeCopyList, x => x.id);
+        attributeBySkill = BuildMultiIndex(skillAttributeCopyList, x => x.skill);
+        attributeByTarget = BuildMultiIndex(skillAttributeCopyList, x => x.targetObject);
+
+        attributeBySkillNoTarget = new Dictionary<string, List<SkillAttributeCopy>>();
+        foreach (var attribute in skillAttributeCopyList)
+        {
+            if (string.IsNullOrEmpty(attribute.skill) || !string.IsNullOrWhiteSpace(attribute.targetObject))
+                continue;
+
+            if (!attributeBySkillNoTarget.TryGetValue(attribute.skill, out var bucket))
+            {
+                bucket = new List<SkillAttributeCopy>();
+                attributeBySkillNoTarget.Add(attribute.skill, bucket);
+            }
+            bucket.Add(attribute);
+        }
+    }
+
+    // id 가 겹치면 먼저 나온 것을 쓴다(기존 Find 동작과 동일)
+    private static Dictionary<string, T> BuildCopyIndex<T>(List<T> list, Func<T, string> keyOf, string typeName)
+    {
+        var dic = new Dictionary<string, T>();
+        if (list == null)
+            return dic;
+
+        foreach (var item in list)
+        {
+            var key = keyOf(item);
+            if (string.IsNullOrEmpty(key))
+                continue;
+
+            if (dic.ContainsKey(key))
+            {
+                Debug.LogWarning($"[Copy] {typeName} 에 중복된 id 가 있습니다: {key}");
+                continue;
+            }
+            dic.Add(key, item);
+        }
+        return dic;
+    }
+
+    // 하나의 키에 여러 항목이 대응한다. 리스트 순서는 원본 순서를 유지한다.
+    private static Dictionary<string, List<T>> BuildMultiIndex<T>(List<T> list, Func<T, string> keyOf)
+    {
+        var dic = new Dictionary<string, List<T>>();
+        if (list == null)
+            return dic;
+
+        foreach (var item in list)
+        {
+            var key = keyOf(item);
+            if (string.IsNullOrEmpty(key))
+                continue;
+
+            if (!dic.TryGetValue(key, out var bucket))
+            {
+                bucket = new List<T>();
+                dic.Add(key, bucket);
+            }
+            bucket.Add(item);
+        }
+        return dic;
+    }
+
+    private static T GetCopy<T>(Dictionary<string, T> dic, string id) where T : class
+        => dic != null && !string.IsNullOrEmpty(id) && dic.TryGetValue(id, out var v) ? v : null;
+
+    public ItemCopy GetItemCopy(string id) => GetCopy(itemCopyById, id);
+    public RelicCopy GetRelicCopy(string id) => GetCopy(relicCopyById, id);
+    public NpcCopy GetNpcCopy(string id) => GetCopy(npcCopyById, id);
+    public GrenadeCopy GetGrenadeCopy(string id) => GetCopy(grenadeCopyById, id);
+    public PassiveCopy GetPassiveCopy(string id) => GetCopy(passiveCopyById, id);
+
+    // 결과가 없으면 공용 빈 리스트를 돌려준다. FindAll 처럼 매번 새로 만들지 않는다.
+    // 반환된 리스트를 수정하면 인덱스가 오염되므로 읽기 전용으로만 쓴다.
+    public List<SkillAttributeCopy> GetAttributesById(string attributeId)
+        => Lookup(attributeById, attributeId);
+
+    public List<SkillAttributeCopy> GetAttributesBySkill(string skillId)
+        => Lookup(attributeBySkill, skillId);
+
+    public List<SkillAttributeCopy> GetAttributesByTarget(string targetId)
+        => Lookup(attributeByTarget, targetId);
+
+    // 대상 오브젝트가 지정되지 않은, 스킬 본체에 붙는 특성만 반환한다
+    public List<SkillAttributeCopy> GetSkillOwnAttributes(string skillId)
+        => Lookup(attributeBySkillNoTarget, skillId);
+
+    private static List<SkillAttributeCopy> Lookup(Dictionary<string, List<SkillAttributeCopy>> dic, string key)
+        => dic != null && !string.IsNullOrEmpty(key) && dic.TryGetValue(key, out var v) ? v : EmptyAttributes;
+    #endregion
 
     private void InitChangeSkill()
     {
@@ -749,7 +877,7 @@ public partial class GameManager
 
     public async void BuyAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
-        var attributeData = skillAttributeCopyList.FindAll(x => x.id == attributeId);
+        var attributeData = GetAttributesById(attributeId);
 
         foreach (var playerInfo in saveData.playerInfoList)
         {
@@ -787,7 +915,7 @@ public partial class GameManager
 
     public void SellAttribute(string skillId, string attributeId, Vector3 effectPos)
     {
-        var attributeData = skillAttributeCopyList.FindAll(x => x.id == attributeId);
+        var attributeData = GetAttributesById(attributeId);
 
         foreach (var playerInfo in saveData.playerInfoList)
         {
@@ -823,7 +951,7 @@ public partial class GameManager
             targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
         // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
-        var attributeData = skillAttributeCopyList.FindAll(x => x.targetObject == targetId);
+        var attributeData = GetAttributesByTarget(targetId);
         if (attributeData.Count > 0)
         {
             foreach (var attribute in attributeData)
@@ -839,7 +967,7 @@ public partial class GameManager
         }
         
         // 파생기도 효과를 적용받음
-        attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        attributeData = GetSkillOwnAttributes(skillId);
         foreach (var attribute in attributeData)
         {
             if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
@@ -859,7 +987,7 @@ public partial class GameManager
     {
         List<string> idList = new List<string>();
 
-        var attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId);
+        var attributeData = GetAttributesBySkill(skillId);
         foreach (var attribute in attributeData)
         {
             if (attribute.passiveId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
@@ -886,7 +1014,7 @@ public partial class GameManager
             targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
         // 정확히 일치하는 타겟 데이터가 있는지 확인하고, 그 데이터는 파생기를 포함하여 효과를 적용함
-        var attributeData = skillAttributeCopyList.FindAll(x => x.targetObject == targetId);
+        var attributeData = GetAttributesByTarget(targetId);
         if (attributeData.Count > 0)
         {
             foreach (var attribute in attributeData)
@@ -904,7 +1032,7 @@ public partial class GameManager
             }
         }
         // 파생기도 효과를 적용받음
-        attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        attributeData = GetSkillOwnAttributes(skillId);
         foreach (var attribute in attributeData)
         {
             if (string.IsNullOrWhiteSpace(attribute.addObjectId) || !IsHaveAttribute(skillId, attribute.id))
@@ -936,7 +1064,7 @@ public partial class GameManager
             targetId = $"{idSplit[0]}_{idSplit[1]}_{idSplit[2]}";
         
         // 정확히 일치하는 타겟 데이터가 있는지 확인
-        var attributeData = skillAttributeCopyList.FindAll(x => x.targetObject == targetId);
+        var attributeData = GetAttributesByTarget(targetId);
         
         // 정확히 id가 일치하는 오브젝트만 효과를 적용받음
         if (attributeData.Count > 0)
@@ -958,7 +1086,7 @@ public partial class GameManager
             }
         }
         // 파생기도 해당 효과를 적용받음
-        attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId && string.IsNullOrWhiteSpace(x.targetObject));
+        attributeData = GetSkillOwnAttributes(skillId);
         foreach (var attribute in attributeData)
         {
             if (attribute.upgradeId.Count == 0 || !IsHaveAttribute(skillId, attribute.id))
@@ -986,7 +1114,7 @@ public partial class GameManager
         {
             // 파생기도 해당 효과를 적용받음
             string skillId = $"{idSplit[0]}_{idSplit[1]}";
-            var attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId);
+            var attributeData = GetAttributesBySkill(skillId);
             foreach (var attribute in attributeData)
             {
                 if (string.IsNullOrWhiteSpace(attribute.buffId) || !IsHaveAttribute(skillId, attribute.id))
@@ -1013,7 +1141,7 @@ public partial class GameManager
         {
             // 파생기도 해당 효과를 적용받음
             string skillId = $"{idSplit[0]}_{idSplit[1]}";
-            var attributeData = skillAttributeCopyList.FindAll(x => x.skill == skillId);
+            var attributeData = GetAttributesBySkill(skillId);
             foreach (var attribute in attributeData)
             {
                 if (string.IsNullOrWhiteSpace(attribute.deBuffId) || !IsHaveAttribute(skillId, attribute.id))

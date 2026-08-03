@@ -288,7 +288,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
         foreach (var sortStoreItem in sortStoreItemTableData)
         {
             // 아이템 itemList에 있는지 null 확인
-            var sortItemData = GameManager.Instance.itemCopyList.Find(x => x.id == sortStoreItem.id);
+            var sortItemData = GameManager.Instance.GetItemCopy(sortStoreItem.id);
             if (sortItemData != null)
                 itemInfoList.Add(sortItemData);
         }
@@ -300,8 +300,8 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
     // %% 우측 아이템 정보창 갱신 %%%%%%%%%%%%%%%%%%%%%%%%%%%
     private void DisplayItemInfo()
     {
-        var itemInfo      = GameManager.Instance.itemCopyList.Find(x => x.id == curItemId);
-        var relicInfo     = GameManager.Instance.relicCopyList.Find(x => x.id == curItemId);
+        var itemInfo      = GameManager.Instance.GetItemCopy(curItemId);
+        var relicInfo     = GameManager.Instance.GetRelicCopy(curItemId);
         var storeItemData = TableManager.Instance.GetStoreItem(curItemId);
 
         if (itemInfo != null)

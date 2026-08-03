@@ -615,7 +615,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             return;
         }
 
-        attributeList = GameManager.Instance.skillAttributeCopyList.FindAll(x => x.skill == curSkillId);
+        attributeList = GameManager.Instance.GetAttributesBySkill(curSkillId);
         BuildAttributeIdList();
 
         var skill = playerInfo.skillList.Find(x => x.skillId == curSkillId);

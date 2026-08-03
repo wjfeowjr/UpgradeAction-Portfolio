@@ -810,7 +810,7 @@ public abstract class Character : InteractionController
                 if(string.IsNullOrWhiteSpace(relic))
                     continue;
             
-                var relicInfo = GameManager.Instance.relicCopyList.Find(x => x.id == relic);
+                var relicInfo = GameManager.Instance.GetRelicCopy(relic);
 
                 for (var i = 0; i < relicInfo.statList.Count; i++)
                 {
@@ -1566,7 +1566,7 @@ public abstract class Character : InteractionController
     }
     private void SetGrenadeData(string id, GameObject obj, Vector2 targetVector = default)
     {
-        var grenadeCopy = GameManager.Instance.grenadeCopyList.Find(x => x.id == id);
+        var grenadeCopy = GameManager.Instance.GetGrenadeCopy(id);
         if (grenadeCopy != null)
         {
             var grenade = obj.GetComponent<Grenade>();

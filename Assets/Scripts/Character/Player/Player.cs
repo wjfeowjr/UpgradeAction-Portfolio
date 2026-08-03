@@ -431,7 +431,7 @@ public abstract class Player : Character
         switch (playerStat.passive)
         {
             case ConstValues.SmileShot:
-                var smilePassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                var smilePassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
                 // 이동속도 버프 추가
                 if(playerStat.resource >= smilePassive.getBuffResource)
                     AddBuff(smilePassive.buffId, smilePassive.buffValue, smilePassive.buffTime, 0);
@@ -471,7 +471,7 @@ public abstract class Player : Character
                 if (playerStat.resource >= playerStat.maxResource)
                 {
                     SpawnAttack(ConstValues.BerserkerFuryExplosion, centerPos);
-                    var furyPassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                    var furyPassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
                     AddBuff(furyPassive.buffId, furyPassive.buffValue, furyPassive.buffTime, 0);
                     playerStat.resource = 0;
                     GameManager.Instance.RefreshPlayerResource();
@@ -479,7 +479,7 @@ public abstract class Player : Character
                 break;
             
             case ConstValues.SmileShot:
-                var smilePassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                var smilePassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
                 // 이동속도 버프 추가
                 if(playerStat.resource >= smilePassive.getBuffResource)
                     AddBuff(smilePassive.buffId, smilePassive.buffValue, smilePassive.buffTime, 0);
@@ -898,7 +898,7 @@ public abstract class Player : Character
             case ConstValues.IronMan:
                 if (playerStat.resource >= playerStat.maxResource)
                 {
-                    var ironPassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                    var ironPassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
                     AddShield(ironPassive.buffId, ironPassive.buffValue, ironPassive.buffTime);
                     playerStat.resource = 0;
                     GameManager.Instance.RefreshPlayerResource();
@@ -915,7 +915,7 @@ public abstract class Player : Character
         switch (playerStat.passive)
         {
             case ConstValues.SmileShot:
-                var smilePassive = GameManager.Instance.passiveCopyList.Find(x => x.id == playerStat.passive);
+                var smilePassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
                 // 패널티 게이지 감소
                 playerStat.resource -= smilePassive.penaltyValue;
                 if (playerStat.resource < 0)
