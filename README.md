@@ -379,13 +379,31 @@ public class PopupCommonPresenter          // 로직 (MonoBehaviour 아님 = 테
     public PopupCommonPresenter(IPopupCommonView view, PopupCommonModel model) { … }
 }
 
-public class PopupCommonView : UIBase, IPopupCommonView { … }   // uGUI 구현
+public class PopupCommonView : UIBase, IPopupCommonView   // uGUI 구현
+{
+    private PopupCommonPresenter presenter;
+
+    // View 가 자기 Presenter 를 조립한다
+    public PopupCommonPresenter Bind(PopupCommonModel model)
+    {
+        presenter = new PopupCommonPresenter(this, model);
+        return presenter;
+    }
+}
 ```
 
-> ⚠️ 이 MVP 구조는 **일부 팝업에만 적용된 전환 중인 상태**입니다.
-> 인터페이스와 Presenter는 갖췄지만 이를 조립하는 UI 관리자가 아직 없어,
-> 현재 팝업 생성은 `GameManager` 의 풀 API(`SpawnToPopupPool` 등)를 경유합니다.
-> 자세한 내용은 [알려진 한계와 개선 계획](#알려진-한계와-개선-계획)을 봐주세요.
+**조립 책임을 View가 갖습니다.** 호출부는 한 줄입니다.
+
+```csharp
+popupStore.StoreView.Bind(storeModel).SetAction();
+```
+
+이전에는 호출부마다 **인터페이스 변환 → Model 생성 → Presenter 생성 → 역주입 → 실행**
+다섯 단계를 손으로 반복했고, 그 코드가 **35곳**에 흩어져 있었습니다.
+
+> UI 전용 관리자를 두는 방법도 있었지만 택하지 않았습니다.
+> 생성 경로는 이미 `ObjectPoolService` 하나로 통일돼 있어서,
+> 관리자를 더하면 위임 껍데기만 늘어납니다. 문제는 생성이 아니라 조립이었습니다.
 
 ---
 
