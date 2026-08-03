@@ -64,8 +64,8 @@ public partial class GameManager : Singleton<GameManager>
     [SerializeField] private Transform highestPool;
 
     [SerializeField] private List<Player> players = new List<Player>();
+    // PrefabCacher(에디터 툴)가 채운다. ObjectPoolService 생성 시 넘긴다.
     [SerializeField] private List<GameObject> prefabList = new List<GameObject>();
-    [SerializeField] private List<GameObject> objectList = new List<GameObject>();
     [SerializeField] private List<Monster> monsterList = new List<Monster>();
     
     [SerializeField] private FadeSystem fadeSystem;
@@ -106,6 +106,9 @@ public partial class GameManager : Singleton<GameManager>
     // 분리된 서비스들 (MonoBehaviour 아님. InitManager 에서 생성한다)
     private LocalizationService localization;
     public LocalizationService Localization => localization;
+
+    private ObjectPoolService pool;
+    public ObjectPoolService Pool => pool;
 
     // 카메라
     private FollowCamera mainCamera;
@@ -359,6 +362,9 @@ public partial class GameManager : Singleton<GameManager>
 
         // 테이블 로드 직후에 생성한다 (조회 캐시를 만들어야 하므로 순서가 중요하다)
         localization = new LocalizationService(tableManager.talkTable, tableManager.itemTable);
+
+        // prefabList 는 PrefabCacher 가 에디터에서 채워둔 상태여야 한다
+        pool = new ObjectPoolService(prefabList);
     }
 
 

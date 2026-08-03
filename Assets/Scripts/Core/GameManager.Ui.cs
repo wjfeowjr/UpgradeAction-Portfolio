@@ -151,7 +151,7 @@ public partial class GameManager
     public GameObject GetUI(eUIType type)
     {
         GameObject result = null;
-        foreach (var go in objectList)
+        foreach (var go in pool.AllInstances)
         {
             if (go.GetComponent<UIBase>() && go.GetComponent<UIBase>().GetUIType() == type)
             {

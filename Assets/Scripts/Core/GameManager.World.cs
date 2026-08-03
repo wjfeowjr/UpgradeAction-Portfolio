@@ -114,9 +114,9 @@ public partial class GameManager
 
     public void RoomMoveSetting()
     {
-        foreach (var list in objectList)
+        foreach (var list in pool.AllInstances)
         {
-            if(list.activeSelf && (list.GetComponent<Missile>() || list.GetComponent<Grenade>()))
+            if(list && list.activeSelf && (list.GetComponent<Missile>() || list.GetComponent<Grenade>()))
                 list.SetActive(false);
         }
     }
