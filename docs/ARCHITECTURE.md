@@ -673,11 +673,39 @@ public class PopupCommonPresenter        // MonoBehaviour 아님 → 단위 테�
     }
 }
 
-public class PopupCommonView : UIBase, IPopupCommonView { /* uGUI 바인딩 */ }
+public class PopupCommonView : UIBase, IPopupCommonView   // uGUI 바인딩
+{
+    private PopupCommonPresenter presenter;
+    public PopupCommonPresenter Presenter => presenter;
+
+    // View 가 자기 Presenter 를 조립한다
+    public PopupCommonPresenter Bind(PopupCommonModel model)
+    {
+        presenter = new PopupCommonPresenter(this, model);
+        return presenter;
+    }
+}
 ```
 
 Presenter가 `MonoBehaviour` 를 상속하지 않는 것이 핵심입니다.
 View를 인터페이스로만 알고 있으므로 **Unity 런타임 없이 테스트할 수 있는 형태**입니다.
+
+### 조립은 View 가 한다
+
+호출부는 한 줄입니다.
+
+```csharp
+popupStore.StoreView.Bind(storeModel).SetAction();
+uiInterface.GoodsView.Bind(new UIGoodsModel { totalGold = Gold }).SetGoldText();
+```
+
+예외는 두 가지입니다. **View 하나가 자기 것만 조립하는 방식으로는 만들 수 없는 경우**라,
+해당 View 들을 모두 가진 `UI_Interface` 가 조립합니다.
+
+```csharp
+public UIBossHpPresenter BindBossHp()                  // Model 이 없다
+public UISkillPresenter  BindSkill(UISkillModel model) // 교체/포션/일반 스킬 View 3종을 함께 다룬다
+```
 
 ### 화면 목록
 
@@ -691,18 +719,30 @@ View를 인터페이스로만 알고 있으므로 **Unity 런타임 없이 테�
 
 인터페이스 정의는 총 **33개** (`IPopup*View` 21 + `IUI*View` 12).
 
-### 현재 상태 주의
+### UI 전용 관리자를 두지 않은 이유
 
-> ⚠️ **UI 전용 관리자가 없습니다.**
-> 인터페이스·Model·Presenter 인프라는 갖춰져 있지만, 이를 조립하고 라이프사이클을
-> 관리하는 계층이 비어 있어 현재 팝업 생성은 `GameManager` 의 풀 API
-> (`SpawnToPopupPool` 등)를 경유합니다.
->
-> 초기에 `UIManager` 를 두었으나 기존 팝업이 이미 풀 API로 동작하고 있어 전환을 미뤘고,
-> 오래 방치된 끝에 제거했습니다(커밋 `사용 않는 스크립트 제거`).
-> 인프라가 남아 있으므로 **관리자를 다시 세우는 것이 다음 과제**입니다.
->
-> 개선 계획은 [README의 알려진 한계](../README.md#알려진-한계와-개선-계획) 3번 항목을 참고해 주세요.
+초기에는 `UIManager` 가 있었습니다. 기존 팝업이 이미 풀 API로 동작하고 있어 전환을 미뤘고,
+오래 방치된 끝에 제거했습니다(커밋 `사용 않는 스크립트 제거`).
+
+이후 "관리자를 다시 세울 것인가"를 검토했는데, 다시 만들지 않기로 했습니다.
+
+**생성 경로는 이미 하나입니다.** UI든 일반 오브젝트든 전부 `ObjectPoolService.Spawn()` 을
+탑니다. 부모 `Transform` 만 다릅니다.
+
+```csharp
+SpawnToObjectPool(id, pos)   → pool.Spawn(id, objectPool, pos)
+SpawnToUIPool(type, pos)     → pool.Spawn(id, uiPool,     pos)
+SpawnToPopupPool(type, pos)  → pool.Spawn(id, popupPool,  pos)
+```
+
+여기에 관리자를 더하면 **위임 껍데기가 하나 늘어날 뿐**입니다.
+
+**실제 문제는 생성이 아니라 조립이었습니다.** MVP 를 엮는 코드가 35곳에 흩어져 있었고,
+호출부마다 다섯 단계를 손으로 반복했습니다. 그래서 관리자를 만드는 대신
+**조립의 주인을 View 로 정했습니다**(위 참고).
+
+> 팝업 스택·ESC 우선순위처럼 **여러 팝업의 관계를 한 곳에서 봐야 하는 요구**가 생기면
+> 그때 얇은 계층을 두는 것이 맞습니다. 지금 규모에서는 과설계입니다.
 
 ---
 
@@ -1179,9 +1219,17 @@ public class PopupCommonView : UIBase, IPopupCommonView
 
 View 인터페이스 33개(`IPopup*View` 21 + `IUI*View` 12), Presenter 30개.
 
-> ⚠️ **절반만 적용된 상태입니다.** 인터페이스와 Presenter는 갖췄지만
-> 이를 조립하는 UI 관리자가 없어, 현재 팝업 생성은 `GameManager` 의 풀 API를 경유합니다.
-> [9절](#현재-상태-주의) 참고.
+**조립은 View 가 합니다.** 호출부는 한 줄입니다.
+
+```csharp
+popupStore.StoreView.Bind(storeModel).SetAction();
+```
+
+이전에는 호출부마다 `ConvertTo` 로 인터페이스를 꺼내고, Model 과 Presenter 를 만들고,
+컨테이너에 되돌려 주입하는 다섯 단계를 반복했습니다. 그 코드가 35곳에 흩어져 있었습니다.
+
+> UI 전용 관리자를 두는 선택지도 있었지만 택하지 않았습니다.
+> 이유는 [9절](#ui-전용-관리자를-두지-않은-이유)에 있습니다.
 
 ---
 

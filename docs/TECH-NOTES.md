@@ -31,10 +31,11 @@
 12. [God Object를 어디부터 뜯을지 — 감이 아니라 측정으로](#12-god-object를-어디부터-뜯을지--감이-아니라-측정으로)
 13. [520배 빨라진 이유는 알고리즘이 아니었다](#13-520배-빨라진-이유는-알고리즘이-아니었다)
 14. [Dictionary로 바꿨더니 데이터 버그가 나왔다](#14-dictionary로-바꿨더니-데이터-버그가-나왔다)
+15. [관리자를 하나 더 만들 뻔했다](#15-관리자를-하나-더-만들-뻔했다)
 
 **남은 것**
 
-15. [아직 풀지 못한 문제들](#15-아직-풀지-못한-문제들)
+16. [아직 풀지 못한 문제들](#16-아직-풀지-못한-문제들)
 
 ---
 
@@ -1119,7 +1120,126 @@ private void SetCopyData()
 
 ---
 
-## 15. 아직 풀지 못한 문제들
+## 15. 관리자를 하나 더 만들 뻔했다
+
+### 문서에 이렇게 적어뒀었습니다
+
+> "MVP 인프라(인터페이스 33개)는 갖췄으나 이를 조립하는 관리자가 없음
+> → **UI 전용 관리자를 새로 만들어 생성 경로 일원화**"
+
+`UIManager` 는 원래 있었습니다. 기존 팝업이 이미 `GameManager` 의 풀 API로 돌아가고 있어
+전환을 미뤘고, 통째로 주석 처리해 둔 채 1년 넘게 방치하다 결국 제거했습니다.
+그래서 "다시 만들어야 한다"고 적어두고 있었습니다.
+
+### 그런데 지적을 받았습니다
+
+> "어차피 UI든 일반 오브젝트든 `GameManager` 의 스폰 메서드에서 생성되잖아?"
+
+맞는 말이었습니다. 확인해보니 **생성 경로는 이미 하나**였습니다.
+
+```csharp
+SpawnToObjectPool(id, pos)   → pool.Spawn(id, objectPool, pos)
+SpawnToUIPool(type, pos)     → pool.Spawn(id, uiPool,     pos)
+SpawnToPopupPool(type, pos)  → pool.Spawn(id, popupPool,  pos)
+```
+
+부모 `Transform` 만 다를 뿐 전부 `ObjectPoolService.Spawn()` 을 탑니다.
+여기에 관리자를 더하면 **위임 껍데기가 하나 늘어날 뿐**이었습니다.
+
+제가 문제를 잘못 진단하고 있었던 것입니다.
+
+### 진짜 문제를 다시 찾았습니다
+
+세어보니 Presenter 를 만드는 코드가 **35곳**에 흩어져 있었습니다.
+
+| 파일 | 조립 지점 |
+|---|---|
+| `GameManager.Ui.cs` | 11 |
+| `RoomManager.cs` | 6 |
+| `Popup_Setting.cs` | 5 |
+| `Popup_Character.cs` | 5 |
+| 그 외 6개 파일 | 8 |
+
+그리고 매번 같은 다섯 단계를 손으로 반복했습니다.
+
+```csharp
+var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();   // ① 인터페이스 변환
+var goodsModel = new UIGoodsModel() { totalGold = Gold };               // ② 모델 생성
+var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);  // ③ 프레젠터 생성
+uiInterface.SetGoodsPresenter(goodsPresenter);                          // ④ 역주입
+goodsPresenter.SetGoldText();                                           // ⑤ 실행
+```
+
+**문제는 "생성"이 아니라 "조립"이었습니다.** 그리고 조립에는 주인이 없었습니다.
+
+### 해결 — 관리자가 아니라 주인을 정했다
+
+조립의 주인은 View 가 맞습니다. 자기 Presenter 를 자기가 만들면 됩니다.
+
+```csharp
+public class UIGoodsView : MonoBehaviour, IUIGoodsView
+{
+    private UIGoodsPresenter presenter;
+    public UIGoodsPresenter Presenter => presenter;
+
+    public UIGoodsPresenter Bind(UIGoodsModel model)
+    {
+        presenter = new UIGoodsPresenter(this, model);
+        return presenter;
+    }
+}
+```
+
+호출부는 한 줄이 됐습니다.
+
+```csharp
+uiInterface.GoodsView.Bind(new UIGoodsModel { totalGold = Gold }).SetGoldText();
+```
+
+| | 전 | 후 |
+|---|---|---|
+| Presenter 직접 조립 | 35곳 | **2곳** |
+| `ConvertTo` 인터페이스 변환 | 32회 | **0회** |
+| `SetXxxPresenter` 역주입 | 7개 | **0개** |
+| `SpawnGameInterface()` | 42줄 | **17줄** |
+
+`Bind` 가 `this` 를 넘기므로 `ConvertTo` 가 필요 없어졌고,
+View 가 Presenter 를 들고 있으므로 역주입도 사라졌습니다.
+**`UI_Interface` 와 호출부가 같은 Presenter 를 각자 보관하던 이중 구조**도 정리됐습니다.
+
+남긴 2곳은 View 하나로는 조립할 수 없는 경우입니다.
+`BindBossHp` 는 Model 이 없고, `BindSkill` 은 교체·포션·일반 스킬 View 3종을 한꺼번에 다룹니다.
+세 View 를 모두 가진 `UI_Interface` 가 조립하는 것이 자연스럽습니다.
+
+### 배운 것
+
+**"관리자가 없다"는 진단이 틀렸습니다.** 없는 건 관리자가 아니라 **책임의 주인**이었습니다.
+
+구조가 허전해 보일 때 계층을 하나 추가하는 건 쉽습니다.
+그런데 그 계층이 실제로 하는 일이 위임뿐이라면, 코드는 늘고 문제는 그대로입니다.
+
+지금도 팝업 스택·ESC 우선순위 같은 요구가 생기면 얇은 계층이 필요할 것입니다.
+다만 그건 **"여러 팝업의 관계를 한 곳에서 봐야 한다"는 실제 요구가 생겼을 때**의 이야기지,
+지금 미리 만들 이유는 없었습니다.
+
+### 덧 — 일괄 치환이 또 걸렸다
+
+35곳을 스크립트로 바꾸다 컴파일 에러가 났습니다.
+팝업 컨테이너 7개가 View 를 **인터페이스 타입으로 노출**하고 있었습니다.
+
+```csharp
+public IPopupStoreView StoreView => storeView;      // 인터페이스로 노출
+[SerializeField] private PopupStoreView storeView;  // 실제 타입
+```
+
+`Bind` 는 구체 클래스에 있으니 인터페이스로는 부를 수 없습니다.
+[14번](#14-dictionary로-바꿨더니-데이터-버그가-나왔다)에서는 생성 순서를 놓쳤는데, 이번엔 타입이었습니다.
+
+**치환 스크립트는 문맥을 보지 못합니다.** 빠른 대신 그 대가를 두 번 치렀습니다.
+
+---
+
+## 16. 아직 풀지 못한 문제들
 
 숨기는 것보다 적어두는 편이 낫다고 판단했습니다.
 
@@ -1143,26 +1263,6 @@ private void SetCopyData()
 
 **계획:** `saveData` 를 감싸는 `GameState` 를 만들어 주입하고 `ProgressionService` 를 추출합니다.
 측정에서 `Player` 그룹의 독점 필드가 12%로 가장 낮게 나왔으므로, 캐릭터 교체 쪽은 마지막에 다룹니다.
-
-### UI 관리자가 비어 있다
-
-MVP 인프라(인터페이스 33개 + Model + Presenter)는 만들어 뒀는데,
-이를 조립하고 팝업의 생성·소멸을 관리하는 계층이 없습니다.
-
-**왜 이렇게 됐나:** 기존 팝업이 이미 `GameManager` 의 풀 API로 동작하고 있었고,
-새 구조로 전부 옮기는 것보다 기능 추가가 급했습니다.
-`UIManager` 를 만들어 두긴 했지만 전환을 미루면서 통째로 주석 처리해 뒀고,
-1년 넘게 방치된 끝에 결국 제거했습니다.
-
-남은 건 **인프라만 있고 조립하는 쪽이 없는 상태**입니다.
-Presenter가 `MonoBehaviour` 를 상속하지 않도록 설계해 둔 것은 살아 있으므로,
-관리자만 다시 세우면 이관을 시작할 수 있습니다.
-
-**배운 것:** "일단 만들어두고 나중에 옮기자"는 대부분 옮겨지지 않습니다.
-새 구조를 도입할 거라면 **신규 작업분만이라도 즉시 그 경로로 태워야** 합니다.
-그러지 않으면 인프라만 남고 아무도 쓰지 않는 상태가 됩니다.
-
-**계획:** UI 전용 관리자를 다시 만들고, 신규 팝업부터 MVP 경로로 태웁니다.
 
 ### 테스트 범위가 아직 좁다
 
@@ -1225,13 +1325,14 @@ EditMode 테스트 31개가 생겼지만, **전부 `MonoBehaviour` 밖으로 꺼
 - 어디부터 뜯을지는 **감이 아니라 측정**으로 정해야 했습니다 ([12](#12-god-object를-어디부터-뜯을지--감이-아니라-측정으로))
 - 느린 원인은 알고리즘이 아니라 **엔진 API의 숨은 비용**이었습니다 ([13](#13-520배-빨라진-이유는-알고리즘이-아니었다))
 - 자료구조를 바꾸자 **그 제약이 데이터를 검사해줬습니다** ([14](#14-dictionary로-바꿨더니-데이터-버그가-나왔다))
+- 구조가 허전할 때 **계층을 더하는 대신 책임의 주인을 찾아야 했습니다** ([15](#15-관리자를-하나-더-만들-뻔했다))
 - 분리해야 검증할 수 있고, **검증하려다 보면 문제가 드러났습니다**
 
-[15번](#15-아직-풀지-못한-문제들)에 적은 것들은
+[16번](#16-아직-풀지-못한-문제들)에 적은 것들은
 **혼자였기 때문에 미룰 수 있었던 부채**입니다.
 God Object도 이원화된 팝업 경로도, 나 혼자 알고 있으면 굴러갔습니다.
 
-지금 가장 하고 싶은 작업은 새 기능이 아니라 15번 목록을 지우는 일입니다.
+지금 가장 하고 싶은 작업은 새 기능이 아니라 16번 목록을 지우는 일입니다.
 
 ---
 
