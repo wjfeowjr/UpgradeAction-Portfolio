@@ -810,18 +810,12 @@ public partial class GameManager
         if (uiInterfaceObj == null)
             return;
         
-        var changeInterface = uiInterface.ChangeSkillView.ConvertTo<IUISkillView>();
-        var potionInterface = uiInterface.PotionSkillView.ConvertTo<IUISkillView>();
-        var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
-        var skillModel = new UISkillModel
+        uiInterface.BindSkill(new UISkillModel
         {
             changeSkill = changeSkill,
             potionSkill = potionSkill,
             settingSkillList = GetSettingSkillList()
-        };
-        var skillPresenter = new UISkillPresenter(changeInterface, potionInterface, skillInterfaces, skillModel);
-        uiInterface.SetSkillPresenter(skillPresenter);
-        skillPresenter.SetSkillInfo();
+        }).SetSkillInfo();
     }
 
     public void PlusAttributePoint(int point)

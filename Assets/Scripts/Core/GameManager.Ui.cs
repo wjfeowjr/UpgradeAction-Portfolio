@@ -17,48 +17,22 @@ public partial class GameManager
             uiInterface.Setup(eUIType.UI_Interface);
         }
 
-        var comboInterface = uiInterface.ComboView.ConvertTo<IUIComboView>();
-        var comboModel = new UIComboModel()
-        {
-            comboCount = 0
-        };
-        var comboPresenter = new UIComboPresenter(comboInterface, comboModel);
-        uiInterface.SetComboPresenter(comboPresenter);
-        comboPresenter.SetCombo();
+        uiInterface.ComboView.Bind(new UIComboModel { comboCount = 0 }).SetCombo();
 
         RefreshFace();
         RefreshPlayerHp();
         RefreshPlayerResource();
-                    
-        var bossHpInterface = uiInterface.BossHpView.ConvertTo<IUIBossHpView>();
-        var bossHpPresenter = new UIBossHpPresenter(bossHpInterface);
-        uiInterface.SetBossHpPresenter(bossHpPresenter);
-        bossHpPresenter.HideHp();
-            
-        var placeNameInterface = uiInterface.PlaceNameView.ConvertTo<IUIPlaceNameView>();
-        var placeNameModel = new UIPlaceNameModel();
-        var placeNamePresenter = new UIPlaceNamePresenter(placeNameInterface, placeNameModel);
-        uiInterface.SetPlaceNamePresenter(placeNamePresenter);
-        placeNamePresenter.HideImmediate();
-        
-        var objectInfoInterface = uiInterface.ObjectInfoView.ConvertTo<IUIObjectInfoView>();
-        var objectInfoModel = new UIObjectInfoModel();
-        var objectInfoPresenter = new UIObjectInfoPresenter(objectInfoInterface, objectInfoModel);
-        uiInterface.SetObjectInfoPresenter(objectInfoPresenter);
-        objectInfoPresenter.HideImmediate();
-        
-        var changeInterface = uiInterface.ChangeSkillView.ConvertTo<IUISkillView>();
-        var potionInterface = uiInterface.PotionSkillView.ConvertTo<IUISkillView>();
-        var skillInterfaces = uiInterface.SkillViews.ConvertAll(v => (IUISkillView)v);
-        var skillModel = new UISkillModel
+
+        uiInterface.BindBossHp().HideHp();
+        uiInterface.PlaceNameView.Bind(new UIPlaceNameModel()).HideImmediate();
+        uiInterface.ObjectInfoView.Bind(new UIObjectInfoModel()).HideImmediate();
+
+        uiInterface.BindSkill(new UISkillModel
         {
             changeSkill = changeSkill,
             potionSkill = potionSkill,
             settingSkillList = GetSettingSkillList()
-        };
-        var skillPresenter = new UISkillPresenter(changeInterface, potionInterface, skillInterfaces, skillModel);
-        uiInterface.SetSkillPresenter(skillPresenter);
-        skillPresenter.SetSkillInfo();
+        }).SetSkillInfo();
 
         RefreshPotionActive();
 
@@ -89,29 +63,18 @@ public partial class GameManager
 
     public void GetGold(int getGold, int totalGold)
     {
-        var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();
-        var goodsModel = new UIGoodsModel()
+        uiInterface.GoodsView.Bind(new UIGoodsModel
         {
             getGold = getGold,
             totalGold = totalGold,
-        };
-        var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);
-        uiInterface.SetGoodsPresenter(goodsPresenter);
-        goodsPresenter.PlusGoldText();
+        }).PlusGoldText();
     }
 
     public void RefreshGoods()
     {
         Gold = saveData.gold;
 
-        var goodsInterface = uiInterface.GoodsView.ConvertTo<IUIGoodsView>();
-        var goodsModel = new UIGoodsModel()
-        {
-            totalGold = Gold,
-        };
-        var goodsPresenter = new UIGoodsPresenter(goodsInterface, goodsModel);
-        uiInterface.SetGoodsPresenter(goodsPresenter);
-        goodsPresenter.SetGoldText();
+        uiInterface.GoodsView.Bind(new UIGoodsModel { totalGold = Gold }).SetGoldText();
     }
 
     public void RefreshPlaceName()
@@ -119,28 +82,20 @@ public partial class GameManager
         if (RoomManager.Instance == null || RoomManager.Instance.CurrentRoom == null)
             return;
 
-        var placeNameInterface = uiInterface.PlaceNameView.ConvertTo<IUIPlaceNameView>();
-        var placeNameModel = new UIPlaceNameModel()
+        uiInterface.PlaceNameView.Bind(new UIPlaceNameModel
         {
             placeName = RoomManager.Instance.CurrentRoom.Place,
-        };
-        var placeNamePresenter = new UIPlaceNamePresenter(placeNameInterface, placeNameModel);
-        uiInterface.SetPlaceNamePresenter(placeNamePresenter);
-        placeNamePresenter.SetPlaceText();
+        }).SetPlaceText();
     }
 
     public void ProductObjectInfo(string id, string objectName, int count)
     {
-        var getObjectInterface = uiInterface.ObjectInfoView.ConvertTo<IUIObjectInfoView>();
-        var getObjectModel = new UIObjectInfoModel()
+        uiInterface.ObjectInfoView.Bind(new UIObjectInfoModel
         {
             id = id,
             objectName = objectName,
             count = count,
-        };
-        var objectInfoPresenter = new UIObjectInfoPresenter(getObjectInterface, getObjectModel);
-        uiInterface.SetObjectInfoPresenter(objectInfoPresenter);
-        objectInfoPresenter.SetObjectText();
+        }).SetObjectText();
     }
 
     public void HidePlaceName()

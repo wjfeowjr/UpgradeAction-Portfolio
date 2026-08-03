@@ -6,12 +6,15 @@ using UnityEngine.Serialization;
 
 public class UI_Interface : UIBase
 {
+    // Presenter 는 각 View 가 직접 들고 있다. 여기서는 그걸 그대로 넘겨준다.
+    // 이전에는 UI_Interface 가 Presenter 를 따로 보관하고, 호출부가 만들어서
+    // SetXxxPresenter 로 되돌려주는 구조였다. 같은 참조를 두 곳에서 들고 있었다.
+
     // 콤보
     public UIComboView ComboView => comboView;
     [SerializeField] private UIComboView comboView;
-    private UIComboPresenter uiComboPresenter;
-    public UIComboPresenter ComboPresenter => uiComboPresenter;
-    
+    public UIComboPresenter ComboPresenter => comboView ? comboView.Presenter : null;
+
     // 캐릭터 얼굴
     public UICharacterFaceView CharacterFaceView => characterFaceView;
     [SerializeField] private UICharacterFaceView characterFaceView;
@@ -19,19 +22,16 @@ public class UI_Interface : UIBase
     // 체력
     public UIHpView HpView => hpView;
     [SerializeField] private UIHpView hpView;
-    private UIHpPresenter uiHpPresenter;
-    public UIHpPresenter HpPresenter => uiHpPresenter;
-    
+    public UIHpPresenter HpPresenter => hpView ? hpView.Presenter : null;
+
     // 획득 아이템
     public UIObjectInfoView ObjectInfoView => objectInfoView;
     [SerializeField] private UIObjectInfoView objectInfoView;
-    private UIObjectInfoPresenter uiObjectInfoPresenter;
-    public UIObjectInfoPresenter ObjectInfoPresenter => uiObjectInfoPresenter;
-    
+    public UIObjectInfoPresenter ObjectInfoPresenter => objectInfoView ? objectInfoView.Presenter : null;
+
     // 재화
     public UIGoodsView GoodsView => goodsView;
     [SerializeField] private UIGoodsView goodsView;
-    private UIGoodsPresenter uiGoodsPresenter;
 
     // 보스체력
     public UIBossHpView BossHpView => bossHpView;
@@ -42,9 +42,8 @@ public class UI_Interface : UIBase
     // 지역명
     public UIPlaceNameView PlaceNameView => placeNameView;
     [SerializeField] private UIPlaceNameView placeNameView;
-    private UIPlaceNamePresenter uiPlaceNamePresenter;
-    public UIPlaceNamePresenter PlaceNamePresenter => uiPlaceNamePresenter;
-    
+    public UIPlaceNamePresenter PlaceNamePresenter => placeNameView ? placeNameView.Presenter : null;
+
     // 스킬
     public UISkillView ChangeSkillView => changeSkillView;
     public UISkillView PotionSkillView => potionSkillView;
@@ -73,39 +72,21 @@ public class UI_Interface : UIBase
         return waitingCharacterPos.position;
     }
     
-    public void SetComboPresenter(UIComboPresenter presenter)
+    // 보스 체력은 Model 이 없어 View 하나만 넘긴다
+    public UIBossHpPresenter BindBossHp()
     {
-        uiComboPresenter = presenter;
+        uiBossHpPresenter = new UIBossHpPresenter(bossHpView);
+        return uiBossHpPresenter;
     }
 
-    public void SetHpPresenter(UIHpPresenter presenter)
+    // 스킬 Presenter 는 교체/포션/일반 스킬 View 를 한꺼번에 다룬다.
+    // View 하나가 자기 것만 조립하는 방식으로는 만들 수 없어,
+    // 세 View 를 모두 들고 있는 UI_Interface 가 조립한다.
+    public UISkillPresenter BindSkill(UISkillModel model)
     {
-        uiHpPresenter = presenter;
-    }
-    
-    public void SetObjectInfoPresenter(UIObjectInfoPresenter presenter)
-    {
-        uiObjectInfoPresenter = presenter;
-    }
-    
-    public void SetGoodsPresenter(UIGoodsPresenter presenter)
-    {
-        uiGoodsPresenter = presenter;
-    }
-    
-    public void SetBossHpPresenter(UIBossHpPresenter presenter)
-    {
-        uiBossHpPresenter = presenter;
-    }
-
-    public void SetPlaceNamePresenter(UIPlaceNamePresenter presenter)
-    {
-        uiPlaceNamePresenter = presenter;
-    }
-
-    public void SetSkillPresenter(UISkillPresenter presenter)
-    {
-        uiSkillPresenter = presenter;
+        var skillInterfaces = skillViews.ConvertAll(v => (IUISkillView)v);
+        uiSkillPresenter = new UISkillPresenter(changeSkillView, potionSkillView, skillInterfaces, model);
+        return uiSkillPresenter;
     }
 
     private void Update()

@@ -55,6 +55,18 @@ public class UIHpPresenter
 
 public class UIHpView : MonoBehaviour, IUIHpView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    // 호출부가 인터페이스 변환 -> Model 생성 -> Presenter 생성 -> 역주입을
+    // 매번 반복하던 것을 한 줄로 줄인다.
+    private UIHpPresenter presenter;
+    public UIHpPresenter Presenter => presenter;
+
+    public UIHpPresenter Bind(UIHpModel model)
+    {
+        presenter = new UIHpPresenter(this, model);
+        return presenter;
+    }
+
     [SerializeField] private Gauge hpGauge;
     [SerializeField] private Gauge shieldGauge;
     [SerializeField] private Gauge resourceGauge;
