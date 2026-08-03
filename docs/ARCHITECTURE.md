@@ -83,6 +83,27 @@ flowchart TB
 | `RoomManager` | 룸 이동, 카메라 경계, 미니맵, 페이드 전환, 게임오버 흐름 |
 | `Controller` | 입력 폴링 및 플레이어 액션 디스패치 |
 | `ResourceManager` | Addressables 로딩 (동기 / 비동기) |
+
+### 분리된 서비스
+
+`MonoBehaviour` 도 싱글턴도 아닌 순수 클래스입니다.
+`GameManager.InitManager()` 에서 생성하며, 기존 호출부는 `GameManager` 가 위임합니다.
+
+| 서비스 | 책임 | 테스트 |
+|---|---|---|
+| `LocalizationService` | 다국어 텍스트 조회 (`Core/Localization/`) | 10개 |
+| `ObjectPoolService` | 오브젝트 풀 (`Core/Pool/`) | 13개 |
+
+의존을 생성자로 주입받으므로 Unity 런타임 없이 검증할 수 있습니다.
+
+```csharp
+localization = new LocalizationService(tableManager.talkTable, tableManager.itemTable);
+pool = new ObjectPoolService(prefabList);
+```
+
+`GameManager` 자체는 역할별 `partial` 파일 9개로 나뉘어 있습니다.
+다만 **파일만 나뉘었을 뿐 클래스는 하나**이므로 결합도는 그대로입니다.
+분할 목적과 측정 결과는 [`TECH-NOTES.md` 12번](TECH-NOTES.md#12-god-object를-어디부터-뜯을지--감이-아니라-측정으로)에 있습니다.
 | `TableManager` | JSON 데이터 테이블 로드 및 조회 |
 | `BgmManager` / `SoundManager` | 오디오 재생 |
 | `VolumeManager` | AudioMixer 볼륨 제어 |
@@ -145,6 +166,35 @@ private T LoadDataFromJson<T>(string fileName)
     return data;
 }
 ```
+
+### id 조회 인덱스
+
+테이블은 로드 후 변하지 않으므로, `Init()` 마지막에 `id → 데이터` 사전을 만듭니다.
+
+```csharp
+// 이전 — 조회할 때마다 전체를 훑고, 람다가 지역 변수를 캡처해 클로저를 할당했다
+TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+
+// 현재
+TableManager.Instance.GetSpawnedObject(id);
+```
+
+`SpawnedObject`(428개)는 이펙트 생성마다, `Attack`(152개)은 공격 판정마다 조회되던 경로입니다.
+런타임 복제본(`skillAttributeCopyList` 등)도 같은 방식으로 인덱싱했으며,
+특성 조회는 `FindAll` 이라 **호출마다 결과 `List` 를 새로 할당**하던 것을 없앴습니다.
+
+**인덱스를 만들지 않은 것**
+
+| 대상 | 이유 |
+|---|---|
+| 세이브 데이터 리스트 | `JsonUtility` 가 `Dictionary` 를 직렬화하지 못해 세이브 호환성이 깨집니다. 항목도 3~20개입니다 |
+| `buffList`, `players` 등 런타임 상태 | 10개 미만이라 해시 오버헤드가 더 큽니다 |
+| 조건 필터형 `FindAll` 1건 | 키 조회가 아니라 여러 조건으로 걸러내는 코드입니다 |
+
+id 가 중복되면 `Init()` 에서 경고를 남깁니다.
+`List` 는 중복을 허용하지만 `Dictionary` 는 거부하므로, 이 전환 과정에서
+`Monster` 테이블의 중복 id 2건이 드러났습니다
+([`TECH-NOTES.md` 14번](TECH-NOTES.md#14-dictionary로-바꿨더니-데이터-버그가-나왔다)).
 
 ### 원본 불변 · 복제본 가변 원칙
 
@@ -725,26 +775,27 @@ UI · 배경 2종의 아틀라스에 적용되어 있으며, 조회는 **O(1)** 
 분리 이유는 **계층 정리 + 렌더 순서 제어**를 동시에 얻기 위해서입니다.
 uGUI는 형제 순서(sibling index)가 곧 렌더 순서이므로, 부모를 나누면 레이어 관리가 단순해집니다.
 
-재활용 로직:
+풀 로직은 `ObjectPoolService`(`Core/Pool/`)에 있습니다.
+`MonoBehaviour` 가 아니므로 EditMode 테스트가 가능하고, `GameManager` 는 위임만 합니다.
+
+**재사용 규칙** — 같은 id 의 인스턴스 중 비활성인 것을 앞에서부터 찾아 재사용하고, 없으면 새로 만듭니다.
 
 ```csharp
-private GameObject SpawnToPool(string id, Transform pool, Vector3 pos)
+// 프리팹 이름 -> 프리팹 (스폰마다 하던 선형 탐색을 없앤다)
+private readonly Dictionary<string, GameObject> prefabById;
+
+// 프리팹 이름 -> 그 id 로 만들어진 인스턴스들 (생성 순서 유지)
+private readonly Dictionary<string, List<GameObject>> instancesById;
+
+public GameObject Spawn(string id, Transform parent, Vector3 position, bool asLastSibling = false)
 {
-    var objectName = $"{id}(Clone)";
-    var isSearch = objectList.FindAll(x => x.name == objectName);
+    var go = GetRecyclable(id) ?? Create(id, parent);
+    if (!go)
+        return null;                 // 프리팹이 없으면 경고 후 null (이전에는 크래시)
 
-    GameObject go;
-    if (isSearch.Count == 0)
-        go = Instantiate(prefabList.Find(x => x.name == id), pool);   // 최초 생성
-    else
-    {
-        var recycleObj = isSearch.Find(x => !x.activeSelf);           // 비활성 개체 재사용
-        go = recycleObj ?? Instantiate(prefabList.Find(x => x.name == id), pool);
-    }
-
-    go.transform.position = pos;
+    go.transform.position = position;
     go.SetActive(true);
-    ResetParticles(go);          // 파티클 잔상 제거
+    ResetParticles(go);              // 파티클 잔상 제거
     return go;
 }
 ```
@@ -752,9 +803,17 @@ private GameObject SpawnToPool(string id, Transform pool, Vector3 pos)
 `ResetParticles()` 로 **재사용 시 이전 파티클 잔상이 남는 문제**를 처리합니다.
 풀링에서 자주 놓치는 지점입니다.
 
-> ⚠️ 현재 구현은 전체 `objectList` 를 선형 탐색(`FindAll`)합니다.
-> 풀 규모가 커질수록 스폰 비용이 증가하므로,
-> `Dictionary<string, Queue<GameObject>>` 로의 전환이 개선 과제로 남아 있습니다.
+이전 구현은 전체 인스턴스를 `GameObject.name` 으로 훑었습니다.
+`.name` 은 네이티브 접근이라 읽을 때마다 문자열을 할당하므로, 조회 비용이 그대로 GC 부담이 됐습니다.
+자세한 측정은 [`TECH-NOTES.md` 13번](TECH-NOTES.md#13-520배-빨라진-이유는-알고리즘이-아니었다)에 있습니다.
+
+| | 조회 시간 | 호출당 할당 |
+|---|---|---|
+| 이전 | 36,122 ms | 3,565 B |
+| 이후 | 69 ms | **0 B** |
+
+> 인스턴스 3,000개 / 조회 20,000회 기준. 시간 차이는 인스턴스 수에 비례하므로
+> 실제 게임 규모에서는 체감되지 않습니다. 규모와 무관한 것은 할당이 0이 된 부분입니다.
 
 ### 참조 탐색 정책
 
