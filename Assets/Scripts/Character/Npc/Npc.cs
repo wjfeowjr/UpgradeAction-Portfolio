@@ -122,7 +122,6 @@ public class Npc : Character
             
             if (uiBase is Popup_Store popupStore)
             {
-                var storeInterface = popupStore.StoreView.ConvertTo<IPopupStoreView>();
                 
                 var common = new PopupCommonActions
                 {
@@ -141,7 +140,7 @@ public class Npc : Character
                     }
                 };
                 
-                var storePresenter = new PopupStorePresenter(storeInterface, storeModel);
+                var storePresenter = popupStore.StoreView.Bind(storeModel);
                 popupStore.SetStorePresenter(storePresenter);
                 storePresenter.SetModel(popupId);
                 storePresenter.SetItem();

@@ -38,6 +38,15 @@ public class PopupKeyboardPresenter
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupKeyboardPresenter presenter;
+
+    public PopupKeyboardPresenter Bind(PopupKeyboardModel model)
+    {
+        presenter = new PopupKeyboardPresenter(this, model);
+        return presenter;
+    }
+
     private const int Cols = 2;
 
     [SerializeField] private KeySettingFrame leftKey;

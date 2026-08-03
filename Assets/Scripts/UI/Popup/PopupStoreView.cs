@@ -56,6 +56,15 @@ public class PopupStorePresenter
 
 public class PopupStoreView : MonoBehaviour, IPopupStoreView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupStorePresenter presenter;
+    
+    public PopupStorePresenter Bind(PopupStoreModel model)
+    {
+        presenter = new PopupStorePresenter(this, model);
+        return presenter;
+    }
+
     [SerializeField] private TMP_Text popupText;
     [SerializeField] private TMP_Text goldText;
 

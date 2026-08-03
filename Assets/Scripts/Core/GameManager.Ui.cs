@@ -50,13 +50,12 @@ public partial class GameManager
             popupWarning = SpawnToHighestPool(eUIType.Popup_Warning, Vector3.zero).GetComponent<Popup_Warning>();
         }
 
-        var warningInterface = popupWarning.WarningView.ConvertTo<IPopupWarningView>();
         var warningModel = new PopupWarningModel()
         {
             message = message,
             delay = delay,
         };
-        var warningPresenter = new PopupWarningPresenter(warningInterface, warningModel);
+        var warningPresenter = popupWarning.WarningView.Bind(warningModel);
         popupWarning.SetWarningPresenter(warningPresenter);
         await popupWarning.PopupWarningPresenter.SetMessage();
     }
@@ -219,8 +218,7 @@ public partial class GameManager
                 commonActions = common
             };
             
-            var selectInterface = popupSelect.SelectView.ConvertTo<IPopupSelectView>();
-            var selectPresenter = new PopupSelectPresenter(selectInterface, selectModel);
+            var selectPresenter = popupSelect.SelectView.Bind(selectModel);
             popupSelect.SetSelectPresenter(selectPresenter);
             selectPresenter.Expansion(() =>
             {

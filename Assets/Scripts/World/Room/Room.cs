@@ -2011,13 +2011,12 @@ public class Room : MonoBehaviour
         // 바인딩
         if (uiBase is UI_BossMessage bossMessageView)
         {
-            var bossMessageInterface = bossMessageView.BossMessageView.ConvertTo<IUIBossMessageView>();
             var bossMessageModel = new UIBossMessageModel()
             {
                 bossName = bossName,
                 monsterType = monsterType
             };
-            var bossMessagePresenter = new UIBossMessagePresenter(bossMessageInterface, bossMessageModel);
+            var bossMessagePresenter = bossMessageView.BossMessageView.Bind(bossMessageModel);
             bossMessageView.SetEpisodePresenter(bossMessagePresenter);
             bossMessageView.ViewActive();
             bossMessagePresenter.SetBossMessage();

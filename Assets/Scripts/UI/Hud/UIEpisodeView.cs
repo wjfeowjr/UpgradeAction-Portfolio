@@ -47,6 +47,16 @@ public class UIEpisodePresenter
 
 public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private UIEpisodePresenter presenter;
+    public UIEpisodePresenter Presenter => presenter;
+
+    public UIEpisodePresenter Bind(UIEpisodeModel model)
+    {
+        presenter = new UIEpisodePresenter(this, model);
+        return presenter;
+    }
+
     private CancellationTokenSource episodeCancellation;
     
     private float fadeTime = 0.5f;

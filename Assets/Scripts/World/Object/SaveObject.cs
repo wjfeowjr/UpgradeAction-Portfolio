@@ -67,7 +67,6 @@ public class SaveObject : InteractionController
         // 바인딩
         if (uiBase is Popup_FastTravel popupFastTravel)
         {
-            var fastTravelInterface = popupFastTravel.FastTravelView.ConvertTo<IPopupFastTravelView>();
             // 닫기 연타 시 중복 호출을 막기 위한 플래그
             var isClosing = false;
             var fastTravelModel = new PopupFastTravelModel()
@@ -95,7 +94,7 @@ public class SaveObject : InteractionController
                     FastTravelSelectAsync(uiBase, roomIds[index]).Forget();
                 }
             };
-            var fastTravelPresenter = new PopupFastTravelPresenter(fastTravelInterface, fastTravelModel);
+            var fastTravelPresenter = popupFastTravel.FastTravelView.Bind(fastTravelModel);
             popupFastTravel.SetFastTravelPresenter(fastTravelPresenter);
             fastTravelPresenter.SetFastTravelText();
             fastTravelPresenter.Fade(() =>

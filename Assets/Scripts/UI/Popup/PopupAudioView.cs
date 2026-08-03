@@ -34,9 +34,17 @@ public class PopupAudioPresenter
     }
 }
 
-// ── View ──────────────────────────────────────────────────────────────────────
 public class PopupAudioView : MonoBehaviour, IPopupAudioView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupAudioPresenter presenter;
+
+    public PopupAudioPresenter Bind(PopupAudioModel model)
+    {
+        presenter = new PopupAudioPresenter(this, model);
+        return presenter;
+    }
+
     private const float VolumeStep = 0.1f;
     private const float VolumeMin  = 0.0f;
     private const float VolumeMax  = 1.0f;

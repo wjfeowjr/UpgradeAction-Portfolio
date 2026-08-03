@@ -40,6 +40,15 @@ public class PopupCharacterPresenter
  
 public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupCharacterPresenter presenter;
+
+    public PopupCharacterPresenter Bind(PopupCharacterModel model)
+    {
+        presenter = new PopupCharacterPresenter(this, model);
+        return presenter;
+    }
+
     private PopupCommonActions commonActions;
     private string curPlayerId;
  

@@ -36,6 +36,15 @@ public class PopupWarningPresenter
 
 public class PopupWarningView : MonoBehaviour, IPopupWarningView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupWarningPresenter presenter;
+
+    public PopupWarningPresenter Bind(PopupWarningModel model)
+    {
+        presenter = new PopupWarningPresenter(this, model);
+        return presenter;
+    }
+
     private CancellationTokenSource warningCancellation;
     private Tween scaleTween;
     private Vector3 expansionScale = new Vector3(1, 1, 1);

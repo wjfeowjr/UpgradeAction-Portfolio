@@ -41,6 +41,15 @@ public class PopupSettingPresenter
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupSettingView : MonoBehaviour, IPopupSettingView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupSettingPresenter presenter;
+
+    public PopupSettingPresenter Bind(PopupSettingModel model)
+    {
+        presenter = new PopupSettingPresenter(this, model);
+        return presenter;
+    }
+
     private const int ButtonCount = 5;
 
     [SerializeField] private ExpansionUiObject[] settingButtons;

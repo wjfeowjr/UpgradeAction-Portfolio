@@ -134,6 +134,15 @@ public class PopupFastTravelPresenter
 
 public class PopupFastTravelView : MonoBehaviour, IPopupFastTravelView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupFastTravelPresenter presenter;
+
+    public PopupFastTravelPresenter Bind(PopupFastTravelModel model)
+    {
+        presenter = new PopupFastTravelPresenter(this, model);
+        return presenter;
+    }
+
     [SerializeField] private ExpansionUiObject[] expansionUiObjects;
 
     [SerializeField] private TMP_Text moveText;

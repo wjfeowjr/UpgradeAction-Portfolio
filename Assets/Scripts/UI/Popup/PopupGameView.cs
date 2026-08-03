@@ -38,6 +38,15 @@ public class PopupGamePresenter
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupGameView : MonoBehaviour, IPopupGameView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupGamePresenter presenter;
+
+    public PopupGamePresenter Bind(PopupGameModel model)
+    {
+        presenter = new PopupGamePresenter(this, model);
+        return presenter;
+    }
+
     private static readonly string[] LanguageOptions =
     {
         ConstValues.Korean,

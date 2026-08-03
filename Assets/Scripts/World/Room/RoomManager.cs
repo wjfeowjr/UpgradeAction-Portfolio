@@ -207,12 +207,11 @@ public class RoomManager : Singleton<RoomManager>
         // 바인딩
         if (uiBase is UI_BossMessage bossMessageView)
         {
-            var bossMessageInterface = bossMessageView.BossMessageView.ConvertTo<IUIBossMessageView>();
             var bossMessageModel = new UIBossMessageModel()
             {
                 bossName = bossName
             };
-            var episodePresenter = new UIBossMessagePresenter(bossMessageInterface, bossMessageModel);
+            var episodePresenter = bossMessageView.BossMessageView.Bind(bossMessageModel);
             bossMessageView.SetEpisodePresenter(episodePresenter);
             bossMessageView.ViewActive();
             episodePresenter.SetBossMessage();
@@ -240,7 +239,7 @@ public class RoomManager : Singleton<RoomManager>
             commonActions = common,
         };
 
-        var presenter = new PopupPausePresenter(popupPause.PauseView.ConvertTo<IPopupPauseView>(), model);
+        var presenter = popupPause.PauseView.Bind(model);
         popupPause.SetPausePresenter(presenter);
         presenter.SetAction();
 
@@ -313,7 +312,6 @@ public class RoomManager : Singleton<RoomManager>
         
         popupMinimap = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Minimap, Vector3.zero).GetComponent<Popup_Minimap>();
         
-        var minimapInterface = popupMinimap.MinimapView.ConvertTo<IPopupMinimapView>();
         var minimapModel = new PopupMinimapModel()
         {
             checkString = string.Format(GameManager.Instance.GetTalk(30101), GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey)),
@@ -322,7 +320,7 @@ public class RoomManager : Singleton<RoomManager>
             checkAction = SpawnCheckMark,
             closeAction = PopupLayerReset,
         };
-        var minimapPresenter = new PopupMinimapPresenter(minimapInterface, minimapModel);
+        var minimapPresenter = popupMinimap.MinimapView.Bind(minimapModel);
         popupMinimap.SetMinimapPresenter(minimapPresenter);
         popupMinimap.PopupMinimapPresenter.SetMinimapText();
 
@@ -392,7 +390,6 @@ public class RoomManager : Singleton<RoomManager>
         
         if (uiBase is Popup_GameOver popupGameOver)
         {
-            var gameOverInterface = popupGameOver.GameOverView.ConvertTo<IPopupGameOverView>();
             var gameOverModel = new PopupGameOverModel()
             {
                 title = GameManager.Instance.GetTalk(30019),
@@ -402,7 +399,7 @@ public class RoomManager : Singleton<RoomManager>
                     CloseGameOverAsync(uiBase).Forget();
                 }
             };
-            var gameOverPresenter = new PopupGameOverPresenter(gameOverInterface, gameOverModel);
+            var gameOverPresenter = popupGameOver.GameOverView.Bind(gameOverModel);
             popupGameOver.SetGuidePresenter(gameOverPresenter);
             gameOverPresenter.Open(() =>
             {
@@ -428,12 +425,11 @@ public class RoomManager : Singleton<RoomManager>
             uiEpisode = GameManager.Instance.SpawnToUIPool(eUIType.UI_Episode, Vector3.zero).GetComponent<UI_Episode>();
         
         // 바인딩
-        var episodeInterface = uiEpisode.EpisodeView.ConvertTo<IUIEpisodeView>();
         var episodeModel = new UIEpisodeModel()
         {
             episodeName = episodeName,
         };
-        var episodePresenter = new UIEpisodePresenter(episodeInterface, episodeModel);
+        var episodePresenter = uiEpisode.EpisodeView.Bind(episodeModel);
         uiEpisode.SetEpisodePresenter(episodePresenter);
         episodePresenter.SetEpisode();
         
@@ -454,7 +450,6 @@ public class RoomManager : Singleton<RoomManager>
         // 바인딩
         if (uiBase is Popup_Guide popupGuide)
         {
-            var guideInterface = popupGuide.GuideView.ConvertTo<IPopupGuideView>();
             // 닫기 연타 시 중복 호출 및 닫는 도중 다른 팝업이 열리는 것을 막기 위한 플래그
             var isClosing = false;
             var guideModel = new PopupGuideModel()
@@ -470,7 +465,7 @@ public class RoomManager : Singleton<RoomManager>
                     CloseGuideAsync(uiBase).Forget();
                 }
             };
-            var guidePresenter = new PopupGuidePresenter(guideInterface, guideModel);
+            var guidePresenter = popupGuide.GuideView.Bind(guideModel);
             popupGuide.SetGuidePresenter(guidePresenter);
             guidePresenter.Open(() =>
             {

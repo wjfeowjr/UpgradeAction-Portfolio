@@ -42,6 +42,16 @@ public class UIBossMessagePresenter
 
 public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private UIBossMessagePresenter presenter;
+    public UIBossMessagePresenter Presenter => presenter;
+
+    public UIBossMessagePresenter Bind(UIBossMessageModel model)
+    {
+        presenter = new UIBossMessagePresenter(this, model);
+        return presenter;
+    }
+
     private CancellationTokenSource bossMessageCancellation;
     
     private float fadeTime = 0.7f;

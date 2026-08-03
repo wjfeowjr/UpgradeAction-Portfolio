@@ -54,6 +54,15 @@ public class PopupPausePresenter
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupPauseView : MonoBehaviour, IPopupPauseView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupPausePresenter presenter;
+
+    public PopupPausePresenter Bind(PopupPauseModel model)
+    {
+        presenter = new PopupPausePresenter(this, model);
+        return presenter;
+    }
+
     private const int ButtonCount = 3;
 
     private PopupPausePresenter _presenter;
@@ -65,7 +74,6 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
     [SerializeField] private ExpansionUiObject resumeButton;
     [SerializeField] private ExpansionUiObject settingButton;
     [SerializeField] private ExpansionUiObject returnButton;
-
 
     public bool _IsSettingOpen => _isSettingOpen;
     

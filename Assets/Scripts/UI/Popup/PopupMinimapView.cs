@@ -56,6 +56,15 @@ public class PopupMinimapPresenter
 
 public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupMinimapPresenter presenter;
+
+    public PopupMinimapPresenter Bind(PopupMinimapModel model)
+    {
+        presenter = new PopupMinimapPresenter(this, model);
+        return presenter;
+    }
+
     private CancellationTokenSource minimapCancellation;
     
     [SerializeField] private TMP_Text checkText;

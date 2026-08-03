@@ -3,7 +3,7 @@ using UnityEngine;
 public class Popup_Warning : MonoBehaviour
 {
     // 경고 팝업
-    public IPopupWarningView WarningView => warningView;
+    public PopupWarningView WarningView => warningView;
     
     [SerializeField] private PopupWarningView warningView;
     private PopupWarningPresenter popupWarningPresenter;

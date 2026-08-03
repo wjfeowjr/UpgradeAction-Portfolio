@@ -59,6 +59,15 @@ public class PopupGameOverPresenter
 
 public class PopupGameOverView : MonoBehaviour, IPopupGameOverView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupGameOverPresenter presenter;
+
+    public PopupGameOverPresenter Bind(PopupGameOverModel model)
+    {
+        presenter = new PopupGameOverPresenter(this, model);
+        return presenter;
+    }
+
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text messageText;
     [SerializeField] private GameObject bgObject;

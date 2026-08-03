@@ -37,6 +37,15 @@ public class PopupVideoPresenter
 // ── View ──────────────────────────────────────────────────────────────────────
 public class PopupVideoView : MonoBehaviour, IPopupVideoView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupVideoPresenter presenter;
+
+    public PopupVideoPresenter Bind(PopupVideoModel model)
+    {
+        presenter = new PopupVideoPresenter(this, model);
+        return presenter;
+    }
+
     // 지원 해상도 목록 (16:9, 4:3 두 종류)
     private static readonly Vector2Int[] Resolutions =
     {

@@ -92,7 +92,7 @@ public class Popup_Character : UIBase
             playerId      = curPlayerId,
             commonActions = common
         };
-        _characterPresenter = new PopupCharacterPresenter(characterView, charModel);
+        _characterPresenter = characterView.Bind(charModel);
 
         _skillModel = new PopupSkillModel
         {
@@ -102,7 +102,7 @@ public class Popup_Character : UIBase
             commonActions   = common,
             closeAction     = () => SetState(ePopupState.Character),
         };
-        _skillPresenter = new PopupSkillPresenter(skillView, _skillModel);
+        _skillPresenter = skillView.Bind(_skillModel);
 
         var attrModel = new PopupAttributeModel
         {
@@ -113,7 +113,7 @@ public class Popup_Character : UIBase
             popupAction    = GameManager.Instance.SpawnSelect,
             closeAction    = () => SetState(ePopupState.Character),
         };
-        _attributePresenter = new PopupAttributePresenter(attributeView, attrModel);
+        _attributePresenter = attributeView.Bind(attrModel);
 
         var relicModel = new PopupRelicModel
         {
@@ -128,7 +128,7 @@ public class Popup_Character : UIBase
                 RefreshAll();
             },
         };
-        _relicPresenter = new PopupRelicPresenter(relicView, relicModel);
+        _relicPresenter = relicView.Bind(relicModel);
 
         var itemModel = new PopupItemModel
         {
@@ -136,7 +136,7 @@ public class Popup_Character : UIBase
             commonActions = common,
             closeAction   = () => SetState(ePopupState.Character),
         };
-        _itemPresenter = new PopupItemPresenter(itemView, itemModel);
+        _itemPresenter = itemView.Bind(itemModel);
 
         SetState(ePopupState.Character);
         RefreshAll();

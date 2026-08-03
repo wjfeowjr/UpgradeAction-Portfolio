@@ -44,6 +44,15 @@ public class PopupAttributePresenter
 
 public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupAttributePresenter presenter;
+
+    public PopupAttributePresenter Bind(PopupAttributeModel model)
+    {
+        presenter = new PopupAttributePresenter(this, model);
+        return presenter;
+    }
+
     private enum eStep
     {
         SkillSelect,

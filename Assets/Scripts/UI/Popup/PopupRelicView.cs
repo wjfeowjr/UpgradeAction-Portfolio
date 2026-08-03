@@ -42,6 +42,15 @@ public class PopupRelicPresenter
 
 public class PopupRelicView : MonoBehaviour, IPopupRelicView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupRelicPresenter presenter;
+
+    public PopupRelicPresenter Bind(PopupRelicModel model)
+    {
+        presenter = new PopupRelicPresenter(this, model);
+        return presenter;
+    }
+
     // ── 외부 주입 ──────────────────────────────────────
     private PopupCommonActions _actions;
     private Action _closeAction;

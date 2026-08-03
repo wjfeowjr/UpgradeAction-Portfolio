@@ -54,6 +54,15 @@ public class PopupSelectPresenter
 
 public class PopupSelectView : MonoBehaviour, IPopupSelectView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupSelectPresenter presenter;
+
+    public PopupSelectPresenter Bind(PopupSelectModel model)
+    {
+        presenter = new PopupSelectPresenter(this, model);
+        return presenter;
+    }
+
     [SerializeField] private TMP_Text messageText;
     [SerializeField] private TMP_Text costText;
     

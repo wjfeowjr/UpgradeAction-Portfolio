@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class Popup_Store : UIBase
 {
-    public IPopupStoreView StoreView => storeView;
+    public PopupStoreView StoreView => storeView;
 
     [SerializeField] private PopupStoreView storeView;
     private PopupStorePresenter popupStorePresenter;

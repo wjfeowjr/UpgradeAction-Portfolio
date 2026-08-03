@@ -2,7 +2,7 @@ using UnityEngine;
 
 public class Popup_Pause : UIBase
 {
-    public PopupPauseView      PauseView      => pauseView;
+    public PopupPauseView PauseView => pauseView;
     public PopupPausePresenter PausePresenter => pausePresenter;
 
     [SerializeField] private PopupPauseView pauseView;

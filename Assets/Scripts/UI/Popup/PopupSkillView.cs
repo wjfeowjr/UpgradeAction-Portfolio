@@ -43,6 +43,15 @@ public class PopupSkillPresenter
 
 public class PopupSkillView : MonoBehaviour, IPopupSkillView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupSkillPresenter presenter;
+
+    public PopupSkillPresenter Bind(PopupSkillModel model)
+    {
+        presenter = new PopupSkillPresenter(this, model);
+        return presenter;
+    }
+
     [Header("Texts")]
     [SerializeField] private TMP_Text skillName;
     [SerializeField] private TMP_Text skillExplain;

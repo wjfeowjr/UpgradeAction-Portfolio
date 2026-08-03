@@ -5,7 +5,7 @@ using UnityEngine;
 public class Popup_GameOver : UIBase
 {
     // 게임오버
-    public IPopupGameOverView GameOverView => gameOverView;
+    public PopupGameOverView GameOverView => gameOverView;
     
     [SerializeField] private PopupGameOverView gameOverView;
     private PopupGameOverPresenter popupGameOverPresenter;

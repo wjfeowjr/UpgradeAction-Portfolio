@@ -52,6 +52,15 @@ public class PopupGuidePresenter
 
 public class PopupGuideView : MonoBehaviour, IPopupGuideView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupGuidePresenter presenter;
+
+    public PopupGuidePresenter Bind(PopupGuideModel model)
+    {
+        presenter = new PopupGuidePresenter(this, model);
+        return presenter;
+    }
+
     [SerializeField] private TMP_Text titleText;
     [SerializeField] private TMP_Text explainText;
     [SerializeField] private TMP_Text closeText;

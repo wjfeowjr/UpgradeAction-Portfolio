@@ -37,6 +37,15 @@ public class PopupItemPresenter
 
 public class PopupItemView : MonoBehaviour, IPopupItemView
 {
+    // 이 View 가 자기 Presenter 를 직접 조립한다.
+    private PopupItemPresenter presenter;
+
+    public PopupItemPresenter Bind(PopupItemModel model)
+    {
+        presenter = new PopupItemPresenter(this, model);
+        return presenter;
+    }
+
     // ── 외부 주입 ──────────────────────────────────────
     private PopupCommonActions _actions;
     private Action _closeAction;

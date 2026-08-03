@@ -4,7 +4,7 @@ using UnityEngine.Serialization;
 public class Popup_Select : UIBase
 {
     // 가이드 팝업
-    public IPopupSelectView SelectView => selectView;
+    public PopupSelectView SelectView => selectView;
     
     [SerializeField] private PopupSelectView selectView;
     private PopupSelectPresenter popupSelectPresenter;
