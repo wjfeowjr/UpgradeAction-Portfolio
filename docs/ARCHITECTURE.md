@@ -18,6 +18,7 @@
 11. [비동기 정책](#11-비동기-정책)
 12. [로컬라이징](#12-로컬라이징)
 13. [세이브 · 설정](#13-세이브--설정)
+14. [적용한 설계 패턴](#14-적용한-설계-패턴)
 
 ---
 
@@ -954,6 +955,233 @@ return Path.Combine(Application.persistentDataPath, SaveFolderName);
 
 `SteamWorksManager` 가 Steamworks.NET을 통해 플랫폼 기능을 담당합니다.
 `steam_appid.txt` 로 로컬 개발 환경을 구성합니다.
+
+---
+
+## 14. 적용한 설계 패턴
+
+패턴을 쓰기 위해 쓴 것이 아니라, 문제를 풀다 보니 자리 잡은 것들입니다.
+실제로 코드에 적용된 것만 적었습니다.
+
+### Template Method
+
+가장 넓게 쓰인 패턴입니다. **골격은 부모가 정하고 세부는 자식이 채웁니다.**
+
+```csharp
+public abstract class Character : InteractionController
+{
+    // 공통: 상태 머신, 버프/실드, HP/MP, 방어 타입은 여기서 처리한다
+    protected List<Buff> buffList;
+    protected List<Shield> shieldList;
+    protected EBodyType bodyType;
+
+    public int ConsumeShield(int damage) { … }   // 모든 캐릭터가 공유
+    protected void AddBuff(string buffId, …)     { … }
+
+    // 자식이 반드시 구현해야 하는 부분
+    protected abstract void StateSetting(ENormalState state, string trigger, string animId);
+    protected abstract void StateCheck();
+    protected abstract void StateRecovery();
+}
+
+public abstract class Player : Character
+{
+    public abstract void Skill(KeyCode skillKey);   // 직업마다 스킬 구성이 다르다
+    public abstract void ChangeAttack();            // 교체 등장 공격도 직업마다 다르다
+}
+
+public class Player_Berserker : Player
+{
+    public override void Skill(KeyCode skillKey) { … }   // 대검·저스트 카운터
+}
+```
+
+`Character` 하나에 구현한 버프·실드·상태이상 로직을
+**플레이어 3종 + 몬스터 21종 + NPC 8종**이 그대로 씁니다.
+몬스터를 추가할 때 다시 구현할 것이 없습니다.
+
+`virtual` 50개 / `override` 130개.
+
+### Singleton
+
+씬을 넘어 유지되어야 하는 매니저에 적용했습니다.
+**용도가 달라 두 가지를 만들었습니다.**
+
+```csharp
+// 씬에 미리 배치해 두는 매니저 — 배치된 것을 찾아 쓴다
+public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
+{
+    public static T Instance
+    {
+        get
+        {
+            if (instance == null)
+                instance = (T)FindObjectOfType(typeof(T));
+            return instance;
+        }
+    }
+}
+
+// 씬 배치가 필요 없는 매니저 — 없으면 만들어서 쓴다
+public class SingletonMono<T> : MonoBehaviour where T : MonoBehaviour
+{
+    private static object _lock = new object();
+
+    public static T Instance
+    {
+        get
+        {
+            lock (_lock)                                  // 스레드 세이프
+            {
+                if (null == instance)
+                {
+                    GameObject singleton = new GameObject();
+                    instance = singleton.AddComponent<T>();
+                    singleton.name = "(SingletonMono) " + typeof(T).ToString();
+                    if (Application.isPlaying)
+                        DontDestroyOnLoad(singleton);
+                }
+                return instance;
+            }
+        }
+    }
+}
+```
+
+| | 방식 | 대상 |
+|---|---|---|
+| `Singleton<T>` | `FindObjectOfType` | `GameManager`, `Controller` 등 씬에 배치된 것 |
+| `SingletonMono<T>` | `lock` + 자동 생성 | `TableManager`, `ResourceManager` 등 |
+
+13개 클래스가 상속받습니다.
+
+> ⚠️ 이 패턴의 대가도 겪었습니다. 어디서든 접근 가능하다 보니
+> `GameManager` 에 계속 기능이 붙어 God Object가 됐습니다.
+> 자세한 내용은 [`TECH-NOTES.md` 12번](TECH-NOTES.md#12-god-object를-어디부터-뜯을지--감이-아니라-측정으로)에 있습니다.
+
+### Facade
+
+내부 구조를 바꾸면서 **호출부를 건드리지 않기 위해** 썼습니다.
+
+`GetTalk` 은 코드베이스 293곳에서, 스폰 API는 그보다 더 많은 곳에서 호출됩니다.
+이걸 전부 고치는 대신 `GameManager` 가 얇은 창구로 남았습니다.
+
+```csharp
+// GameManager.Text.cs — 실제 로직은 LocalizationService 에 있다
+public string GetTalk(int idx)
+    => localization.GetTalk(idx, language);
+
+// GameManager.Pool.cs — 실제 로직은 ObjectPoolService 에 있다
+public GameObject SpawnToObjectPool(string id, Vector3 pos)
+    => pool.Spawn(id, objectPool, pos);
+```
+
+덕분에 다국어 조회를 선형 탐색에서 `Dictionary` 로,
+오브젝트 풀을 이름 기반에서 id 기반으로 바꾸면서도 **호출부는 한 곳도 수정하지 않았습니다.**
+
+---
+
+아래 둘은 앞의 것들과 성격이 다릅니다.
+객체 간 관계를 정리하는 패턴이 아니라, **특정 문제 영역을 위해 정립된 구조**입니다.
+
+### Object Pool
+
+전투 중 이펙트·투사체가 초당 수십 개 생성됩니다.
+매번 `Instantiate`/`Destroy` 하면 GC 부담이 프레임 튐으로 돌아옵니다.
+
+```csharp
+public class ObjectPoolService
+{
+    private readonly Dictionary<string, GameObject> prefabById;
+    private readonly Dictionary<string, List<GameObject>> instancesById;
+
+    public GameObject Spawn(string id, Transform parent, Vector3 position)
+    {
+        var go = GetRecyclable(id) ?? Create(id, parent);   // 재사용 우선, 없으면 생성
+        if (!go)
+            return null;
+
+        go.transform.position = position;
+        go.SetActive(true);
+        ResetParticles(go);          // 재사용 시 이전 상태를 물려받지 않도록 초기화
+        return go;
+    }
+
+    private GameObject GetRecyclable(string id)
+    {
+        if (!instancesById.TryGetValue(id, out var list))
+            return null;
+
+        for (int i = 0; i < list.Count; i++)
+            if (list[i] && !list[i].activeSelf)
+                return list[i];      // 같은 id 의 비활성 인스턴스를 앞에서부터
+        return null;
+    }
+}
+```
+
+용도별로 **5개 풀**(월드 오브젝트 / UI 오브젝트 / HUD / 팝업 / 최상위)을 분리 운영합니다.
+uGUI는 형제 순서가 곧 렌더 순서이므로, 부모를 나누면 계층 정리와 레이어 관리를 동시에 얻습니다.
+
+**이 패턴의 핵심은 `Instantiate` 를 줄이는 것이 아니라, 재사용 시 이전 상태를 물려받는 위험을 관리하는 것**입니다.
+실제로 미사일이 이전 소유자의 콜백을 물고 다니던 버그를 겪었습니다
+([`TECH-NOTES.md` 4번](TECH-NOTES.md#4-부활-후-미사일--재현이-안-되던-고질적-버그)).
+그래서 재사용 규칙을 테스트 13개로 고정해 두었습니다.
+
+### MVP (Model–View–Presenter)
+
+UI 로직이 `MonoBehaviour` 에 붙어 있으면 검증할 수 없습니다.
+**Presenter를 `MonoBehaviour` 밖에 두는 것**이 목적이었습니다.
+
+```csharp
+// 1) View 계약 — 화면이 무엇을 할 수 있는지만 정의한다
+public interface IPopupCommonView
+{
+    void SetTitle(string title);
+    void SetDesc(string desc);
+    void SetButton(UIButtonData data);
+    void SetClose(Action onClose);
+}
+
+// 2) Model — 표시할 데이터
+public class PopupCommonModel
+{
+    public string Title;
+    public string Desc;
+    public UIButtonData ButtonData;
+}
+
+// 3) Presenter — 로직. MonoBehaviour 가 아니므로 Unity 없이 테스트 가능하다
+public class PopupCommonPresenter
+{
+    private readonly IPopupCommonView _view;
+    private readonly PopupCommonModel _model;
+
+    public PopupCommonPresenter(IPopupCommonView view, PopupCommonModel model)
+    {
+        _view = view;
+        _model = model;
+
+        _view.SetTitle(_model.Title);
+        _view.SetDesc(_model.Desc);
+        _view.SetButton(_model.ButtonData);
+    }
+}
+
+// 4) View 구현 — uGUI 바인딩만 담당한다
+public class PopupCommonView : UIBase, IPopupCommonView
+{
+    [SerializeField] private TMP_Text titleText;
+
+    public void SetTitle(string title) => titleText.text = title;
+}
+```
+
+View 인터페이스 33개(`IPopup*View` 21 + `IUI*View` 12), Presenter 30개.
+
+> ⚠️ **절반만 적용된 상태입니다.** 인터페이스와 Presenter는 갖췄지만
+> 이를 조립하는 UI 관리자가 없어, 현재 팝업 생성은 `GameManager` 의 풀 API를 경유합니다.
+> [9절](#현재-상태-주의) 참고.
 
 ---
 
