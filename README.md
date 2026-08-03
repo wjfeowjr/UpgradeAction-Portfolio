@@ -281,7 +281,6 @@ private async UniTask<bool> SwordCounter()
 flowchart LR
     Logo[Logo] --> Title[Title]
     Title --> Battle[Battle<br/>본편]
-    Title --> Practice[Practice<br/>연습장]
     Battle --> Title
 ```
 
@@ -543,6 +542,7 @@ docs/               설계 문서 · 기술 노트 · UI 목업
 | 문서 | 내용 |
 |---|---|
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 시스템별 설계 상세 — 상태 머신, 전투 판정, 데이터 로딩, UI 계층, 룸 전환 |
+| [`docs/ARCHITECTURE.md#14`](docs/ARCHITECTURE.md#14-적용한-설계-패턴) | **적용한 설계 패턴** — Template Method · Singleton · Facade · Object Pool · MVP |
 | [`docs/TECH-NOTES.md`](docs/TECH-NOTES.md) | **문제 → 고민 → 해결** 사례 모음. 왜 그런 선택을 했는지에 대한 기록 |
 
 ### 설계 · 기획 문서
