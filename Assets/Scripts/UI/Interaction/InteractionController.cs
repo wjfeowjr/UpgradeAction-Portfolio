@@ -73,7 +73,7 @@ public class InteractionController : MonoBehaviour
     {
         var obj = GameManager.Instance.SpawnToUIObjectPoolInstantiate(id, pos);
         
-        var uiData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        var uiData = TableManager.Instance.GetSpawnedObject(id);
         if (uiData == null)
             return obj;
         
@@ -201,7 +201,7 @@ public class InteractionController : MonoBehaviour
     {
         var obj = GameManager.Instance.SpawnToObjectPool(effectId, pos);
         
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == effectId);
+        var objectData = TableManager.Instance.GetSpawnedObject(effectId);
         if (objectData != null)
         {
             var spawnedObject = obj.GetComponent<SpawnedObject>();

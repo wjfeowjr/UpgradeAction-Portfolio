@@ -36,7 +36,7 @@ public class SaveFrame : ExpansionUiObject
             }
             else
             {
-                var roomTableData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == saveData.savePoint);
+                var roomTableData = TableManager.Instance.GetRoom(saveData.savePoint);
                 placeText.text = GameManager.Instance.GetPlaceName((ePlace)Enum.Parse(typeof(ePlace), roomTableData.place));
             }
             

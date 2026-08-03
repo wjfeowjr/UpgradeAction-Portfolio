@@ -65,7 +65,7 @@ public class Platform : MonoBehaviour
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, pos);
         
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        var objectData = TableManager.Instance.GetSpawnedObject(id);
         if (objectData == null)
             return obj;
         
@@ -95,7 +95,7 @@ public class Platform : MonoBehaviour
     {
         var obj = GameManager.Instance.SpawnToObjectPool(id, dustTransform);
         
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        var objectData = TableManager.Instance.GetSpawnedObject(id);
         if (objectData == null)
             return;
         

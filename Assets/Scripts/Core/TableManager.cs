@@ -485,9 +485,11 @@ public class TableManager : SingletonMono<TableManager>
         spawnedObjectTable = LoadDataFromJson<SpawnedObjectDataList>(ConstValues.SpawnedObject);
         storeItemTable = LoadDataFromJson<StoreItemDataList>(ConstValues.StoreItem);
         talkTable = LoadDataFromJson<TalkDataList>(ConstValues.Talk);
+
+        BuildIndexes();
         Debug.Log($"{name} 초기화 완료");
     }
-    
+
     private T LoadDataFromJson<T>(string fileName)
     {
         var jsonText = Resources.Load<TextAsset>($"JsonFolder/{fileName}");
@@ -496,8 +498,99 @@ public class TableManager : SingletonMono<TableManager>
             Debug.LogError($"JSON 파일을 찾을 수 없다: {fileName}");
             return default;
         }
-        
+
         var data = JsonUtility.FromJson<T>(jsonText.text);
         return data;
     }
+
+    #region id 조회 인덱스
+    // 테이블은 로드 후 변하지 않으므로 id -> 데이터 사전을 한 번만 만들어 둔다.
+    //
+    // 이전에는 조회할 때마다 Find(x => x.id == id) 로 리스트 전체를 훑었다.
+    // SpawnedObject 는 439개인데 이펙트가 생성될 때마다, Attack 은 152개인데
+    // 공격 판정이 만들어질 때마다 호출되므로 전투 중 반복 비용이 컸다.
+    // 람다가 지역 변수를 캡처해 호출마다 클로저까지 할당하고 있었다.
+    //
+    // 원본 List 는 그대로 둔다. 인스펙터 표시와 순회가 필요한 곳이 있고,
+    // 사전은 조회 전용으로만 쓴다.
+
+    private Dictionary<string, AttackData> attackById;
+    private Dictionary<string, BuffData> buffById;
+    private Dictionary<string, DialogueData> dialogueById;
+    private Dictionary<string, MissileData> missileById;
+    private Dictionary<string, MonsterData> monsterById;
+    private Dictionary<string, PlayerData> playerById;
+    private Dictionary<string, RoomsData> roomsById;
+    private Dictionary<string, SkillData> skillById;
+    private Dictionary<string, SpawnedObjectData> spawnedObjectById;
+    private Dictionary<string, StoreItemData> storeItemById;
+
+    private void BuildIndexes()
+    {
+        attackById        = BuildIndex(attackTable?.Attack,               x => x.id, nameof(AttackData));
+        buffById          = BuildIndex(buffTable?.Buff,                   x => x.id, nameof(BuffData));
+        dialogueById      = BuildIndex(dialogueTable?.Dialogue,           x => x.id, nameof(DialogueData));
+        missileById       = BuildIndex(missileTable?.Missile,             x => x.id, nameof(MissileData));
+        monsterById       = BuildIndex(monsterTable?.Monster,             x => x.id, nameof(MonsterData));
+        playerById        = BuildIndex(playerTable?.Player,               x => x.id, nameof(PlayerData));
+        roomsById         = BuildIndex(roomsTable?.Rooms,                 x => x.id, nameof(RoomsData));
+        skillById         = BuildIndex(skillTable?.Skill,                 x => x.id, nameof(SkillData));
+        spawnedObjectById = BuildIndex(spawnedObjectTable?.SpawnedObject, x => x.id, nameof(SpawnedObjectData));
+        storeItemById     = BuildIndex(storeItemTable?.StoreItem,         x => x.id, nameof(StoreItemData));
+    }
+
+    /// <summary>
+    /// id 가 겹치면 먼저 나온 것을 쓴다. 기존 Find 동작과 동일하다.
+    /// 중복은 시트 실수이므로 경고를 남긴다.
+    /// </summary>
+    private static Dictionary<string, T> BuildIndex<T>(List<T> list, Func<T, string> keySelector, string typeName)
+    {
+        var dic = new Dictionary<string, T>();
+        if (list == null)
+            return dic;
+
+        foreach (var item in list)
+        {
+            var key = keySelector(item);
+            if (string.IsNullOrEmpty(key))
+                continue;
+
+            if (dic.ContainsKey(key))
+            {
+                Debug.LogWarning($"[Table] {typeName} 에 중복된 id 가 있습니다: {key}");
+                continue;
+            }
+            dic.Add(key, item);
+        }
+        return dic;
+    }
+
+    private static T Get<T>(Dictionary<string, T> dic, string id, string typeName) where T : class
+    {
+        if (dic == null || string.IsNullOrEmpty(id))
+            return null;
+
+        return dic.TryGetValue(id, out var data) ? data : null;
+    }
+
+    public AttackData GetAttack(string id) => Get(attackById, id, nameof(AttackData));
+    public BuffData GetBuff(string id) => Get(buffById, id, nameof(BuffData));
+    public DialogueData GetDialogue(string id) => Get(dialogueById, id, nameof(DialogueData));
+    public MissileData GetMissile(string id) => Get(missileById, id, nameof(MissileData));
+    public MonsterData GetMonster(string id) => Get(monsterById, id, nameof(MonsterData));
+    public PlayerData GetPlayer(string id) => Get(playerById, id, nameof(PlayerData));
+    public RoomsData GetRoom(string id) => Get(roomsById, id, nameof(RoomsData));
+    public SkillData GetSkill(string id) => Get(skillById, id, nameof(SkillData));
+    public SpawnedObjectData GetSpawnedObject(string id) => Get(spawnedObjectById, id, nameof(SpawnedObjectData));
+    public StoreItemData GetStoreItem(string id) => Get(storeItemById, id, nameof(StoreItemData));
+
+    // 인덱스 검증용
+    public int IndexedCount(string typeName) => typeName switch
+    {
+        nameof(AttackData) => attackById?.Count ?? 0,
+        nameof(SpawnedObjectData) => spawnedObjectById?.Count ?? 0,
+        nameof(MissileData) => missileById?.Count ?? 0,
+        _ => 0,
+    };
+    #endregion
 }

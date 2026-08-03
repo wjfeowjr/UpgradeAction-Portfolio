@@ -85,7 +85,7 @@ public class GoldObject : MonoBehaviour
     // 오브젝트 데이터 삽입
     private void SetSpawnedObjectData(string id, GameObject obj, int zAngle, Transform traceTransform = null)
     {
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        var objectData = TableManager.Instance.GetSpawnedObject(id);
         if (objectData != null)
         {
             var spawnedObject = obj.GetComponent<SpawnedObject>();

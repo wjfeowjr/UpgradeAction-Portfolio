@@ -357,7 +357,7 @@ public abstract class Player : Character
     public void InitBasicStat()
     {
         var myName = name.Split('(')[0];
-        var targetStat = TableManager.Instance.playerTable.Player.Find(x => x.id == myName);
+        var targetStat = TableManager.Instance.GetPlayer(myName);
         immortal = false;
         trapRespawning = false;
         
@@ -1096,7 +1096,7 @@ public abstract class Player : Character
             return false;
         }
 
-        var type = TableManager.Instance.skillTable.Skill.Find(x => x.id == id).type;
+        var type = TableManager.Instance.GetSkill(id).type;
 
         // 대시
         if (type == ConstValues.Dash && normalState == ENormalState.Potion && IsCc())
@@ -1496,7 +1496,7 @@ public abstract class Player : Character
             foreach (var buffValue in buffValueArray)
                 addedSkill.buffValue.Add(int.Parse(buffValue));
             
-            var skillTableData = TableManager.Instance.skillTable.Skill.Find(x => x.id == skill.id);
+            var skillTableData = TableManager.Instance.GetSkill(skill.id);
             addedSkill.skillSpeed = skillTableData.skillSpeed;
             addedSkill.skillArmor = skillTableData.skillArmor;
 

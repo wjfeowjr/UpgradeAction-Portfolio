@@ -556,7 +556,7 @@ public class Room : MonoBehaviour
     public void InfoSetting()
     {
         // 저장되는 룸만 불러온다
-        roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
+        roomsData = TableManager.Instance.GetRoom(name);
         if (roomsData == null)
             return;
         
@@ -1859,7 +1859,7 @@ public class Room : MonoBehaviour
     private async void SetBgm(bool immediately)
     {
         
-        roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
+        roomsData = TableManager.Instance.GetRoom(name);
         if (roomsData == null)
             return;
         
@@ -1875,7 +1875,7 @@ public class Room : MonoBehaviour
 
     private void BgSetting()
     {
-        roomsData = TableManager.Instance.roomsTable.Rooms.Find(x => x.id == name);
+        roomsData = TableManager.Instance.GetRoom(name);
         if (roomsData != null)
         {
             GameManager.Instance.MainCamera.SetBg(roomsData.bgSprite);

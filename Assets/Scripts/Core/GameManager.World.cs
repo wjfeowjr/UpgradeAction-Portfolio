@@ -82,7 +82,7 @@ public partial class GameManager
     public void InputDataTrap(string trapId, Collider2D trapObject)
     {
         string originId = trapId.Split(' ')[0];
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == originId);
+        var objectData = TableManager.Instance.GetSpawnedObject(originId);
         if (objectData != null)
         {
             var spawnedObject = trapObject.GetComponent<SpawnedObject>();
@@ -93,7 +93,7 @@ public partial class GameManager
             spawnedObject.EnableSetting();
         }
 
-        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == originId);
+        var attackData = TableManager.Instance.GetAttack(originId);
         if (attackData != null)
         {
             var attack = trapObject.GetComponent<Attack>();

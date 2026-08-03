@@ -170,7 +170,7 @@ public partial class GameManager
         else
             speechFrame = SpawnToUIObjectPool(frameName, Vector2.zero).GetComponent<SpeechFrame>();
 
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == frameName);
+        var objectData = TableManager.Instance.GetSpawnedObject(frameName);
         if (objectData == null)
             return speechFrame;
         

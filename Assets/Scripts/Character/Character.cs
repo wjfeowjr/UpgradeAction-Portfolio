@@ -1467,7 +1467,7 @@ public abstract class Character : InteractionController
 
     private void SetSpawnedObjectData(string id, GameObject obj, int zAngle, Transform traceTransform = null, bool isBuff = false)
     {
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        var objectData = TableManager.Instance.GetSpawnedObject(id);
         if (objectData != null)
         {
             var spawnedObject = obj.GetComponent<SpawnedObject>();
@@ -1515,7 +1515,7 @@ public abstract class Character : InteractionController
 
     private void SetAttackData(string id, GameObject obj)
     {
-        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == id);
+        var attackData = TableManager.Instance.GetAttack(id);
         if (attackData != null)
         {
             if (obj.GetComponent<SpawnedObject>())
@@ -1539,7 +1539,7 @@ public abstract class Character : InteractionController
     }
     private void SetMissileData(string id, GameObject obj, int missileDir = 0)
     {
-        var missileData = TableManager.Instance.missileTable.Missile.Find(x => x.id == id);
+        var missileData = TableManager.Instance.GetMissile(id);
         if (missileData != null)
         {
             var missile = obj.GetComponent<Missile>();
@@ -2170,7 +2170,7 @@ public abstract class Character : InteractionController
         // 해당 버프가 적용되어있지 않음
         if (findDeBuff == null)
         {
-            var buffData = TableManager.Instance.buffTable.Buff.Find(x => x.id == buffId);
+            var buffData = TableManager.Instance.GetBuff(buffId);
             if (buffData != null)
             {
                 var buffType = (EBuffType)Enum.Parse(typeof(EBuffType), buffData.buffType);

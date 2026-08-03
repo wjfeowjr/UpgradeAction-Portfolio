@@ -31,7 +31,7 @@ public class SkillTooltip : MonoBehaviour
         else
             skillArmor.gameObject.SetActive(false);
         
-        var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == playerSkill.id);
+        var attackData = TableManager.Instance.GetAttack(playerSkill.id);
         if (attackData != null)
         {
             if (string.IsNullOrWhiteSpace(attackData.deBuffTime))
@@ -45,7 +45,7 @@ public class SkillTooltip : MonoBehaviour
             }
             return;
         }
-        var skillData = TableManager.Instance.skillTable.Skill.Find(x => x.id == playerSkill.id);
+        var skillData = TableManager.Instance.GetSkill(playerSkill.id);
         if (skillData != null)
         {
             if (string.IsNullOrWhiteSpace(skillData.buffName))

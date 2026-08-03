@@ -336,11 +336,11 @@ public class Monster : Character
     private void InitBasicStat()
     {
         var myName = name.Split(' ')[0];
-        var targetStat = TableManager.Instance.monsterTable.Monster.Find(x => x.id == myName);
+        var targetStat = TableManager.Instance.GetMonster(myName);
         if (targetStat == null)
         {
             myName = name.Split('(')[0];
-            targetStat = TableManager.Instance.monsterTable.Monster.Find(x => x.id == myName);
+            targetStat = TableManager.Instance.GetMonster(myName);
         }
 
         basicStat = new BasicStat()

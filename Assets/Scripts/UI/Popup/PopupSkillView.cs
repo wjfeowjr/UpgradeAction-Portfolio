@@ -248,7 +248,7 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
         {
             skillExplain.text = GameManager.Instance.GetTalk(skillInfo.explainTalk);
             
-            var attackData = TableManager.Instance.attackTable.Attack.Find(x => x.id == skillInfo.id);
+            var attackData = TableManager.Instance.GetAttack(skillInfo.id);
             if (attackData != null)
             {
                 if (!string.IsNullOrWhiteSpace(attackData.deBuffTime))
@@ -296,7 +296,7 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
     // 클래스 고유 패시브 표시 (Player 테이블의 passive / passiveComment)
     private void RefreshPassive()
     {
-        var playerData = TableManager.Instance.playerTable.Player.Find(x => x.id == curPlayerId);
+        var playerData = TableManager.Instance.GetPlayer(curPlayerId);
         if (playerData == null)
             return;
 

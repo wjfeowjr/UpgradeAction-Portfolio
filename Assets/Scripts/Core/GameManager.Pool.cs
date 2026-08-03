@@ -155,7 +155,7 @@ public partial class GameManager
     public void SpawnHighestObject(string id, Vector2 pos, int zAngle = 0)
     {
         var obj = SpawnToHighestPool(id, pos);
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == id);
+        var objectData = TableManager.Instance.GetSpawnedObject(id);
 
         var spawnedObject = obj.GetComponent<SpawnedObject>();
         if (!spawnedObject)

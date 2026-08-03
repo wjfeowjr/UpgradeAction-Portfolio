@@ -185,7 +185,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
             return;
         }
 
-        var storeItemData = TableManager.Instance.storeItemTable.StoreItem.Find(x => x.id == curItemId);
+        var storeItemData = TableManager.Instance.GetStoreItem(curItemId);
         if (storeItemData == null)
             return;
 
@@ -302,7 +302,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
     {
         var itemInfo      = GameManager.Instance.itemCopyList.Find(x => x.id == curItemId);
         var relicInfo     = GameManager.Instance.relicCopyList.Find(x => x.id == curItemId);
-        var storeItemData = TableManager.Instance.storeItemTable.StoreItem.Find(x => x.id == curItemId);
+        var storeItemData = TableManager.Instance.GetStoreItem(curItemId);
 
         if (itemInfo != null)
         {

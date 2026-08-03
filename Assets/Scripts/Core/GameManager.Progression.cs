@@ -66,7 +66,7 @@ public partial class GameManager
     public void AddNewSkill(string id)
     {
         // 키 저장
-        var skillKeyData = tableManager.skillTable.Skill.Find(x => x.id == id);
+        var skillKeyData = tableManager.GetSkill(id);
         var playerInfo = saveData.playerInfoList.Find(x => x.playerId == skillKeyData.caster);
         
         // 이미 가지고 있는 스킬이라면 무시해버린다

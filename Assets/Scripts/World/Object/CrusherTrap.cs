@@ -150,7 +150,7 @@ public class CrusherTrap : MonoBehaviour
     {
         var obj = GameManager.Instance.SpawnToObjectPool(effectId, pos);
         
-        var objectData = TableManager.Instance.spawnedObjectTable.SpawnedObject.Find(x => x.id == effectId);
+        var objectData = TableManager.Instance.GetSpawnedObject(effectId);
         if (objectData != null)
         {
             var spawnedObject = obj.GetComponent<SpawnedObject>();

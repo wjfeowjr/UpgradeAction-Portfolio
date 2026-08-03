@@ -147,7 +147,7 @@ public partial class GameManager
 
     public async UniTask NpcFirstTalk(string startDialog, Transform speechPos)
     {
-        var firstTalk = TableManager.Instance.dialogueTable.Dialogue.Find(x => x.id == startDialog);
+        var firstTalk = TableManager.Instance.GetDialogue(startDialog);
         // 프레임 이름을 먼저 정한 뒤 한 번만 스폰 (선스폰 후 교체 시 SpeechFrame1이 활성 상태로 누적되는 버그 방지)
         var frameName = firstTalk.speechFrame switch
         {
