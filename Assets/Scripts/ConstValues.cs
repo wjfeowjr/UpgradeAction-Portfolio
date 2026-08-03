@@ -5,6 +5,17 @@ using UnityEngine;
 public class ConstValues : Singleton<ConstValues>
 {
     public const uint AppId = 4972100;
+    public const uint DemoId = 5007640;
+
+    // Steam 스탯 API Name — 파트너 사이트에 정의한 값과 반드시 일치해야 한다
+    public const string StatKilledSun = "KILLED_SUN";
+    public const string StatKilledMoon = "KILLED_MOON";
+    public const string StatKilledTree = "KILLED_TREE";
+    public const string StatKilledBigCharge = "KILLED_BIGCHARGE";
+    public const string StatKilledKnife = "KILLED_KNIFE";
+    public const string StatKilledGolem = "KILLED_GOLEM";
+    public const string StatKilledBomb = "KILLED_BOMB";
+    public const string StatDemoCleared = "DEMO_CLEARED";
     
     public const float BasicGravity = 1.0f;
     public const float DownSecond = 0.9f;

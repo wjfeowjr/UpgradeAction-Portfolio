@@ -200,6 +200,9 @@ public abstract class Player : Character
     // 함정 피격 리스폰 연출 중 — ignoreImmortal 공격(함정 포함)도 막는 완전 무적
     private bool trapRespawning;
 
+    // 최초 피격 가이드 대기 중 — 짧은 시간에 연속 피격 시 중복 실행을 막는다(세이브 대상 아님)
+    private bool damageGuideRunning;
+
     protected float globalCoolTime;
     protected float curGlobalCoolTime;
     
@@ -1028,17 +1031,28 @@ public abstract class Player : Character
             ActiveDashEffectUI();
     }
 
-    private void DamageEscapeGuide()
+    private async void DamageEscapeGuide()
     {
-        if (GameManager.Instance.FirstDamaged)
+        if (damageGuideRunning || GameManager.Instance.FirstDamaged)
             return;
 
         // 함정 피격(리스폰 연출 후 안전발판 이동) 상황에서는 가이드를 띄우지 않음
         if (trapRespawning)
             return;
 
-        RoomManager.Instance.Guide(7);
+        damageGuideRunning = true;
+
+        // stateCancellation은 base.Damaged/base.Airborne의 CancelMotion에서 즉시 취소되므로,
+        // 방 이동/풀 정리에서만 취소되는 delayCancellation을 사용한다
+        if (await NormalDelay(0.5f, delayCancellation).SuppressCancellationThrow())
+        {
+            // 방 이동 등으로 취소됐다면 다음 피격에서 다시 시도한다
+            damageGuideRunning = false;
+            return;
+        }
+
         GameManager.Instance.FirstDamaged = true;
+        RoomManager.Instance.Guide(7);
         GameManager.Instance.SaveGame();
     }
     

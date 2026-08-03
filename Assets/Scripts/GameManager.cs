@@ -614,8 +614,12 @@ public class SaveData
     public bool firstDamaged;
     public bool firstPortal;
 
-    // 데모 마지막 구역에서 위시리스트 유도 팝업을 이미 띄웠는지 (예/아니오 무관, 최초 1회)
-    public bool isWishlistPopupShown;
+    // 위시리스트 유도 팝업에서 "예"를 눌러 스토어로 이동한 적이 있는지
+    public bool isWishlistAccepted;
+    // 1차 유도(보스 연출 Product6 종료 직후)를 이미 띄웠는지
+    public bool isFirstWishlistShown;
+    // 2차 유도(데모 마지막 구역 세이브 포인트)를 이미 띄웠는지
+    public bool isSecondWishlistShown;
 
     // 전체 보스 수 (모든 Room의 bosses 배열 크기 합)
     public int bossCount;
@@ -830,10 +834,22 @@ public class GameManager : Singleton<GameManager>
         set => saveData.firstPortal = value;
     }
 
-    public bool IsWishlistPopupShown
+    public bool IsWishlistAccepted
     {
-        get => saveData.isWishlistPopupShown;
-        set => saveData.isWishlistPopupShown = value;
+        get => saveData.isWishlistAccepted;
+        set => saveData.isWishlistAccepted = value;
+    }
+
+    public bool IsFirstWishlistShown
+    {
+        get => saveData.isFirstWishlistShown;
+        set => saveData.isFirstWishlistShown = value;
+    }
+
+    public bool IsSecondWishlistShown
+    {
+        get => saveData.isSecondWishlistShown;
+        set => saveData.isSecondWishlistShown = value;
     }
 
     public bool FirstGetSkill

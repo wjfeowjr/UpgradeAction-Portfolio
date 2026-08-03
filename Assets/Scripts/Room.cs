@@ -1775,14 +1775,20 @@ public class Room : MonoBehaviour
             SoundManager.Instance.PlaySound(ConstValues.SlotEquip);
             GameManager.Instance.SaveGame();
 
-            // 데모 마지막 구역에서는 세이브가 끝난 뒤 최초 1회 위시리스트를 유도하고,
+            // 데모 마지막 구역: 완주 집계 후 최초 1회 위시리스트를 유도하고,
             // 팝업이 닫힌 다음에 패스트 트래블 선택지를 연다
-            if (GameManager.Instance.isDemo && name == ConstValues.DemoLastSaveRoom &&
-                SteamWorksManager.Instance.TryShowWishlistPopup(OnWishlistPopupClosed))
+            if (GameManager.Instance.isDemo && name == ConstValues.DemoLastSaveRoom)
             {
-                // 팝업의 방향키 입력과 플레이어 조작이 겹치지 않도록 잠근다
-                GameManager.Instance.ControlStart = false;
-                return;
+                // 여러 번 세이브해도 값이 1로 유지되도록 덮어쓴다
+                SteamWorksManager.Instance.SetStat(ConstValues.StatDemoCleared, 1);
+                SteamWorksManager.Instance.StoreStats();
+
+                if (SteamWorksManager.Instance.TryShowWishlistPopup(OnWishlistPopupClosed))
+                {
+                    // 팝업의 방향키 입력과 플레이어 조작이 겹치지 않도록 잠근다
+                    GameManager.Instance.ControlStart = false;
+                    return;
+                }
             }
 
             OpenFastTravel();
@@ -3019,7 +3025,16 @@ public class Room : MonoBehaviour
         
         SpawnSpeechFrame(speechFrame2, sunSpeechPos, GameManager.Instance.GetTalk(10129)); 
         await NextDialog(speechFrame2);
+        
+        // 태양/달 보스 격파 기록. 유저당 0/1 퍼널 지표라 세이브를 새로 파거나 재도전해도 1로 유지된다.
+        // 팝업 대기 중 게임을 종료해도 유실되지 않도록 먼저 기록한다
+        SteamWorksManager.Instance.SetStat(ConstValues.StatKilledSun, 1);
+        SteamWorksManager.Instance.SetStat(ConstValues.StatKilledMoon, 1);
+        SteamWorksManager.Instance.StoreStats();
 
+        // 1차 위시리스트 유도. 팝업이 닫힐 때까지 기다린 뒤 문을 연다
+        await SteamWorksManager.Instance.ShowFirstWishlistPopupAsync();
+        
         // 문 열기
         BossTileMapActive(false);
         roomInfo.roomProduct[0].isFinish = true;

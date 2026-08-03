@@ -280,6 +280,10 @@ public class Monster_Golem : Monster
 
     public override async void Die()
     {
+        // 화상 틱 등으로 Die가 재호출될 수 있어 base.Die()가 isDie를 세우기 전에 1회만 집계
+        if (!isDie)
+            SteamWorksManager.Instance.AddStat(ConstValues.StatKilledGolem);
+
         base.Die();
         
         CancelMotion();

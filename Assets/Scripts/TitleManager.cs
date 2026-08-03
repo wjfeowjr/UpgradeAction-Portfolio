@@ -52,6 +52,8 @@ public class TitleManager : MonoBehaviour
             return;
         
         StartBGM();
+        SteamWorksManager.Instance.SteamCheck();
+        SteamWorksManager.Instance.GlobalStatCheck();
     }
 
     private void Update()
