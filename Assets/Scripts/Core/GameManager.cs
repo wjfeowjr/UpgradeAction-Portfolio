@@ -103,6 +103,10 @@ public partial class GameManager : Singleton<GameManager>
     // 매니저들
     public TableManager tableManager;
 
+    // 분리된 서비스들 (MonoBehaviour 아님. InitManager 에서 생성한다)
+    private LocalizationService localization;
+    public LocalizationService Localization => localization;
+
     // 카메라
     private FollowCamera mainCamera;
     [SerializeField] private Transform miniMapCamera;
@@ -348,10 +352,13 @@ public partial class GameManager : Singleton<GameManager>
     }
 
 
-    private void InitManager() 
+    private void InitManager()
     {
         tableManager = TableManager.Instance;
         tableManager.Init();
+
+        // 테이블 로드 직후에 생성한다 (조회 캐시를 만들어야 하므로 순서가 중요하다)
+        localization = new LocalizationService(tableManager.talkTable, tableManager.itemTable);
     }
 
 
