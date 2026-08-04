@@ -144,7 +144,7 @@ public class Room : MonoBehaviour
     private bool hasPrevPlayerPos;
 
     public string Id    => roomInfo.roomId;
-    public string Place => GameManager.Instance.GetPlaceName((ePlace)Enum.Parse(typeof(ePlace), roomsData.place));
+    public string Place => GameManager.Instance.GetPlaceName(TableParse.Enum<ePlace>(roomsData.place));
 
     // 패스트 트래블용: 세이브 포인트 활성화 여부와 세이브 오브젝트 접근자
     public bool SavePointCheck => roomInfo != null && roomInfo.IsRevealed(EMinimapObjectType.SavePoint);
@@ -564,7 +564,7 @@ public class Room : MonoBehaviour
         var productIdxArray = roomsData.productIdx.Split(';');
         List<int> productIdxList = new List<int>();
         foreach (var productIdx in productIdxArray)
-            productIdxList.Add(int.Parse(productIdx));
+            productIdxList.Add(TableParse.Int(productIdx));
         if (roomInfo.roomProduct.Count < productTriggers.Length)
         {
             foreach (var productIdx in productIdxList)
@@ -601,7 +601,7 @@ public class Room : MonoBehaviour
                 {
                     var npcArray = eventNpcArray[i].Split(';');
                     var npcId = npcArray[0];
-                    var npcActive = bool.Parse(npcArray[1]);
+                    var npcActive = TableParse.Bool(npcArray[1]);
                     
                     var eventNpc = new EventNpc()
                     {
@@ -624,7 +624,7 @@ public class Room : MonoBehaviour
                 {
                     var objectArray = customObjectArray[i].Split(';');
                     var objectId = objectArray[0];
-                    var obejectActive = bool.Parse(objectArray[1]);
+                    var obejectActive = TableParse.Bool(objectArray[1]);
                     
                     var customObject = new EventCustomObject()
                     {
@@ -713,7 +713,7 @@ public class Room : MonoBehaviour
                 {
                     var treasureArray = treasureBoxArray[i].Split(';');
                     var treasure = treasureArray[0];
-                    var treasureCount = int.Parse(treasureArray[1]);
+                    var treasureCount = TableParse.Int(treasureArray[1]);
                     
                     var treasureBox = new RoomObjectClass()
                     {
@@ -787,7 +787,7 @@ public class Room : MonoBehaviour
                 {
                     var itemInfoArray = itemArray[i].Split(';');
                     var itemName = itemInfoArray[0];
-                    var itemCount = int.Parse(itemInfoArray[1]);
+                    var itemCount = TableParse.Int(itemInfoArray[1]);
                     
                     var item = new RoomObjectClass()
                     {
@@ -846,7 +846,7 @@ public class Room : MonoBehaviour
                 {
                     var relicInfoArray = relicArray[i].Split(';');
                     var relicName = relicInfoArray[0];
-                    var relicCount = int.Parse(relicInfoArray[1]);
+                    var relicCount = TableParse.Int(relicInfoArray[1]);
                     
                     var relic = new RoomObjectClass()
                     {

@@ -365,7 +365,7 @@ public abstract class Player : Character
         {
             id = targetStat.id,
             name = GameManager.Instance.GetTalk(targetStat.talk),
-            bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
+            bodyType = TableParse.Enum<EBodyType>(targetStat.bodyType),
             hp = targetStat.hp,
             maxHp = targetStat.hp,
             power = targetStat.power,
@@ -392,7 +392,7 @@ public abstract class Player : Character
             {
                 id = targetStat.id,
                 name = GameManager.Instance.GetTalk(targetStat.talk),
-                bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
+                bodyType = TableParse.Enum<EBodyType>(targetStat.bodyType),
                 hp = targetStat.hp,
                 maxHp = targetStat.hp,
                 power = targetStat.power,
@@ -1463,7 +1463,7 @@ public abstract class Player : Character
         if (originStat.bodyType == EBodyType.SuperArmor && armor == ConstValues.Normal)
             armor = ConstValues.SuperArmor;
         
-        BodyTypeSetting((EBodyType)Enum.Parse(typeof(EBodyType), armor));
+        BodyTypeSetting(TableParse.Enum<EBodyType>(armor));
     }
 
     public void InitSkill()
@@ -1478,8 +1478,8 @@ public abstract class Player : Character
             var coolTimeArray = skill.coolTime.Split(';');
             foreach (var coolTime in coolTimeArray)
             {
-                addedSkill.maxCoolTime.Add(float.Parse(coolTime));
-                addedSkill.curCoolTime.Add(float.Parse(coolTime));
+                addedSkill.maxCoolTime.Add(TableParse.Float(coolTime));
+                addedSkill.curCoolTime.Add(TableParse.Float(coolTime));
             }
 
             if (!string.IsNullOrWhiteSpace(skill.buffName))
@@ -1494,7 +1494,7 @@ public abstract class Player : Character
             
             var buffValueArray = skill.buffValue.Split(';');
             foreach (var buffValue in buffValueArray)
-                addedSkill.buffValue.Add(int.Parse(buffValue));
+                addedSkill.buffValue.Add(TableParse.Int(buffValue));
             
             var skillTableData = TableManager.Instance.GetSkill(skill.id);
             addedSkill.skillSpeed = skillTableData.skillSpeed;

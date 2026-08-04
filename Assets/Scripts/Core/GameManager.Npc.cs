@@ -54,7 +54,7 @@ public partial class GameManager
                 SoundManager.Instance.PlaySound(talkData.sound);
             
             var cameraShakeArray = talkData.cameraShake.Split(';');
-            var cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
+            var cameraShake = new Vector2(TableParse.Float(cameraShakeArray[0]), TableParse.Float(cameraShakeArray[1]));
             if(cameraShake != Vector2.zero)
                 CameraShake(cameraShake.x, cameraShake.y, talkData.shakeTime);
             

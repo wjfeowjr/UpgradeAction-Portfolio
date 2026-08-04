@@ -117,7 +117,7 @@ public class Attack : MonoBehaviour
         {
             originInfo = new AttackInfo();
             originInfo.id = attackData.id;
-            originInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
+            originInfo.effectType = TableParse.Enum<EEffectType>(attackData.effectType);
             originInfo.effectTime = attackData.effectTime;
             
             var deBuffSplit1 = attackData.deBuff.Split(';');
@@ -129,9 +129,9 @@ public class Attack : MonoBehaviour
                 for (var i = 0; i < deBuffSplit1.Length; i++)
                 {
                     DeBuffInfo deBuffInfo = new DeBuffInfo();
-                    deBuffInfo.deBuff = (EBuffType)Enum.Parse(typeof(EBuffType), deBuffSplit1[i]);
-                    deBuffInfo.deBuffPercent = int.Parse(deBuffTimePercent1[i]);
-                    deBuffInfo.deBuffTime = float.Parse(deBuffTimeSplit1[i]);
+                    deBuffInfo.deBuff = TableParse.Enum<EBuffType>(deBuffSplit1[i]);
+                    deBuffInfo.deBuffPercent = TableParse.Int(deBuffTimePercent1[i]);
+                    deBuffInfo.deBuffTime = TableParse.Float(deBuffTimeSplit1[i]);
                     originInfo.deBuffInfoList.Add(deBuffInfo);
                 }
             }
@@ -142,7 +142,7 @@ public class Attack : MonoBehaviour
             originInfo.continuous = attackData.continuous;
             originInfo.continuousDelay = attackData.continuousDelay;
             originInfo.duplicate = attackData.duplicate;
-            originInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
+            originInfo.directionType = TableParse.Enum<EDirectionType>(attackData.directionType);
             originInfo.coefficient = attackData.coefficient;
             originInfo.criticalChance = attackData.criticalChance;
             originInfo.stagger = attackData.stagger;
@@ -155,7 +155,7 @@ public class Attack : MonoBehaviour
             else
             {
                 var upperPowerSplit1 = attackData.upperPower.Split(';');
-                originInfo.upperPower = new Vector2(float.Parse(upperPowerSplit1[0]), float.Parse(upperPowerSplit1[1]));
+                originInfo.upperPower = new Vector2(TableParse.Float(upperPowerSplit1[0]), TableParse.Float(upperPowerSplit1[1]));
             }
             originInfo.customDir = attackData.customDir;
             originInfo.colliderTime = attackData.colliderTime;
@@ -166,7 +166,7 @@ public class Attack : MonoBehaviour
             else
             {
                 var hitShakeSplit1 = attackData.hitShake.Split(';');
-                originInfo.hitShake = new Vector2(float.Parse(hitShakeSplit1[0]), float.Parse(hitShakeSplit1[1]));
+                originInfo.hitShake = new Vector2(TableParse.Float(hitShakeSplit1[0]), TableParse.Float(hitShakeSplit1[1]));
             }
             originInfo.shakeTime = attackData.shakeTime;
             originInfo.hitEffectId = attackData.hitEffectId;
@@ -175,7 +175,7 @@ public class Attack : MonoBehaviour
         // 어택데이터는 항상 초기화
         attackInfo = new AttackInfo();
         attackInfo.id = attackData.id;
-        attackInfo.effectType = (EEffectType)Enum.Parse(typeof(EEffectType), attackData.effectType);
+        attackInfo.effectType = TableParse.Enum<EEffectType>(attackData.effectType);
         attackInfo.effectTime = attackData.effectTime;
         
         var deBuffSplit = attackData.deBuff.Split(';');
@@ -186,9 +186,9 @@ public class Attack : MonoBehaviour
             for (var i = 0; i < deBuffSplit.Length; i++)
             {
                 DeBuffInfo deBuffInfo = new DeBuffInfo();
-                deBuffInfo.deBuff = (EBuffType)Enum.Parse(typeof(EBuffType), deBuffSplit[i]);
-                deBuffInfo.deBuffPercent = int.Parse(deBuffTimePercent[i]);
-                deBuffInfo.deBuffTime = float.Parse(deBuffTimeSplit[i]);
+                deBuffInfo.deBuff = TableParse.Enum<EBuffType>(deBuffSplit[i]);
+                deBuffInfo.deBuffPercent = TableParse.Int(deBuffTimePercent[i]);
+                deBuffInfo.deBuffTime = TableParse.Float(deBuffTimeSplit[i]);
                 attackInfo.deBuffInfoList.Add(deBuffInfo);
             }
         }
@@ -200,7 +200,7 @@ public class Attack : MonoBehaviour
         attackInfo.continuous = attackData.continuous;
         attackInfo.continuousDelay = attackData.continuousDelay;
         attackInfo.duplicate = attackData.duplicate;
-        attackInfo.directionType = (EDirectionType)Enum.Parse(typeof(EDirectionType), attackData.directionType);
+        attackInfo.directionType = TableParse.Enum<EDirectionType>(attackData.directionType);
         attackInfo.coefficient = attackData.coefficient;
         attackInfo.criticalChance = attackData.criticalChance;
         attackInfo.stagger = attackData.stagger;
@@ -214,7 +214,7 @@ public class Attack : MonoBehaviour
         else
         {
             var upperPowerSplit = attackData.upperPower.Split(';');
-            attackInfo.upperPower = new Vector2(float.Parse(upperPowerSplit[0]), float.Parse(upperPowerSplit[1]));
+            attackInfo.upperPower = new Vector2(TableParse.Float(upperPowerSplit[0]), TableParse.Float(upperPowerSplit[1]));
         }
 
         attackInfo.customDir = attackData.customDir;
@@ -227,7 +227,7 @@ public class Attack : MonoBehaviour
         else
         {
             var hitShakeSplit = attackData.hitShake.Split(';');
-            attackInfo.hitShake = new Vector2(float.Parse(hitShakeSplit[0]), float.Parse(hitShakeSplit[1]));
+            attackInfo.hitShake = new Vector2(TableParse.Float(hitShakeSplit[0]), TableParse.Float(hitShakeSplit[1]));
         }
 
         attackInfo.shakeTime = attackData.shakeTime;
@@ -287,7 +287,7 @@ public class Attack : MonoBehaviour
         {
             DeBuffInfo deBuffInfo = new DeBuffInfo
             {
-                deBuff = (EBuffType)Enum.Parse(typeof(EBuffType), deBuff.buffId),
+                deBuff = TableParse.Enum<EBuffType>(deBuff.buffId),
                 deBuffTime = deBuff.buffTime,
                 deBuffPercent = 100
             };

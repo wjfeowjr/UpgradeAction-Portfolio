@@ -2173,7 +2173,7 @@ public abstract class Character : InteractionController
             var buffData = TableManager.Instance.GetBuff(buffId);
             if (buffData != null)
             {
-                var buffType = (EBuffType)Enum.Parse(typeof(EBuffType), buffData.buffType);
+                var buffType = TableParse.Enum<EBuffType>(buffData.buffType);
                 var newBuff = new Buff()
                 {
                     buffId = buffId,

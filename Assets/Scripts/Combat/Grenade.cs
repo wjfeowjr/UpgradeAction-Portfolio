@@ -100,10 +100,10 @@ public class Grenade : MonoBehaviour, IProjectile
         grenadeInfo.id = grenadeCopy.id;
 
         var minForceSplit = grenadeCopy.minForce.Split(';');
-        grenadeInfo.minForce = new Vector2(float.Parse(minForceSplit[0]), float.Parse(minForceSplit[1]));
+        grenadeInfo.minForce = new Vector2(TableParse.Float(minForceSplit[0]), TableParse.Float(minForceSplit[1]));
             
         var maxForceSplit = grenadeCopy.maxForce.Split(';');
-        grenadeInfo.maxForce = new Vector2(float.Parse(maxForceSplit[0]), float.Parse(maxForceSplit[1]));
+        grenadeInfo.maxForce = new Vector2(TableParse.Float(maxForceSplit[0]), TableParse.Float(maxForceSplit[1]));
 
         grenadeInfo.timer = grenadeCopy.timer;
 

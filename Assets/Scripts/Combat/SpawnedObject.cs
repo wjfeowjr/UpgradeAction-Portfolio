@@ -81,16 +81,16 @@ public class SpawnedObject : MonoBehaviour
         spawnObjectInfo.timeScale = objectData.timeScale;
         
         var basicPosition = objectData.basicPosition.Split(',');
-        spawnObjectInfo.basicPosition = new Vector3(float.Parse(basicPosition[0]), float.Parse(basicPosition[1]), float.Parse(basicPosition[2]));
+        spawnObjectInfo.basicPosition = new Vector3(TableParse.Float(basicPosition[0]), TableParse.Float(basicPosition[1]), TableParse.Float(basicPosition[2]));
         
         var flipPosition = objectData.flipPosition.Split(',');
-        spawnObjectInfo.flipPosition = new Vector3(float.Parse(flipPosition[0]), float.Parse(flipPosition[1]), float.Parse(flipPosition[2]));
+        spawnObjectInfo.flipPosition = new Vector3(TableParse.Float(flipPosition[0]), TableParse.Float(flipPosition[1]), TableParse.Float(flipPosition[2]));
         
         var basicAngle = objectData.basicAngle.Split(',');
-        spawnObjectInfo.basicAngle = new Vector3(float.Parse(basicAngle[0]), float.Parse(basicAngle[1]), float.Parse(basicAngle[2]));
+        spawnObjectInfo.basicAngle = new Vector3(TableParse.Float(basicAngle[0]), TableParse.Float(basicAngle[1]), TableParse.Float(basicAngle[2]));
         
         var flipAngle = objectData.flipAngle.Split(',');
-        spawnObjectInfo.flipAngle = new Vector3(float.Parse(flipAngle[0]), float.Parse(flipAngle[1]), float.Parse(flipAngle[2]));
+        spawnObjectInfo.flipAngle = new Vector3(TableParse.Float(flipAngle[0]), TableParse.Float(flipAngle[1]), TableParse.Float(flipAngle[2]));
 
         spawnObjectInfo.objectTime = objectData.objectTime;
 
@@ -106,7 +106,7 @@ public class SpawnedObject : MonoBehaviour
         spawnObjectInfo.soundVolume = objectData.soundVolume;
         
         var cameraShakeArray = objectData.cameraShake.Split(';');
-        spawnObjectInfo.cameraShake = new Vector2(float.Parse(cameraShakeArray[0]), float.Parse(cameraShakeArray[1]));
+        spawnObjectInfo.cameraShake = new Vector2(TableParse.Float(cameraShakeArray[0]), TableParse.Float(cameraShakeArray[1]));
         
         spawnObjectInfo.shakeTime = objectData.shakeTime;
         dir = dirX;

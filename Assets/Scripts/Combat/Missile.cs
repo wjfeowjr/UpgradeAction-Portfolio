@@ -95,7 +95,7 @@ public class Missile : MonoBehaviour, IProjectile
     {
         missileInfo = new MissileInfo();
         missileInfo.id = missileData.id;
-        missileInfo.type = (MissileType)Enum.Parse(typeof(MissileType), missileData.type);
+        missileInfo.type = TableParse.Enum<MissileType>(missileData.type);
         missileInfo.speed = missileData.speed;
         defaultLimit = missileData.limitLength;
 

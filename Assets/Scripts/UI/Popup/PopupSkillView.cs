@@ -286,7 +286,7 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
             var coolTimeString = skill.coolTime.Split(';');
             List<float> coolTimeList = new List<float>();
             foreach (var coolTime in coolTimeString)
-                coolTimeList.Add(float.Parse(coolTime));
+                coolTimeList.Add(TableParse.Float(coolTime));
             
             skillCoolTime.text = string.Format(GameManager.Instance.GetTalk(30107), coolTimeList[0].ToString(CultureInfo.InvariantCulture));
             

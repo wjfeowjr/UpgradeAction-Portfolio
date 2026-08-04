@@ -430,7 +430,7 @@ public partial class GameManager
             {
                 var upgradeValueSplit = skillAttribute.upgradeValue.Split(';');
                 foreach (var upgradeValue in upgradeValueSplit)
-                    data.upgradeValue.Add(int.Parse(upgradeValue));
+                    data.upgradeValue.Add(TableParse.Int(upgradeValue));
             }
             
             data.buffId = skillAttribute.buffId;
@@ -450,8 +450,8 @@ public partial class GameManager
             data.id = item.id;
             data.name = item.name;
             data.explain = item.explain;
-            data.rank = (eItemRank)Enum.Parse(typeof(eItemRank), item.rank);
-            data.type = (eItemType)Enum.Parse(typeof(eItemType), item.type);
+            data.rank = TableParse.Enum<eItemRank>(item.rank);
+            data.type = TableParse.Enum<eItemType>(item.type);
             
             itemCopyList.Add(data);
         }
@@ -470,11 +470,11 @@ public partial class GameManager
 
             var statSplit = relic.stat.Split(';');
             foreach (var stat in statSplit)
-                data.statList.Add((eItemStat)Enum.Parse(typeof(eItemStat), stat));
+                data.statList.Add(TableParse.Enum<eItemStat>(stat));
             
             var valueSplit = relic.value.Split(';');
             foreach (var value in valueSplit)
-                data.valueList.Add(int.Parse(value));
+                data.valueList.Add(TableParse.Int(value));
 
             data.specialValue = relic.specialValue;
             
@@ -512,7 +512,7 @@ public partial class GameManager
                 var itemCountSplit = npc.questItemCount.Split(';');
                 foreach (var itemCount in itemCountSplit)
                 {
-                    data.questItemCount.Add(int.Parse(itemCount));
+                    data.questItemCount.Add(TableParse.Int(itemCount));
                 }
             }
 
@@ -541,7 +541,7 @@ public partial class GameManager
                 var checkKeyValueSplit = dialogueChoice.checkKeyValue.Split(';');
                 foreach (var checkKeyValue in checkKeyValueSplit)
                 {
-                    data.checkKeyValue.Add(bool.Parse(checkKeyValue));
+                    data.checkKeyValue.Add(TableParse.Bool(checkKeyValue));
                 }
             }
             
@@ -727,8 +727,8 @@ public partial class GameManager
             var coolTimeArray = skill.coolTime.Split(';');
             foreach (var coolTime in coolTimeArray)
             {
-                addedSkill.maxCoolTime.Add(float.Parse(coolTime));
-                addedSkill.curCoolTime.Add(float.Parse(coolTime));
+                addedSkill.maxCoolTime.Add(TableParse.Float(coolTime));
+                addedSkill.curCoolTime.Add(TableParse.Float(coolTime));
             }
             
             addedSkill.talk = GetTalk(skill.talk);
@@ -756,8 +756,8 @@ public partial class GameManager
             var coolTimeArray = skill.coolTime.Split(';');
             foreach (var coolTime in coolTimeArray)
             {
-                addedSkill.maxCoolTime.Add(float.Parse(coolTime));
-                addedSkill.curCoolTime.Add(float.Parse(coolTime));
+                addedSkill.maxCoolTime.Add(TableParse.Float(coolTime));
+                addedSkill.curCoolTime.Add(TableParse.Float(coolTime));
             }
             
             addedSkill.talk = GetTalk(skill.talk);

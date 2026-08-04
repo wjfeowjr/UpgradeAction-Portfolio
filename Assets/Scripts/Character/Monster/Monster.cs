@@ -347,7 +347,7 @@ public class Monster : Character
         {
             id = targetStat.id,
             name = GameManager.Instance.GetTalk(targetStat.talk),
-            bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
+            bodyType = TableParse.Enum<EBodyType>(targetStat.bodyType),
             hp = targetStat.hp,
             maxHp = targetStat.hp,
             power = targetStat.power,
@@ -367,7 +367,7 @@ public class Monster : Character
             {
                 id = targetStat.id,
                 name = GameManager.Instance.GetTalk(targetStat.talk),
-                bodyType = (EBodyType)Enum.Parse(typeof(EBodyType), targetStat.bodyType),
+                bodyType = TableParse.Enum<EBodyType>(targetStat.bodyType),
                 hp = targetStat.hp,
                 maxHp = targetStat.hp,
                 power = targetStat.power,
@@ -397,26 +397,26 @@ public class Monster : Character
             foreach (var totalRange in totalAttackRangeArray)
             {
                 var attackRangeArray = totalRange.Split(';');
-                Vector2 attackRange = new Vector2(float.Parse(attackRangeArray[0]), float.Parse(attackRangeArray[1]));
+                Vector2 attackRange = new Vector2(TableParse.Float(attackRangeArray[0]), TableParse.Float(attackRangeArray[1]));
                 myStat.attackRange.Add(attackRange);
             }
 
             var agroRangeArray = targetStat.agroRange.Split(';');
-            myStat.agroRange = new Vector2(float.Parse(agroRangeArray[0]), float.Parse(agroRangeArray[1]));
+            myStat.agroRange = new Vector2(TableParse.Float(agroRangeArray[0]), TableParse.Float(agroRangeArray[1]));
 
             var jumpRangeArray = targetStat.jumpRange.Split(';');
-            myStat.jumpRange = new Vector2(float.Parse(jumpRangeArray[0]), float.Parse(jumpRangeArray[1]));
+            myStat.jumpRange = new Vector2(TableParse.Float(jumpRangeArray[0]), TableParse.Float(jumpRangeArray[1]));
 
             var dropRangeArray = targetStat.dropRange.Split(';');
-            myStat.dropRange = new Vector2(float.Parse(dropRangeArray[0]), float.Parse(dropRangeArray[1]));
+            myStat.dropRange = new Vector2(TableParse.Float(dropRangeArray[0]), TableParse.Float(dropRangeArray[1]));
 
             var coolTimeArray = targetStat.coolTime.Split(';');
             foreach (var coolTime in coolTimeArray)
-                myStat.coolTime.Add(float.Parse(coolTime));
+                myStat.coolTime.Add(TableParse.Float(coolTime));
 
             var priorityArray = targetStat.priority.Split(';');
             foreach (var priority in priorityArray)
-                myStat.priority.Add(int.Parse(priority));
+                myStat.priority.Add(TableParse.Int(priority));
 
             var pageHpArray = targetStat.pageHp.Split(';');
             var pagePatternArray = targetStat.pagePattern.Split('ㅗ');
@@ -426,9 +426,9 @@ public class Monster : Character
                 var patternArray = pagePatternArray[i].Split(';');
                 List<int> pagePatternList = new List<int>();
                 foreach (var pattern in patternArray)
-                    pagePatternList.Add(int.Parse(pattern));
+                    pagePatternList.Add(TableParse.Int(pattern));
 
-                monsterPattern.pageHp = int.Parse(pageHpArray[i]);
+                monsterPattern.pageHp = TableParse.Int(pageHpArray[i]);
                 monsterPattern.pagePattern = pagePatternList;
                 myStat.pattern.Add(monsterPattern);
             }
@@ -465,14 +465,14 @@ public class Monster : Character
 
             var hoveringHeightArray = targetStat.hoveringHeight.Split(';');
             foreach (var hoveringHeight in hoveringHeightArray)
-                myStat.hoveringHeight.Add(float.Parse(hoveringHeight));
+                myStat.hoveringHeight.Add(TableParse.Float(hoveringHeight));
 
             myStat.hoveringSpeed = targetStat.hoveringSpeed;
             myStat.customPatrol = targetStat.customPatrol;
 
             var appearShakeArray = targetStat.appearShake.Split(';');
             foreach (var appearShake in appearShakeArray)
-                myStat.appearShake.Add(float.Parse(appearShake));
+                myStat.appearShake.Add(TableParse.Float(appearShake));
 
             myStat.appearEffect = targetStat.appearEffect;
             myStat.dyingMiniEffect = targetStat.dyingMiniEffect;
