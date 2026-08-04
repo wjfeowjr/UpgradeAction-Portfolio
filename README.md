@@ -105,11 +105,11 @@ Berserker_UpperSlash
 public enum EBodyType
 {
     Normal,       // 모든 타격에 경직
-    SuperArmor,   // 경직 무시, 넉백은 적용
-    HeavyArmor,   // 강한 타격에만 반응
-    StrongArmor,
-    HyperArmor,   // 완전 무경직
-    UnChange,     // 외부 요인으로 상태 변경 불가
+    SuperArmor,   // 경직 무시, 상태이상으로 파괴됨
+    HeavyArmor,   // 경직 무시, 상태이상은 걸리나, 공중에 뜨지 않음
+    StrongArmor,  // 보스 전용, 무력화 게이지를 다 깎으면 그로기 시간동안 Normal판정으로 변함
+    HyperArmor,   // 보스 전용, 무력화 게이지를 다 깎으면 그로기, 대신 공중에 뜨지 않음
+    UnChange,     // 보스 전용, 모든 경직 및 에어본 무시
     Counter,      // 피격 시 반격으로 전환
 }
 ```
