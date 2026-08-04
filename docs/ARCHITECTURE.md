@@ -83,31 +83,42 @@ flowchart TB
 | `RoomManager` | 룸 이동, 카메라 경계, 미니맵, 페이드 전환, 게임오버 흐름 |
 | `Controller` | 입력 폴링 및 플레이어 액션 디스패치 |
 | `ResourceManager` | Addressables 로딩 (동기 / 비동기) |
+| `TableManager` | JSON 데이터 테이블 로드 및 조회 |
+| `BgmManager` / `SoundManager` | 오디오 재생 |
+| `VolumeManager` | AudioMixer 볼륨 제어 |
+| `SteamWorksManager` | Steam 플랫폼 연동 |
 
 ### 분리된 서비스
 
 `MonoBehaviour` 도 싱글턴도 아닌 순수 클래스입니다.
 `GameManager.InitManager()` 에서 생성하며, 기존 호출부는 `GameManager` 가 위임합니다.
 
-| 서비스 | 책임 | 테스트 |
-|---|---|---|
-| `LocalizationService` | 다국어 텍스트 조회 (`Core/Localization/`) | 10개 |
-| `ObjectPoolService` | 오브젝트 풀 (`Core/Pool/`) | 13개 |
+| 서비스 | 책임 | 위치 | 테스트 |
+|---|---|---|---:|
+| `LocalizationService` | 다국어 텍스트 조회 | `Core/Localization/` | 10개 |
+| `ObjectPoolService` | 오브젝트 풀 | `Core/Pool/` | 13개 |
+| `GameFlowService` | 시간 정지 · 입력 잠금 · 슬로우모션 | `Core/Flow/` | 10개 |
+| `TableParse` | 테이블 문자열 파싱 (로케일 고정) | `Util/` | 10개 |
+| `RoomMinimap` | 미니맵 공개 상태 | `World/Room/` | 7개 |
+| `MinimapCellCodec` | 미니맵 세이브 형식 | `World/Room/` | 9개 |
 
 의존을 생성자로 주입받으므로 Unity 런타임 없이 검증할 수 있습니다.
 
 ```csharp
 localization = new LocalizationService(tableManager.talkTable, tableManager.itemTable);
 pool = new ObjectPoolService(prefabList);
+flow = new GameFlowService();
 ```
+
+**무엇을 뽑을지는 감이 아니라 필드 의존도로 판정했습니다.**
+전용 필드가 뚜렷하고 바깥 참조가 초기화뿐인 것만 뽑았고,
+필드를 공유하는 책임(보스 이벤트, 문 이동, 성장 로직)은 남겼습니다.
+같은 기준을 `GameManager` 와 `Room` 양쪽에 적용했습니다 —
+[8절 룸 구성](#8-룸-구성)과
+[`TECH-NOTES.md` 12번](TECH-NOTES.md#12-god-object를-어디부터-뜯을지--감이-아니라-측정으로)에 측정 결과가 있습니다.
 
 `GameManager` 자체는 역할별 `partial` 파일 9개로 나뉘어 있습니다.
 다만 **파일만 나뉘었을 뿐 클래스는 하나**이므로 결합도는 그대로입니다.
-분할 목적과 측정 결과는 [`TECH-NOTES.md` 12번](TECH-NOTES.md#12-god-object를-어디부터-뜯을지--감이-아니라-측정으로)에 있습니다.
-| `TableManager` | JSON 데이터 테이블 로드 및 조회 |
-| `BgmManager` / `SoundManager` | 오디오 재생 |
-| `VolumeManager` | AudioMixer 볼륨 제어 |
-| `SteamWorksManager` | Steam 플랫폼 연동 |
 
 ### 입력 처리
 
@@ -571,13 +582,89 @@ private async UniTask<bool> SwordCounter()
 
 ### 구성 요소
 
-| 클래스 | 책임 |
-|---|---|
-| `Room` | 몬스터 스폰, NPC 배치, 보물상자, 지름길, 카메라 경계, 미니맵 타일 |
-| `RoomManager` | 룸 간 비동기 페이드 전환, 카메라 인계, 게임오버 흐름 |
-| `TotalRoom` | 전체 룸 컨테이너, 미니맵 방문 상태 보관 |
-| `Arena` | 라운드 기반 전투 구역 (`Arena.json` 으로 웨이브 구성) |
-| `RoomEntrance` / `ShortcutObject` | 룸 출입구, 지름길 개통 |
+| 클래스 / 파일 | 줄수 | 책임 |
+|---|---:|---|
+| `Room.cs` | 1,469 | 방 상태, 몬스터 스폰, NPC 배치, 카메라 경계, 미니맵 마커 |
+| `Room.Product.cs` (`partial`) | 2,005 | 방에서 벌어지는 연출 — 스토리·보스 등장·문 열림·아레나·퀘스트 |
+| `Room.InfoSetting.cs` (`partial`) | 775 | 세이브 스키마 동기화 · 저장 상태 복원 |
+| `RoomMinimap` | 324 | 미니맵 공개 상태 (`MonoBehaviour` 아님) |
+| `MinimapCellCodec` | 72 | 방문 셀 저장 형식 (순수 정적) |
+| `RoomManager` | 554 | 룸 간 비동기 페이드 전환, 카메라 인계, 게임오버 흐름 |
+| `TotalRoom` | — | 전체 룸 컨테이너 |
+| `Arena` | — | 라운드 기반 전투 구역 (`Arena.json` 으로 웨이브 구성) |
+| `RoomEntrance` / `ShortcutObject` | — | 룸 출입구, 지름길 개통 |
+
+### 무엇을 뽑고 무엇을 남겼나
+
+`Room.cs` 는 한때 **4,444줄**이었습니다. "방에 관련된 모든 것"이 한 클래스에 있었기 때문입니다.
+분해할 때 파일을 옮기는 건 쉽지만, **필드를 공유하면 실제로는 갈라지지 않습니다.**
+그래서 책임별로 어떤 필드를 쓰는지 먼저 셌습니다.
+
+| 책임 | 쓰는 필드 | 공유 관계 | 판정 |
+|---|---:|---|---|
+| 보스 이벤트 | 14개 | `bosses` · `npc` · `roomInfo` · `customObjects` | 분리 불가 |
+| 문 / 방 이동 | 16개 | `roomInfo` · `roomsData` · `shortCutObjects` | 분리 불가 |
+| 스토리 연출 | 11개 | 공유는 적으나 재사용 없는 일회성 코드 | **파일만 분리** |
+| 미니맵 | 21개 (전용 9개) | 바깥 참조가 `Awake` 초기화뿐 | **클래스로 추출** |
+
+미니맵 전용 필드 9개(`visitedFrameCells`, `originalFrameTiles`, `minimapFrameTilemap` 등)를
+`Room` 의 다른 코드가 건드리는 곳은 `Awake` 의 초기화가 전부였습니다.
+생성자 인자로 넘기면 끝나는 관계 — 자리만 `Room` 안이었을 뿐 원래부터 독립된 기능이었습니다.
+
+```csharp
+// Room.Awake()
+minimap = new RoomMinimap(minimapFrameTilemap, minimapInTilemap, shortcutFrameTileMaps, hiddenAreas);
+minimap.CacheTiles();
+
+// 세이브 데이터가 붙는 시점
+minimap.Bind(roomInfo);
+minimap.Restore();
+```
+
+**미니맵 마커(세이브 포인트·포탈·상인·획득물)는 `Room` 에 남겼습니다.**
+미니맵 전용 데이터가 아니라 방이 소유한 오브젝트이고,
+공개 조건이 "이미 먹었는가" 같은 방 상태에 걸려 있어 옮기면 오히려 결합이 늘어납니다.
+
+> `partial` 로 나눈 것과 클래스로 뽑은 것을 구분해 적었습니다.
+> `partial` 은 파일만 가를 뿐 **결합을 줄이지 않습니다.**
+> `Room.Product.cs` 의 코드는 여전히 `Room` 의 필드를 그대로 씁니다.
+
+### 미니맵 공개 판정
+
+미니맵은 "그려둔 타일을 전부 지웠다가 방문한 만큼 다시 칠하는" 방식입니다.
+그래서 `Awake` 에서 원본 타일을 캐싱해 둡니다.
+
+카메라 시야에 조금이라도 걸친 셀을 공개하는데, 같은 겹침 판정이
+**미니맵 셀 3종 + 마커 4종, 총 일곱 곳에 복사**돼 있었습니다.
+
+```csharp
+// RoomMinimap.Overlaps — 일곱 곳을 한 곳으로
+public static bool Overlaps(Rect viewRect, Vector2 center, Vector2 half)
+{
+    return center.x + half.x >= viewRect.xMin && center.x - half.x <= viewRect.xMax &&
+           center.y + half.y >= viewRect.yMin && center.y - half.y <= viewRect.yMax;
+}
+```
+
+판정 사각형은 카메라 사각형보다 위로 넓힙니다. 미니맵 타일이 방보다 위쪽에 그려져 있어,
+카메라 사각형을 그대로 쓰면 화면에 보이는 구역이 미니맵에 늦게 칠해지기 때문입니다.
+이 보정은 테두리 → 내부 순으로 **누적**되고, 누적된 값을 마커·숏컷·숨겨진 구역이 함께 씁니다.
+그래서 `RevealFrameAndInCells` 가 보정된 사각형을 **반환**하고 `Room` 이 그대로 넘깁니다.
+
+### 미니맵 세이브 형식
+
+`JsonUtility` 가 `Vector3Int` 리스트를 다루지 못해 문자열로 눌러 담습니다.
+
+```
+"12_-3_0;13_-3_0;13_-2_0;"
+```
+
+이 직렬화 코드가 **네 곳에 복사**돼 있었습니다 — 테두리·내부·숏컷(`Room`) + 숨겨진 구역(`HiddenArea`).
+세이브 파일 형식인데 네 곳에 흩어져 있으면 한 곳만 고쳐도 세이브가 깨집니다.
+`MinimapCellCodec` 하나로 모으고 테스트를 붙였습니다.
+
+깨진 항목은 **건너뛰고 나머지를 살립니다.** 세이브가 손상됐을 때 방 하나가 통째로
+안 열리는 것보다, 복원 가능한 셀만 살리고 나머지를 다시 탐색하게 두는 편이 낫습니다.
 
 > 에피소드 연출을 담당하던 `Stage` / `Stage1` / `Stage2` / `StageManager` 는
 > **2챕터 컨셉 변경 과정에서 제거**했습니다 (커밋 `사용 않는 스크립트 제거`).
@@ -616,7 +703,11 @@ mySpriteRenderer?.DOFade(endAlpha, duration).SetUpdate(ignoreTime).SetEase(myEas
 ```
 
 `SetUpdate(ignoreTime)` 로 **일시정지 중에도 UI 페이드가 동작**하도록 처리했습니다.
-포즈 팝업이 열릴 때 `Time.timeScale = 0` 이 되어도 연출이 멈추지 않습니다.
+포즈 팝업이 열려 시간이 멈춰도 연출은 멈추지 않습니다.
+
+> 시간 정지 자체는 `GameFlowService` 가 관리합니다.
+> 팝업이 `Time.timeScale` 을 직접 건드리지 않고 **정지를 요청**하는 방식이며,
+> 이유는 [11절 비동기 정책](#11-비동기-정책) 아래 "시간 정지와 입력 잠금"에 있습니다.
 
 ### 룸 데이터
 
@@ -909,6 +1000,66 @@ await popupPause.FadeClose(true, true, 0.2f, true);      // 완료를 기다림
 ```
 
 "의도적으로 기다리지 않음"과 "await를 깜빡함"이 코드상 구분됩니다.
+
+### 시간 정지와 입력 잠금
+
+팝업이 열리면 게임을 멈춰야 합니다. 원래는 각 팝업이 직접 값을 넣었습니다.
+
+```csharp
+// 이전 — UIBase
+if (timeStop)  Time.timeScale = 0f;
+if (timeReset) Time.timeScale = 1f;
+```
+
+팝업이 하나뿐일 때는 맞지만, **팝업 위에 팝업이 뜨면 어긋납니다.**
+
+```
+① 특성 팝업 열림       timeScale = 0
+② 구매 확인 팝업 열림   timeScale = 0
+③ 확인 팝업 닫힘       timeScale = 1   ← 특성 팝업은 열려 있는데 게임이 돌아간다
+```
+
+특성 팝업에서 구매를 누르면 확인 팝업이 뜨므로 **실제로 도달하는 경로**였습니다.
+입력 잠금(`ControlStart`)도 구조가 같았습니다.
+
+`GameFlowService` 는 **"누가 멈춰달라고 했는지"를 집합으로** 들고 있습니다.
+요청자가 하나라도 남아 있으면 멈춘 상태를 유지하고, 마지막 요청자가 풀릴 때만 되돌립니다.
+
+```csharp
+private readonly HashSet<object> timeHolders = new HashSet<object>();
+
+public void StopTime(object owner)
+{
+    if (owner == null || !timeHolders.Add(owner)) return;
+    Apply();
+}
+
+public void ResumeTime(object owner)
+{
+    if (owner == null || !timeHolders.Remove(owner)) return;
+    Apply();
+}
+
+private void Apply() => Time.timeScale = timeHolders.Count > 0 ? 0f : baseTimeScale;
+```
+
+**중첩 깊이가 아니라 요청자 신원으로 셉니다.** 깊이 카운터를 쓰면 같은 팝업이 실수로
+두 번 풀었을 때 값이 음수로 내려가 다른 팝업의 정지까지 풀립니다.
+`HashSet.Add` 의 반환값이 중복 요청을 그대로 걸러 줍니다 — 조회 속도가 아니라 집합 의미 때문에 고른 자료구조입니다.
+
+슬로우모션(저스트 카운터 `0.05`, 아레나 `0.2`)은 정지와 **별개로** 다룹니다.
+정지 중에는 `0` 이 우선하고, 정지가 풀리면 슬로우모션 값으로 돌아갑니다.
+이전에는 둘이 서로 덮어썼습니다.
+
+씬 전환 시에는 `ClearAll()` 을 부릅니다. 요청이 남은 채 씬이 바뀌면 새 씬이 멈춘 채 시작합니다.
+
+| | 이전 | 현재 |
+|---|---:|---:|
+| `Time.timeScale` 직접 쓰기 | 21곳 | **0곳** |
+
+> 컷신처럼 순차적으로만 일어나는 연출은 `ControlStart` 를 직접 씁니다.
+> 겹칠 일이 없어 요청 방식이 필요 없기 때문입니다.
+> 모든 곳에 같은 패턴을 바르는 대신, 겹칠 수 있는 경로에만 적용했습니다.
 
 ---
 
