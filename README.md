@@ -401,7 +401,6 @@ popupStore.StoreView.Bind(storeModel).SetAction();
   "roomId": "A3",
   "cellSize":   { "x": 1.28, "y": 1.28 },
   "gridOrigin": { "x": 0,    "y": 0    },
-  "addCompositeCollider": false,
 
   "ground":    [ { "grid": { "x": 0, "y": 0 } } ],
   "platforms": [ … ],

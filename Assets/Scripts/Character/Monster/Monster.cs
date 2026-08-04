@@ -773,7 +773,7 @@ public class Monster : Character
             if (await YieldDelay(stateCancellation).SuppressCancellationThrow())
             {
                 DeleteAppearObject();
-                Debug.Log("등장 도중 처맞음");
+                GameLog.Info("등장 도중 처맞음");
                 return false;
             }
         }
@@ -1553,7 +1553,7 @@ public class Monster : Character
         {
             currentSkillIdx = patternIdx[0];
             MonsterAttack(patternIdx[0]);
-            Debug.Log($"나올 수 있는 패턴이 {currentSkillIdx}패턴 뿐이다");
+            GameLog.Info($"나올 수 있는 패턴이 {currentSkillIdx}패턴 뿐이다");
         }
         else if (patternIdx.Count > 1)
         {
@@ -1581,14 +1581,14 @@ public class Monster : Character
                 int rand = Random.Range(0, patternIdx.Count);
                 currentSkillIdx = patternIdx[rand];
                 MonsterAttack(currentSkillIdx);
-                Debug.Log($"우선순위가 같은 스킬들이 {patternIdx.Count}개다, 최종적으로 나온건 {currentSkillIdx}");
+                GameLog.Info($"우선순위가 같은 스킬들이 {patternIdx.Count}개다, 최종적으로 나온건 {currentSkillIdx}");
             }
             // 들어있는 패턴들의 우선순위가 하나라도 다를 때
             else
             {
                 // 가장 높은 우선순위의 패턴이 발동한다
                 MonsterAttack(currentSkillIdx);
-                Debug.Log($"가장 높은 우선순위{currentSkillIdx}발동");
+                GameLog.Info($"가장 높은 우선순위{currentSkillIdx}발동");
             }
         }
     }

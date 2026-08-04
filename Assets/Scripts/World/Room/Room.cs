@@ -403,7 +403,7 @@ public class Room : MonoBehaviour
     {
         var data = GameManager.Instance.RoomInfoList.Find(x => x.roomId == name);
         if(name == "Room_1_13")
-            Debug.Log("꽥");
+            GameLog.Info("꽥");
         
         if (data == null)
         {

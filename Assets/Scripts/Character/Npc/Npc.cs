@@ -114,7 +114,7 @@ public class Npc : Character
         if (choiceType == ConstValues.Open)
         {
             string popupId = choiceSplit[1];
-            Debug.Log($"{popupId} 팝업이 뜬다!");
+            GameLog.Info($"{popupId} 팝업이 뜬다!");
 
             // TODO: Popup_Store 생성 및 MVP 초기화
             var uiBase = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Store, Vector3.zero).GetComponent<UIBase>();

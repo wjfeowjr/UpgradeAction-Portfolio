@@ -17,7 +17,7 @@ public static class SyncPrefabInstanceNames
             return;
 
         int count = SyncInOpenScenes(prefab);
-        Debug.Log($"[SyncPrefabInstanceNames] 열린 씬에서 {count}개 인스턴스 이름을 '{prefab.name}'(으)로 변경");
+        GameLog.Info($"[SyncPrefabInstanceNames] 열린 씬에서 {count}개 인스턴스 이름을 '{prefab.name}'(으)로 변경");
     }
 
     // 열려있는 씬 + 프로젝트의 모든 프리팹 에셋 내부(중첩 인스턴스)까지 동기화
@@ -30,7 +30,7 @@ public static class SyncPrefabInstanceNames
 
         int sceneCount = SyncInOpenScenes(prefab);
         int prefabCount = SyncInAllPrefabAssets(prefab);
-        Debug.Log($"[SyncPrefabInstanceNames] 씬 {sceneCount}개, 프리팹 내부 {prefabCount}개 인스턴스 이름을 '{prefab.name}'(으)로 변경");
+        GameLog.Info($"[SyncPrefabInstanceNames] 씬 {sceneCount}개, 프리팹 내부 {prefabCount}개 인스턴스 이름을 '{prefab.name}'(으)로 변경");
     }
 
     private static GameObject GetSelectedPrefab()

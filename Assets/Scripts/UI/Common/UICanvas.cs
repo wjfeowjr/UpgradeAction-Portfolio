@@ -11,13 +11,13 @@ public class UICanvas : MonoBehaviour
         float height = Screen.height;
 
         float heightRatio = (height / width) * 16f;
-        Debug.Log($"현재 화면 비율: 16 : {heightRatio:F2}");
+        GameLog.Info($"현재 화면 비율: 16 : {heightRatio:F2}");
 
         foreach (var rectTransform in rectTransformArray)
         {
             if (heightRatio > 9)
             {
-                Debug.Log("16:9보다 세로가 더 김 (예: 16:10)");
+                GameLog.Info("16:9보다 세로가 더 김 (예: 16:10)");
                 rectTransform.anchorMin = Vector2.zero;        // (0,0)
                 rectTransform.anchorMax = Vector2.one;         // (1,1)
 
@@ -27,11 +27,11 @@ public class UICanvas : MonoBehaviour
             }
             else if (heightRatio < 9)
             {
-                Debug.Log("16:9보다 가로가 더 김 (예: 21:9)");
+                GameLog.Info("16:9보다 가로가 더 김 (예: 21:9)");
             }
             else
             {
-                Debug.Log("정확히 16:9");
+                GameLog.Info("정확히 16:9");
             }
         }
     }

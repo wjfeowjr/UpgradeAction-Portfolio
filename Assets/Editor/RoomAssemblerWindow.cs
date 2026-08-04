@@ -32,7 +32,6 @@ public class RoomAssemblerWindow : EditorWindow
         public string roomId = "A3";
         public Vec2 cellSize = new Vec2 { x = 1.28f, y = 1.28f };
         public Vec2 gridOrigin = new Vec2 { x = 0f, y = 0f };
-        public bool addCompositeCollider = false;
 
         public TileSpawn[] ground;
         public TileSpawn[] platforms;

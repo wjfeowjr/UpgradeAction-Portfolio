@@ -465,7 +465,7 @@ public abstract class Character : InteractionController
                         timer += Time.fixedDeltaTime;
                         if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
                         {
-                            Debug.Log("천장 딜레이 캔슬");
+                            GameLog.Info("천장 딜레이 캔슬");
                             isCeilingHang = false;
                             return;
                         }
@@ -2097,7 +2097,7 @@ public abstract class Character : InteractionController
     {
         if (normalState is ENormalState.Grabbed or ENormalState.Frozen)
         {
-            Debug.Log($"상위 판정이 존재함: {normalState}");
+            GameLog.Info($"상위 판정이 존재함: {normalState}");
             return;
         }
         
@@ -2202,7 +2202,7 @@ public abstract class Character : InteractionController
             }
             else
             {
-                Debug.Log("버프가 테이블 시트에 등록되지 않았음");
+                GameLog.Info("버프가 테이블 시트에 등록되지 않았음");
             }
         }
         // 해당 버프가 적용되어 있음
@@ -2426,7 +2426,7 @@ public abstract class Character : InteractionController
         // 이후 현재 판정에 따라서 애니메이션을 변화함
         if (normalState is ENormalState.Grabbed or ENormalState.Frozen or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
         {
-            Debug.Log($"상위 판정이 존재함: {normalState}");
+            GameLog.Info($"상위 판정이 존재함: {normalState}");
             return;
         }
 
@@ -2462,7 +2462,7 @@ public abstract class Character : InteractionController
         // 이후 현재 판정에 따라서 애니메이션을 변화함
         if (normalState is ENormalState.Grabbed or ENormalState.Frozen)
         {
-            Debug.Log($"상위 판정이 존재함: {normalState}");
+            GameLog.Info($"상위 판정이 존재함: {normalState}");
             return;
         }
         
@@ -2488,7 +2488,7 @@ public abstract class Character : InteractionController
         
         if (normalState is ENormalState.Grabbed or ENormalState.Frozen or ENormalState.Airborne or ENormalState.Down or ENormalState.Stun)
         {
-            Debug.Log($"상위 판정이 존재함: {normalState}");
+            GameLog.Info($"상위 판정이 존재함: {normalState}");
             return;
         }
 

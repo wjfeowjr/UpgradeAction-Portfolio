@@ -157,7 +157,7 @@ public class TotalRoom : MonoBehaviour
     private void SaveCheckerPos()
     {
         
-        Debug.Log($"[{GameManager.Instance.MiniMapCheckers.Count}]개 오브젝트 위치 저장 완료");
+        GameLog.Info($"[{GameManager.Instance.MiniMapCheckers.Count}]개 오브젝트 위치 저장 완료");
     }
 
     private void LoadCheckerPos()
@@ -167,7 +167,7 @@ public class TotalRoom : MonoBehaviour
             checkerArray[i].transform.position = GameManager.Instance.MiniMapCheckers[i];
             checkerArray[i].SetActive(true);
         }
-        Debug.Log($"[{GameManager.Instance.MiniMapCheckers.Count}]개 오브젝트 위치 불러오기 완료)");
+        GameLog.Info($"[{GameManager.Instance.MiniMapCheckers.Count}]개 오브젝트 위치 불러오기 완료)");
     }
 
     // 인스펙터 우클릭 메뉴에 “Cache Prefabs” 항목 추가
@@ -176,7 +176,7 @@ public class TotalRoom : MonoBehaviour
     {
 #if UNITY_EDITOR
         roomArray = GetComponentsInChildren<Room>();
-        Debug.Log($"룸 캐싱 완료");
+        GameLog.Info($"룸 캐싱 완료");
         foreach (var room in roomArray)
             room.CacheObjects();
         
@@ -193,7 +193,7 @@ public class TotalRoom : MonoBehaviour
     {
 #if UNITY_EDITOR
         roomArray = GetComponentsInChildren<Room>();
-        Debug.Log($"오브젝트 이름 변경 완료");
+        GameLog.Info($"오브젝트 이름 변경 완료");
         foreach (var room in roomArray)
             room.ObjectNameChange();
         

@@ -107,7 +107,7 @@ public static class SpriteAtlasUncompressTool
             AssetDatabase.Refresh();
         }
 
-        Debug.Log($"[SpriteAtlasUncompressTool] {label} 적용 완료. 변경 {changed}개 / 건너뜀 {skipped}개 / 검사 총 {texturePaths.Count}개.");
+        GameLog.Info($"[SpriteAtlasUncompressTool] {label} 적용 완료. 변경 {changed}개 / 건너뜀 {skipped}개 / 검사 총 {texturePaths.Count}개.");
         EditorUtility.DisplayDialog(
             "완료",
             $"적용: {label}\n변경: {changed}개\n건너뜀(이미 동일/실패): {skipped}개\n총 검사: {texturePaths.Count}개",

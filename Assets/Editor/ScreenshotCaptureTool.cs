@@ -16,7 +16,7 @@ public static class ScreenshotCaptureTool
     {
         if (GameManager.Instance.isDemo)
         {
-            Debug.Log($"데모버전은 스크린샷이 찍히지 않음");
+            GameLog.Info($"데모버전은 스크린샷이 찍히지 않음");
             return;
         }
         
@@ -29,7 +29,7 @@ public static class ScreenshotCaptureTool
         {
             // 플레이 모드: Game 뷰 전체(UI 포함)를 그대로 캡처
             ScreenCapture.CaptureScreenshot(filePath);
-            Debug.Log($"스크린샷 저장 완료: {filePath}");
+            GameLog.Info($"스크린샷 저장 완료: {filePath}");
         }
         else
         {
@@ -70,7 +70,7 @@ public static class ScreenshotCaptureTool
             File.WriteAllBytes(filePath, tex.EncodeToPNG());
             UnityEngine.Object.DestroyImmediate(tex);
 
-            Debug.Log($"스크린샷 저장 완료: {filePath}");
+            GameLog.Info($"스크린샷 저장 완료: {filePath}");
         }
         finally
         {

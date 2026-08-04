@@ -37,7 +37,7 @@ public class Player_Fighter : Player
             ResetBodyType();
         if (!finishSuccess)
         {
-            Debug.Log($"교체 공격 캔슬");
+            GameLog.Info($"교체 공격 캔슬");
             return;
         }
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
@@ -81,7 +81,7 @@ public class Player_Fighter : Player
         
         if (!finishSuccess)
         {
-            Debug.Log($"{type}공격 캔슬");
+            GameLog.Info($"{type}공격 캔슬");
             // 스킬로 캔슬된 경우, 새 스킬이 설정한 바디타입(예: 반격기의 Counter)을 덮어쓰지 않는다
             if (normalState != ENormalState.Skill)
                 ResetBodyType();
@@ -95,7 +95,7 @@ public class Player_Fighter : Player
         else
         {
             StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
-            Debug.Log($"{type}공격 끝");
+            GameLog.Info($"{type}공격 끝");
             landingAttackCount = 0;
         }
         ResetBodyType();
@@ -249,7 +249,7 @@ public class Player_Fighter : Player
         
         if(!GetGlobalCoolTime())
         {
-            Debug.Log("글로벌 쿨타임이 지나지 않음");
+            GameLog.Info("글로벌 쿨타임이 지나지 않음");
             return;
         }
 
@@ -257,7 +257,7 @@ public class Player_Fighter : Player
         {
             if(!GetDashDelay())
             {
-                Debug.Log("대시 딜레이가 지나지 않음");
+                GameLog.Info("대시 딜레이가 지나지 않음");
                 return;
             }
         }
@@ -313,11 +313,11 @@ public class Player_Fighter : Player
         
         if (!finishSuccess)
         {
-            Debug.Log($"{skillKey} 스킬 캔슬");
+            GameLog.Info($"{skillKey} 스킬 캔슬");
             return;
         }
         
-        Debug.Log($"{skillKey} 스킬 끝");
+        GameLog.Info($"{skillKey} 스킬 끝");
         GravityChange(myGravity);
 
         // 동작이 끝날때 반환하는 트리거

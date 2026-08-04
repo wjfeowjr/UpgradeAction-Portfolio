@@ -73,12 +73,12 @@ public class SteamWorksManager : SingletonMono<SteamWorksManager>
 
     public void SteamCheck()
     {
-        Debug.Log($"[Steam] Initialized = {SteamManager.Initialized}");
+        GameLog.Info($"[Steam] Initialized = {SteamManager.Initialized}");
 
         if (!SteamManager.Initialized)
             return;
 
-        Debug.Log($"[Steam] User = {SteamFriends.GetPersonaName()}, AppID = {SteamUtils.GetAppID()}, LoggedOn = {SteamUser.BLoggedOn()}");
+        GameLog.Info($"[Steam] User = {SteamFriends.GetPersonaName()}, AppID = {SteamUtils.GetAppID()}, LoggedOn = {SteamUser.BLoggedOn()}");
 
         StatCheck();
     }
@@ -121,7 +121,7 @@ public class SteamWorksManager : SingletonMono<SteamWorksManager>
         foreach (var apiName in StatApiNames)
         {
             if (SteamUserStats.GetGlobalStat(apiName, out long total))
-                Debug.Log($"[Steam][전역] {apiName} = {total}");
+                GameLog.Info($"[Steam][전역] {apiName} = {total}");
             else
                 Debug.LogWarning($"[Steam][전역] {apiName} 조회 불가 — 집계(Aggregated) 미설정으로 보임");
         }
@@ -134,7 +134,7 @@ public class SteamWorksManager : SingletonMono<SteamWorksManager>
         {
             if (SteamUserStats.GetStat(apiName, out int intValue))
             {
-                Debug.Log($"[Steam] {apiName} = {intValue} (INT 정상)");
+                GameLog.Info($"[Steam] {apiName} = {intValue} (INT 정상)");
                 continue;
             }
 

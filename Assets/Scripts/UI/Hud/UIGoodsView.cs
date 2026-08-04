@@ -30,7 +30,7 @@ public class UIGoodsPresenter
 
     public void PlusGoldText()
     {
-        Debug.Log(_model.getGold);
+        GameLog.Info(_model.getGold);
         _goodsview.SetGoldText(_model.totalGold);
     }
 }

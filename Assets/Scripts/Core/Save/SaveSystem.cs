@@ -60,7 +60,7 @@ public static class SaveSystem
                 File.Move(tempPath, path); // 최초 저장은 원본이 없어서 Replace 불가
 
 #if UNITY_EDITOR
-            Debug.Log($"[SaveSystem] Saved");
+            GameLog.Info($"[SaveSystem] Saved");
 #endif
         }
         catch (Exception e)

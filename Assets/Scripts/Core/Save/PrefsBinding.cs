@@ -7,7 +7,7 @@ public static class KeyBinding
     // 저장할 때
     public static void SaveKey(string prefKey, KeyCode key)
     {
-        Debug.Log($"{prefKey}를 {key}로 저장");
+        GameLog.Info($"{prefKey}를 {key}로 저장");
         PlayerPrefs.SetInt(prefKey, (int)key);
         PlayerPrefs.Save();
     }
@@ -17,7 +17,7 @@ public static class KeyBinding
     {
         if (PlayerPrefs.HasKey(prefKey))
         {
-            Debug.Log($"저장된 키값 {PlayerPrefs.GetInt(prefKey)}을 불러왔습니다");
+            GameLog.Info($"저장된 키값 {PlayerPrefs.GetInt(prefKey)}을 불러왔습니다");
             return (KeyCode)PlayerPrefs.GetInt(prefKey);
         }
         
@@ -41,12 +41,12 @@ public static class VolumeBinding
     {
         if (PlayerPrefs.HasKey(prefKey))
         {
-            Debug.Log($"저장된 {prefKey}: {PlayerPrefs.GetFloat(prefKey)}");
+            GameLog.Info($"저장된 {prefKey}: {PlayerPrefs.GetFloat(prefKey)}");
             return PlayerPrefs.GetFloat(prefKey);
         }
         
         // 처음 실행 시 디폴트 볼륨 저장
-        Debug.Log($"최초 {prefKey} 설정: {defaultVolume}");
+        GameLog.Info($"최초 {prefKey} 설정: {defaultVolume}");
         SaveVolume(prefKey, defaultVolume);
         return defaultVolume;
     }
@@ -66,12 +66,12 @@ public static class SettingStringBinding
     {
         if (PlayerPrefs.HasKey(prefKey))
         {
-            Debug.Log($"저장된 {prefKey}: {PlayerPrefs.GetString(prefKey)}");
+            GameLog.Info($"저장된 {prefKey}: {PlayerPrefs.GetString(prefKey)}");
             return PlayerPrefs.GetString(prefKey);
         }
         
         // 처음 실행 시 디폴트 설정 저장
-        Debug.Log($"최초 {prefKey} 설정: {defaultValue}");
+        GameLog.Info($"최초 {prefKey} 설정: {defaultValue}");
         SaveGameSetting(prefKey, defaultValue);
         return defaultValue;
     }
@@ -91,12 +91,12 @@ public static class SettingIntBinding
     {
         if (PlayerPrefs.HasKey(prefKey))
         {
-            Debug.Log($"저장된 {prefKey}: {PlayerPrefs.GetInt(prefKey)}");
+            GameLog.Info($"저장된 {prefKey}: {PlayerPrefs.GetInt(prefKey)}");
             return PlayerPrefs.GetInt(prefKey);
         }
         
         // 처음 실행 시 디폴트 설정 저장
-        Debug.Log($"최초 {prefKey} 설정: {defaultValue}");
+        GameLog.Info($"최초 {prefKey} 설정: {defaultValue}");
         SaveGameSetting(prefKey, defaultValue);
         return defaultValue;
     }

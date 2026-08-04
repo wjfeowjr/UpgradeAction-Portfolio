@@ -177,7 +177,7 @@ public partial class GameManager
                 playerInfo.relicList[i] = relicId;
                 var itemData = GetItemCopy(relicId);
                 var relicName = GetTalk(itemData.name);
-                Debug.Log($"{relicName}장착");
+                GameLog.Info($"{relicName}장착");
                 break;
             }
         }
@@ -196,7 +196,7 @@ public partial class GameManager
         playerInfo.relicList[idx] = relicId;
         var itemData = GetItemCopy(relicId);
         var relicName = GetTalk(itemData.name);
-        Debug.Log($"{relicName}장착");
+        GameLog.Info($"{relicName}장착");
         
         foreach (var player in players)
             player.InitBonusStat();
@@ -211,7 +211,7 @@ public partial class GameManager
 
         if (!playerInfo.relicList.Contains(relicId))
         {
-            Debug.Log("해당 유물을 장착하고 있지 않음");
+            GameLog.Info("해당 유물을 장착하고 있지 않음");
             return;
         }
         
@@ -222,7 +222,7 @@ public partial class GameManager
                 playerInfo.relicList[i] = default;
                 var itemData = GetItemCopy(relicId);
                 var relicName = GetTalk(itemData.name);
-                Debug.Log($"{relicName}해제");
+                GameLog.Info($"{relicName}해제");
                 
                 foreach (var player in players)
                     player.InitBonusStat();
@@ -852,7 +852,7 @@ public partial class GameManager
                 return skillList;
         }
         
-        Debug.Log("검색되는 특성 없음");
+        GameLog.Info("검색되는 특성 없음");
         return null;
     }
 
@@ -865,7 +865,7 @@ public partial class GameManager
                 return skill.attributeList.Contains(attributeId);
         }
 
-        Debug.Log("해당 특성 자체가 없음");
+        GameLog.Info("해당 특성 자체가 없음");
         return false;
     }
 

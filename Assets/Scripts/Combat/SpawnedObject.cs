@@ -200,7 +200,7 @@ public class SpawnedObject : MonoBehaviour
     {
         if (spawnObjectInfo == null)
         {
-            Debug.Log(name);
+            GameLog.Info(name);
             return;
         }
         

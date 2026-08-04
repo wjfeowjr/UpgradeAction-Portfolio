@@ -487,7 +487,7 @@ public class TableManager : SingletonMono<TableManager>
         talkTable = LoadDataFromJson<TalkDataList>(ConstValues.Talk);
 
         BuildIndexes();
-        Debug.Log($"{name} 초기화 완료");
+        GameLog.Info($"{name} 초기화 완료");
     }
 
     private T LoadDataFromJson<T>(string fileName)

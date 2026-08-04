@@ -67,7 +67,7 @@ public class MoveSelectedObjectsWindow : EditorWindow
 
         // 프리팹 편집 모드든 씬이든 현재 스테이지를 더티 표시
         EditorSceneManager.MarkSceneDirty(targets[0].gameObject.scene);
-        Debug.Log($"[Move Selected] {targets.Length}개 오브젝트를 ({delta.x}, {delta.y})만큼 이동");
+        GameLog.Info($"[Move Selected] {targets.Length}개 오브젝트를 ({delta.x}, {delta.y})만큼 이동");
     }
 
     // 선택이 바뀔 때 창의 오브젝트 개수 표시를 갱신

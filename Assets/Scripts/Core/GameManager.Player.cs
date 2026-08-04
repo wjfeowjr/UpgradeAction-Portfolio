@@ -260,7 +260,7 @@ public partial class GameManager
         }
 
         if(character == null)
-            Debug.Log($"{characterId}가 존재하지 않는다");
+            GameLog.Info($"{characterId}가 존재하지 않는다");
         
         return character;
     }

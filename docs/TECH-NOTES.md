@@ -578,7 +578,6 @@ private void UpdateStandingCheck()
   "roomId": "A3",
   "cellSize":   { "x": 1.28, "y": 1.28 },
   "gridOrigin": { "x": 0,    "y": 0    },
-  "addCompositeCollider": false,
 
   "ground":    [ { "grid": { "x": 0,  "y": 0 } } ],
   "platforms": [ { "grid": { "x": 5,  "y": 3 } } ],
@@ -592,7 +591,6 @@ private void UpdateStandingCheck()
 
 - **`cellSize` / `gridOrigin` 을 데이터로 노출** — 타일 크기(1.28)를 코드에 박지 않음
 - **타일과 오브젝트를 분리** (`ground[]` vs `transforms[]`) — 타일맵과 프리팹은 배치 방식이 다름
-- **`addCompositeCollider` 옵션** — 룸마다 콜라이더 병합 여부가 다름
 - **격자 좌표(`grid`) 입력** — 월드 좌표로 받으면 소수점 오차로 타일이 어긋남
 
 마지막 항목이 특히 중요했습니다.

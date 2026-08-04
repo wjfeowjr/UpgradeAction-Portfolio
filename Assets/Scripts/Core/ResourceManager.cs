@@ -9,7 +9,7 @@ public class ResourceManager : SingletonMono<ResourceManager>
     public async UniTask Init()
     {
         await Addressables.InitializeAsync();
-        Debug.Log($"{name} 초기화 완료");
+        GameLog.Info($"{name} 초기화 완료");
     }
 
     // 리소스 불러오기(비동기)
@@ -29,7 +29,7 @@ public class ResourceManager : SingletonMono<ResourceManager>
         }
         catch (Exception ex)
         {
-            Debug.Log($"불러올 에셋이 Null입니다 : {ex.Message}");
+            GameLog.Info($"불러올 에셋이 Null입니다 : {ex.Message}");
         }
 
         return default(T);
@@ -51,7 +51,7 @@ public class ResourceManager : SingletonMono<ResourceManager>
         }
         catch (Exception ex)
         {
-            Debug.Log($"불러올 에셋이 Null입니다 : {ex.Message}");
+            GameLog.Info($"불러올 에셋이 Null입니다 : {ex.Message}");
         }
 
         return default(T);

@@ -9,7 +9,7 @@ public partial class GameManager
     private void SetPrefabActive(bool active)
     {
         pool.SetAllPrefabsActive(active);
-        Debug.Log($"{pool.PrefabCount}개의 프리팹 {(active ? "활성화" : "비활성화")}완료");
+        GameLog.Info($"{pool.PrefabCount}개의 프리팹 {(active ? "활성화" : "비활성화")}완료");
     }
 
     // PrefabCacher(에디터 툴)가 인스펙터 목록을 직접 채운다

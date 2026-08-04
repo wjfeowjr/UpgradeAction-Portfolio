@@ -870,7 +870,7 @@ public abstract class Player : Character
     {
         if (normalState is ENormalState.Skill or ENormalState.Potion || IsDamaged() || downJumping)
         {
-            Debug.Log("공격을 할 수 없는 상태임");
+            GameLog.Info("공격을 할 수 없는 상태임");
             return false;
         }
 
@@ -963,7 +963,7 @@ public abstract class Player : Character
         // 가드절
         if (normalState is ENormalState.Grabbed or ENormalState.Frozen)
         {
-            Debug.Log($"상위 판정이 존재함: {normalState}");
+            GameLog.Info($"상위 판정이 존재함: {normalState}");
             return;
         }
         if(basicStat.hp > 0)
@@ -1026,13 +1026,13 @@ public abstract class Player : Character
         if (targetSkill.IsOnCooldown)
         {
             var coolTimeList = targetSkill.GetRemainingCooldown();
-            Debug.Log($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
+            GameLog.Info($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
             return false;
         }
 
         if (isChanging)
         {
-            Debug.Log($"이미 교체가 진행중임");
+            GameLog.Info($"이미 교체가 진행중임");
             return false;
         }
 
@@ -1062,14 +1062,14 @@ public abstract class Player : Character
         if (targetSkill.IsOnCooldown)
         {
             var coolTimeList = targetSkill.GetRemainingCooldown();
-            Debug.Log($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
+            GameLog.Info($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
             return false;
         }
 
         // 일반 스킬
         if (normalState is ENormalState.Dash or ENormalState.Skill or ENormalState.Potion || landingState == ELandingState.Air || IsDamaged())
         {
-            Debug.Log("물약을 사용 할 수 있는 상태가 아님");
+            GameLog.Info("물약을 사용 할 수 있는 상태가 아님");
             return false;
         }
         return true;
@@ -1081,7 +1081,7 @@ public abstract class Player : Character
         var targetSkill = GetSkill(id);
         if (targetSkill == null)
         {
-            Debug.Log($"해당 키에 등록된 스킬이 없음");
+            GameLog.Info($"해당 키에 등록된 스킬이 없음");
             return false;
         }
         
@@ -1089,9 +1089,9 @@ public abstract class Player : Character
         {
             var coolTimeList = targetSkill.GetRemainingCooldown();
             if(coolTimeList.Count > 1)
-                Debug.Log($"{targetSkill.id} 기본 쿨타임 {coolTimeList[0]:F1}초 남음, 스택 쿨타임 {coolTimeList[1]:F1}초 남음, 남은 스택 개수 {coolTimeList[2]:F1}개");
+                GameLog.Info($"{targetSkill.id} 기본 쿨타임 {coolTimeList[0]:F1}초 남음, 스택 쿨타임 {coolTimeList[1]:F1}초 남음, 남은 스택 개수 {coolTimeList[2]:F1}개");
             else
-                Debug.Log($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
+                GameLog.Info($"{targetSkill.id} 쿨타임 중: {coolTimeList[0]:F1}초 남음");
             
             return false;
         }
@@ -1101,19 +1101,19 @@ public abstract class Player : Character
         // 대시
         if (type == ConstValues.Dash && normalState == ENormalState.Potion && IsCc())
         {
-            Debug.Log("대시를 사용 할 수 있는 상태가 아님");
+            GameLog.Info("대시를 사용 할 수 있는 상태가 아님");
             return false;
         }
         // 일반 스킬
         if (type == ConstValues.Skill && (normalState is ENormalState.Skill or ENormalState.Potion || IsDamaged()))
         {
-            Debug.Log("스킬을 사용 할 수 있는 상태가 아님");
+            GameLog.Info("스킬을 사용 할 수 있는 상태가 아님");
             return false;
         }
 
         if(!GetSkillGlobalCoolTime())
         {
-            Debug.Log("스킬 글로벌 쿨타임이 지나지 않음");
+            GameLog.Info("스킬 글로벌 쿨타임이 지나지 않음");
             return false;
         }
         
@@ -1126,7 +1126,7 @@ public abstract class Player : Character
             return;
         
         var targetSkill = GetSkill(id);
-        Debug.Log($"{targetSkill.id} 사용!"); 
+        GameLog.Info($"{targetSkill.id} 사용!"); 
         targetSkill.SetCoolTime();
     }
 
@@ -1190,7 +1190,7 @@ public abstract class Player : Character
             timer += Time.fixedDeltaTime;
             if (await FixedYieldDelay(jumpCancellation).SuppressCancellationThrow())
             {
-                Debug.Log("점프 캔슬");
+                GameLog.Info("점프 캔슬");
                 return;
             }
         }
@@ -1236,7 +1236,7 @@ public abstract class Player : Character
     {
         if(!GetGlobalCoolTime())
         {
-            Debug.Log("글로벌 쿨타임이 지나지 않음");
+            GameLog.Info("글로벌 쿨타임이 지나지 않음");
             return;
         }
 
@@ -1365,7 +1365,7 @@ public abstract class Player : Character
         if(landingState == ELandingState.Ground)
             jumpAttackCount = 0;
         
-        Debug.Log("도약");
+        GameLog.Info("도약");
         LandingStateSetting(ELandingState.Air);
         float currentHeight = transform.position.y;
         
@@ -1743,7 +1743,7 @@ public abstract class Player : Character
         
         if(!GetGlobalCoolTime())
         {
-            Debug.Log("글로벌 쿨타임이 지나지 않음");
+            GameLog.Info("글로벌 쿨타임이 지나지 않음");
             return;
         }
         
@@ -1766,7 +1766,7 @@ public abstract class Player : Character
         SpawnObject(ConstValues.HealingEffect, centerPos.position);
         if (await AttackDelay(delay1).SuppressCancellationThrow())
         {
-            Debug.Log("물약먹기 캔슬");
+            GameLog.Info("물약먹기 캔슬");
             return;
         }
 
@@ -1785,7 +1785,7 @@ public abstract class Player : Character
         
         if (await AttackDelay(delay2).SuppressCancellationThrow())
         {
-            Debug.Log("물약먹기 후딜 캔슬");
+            GameLog.Info("물약먹기 후딜 캔슬");
             return;
         }
         
@@ -1868,7 +1868,7 @@ public abstract class Player : Character
     {
         if (!hasLastMarker)
         {
-            Debug.Log("[Player] 밟은 마커가 없습니다.");
+            GameLog.Info("[Player] 밟은 마커가 없습니다.");
             return transform.position;
         }
 

@@ -63,7 +63,7 @@ public static class SpriteAtlasGeneratorTool
 
                 if (File.Exists(atlasFsPath))
                 {
-                    Debug.Log($"[SpriteAtlasGenerator] 이미 존재: {atlasAssetPath}");
+                    GameLog.Info($"[SpriteAtlasGenerator] 이미 존재: {atlasAssetPath}");
                     skipped++;
                     continue;
                 }
@@ -81,7 +81,7 @@ public static class SpriteAtlasGeneratorTool
                 File.WriteAllText(atlasFsPath, BuildAtlasYaml(folderGuid));
                 File.WriteAllText(atlasMetaFsPath, BuildAtlasMetaYaml(atlasGuid));
 
-                Debug.Log($"[SpriteAtlasGenerator] 생성: {atlasAssetPath}");
+                GameLog.Info($"[SpriteAtlasGenerator] 생성: {atlasAssetPath}");
                 created++;
             }
         }
