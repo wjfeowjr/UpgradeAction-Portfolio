@@ -124,7 +124,7 @@ public class Arena : MonoBehaviour
         GameManager.Instance.ControlStart = false;
         GameManager.Instance.CurPlayer.Immortal = true;
 
-        Time.timeScale = 0.2f;
+        GameManager.Instance.Flow.BaseTimeScale = 0.2f;
         
         var finishDelay = 0.5f;
         var endDelay = 2.0f;
@@ -134,7 +134,7 @@ public class Arena : MonoBehaviour
         if (await NormalDelay(finishDelay, tokenSource).SuppressCancellationThrow())
             return;
 
-        Time.timeScale = 1.0f;
+        GameManager.Instance.Flow.BaseTimeScale = 1.0f;
         GameManager.Instance.CurPlayer.ForceProduct();
         if (await NormalDelay(endDelay, tokenSource).SuppressCancellationThrow())
             return;

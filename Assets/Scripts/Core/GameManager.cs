@@ -110,6 +110,9 @@ public partial class GameManager : Singleton<GameManager>
     private ObjectPoolService pool;
     public ObjectPoolService Pool => pool;
 
+    private GameFlowService flow;
+    public GameFlowService Flow => flow;
+
     // 카메라
     private FollowCamera mainCamera;
     [SerializeField] private Transform miniMapCamera;
@@ -148,6 +151,27 @@ public partial class GameManager : Singleton<GameManager>
                 CurPlayer.StopVelocity_X();
             }
         }
+    }
+
+    /// <summary>
+    /// 팝업이 입력 잠금을 '요청'한다.
+    /// 팝업 위에 팝업이 겹쳐도 마지막 하나가 닫힐 때까지 잠금이 유지된다.
+    ///
+    /// 컷신처럼 순차적으로 일어나는 연출은 ControlStart 를 직접 쓴다.
+    /// 겹칠 일이 없어 요청 방식이 필요 없기 때문이다.
+    /// </summary>
+    public void LockControl(object owner)
+    {
+        flow.LockInput(owner);
+        ControlStart = false;
+    }
+
+    /// <summary>내 요청만 푼다. 다른 팝업이 남아 있으면 잠금이 유지된다.</summary>
+    public void UnlockControl(object owner)
+    {
+        flow.UnlockInput(owner);
+        if (!flow.IsInputLocked)
+            ControlStart = true;
     }
 
     public bool RoomMoving
@@ -365,6 +389,7 @@ public partial class GameManager : Singleton<GameManager>
 
         // prefabList 는 PrefabCacher 가 에디터에서 채워둔 상태여야 한다
         pool = new ObjectPoolService(prefabList);
+        flow = new GameFlowService();
     }
 
 

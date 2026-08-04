@@ -302,7 +302,7 @@ public class Player_Berserker : Player
             // 시간 제어 스킬
             if (!finishSuccess)
             {
-                Time.timeScale = 1.0f;
+                GameManager.Instance.Flow.BaseTimeScale = 1.0f;
                 GameManager.Instance.TimeProduct = false;
             }
         }
@@ -585,7 +585,7 @@ public class Player_Berserker : Player
             
             immortal = true;
             GameManager.Instance.TimeProduct = true;
-            Time.timeScale = 0.05f;
+            GameManager.Instance.Flow.BaseTimeScale = 0.05f;
             var timeDelay = 0.06f;
 
             GameLog.Info($"패링까지 걸린 시간: {addTime}");
@@ -600,7 +600,7 @@ public class Player_Berserker : Player
                 if (await IgnoreTimeDelay(delay1).SuppressCancellationThrow())
                     return false;
                 
-                Time.timeScale = 1.0f;
+                GameManager.Instance.Flow.BaseTimeScale = 1.0f;
                 GameManager.Instance.TimeProduct = false;
                 
                 // 돌진반격
@@ -631,7 +631,7 @@ public class Player_Berserker : Player
                 if (await IgnoreTimeDelay(delay1).SuppressCancellationThrow())
                     return false;
                 
-                Time.timeScale = 1.0f;
+                GameManager.Instance.Flow.BaseTimeScale = 1.0f;
                 GameManager.Instance.TimeProduct = false;
             
                 // 반격

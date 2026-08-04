@@ -34,16 +34,17 @@ public class UIBase : MonoBehaviour
     }
     public async UniTask ExpansionOpen(bool timeStop, bool controlStop)
     {
+        // 이 팝업이 정지를 '요청'한다. 위에 다른 팝업이 겹쳐도 서로 어긋나지 않는다.
         if (timeStop)
-            Time.timeScale = 0;
-        
+            GameManager.Instance.Flow.StopTime(this);
+
         PlaySound(ConstValues.Popup, true);
         uiObject.transform.localScale = Vector3.zero;
         var endVector = Vector3.one;
         var time = 0.2f;
         uiObject.transform.DOScale(endVector, time).SetUpdate(true);
-        if(controlStop)
-            GameManager.Instance.ControlStart = false;
+        if (controlStop)
+            GameManager.Instance.LockControl(this);
         
         await UniTask.Delay(TimeSpan.FromSeconds(time), ignoreTimeScale: true);
         openComplete = true;
@@ -55,26 +56,27 @@ public class UIBase : MonoBehaviour
         var time = 0.2f;
         uiObject.transform.DOScale(endVector, time).SetUpdate(true);
         await UniTask.Delay(TimeSpan.FromSeconds(time), ignoreTimeScale: true);
+        // 내 요청만 푼다. 아래에 다른 팝업이 남아 있으면 계속 멈춰 있다.
         if (timeReset)
-            Time.timeScale = 1;
+            GameManager.Instance.Flow.ResumeTime(this);
         gameObject.SetActive(false);
         openComplete = false;
         
-        if(controlStart)
-            GameManager.Instance.ControlStart = true;
+        if (controlStart)
+            GameManager.Instance.UnlockControl(this);
     }
     public virtual async UniTask FadeOpen(bool timeStop, bool controlStop, float time, bool fadeSound = true)
     {
         if (timeStop)
-            Time.timeScale = 0;
+            GameManager.Instance.Flow.StopTime(this);
 
         if(fadeSound)
             PlaySound(ConstValues.Upgrade, true);
 
         canvasGroup.alpha = 0;
         canvasGroup.DOFade(1, time).SetUpdate(true);
-        if(controlStop)
-            GameManager.Instance.ControlStart = false;
+        if (controlStop)
+            GameManager.Instance.LockControl(this);
         
         await UniTask.Delay(TimeSpan.FromSeconds(time), ignoreTimeScale: true);
         openComplete = true;
@@ -87,13 +89,13 @@ public class UIBase : MonoBehaviour
         canvasGroup.DOFade(0, time).SetUpdate(true);
         await UniTask.Delay(TimeSpan.FromSeconds(time), ignoreTimeScale: true);
         if (timeReset)
-            Time.timeScale = 1;
+            GameManager.Instance.Flow.ResumeTime(this);
 
         gameObject.SetActive(false);
         openComplete = false;
 
-        if(controlStart)
-            GameManager.Instance.ControlStart = true;
+        if (controlStart)
+            GameManager.Instance.UnlockControl(this);
     }
 
     private void PlaySound(string soundId, bool ignoreTime)

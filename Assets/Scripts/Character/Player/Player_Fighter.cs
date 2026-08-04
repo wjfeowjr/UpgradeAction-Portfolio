@@ -301,7 +301,7 @@ public class Player_Fighter : Player
             // 시간 제어 스킬
             if (!finishSuccess)
             {
-                Time.timeScale = 1.0f;
+                GameManager.Instance.Flow.BaseTimeScale = 1.0f;
                 GameManager.Instance.TimeProduct = false;
             }
         }
@@ -524,13 +524,13 @@ public class Player_Fighter : Player
             
             immortal = true;
             GameManager.Instance.TimeProduct = true;
-            Time.timeScale = 0.05f;
+            GameManager.Instance.Flow.BaseTimeScale = 0.05f;
             var timeDelay = 0.06f;
             
             if (await AttackDelayNonAttackSpeed(timeDelay).SuppressCancellationThrow())
                 return false;
             
-            Time.timeScale = 1.0f;
+            GameManager.Instance.Flow.BaseTimeScale = 1.0f;
         }
 
         StateSetting(ENormalState.Skill, ConstValues.ComboAttack, skillId);

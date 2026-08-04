@@ -92,7 +92,8 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
     public async void BossMessageProduct(Action soundAction)
     {
         GameManager.Instance.BossProduct = true;
-        Time.timeScale = 0;
+        // 보스 연출 중 팝업이 겹쳐도 서로 어긋나지 않도록 요청 방식으로 멈춘다
+        GameManager.Instance.Flow.StopTime(this);
         soundAction?.Invoke();
         bossMessageCancellation = new CancellationTokenSource();
 
@@ -116,7 +117,7 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
             return;
         
         
-        Time.timeScale = 1;
+        GameManager.Instance.Flow.ResumeTime(this);
         gameObject.SetActive(false);
         GameManager.Instance.BossProduct = false;
     }

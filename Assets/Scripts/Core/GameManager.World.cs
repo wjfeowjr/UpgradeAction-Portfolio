@@ -20,6 +20,9 @@ public partial class GameManager
 
     public void GoScene(string sceneName)
     {
+        // 씬을 넘어가면 정지/잠금을 요청한 팝업들이 사라진다.
+        // 요청이 남아 있으면 새 씬이 멈춘 채로 시작하므로 여기서 비운다.
+        flow.ClearAll();
         SceneManager.LoadScene(sceneName);
     }
 

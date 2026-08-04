@@ -1328,7 +1328,7 @@ public partial class Room : MonoBehaviour
     }
     private void SetTimeScale(float value)
     {
-        Time.timeScale = value;
+        GameManager.Instance.Flow.BaseTimeScale = value;
     }
 
     // 대화 연출
