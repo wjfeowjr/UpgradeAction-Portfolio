@@ -317,16 +317,54 @@ public enum ELandingState  // 접지 여부
 public enum EBodyType
 {
     Normal,       // 모든 타격에 경직
-    SuperArmor,   // 경직 무시, 넉백은 적용
-    HeavyArmor,   // 일정 강도 이상에만 반응
-    StrongArmor,
-    HyperArmor,   // 완전 무경직
-    UnChange,     // 외부 요인으로 상태 변경 불가
+    SuperArmor,   // 경직 무시, 상태이상으로 파괴됨
+    HeavyArmor,   // 경직 무시, 상태이상은 걸리나, 공중에 뜨지 않음
+    StrongArmor,  // 보스 전용, 무력화 게이지를 다 깎으면 그로기 시간동안 Normal판정으로 변함
+    HyperArmor,   // 보스 전용, 무력화 게이지를 다 깎으면 그로기, 대신 공중에 뜨지 않음
+    UnChange,     // 보스 전용, 모든 경직 및 에어본 무시
     Counter,      // 피격 시 반격으로 전환
 }
 ```
 
-방어 타입은 **스킬 실행 중 동적으로 변경**됩니다.
+**"경직되는가"와 "공중에 뜨는가"는 별개의 축입니다.**
+`HeavyArmor` 와 `HyperArmor` 는 무너지더라도 에어본만은 막는데,
+보스를 띄워 공중 콤보로 끝내는 패턴이 생기면 무력화 시스템이 무의미해지기 때문입니다.
+
+### 무력화 게이지
+
+`StrongArmor` 와 `HyperArmor` 에만 무력화 게이지가 붙습니다 (보스 체력바 아래).
+타격이 누적돼 게이지가 소진되면 그로기 상태가 됩니다.
+
+```csharp
+// Attack.cs — 스태거 누적 후 무력화 판정
+if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 &&
+    hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
+{
+    hitTarget.Stagger();
+    return true;
+}
+```
+
+등급을 깎는 경로는 두 갈래입니다.
+
+| 대상 | 수단 | 결과 |
+|---|---|---|
+| `SuperArmor` (잡몹) | `ArmorBreak` 상태이상 | `Normal` 로 강등 |
+| `StrongArmor` (보스) | 무력화 게이지 소진 | 그로기 동안 `Normal` 로 강등 |
+| `HyperArmor` (보스) | 무력화 게이지 소진 | 그로기. 공중에는 뜨지 않음 |
+| `UnChange` (보스) | 없음 | 연출 · 특수 패턴 구간용 |
+
+강등은 `basicStat` 에만 적용하고 `originStat` 은 건드리지 않습니다.
+**원본 등급이 남아 있어야 그로기가 끝난 뒤 되돌릴 수 있기 때문입니다.**
+
+```csharp
+case EBuffType.Stagger:
+    if (originStat.bodyType == EBodyType.StrongArmor)   // 원본을 보고
+        basicStat.bodyType = EBodyType.Normal;          // 현재만 바꾼다
+    break;
+```
+
+방어 타입은 **스킬 실행 중 동적으로도 변경**됩니다.
 예: 버서커 `SwordCounter` 는 시전과 동시에 `Counter` 로 전환됩니다.
 
 ```csharp

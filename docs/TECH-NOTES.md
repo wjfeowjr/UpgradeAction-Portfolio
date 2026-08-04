@@ -57,12 +57,14 @@
 초기에는 `bool isSuperArmor` 하나로 처리했습니다.
 하지만 컨텐츠가 늘면서 요구사항이 쪼개지기 시작했습니다.
 
-- 보스는 잡몹 공격엔 안 밀려야 하는데, 플레이어 궁극기엔 밀려야 한다
-- 돌진 중인 몬스터는 경직은 안 되지만 넉백은 되어야 한다
-- 어떤 스킬은 시전 중 **아무것에도** 반응하지 않아야 한다
-- 상태이상으로 방어 타입이 바뀌면 안 되는 구간이 있다
+- 잡몹의 슈퍼아머는 **상태이상으로 깨져야** 한다 — 안 그러면 플레이어가 대응할 수단이 없다
+- 보스는 평타에 안 밀리되, **누적 타격으로는 무너져야** 한다
+- 무너진 보스라도 **공중에 띄워 콤보로 끝내지는 못하게** 해야 하는 경우가 있다
+- 연출·특수 패턴 구간은 **아무것에도** 반응하지 않아야 한다
 
 `bool` 하나로는 이 네 가지가 표현되지 않았습니다.
+특히 세 번째는 "경직되는가"와 "공중에 뜨는가"가 **별개의 축**이라는 뜻이었는데,
+`bool` 로는 애초에 표현할 수 없는 구분이었습니다.
 
 ### 고민
 
@@ -83,16 +85,63 @@
 public enum EBodyType
 {
     Normal,       // 모든 타격에 경직
-    SuperArmor,   // 경직 무시, 넉백은 적용
-    HeavyArmor,   // 일정 강도 이상에만 반응
-    StrongArmor,
-    HyperArmor,   // 완전 무경직
-    UnChange,     // 외부 요인으로 방어 타입 변경 불가
+    SuperArmor,   // 경직 무시, 상태이상으로 파괴됨
+    HeavyArmor,   // 경직 무시, 상태이상은 걸리나, 공중에 뜨지 않음
+    StrongArmor,  // 보스 전용, 무력화 게이지를 다 깎으면 그로기 시간동안 Normal판정으로 변함
+    HyperArmor,   // 보스 전용, 무력화 게이지를 다 깎으면 그로기, 대신 공중에 뜨지 않음
+    UnChange,     // 보스 전용, 모든 경직 및 에어본 무시
     Counter,      // 피격 시 반격으로 전환
 }
 ```
 
 시트에는 `"skillArmor": "SuperArmor"` 한 칸만 채우면 됩니다.
+
+### 등급을 깎는 두 가지 경로
+
+등급이 고정값이었다면 "보스는 영원히 안 밀린다"가 되어 재미가 없습니다.
+그래서 **등급을 깎는 수단**을 두 갈래로 나눴습니다.
+
+| 대상 | 깎는 수단 | 결과 |
+|---|---|---|
+| `SuperArmor` (잡몹) | `ArmorBreak` 상태이상 | `Normal` 로 강등 |
+| `StrongArmor` (보스) | 무력화 게이지 소진 | 그로기 동안 `Normal` 로 강등 |
+| `HyperArmor` (보스) | 무력화 게이지 소진 | 그로기. 단, **공중에는 뜨지 않음** |
+| `UnChange` (보스) | 없음 | 연출·특수 패턴 구간용 |
+
+```csharp
+// Character.cs — 상태이상이 등급을 깎는다
+case EBuffType.Stagger:
+    // 스트롱 아머만 깨짐
+    if (originStat.bodyType == EBodyType.StrongArmor)
+        basicStat.bodyType = EBodyType.Normal;
+    break;
+
+case EBuffType.ArmorBreak:
+    if (originStat.bodyType == EBodyType.SuperArmor)
+        basicStat.bodyType = EBodyType.Normal;
+    break;
+```
+
+`originStat` 과 `basicStat` 을 나눈 이유가 여기서 드러납니다.
+**원본 등급은 남겨두고 현재 등급만 바꾸므로**, 그로기가 끝나면 원래대로 되돌릴 수 있습니다.
+등급을 한 곳에만 저장했다면 "원래 무엇이었는지"를 따로 기억해야 했을 겁니다.
+
+무력화 게이지는 `StrongArmor` 와 `HyperArmor` 에만 붙습니다.
+보스 체력바 아래 게이지가 그것이고, 다 깎이면 터지는 연출이 나갑니다.
+
+```csharp
+// Attack.cs — 스태거 누적 후 무력화 판정
+if (!hitTarget.ImmuneStagger && hitTarget.BasicStat.stagger <= 0 &&
+    hitTarget.OriginStat.bodyType is EBodyType.StrongArmor or EBodyType.HyperArmor)
+{
+    hitTarget.Stagger();
+    return true;
+}
+```
+
+**`HyperArmor` 가 그로기 중에도 공중에 뜨지 않는 것**은 의도적입니다.
+보스를 띄워놓고 공중 콤보로 끝내는 패턴이 생기면 무력화 시스템 자체가 무의미해집니다.
+"보상은 주되 게임을 건너뛰게 하지는 않는다"를 등급 하나로 표현했습니다.
 
 `UnChange` 는 특히 나중에 추가된 등급인데,
 "방어 타입을 바꾸는 효과"와 "바뀌면 안 되는 구간"이 충돌하면서 필요해졌습니다.
