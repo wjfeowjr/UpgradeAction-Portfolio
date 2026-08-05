@@ -860,7 +860,7 @@ public partial class GameManager
         if (uiInterfaceObj == null)
             return;
         
-        uiInterface.BindSkill(new UISkillModel
+        uiInterface.BindSkill(() => new UISkillModel
         {
             changeSkill = changeSkill,
             potionSkill = potionSkill,

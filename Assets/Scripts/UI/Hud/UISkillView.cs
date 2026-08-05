@@ -21,20 +21,29 @@ public class UISkillModel
     public List<SettingSkill> settingSkillList = new List<SettingSkill>();
 }
 
+// 스킬 슬롯 · 교체 · 물약 View 를 하나의 모델로 조율한다.
+// View 하나는 자기 슬롯만 알기 때문에, 스킬이 바뀌어 전체를 다시 그려야 할 때
+// 그 판단을 내릴 수 있는 것이 없다. 이 Presenter 가 그 역할을 한다.
 public class UISkillPresenter
 {
     private readonly IUISkillView _changeView;
     private readonly IUISkillView _potionView;
     private readonly List<IUISkillView> _views;
+
+    // 모델을 "어떻게 만드는지"를 주입받는다.
+    // 이전에는 Presenter 안에서 GameManager.Instance 를 직접 읽어 새 모델을 만들었다.
+    private readonly Func<UISkillModel> _modelSource;
     private UISkillModel _model;
 
-    public UISkillPresenter(IUISkillView changeView, IUISkillView potionView, List<IUISkillView> views, UISkillModel model)
+    public UISkillPresenter(IUISkillView changeView, IUISkillView potionView,
+                            List<IUISkillView> views, Func<UISkillModel> modelSource)
     {
         _changeView = changeView;
         _potionView = potionView;
         _views = views;
-        _model = model;
-        
+        _modelSource = modelSource;
+        _model = modelSource();
+
         _changeView.OnSkillDropped += OnSkillDropped;
         for (int i = 0; i < _views.Count; i++)
             _views[i].OnSkillDropped += OnSkillDropped;
@@ -59,15 +68,7 @@ public class UISkillPresenter
         SetSkillInfo();
     }
     
-    private void RefreshModel()
-    {
-        _model = new UISkillModel
-        {
-            changeSkill = GameManager.Instance.ChangeSkill,
-            potionSkill = GameManager.Instance.PotionSkill,
-            settingSkillList = GameManager.Instance.GetSettingSkillList()
-        };
-    }
+    private void RefreshModel() => _model = _modelSource();
 
     public void SetSkillInfo()
     {

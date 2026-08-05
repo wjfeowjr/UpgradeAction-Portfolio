@@ -164,15 +164,14 @@ public partial class GameManager
     private void RefreshFace()
     {
         uiInterface.CharacterFaceView
-            .Bind(new UICharacterFaceModel { playerList = PlayerList })
-            .SetChangeFace();
+            .SetChangeFace(new UICharacterFaceModel { playerList = PlayerList });
     }
 
     public void RefreshPlayerHp()
     {
-        var hpPresenter = uiInterface.HpView.Bind(new UIHpModel { player = CurPlayer });
-        hpPresenter.SetHp();
-        hpPresenter.SetHpText();
+        uiInterface.HpView.SetModel(new UIHpModel { player = CurPlayer });
+        uiInterface.HpView.SetHp();
+        uiInterface.HpView.SetHpText();
     }
 
     public void RefillPlayerHp()
@@ -186,9 +185,9 @@ public partial class GameManager
     // 캐릭 변경할때, 때릴때
     public void RefreshPlayerResource()
     {
-        var hpPresenter = uiInterface.HpView.Bind(new UIHpModel { player = CurPlayer });
-        hpPresenter.SetResource();
-        hpPresenter.SetResourceText();
+        uiInterface.HpView.SetModel(new UIHpModel { player = CurPlayer });
+        uiInterface.HpView.SetResource();
+        uiInterface.HpView.SetResourceText();
     }
 
     public void RefreshPlayerIgnorePlatform()

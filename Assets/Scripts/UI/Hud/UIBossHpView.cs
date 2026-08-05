@@ -1,86 +1,28 @@
 using TMPro;
 using UnityEngine;
 
-public interface IUIBossHpView
-{
-    void HideHp();
-    
-    void SetName(Character character);
-    
-    void SetHp(Character character);
-    void SetHpText(Character character);
-    void HpReduce(Character character, float speed);
-    
-    void SetStagger(Character character);
-    void SetStaggerText(Character character);
-    void StaggerReduce(Character character, float speed);
-    void StaggerExplosion(Character character, Transform targetTransform);
-    Transform StaggerGaugeTransform();
-}
-
 public class UIBossHpModel
 {
     public Character character;
 }
 
-public class UIBossHpPresenter
+public class UIBossHpView : MonoBehaviour
 {
-    private readonly IUIBossHpView _hpview;
     private UIBossHpModel _model;
-
-    public UIBossHpPresenter(IUIBossHpView hpView)
-    {
-        _hpview = hpView;
-    }
 
     public void SetModel(UIBossHpModel model)
     {
         _model = model;
-        _hpview.SetName(_model.character);
-    }
-    
-    public void HideHp()
-    {
-        _hpview.HideHp();
-    }
-    public void SetHp()
-    {
-        _hpview.SetHp(_model.character);
-    }
-    public void SetHpText()
-    {
-        _hpview.SetHpText(_model.character);
-    }
-    public void HpReduce()
-    {
-        _hpview.HpReduce(_model.character, 1.5f);
-    }
-    
-    public void SetStagger()
-    {
-        _hpview.SetStagger(_model.character);
-    }
-    public void SetStaggerText()
-    {
-        _hpview.SetStaggerText(_model.character);
-    }
-    public void StaggerReduce()
-    {
-        _hpview.StaggerReduce(_model.character, 1.5f);
-    }
-    public Transform StaggerGaugeTransform()
-    {
-        return _hpview.StaggerGaugeTransform();
+        SetName(_model.character);
     }
 
-    public void StaggerExplosion(Character character, Transform targetTransform)
-    {
-        _hpview.StaggerExplosion(character, targetTransform);
-    }
-}
+    public void SetHp()         => SetHp(_model.character);
+    public void SetHpText()     => SetHpText(_model.character);
+    public void HpReduce()      => HpReduce(_model.character, 1.5f);
+    public void SetStagger()    => SetStagger(_model.character);
+    public void SetStaggerText()=> SetStaggerText(_model.character);
+    public void StaggerReduce() => StaggerReduce(_model.character, 1.5f);
 
-public class UIBossHpView : MonoBehaviour, IUIBossHpView
-{
     [SerializeField] private TMP_Text nameText;
     [SerializeField] private Gauge hpGauge;
     [SerializeField] private Gauge staggerGauge;

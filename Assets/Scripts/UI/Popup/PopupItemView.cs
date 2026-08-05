@@ -3,13 +3,6 @@ using System.Collections.Generic;
 using TMPro;
 using UnityEngine;
 
-public interface IPopupItemView
-{
-    void SetModel(List<HaveItemInfo> itemList);
-    void SetItemInfo();
-    void SetAction(PopupCommonActions common, Action close);
-}
-
 public class PopupItemModel
 {
     public List<HaveItemInfo> itemList = new List<HaveItemInfo>();
@@ -17,33 +10,16 @@ public class PopupItemModel
     public Action closeAction;
 }
 
-public class PopupItemPresenter
+public class PopupItemView : MonoBehaviour
 {
-    private readonly IPopupItemView _view;
-    private readonly PopupItemModel _model;
+    private PopupItemModel _model;
 
-    public PopupItemPresenter(IPopupItemView view, PopupItemModel model)
-    {
-        _view = view;
-        _model = model;
-    }
+    public void SetData(PopupItemModel model) => _model = model;
 
     public void UpdateItemInfo()
     {
-        _view.SetModel(_model.itemList);
-        _view.SetAction(_model.commonActions, _model.closeAction);
-    }
-}
-
-public class PopupItemView : MonoBehaviour, IPopupItemView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupItemPresenter presenter;
-
-    public PopupItemPresenter Bind(PopupItemModel model)
-    {
-        presenter = new PopupItemPresenter(this, model);
-        return presenter;
+        SetModel(_model.itemList);
+        SetAction(_model.commonActions, _model.closeAction);
     }
 
     // ── 외부 주입 ──────────────────────────────────────
@@ -66,8 +42,8 @@ public class PopupItemView : MonoBehaviour, IPopupItemView
     [SerializeField] private int _cursor;
     private HaveItemInfo _curItemInfo;
 
-    // ── IPopupItemView 구현 ───────────────────────────
-    public void SetModel(List<HaveItemInfo> itemList)
+    // ── 표시 ───────────────────────────────────────────
+    private void SetModel(List<HaveItemInfo> itemList)
     {
         _itemIds   = itemList ?? new List<HaveItemInfo>();
         _itemCount = _itemIds.Count;
@@ -96,7 +72,7 @@ public class PopupItemView : MonoBehaviour, IPopupItemView
         RefreshCursors();
     }
 
-    public void SetItemInfo()
+    private void SetItemInfo()
     {
         if (_itemCount == 0 || _curItemInfo == null)
         {
@@ -115,7 +91,7 @@ public class PopupItemView : MonoBehaviour, IPopupItemView
             selectedItem.SetData(_curItemInfo);
     }
 
-    public void SetAction(PopupCommonActions common, Action close)
+    private void SetAction(PopupCommonActions common, Action close)
     {
         _actions     = common;
         _closeAction = close;

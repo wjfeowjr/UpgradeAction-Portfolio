@@ -8,50 +8,15 @@ public class PopupAudioModel
     public PopupCommonActions commonActions;
 }
 
-// ── Interface ─────────────────────────────────────────────────────────────────
-public interface IPopupAudioView
+public class PopupAudioView : MonoBehaviour
 {
-    void SetAction(PopupAudioPresenter presenter, PopupCommonActions commonActions);
-}
-
-// ── Presenter ─────────────────────────────────────────────────────────────────
-public class PopupAudioPresenter
-{
-    private readonly IPopupAudioView _view;
-    private readonly PopupAudioModel _model;
-
-    public PopupAudioPresenter(IPopupAudioView view, PopupAudioModel model)
-    {
-        _view  = view;
-        _model = model;
-    }
-
-    public void SetAction() => _view.SetAction(this, _model.commonActions);
-    public void HandleEsc()
-    {
-        _model.closeAction?.Invoke();
-        _model.commonActions.PlayCancelSound?.Invoke();
-    }
-}
-
-public class PopupAudioView : MonoBehaviour, IPopupAudioView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupAudioPresenter presenter;
-
-    public PopupAudioPresenter Bind(PopupAudioModel model)
-    {
-        presenter = new PopupAudioPresenter(this, model);
-        return presenter;
-    }
-
     private const float VolumeStep = 0.1f;
     private const float VolumeMin  = 0.0f;
     private const float VolumeMax  = 1.0f;
 
     [SerializeField] private ExpansionUiObject[] volumeFrames;
 
-    private PopupAudioPresenter _presenter;
+    private PopupAudioModel _model;
     private PopupCommonActions  _commonActions;
     private int _cursor = 0;
 
@@ -65,7 +30,7 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
 
     private void Update()
     {
-        if (_presenter == null)
+        if (_model == null)
             return;
 
         if (Input.GetKeyDown(GameManager.Instance.upKey))
@@ -79,7 +44,7 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
         if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
             HandleEnter();
         if (Input.GetKeyDown(GameManager.Instance.escKey))
-            _presenter.HandleEsc();
+            HandleEsc();
     }
 
     private void HandleEnter()
@@ -105,7 +70,7 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
                 break;
 
             case 4:
-                _presenter.HandleEsc();
+                HandleEsc();
                 break;
         }
     }
@@ -204,11 +169,16 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
         }
     }
 
-    // IPopupAudioView
-    public void SetAction(PopupAudioPresenter presenter, PopupCommonActions commonActions)
+    public void SetAction(PopupAudioModel model)
     {
-        _presenter     = presenter;
-        _commonActions = commonActions;
+        _model         = model;
+        _commonActions = model.commonActions;
+    }
+
+    private void HandleEsc()
+    {
+        _model.closeAction?.Invoke();
+        _commonActions?.PlayCancelSound?.Invoke();
     }
 
     // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
@@ -267,6 +237,6 @@ public class PopupAudioView : MonoBehaviour, IPopupAudioView
     }
 
     // 팝업 열림 연출이 끝난 뒤에만 마우스 입력 허용
-    private bool CanMouseInput() => _presenter != null && _ownerPopup && _ownerPopup.OpenComplete;
+    private bool CanMouseInput() => _model != null && _ownerPopup && _ownerPopup.OpenComplete;
     */
 }

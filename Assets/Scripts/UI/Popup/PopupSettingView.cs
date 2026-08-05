@@ -12,49 +12,14 @@ public class PopupSettingModel
     public PopupCommonActions commonActions;
 }
 
-// ── Interface ─────────────────────────────────────────────────────────────────
-public interface IPopupSettingView
-{
-    void SetAction(PopupSettingPresenter presenter, PopupCommonActions commonActions);
-}
-
-// ── Presenter ─────────────────────────────────────────────────────────────────
-public class PopupSettingPresenter
-{
-    private readonly IPopupSettingView _view;
-    private readonly PopupSettingModel _model;
-
-    public PopupSettingPresenter(IPopupSettingView view, PopupSettingModel model)
-    {
-        _view  = view;
-        _model = model;
-    }
-
-    public void SetAction()    => _view.SetAction(this, _model.commonActions);
-    public void OpenGame()     => _model.openGameAction?.Invoke();
-    public void OpenAudio()    => _model.openAudioAction?.Invoke();
-    public void OpenVideo()    => _model.openVideoAction?.Invoke();
-    public void OpenKeyboard() => _model.openKeyboardAction?.Invoke();
-    public void Close()        => _model.closeAction?.Invoke();
-}
-
 // ── View ──────────────────────────────────────────────────────────────────────
-public class PopupSettingView : MonoBehaviour, IPopupSettingView
+public class PopupSettingView : MonoBehaviour
 {
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupSettingPresenter presenter;
-
-    public PopupSettingPresenter Bind(PopupSettingModel model)
-    {
-        presenter = new PopupSettingPresenter(this, model);
-        return presenter;
-    }
-
     private const int ButtonCount = 5;
 
     [SerializeField] private ExpansionUiObject[] settingButtons;
 
-    private PopupSettingPresenter _presenter;
+    private PopupSettingModel _model;
     private PopupCommonActions    _commonActions;
     private int _cursor = 0;
     private int _enabledFrame = -1;
@@ -68,7 +33,7 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
 
     private void Update()
     {
-        if (_presenter == null)
+        if (_model == null)
             return;
 
         // 다른 뷰에서 전환된 프레임에는 입력 무시 (같은 Enter가 중복 처리되는 것 방지)
@@ -108,19 +73,19 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
     {
         switch (_cursor)
         {
-            case 0: _presenter.OpenGame();
+            case 0: _model.openGameAction?.Invoke();
                 _commonActions?.PlaySelectSound?.Invoke();
                 break;
-            case 1: _presenter.OpenAudio();
+            case 1: _model.openAudioAction?.Invoke();
                 _commonActions?.PlaySelectSound?.Invoke();
                 break;
-            case 2: _presenter.OpenVideo();
+            case 2: _model.openVideoAction?.Invoke();
                 _commonActions?.PlaySelectSound?.Invoke();
                 break;
-            case 3: _presenter.OpenKeyboard();
+            case 3: _model.openKeyboardAction?.Invoke();
                 _commonActions?.PlaySelectSound?.Invoke();
                 break;
-            case 4: _presenter.Close();
+            case 4: _model.closeAction?.Invoke();
                 break;
         }
     }
@@ -142,11 +107,10 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
         }
     }
 
-    // IPopupSettingView
-    public void SetAction(PopupSettingPresenter presenter, PopupCommonActions commonActions)
+    public void SetAction(PopupSettingModel model)
     {
-        _presenter     = presenter;
-        _commonActions = commonActions;
+        _model         = model;
+        _commonActions = model.commonActions;
         _cursor        = 0;
         RefreshCursors();
     }
@@ -189,6 +153,6 @@ public class PopupSettingView : MonoBehaviour, IPopupSettingView
     }
 
     // 팝업 열림 연출이 끝난 뒤에만 마우스 입력 허용
-    private bool CanMouseInput() => _presenter != null && _ownerPopup && _ownerPopup.OpenComplete;
+    private bool CanMouseInput() => _model != null && _ownerPopup && _ownerPopup.OpenComplete;
     */
 }

@@ -4,13 +4,6 @@ using System.Text;
 using TMPro;
 using UnityEngine;
 
-public interface IPopupRelicView
-{
-    void SetModel(string playerId, List<PlayerInfo> playerInfo);
-    void SetPlayerInfo();
-    void SetAction(PopupCommonActions commonActions, Action closeAction, Action<int> changeCharAction);
-}
-
 public class PopupRelicModel
 {
     public string playerId;
@@ -20,35 +13,18 @@ public class PopupRelicModel
     public Action<int> changeCharAction; // dir: +1(E) / -1(Q)
 }
 
-public class PopupRelicPresenter
+public class PopupRelicView : MonoBehaviour
 {
-    private readonly IPopupRelicView _view;
-    private readonly PopupRelicModel _model;
+    private PopupRelicModel _model;
 
-    public PopupRelicPresenter(IPopupRelicView view, PopupRelicModel model)
-    {
-        _view = view;
-        _model = model;
-    }
+    public void SetData(PopupRelicModel model) => _model = model;
 
     public void UpdatePlayerInfo(string newId)
     {
         _model.playerId = newId;
-        _view.SetModel(newId, _model.playerInfoList);
-        _view.SetAction(_model.commonActions, _model.closeAction, _model.changeCharAction);
-        _view.SetPlayerInfo();
-    }
-}
-
-public class PopupRelicView : MonoBehaviour, IPopupRelicView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupRelicPresenter presenter;
-
-    public PopupRelicPresenter Bind(PopupRelicModel model)
-    {
-        presenter = new PopupRelicPresenter(this, model);
-        return presenter;
+        SetModel(newId, _model.playerInfoList);
+        SetAction(_model.commonActions, _model.closeAction, _model.changeCharAction);
+        SetPlayerInfo();
     }
 
     // ── 외부 주입 ──────────────────────────────────────
@@ -97,21 +73,21 @@ public class PopupRelicView : MonoBehaviour, IPopupRelicView
     // 현재 보유 유물 Id 목록 (그리드에 표시)
     private List<string> _ownedRelicIds = new List<string>();
 
-    // ── IPopupRelicView 구현 ───────────────────────────
-    public void SetModel(string playerId, List<PlayerInfo> playerInfo)
+    // ── 표시 ───────────────────────────────────────────
+    private void SetModel(string playerId, List<PlayerInfo> playerInfo)
     {
         _curPlayerId  = playerId;
         _playerInfoList = playerInfo;
     }
 
-    public void SetAction(PopupCommonActions commonActions, Action closeAction, Action<int> changeCharAction)
+    private void SetAction(PopupCommonActions commonActions, Action closeAction, Action<int> changeCharAction)
     {
         _actions          = commonActions;
         _closeAction      = closeAction;
         _changeCharAction = changeCharAction;
     }
 
-    public void SetPlayerInfo()
+    private void SetPlayerInfo()
     {
         _slotCount = equippedRelicFrames.Length;
 

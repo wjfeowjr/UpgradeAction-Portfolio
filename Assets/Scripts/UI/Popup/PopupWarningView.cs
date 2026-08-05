@@ -5,11 +5,6 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
-public interface IPopupWarningView
-{
-    UniTask SetMessage(string message, float delay);
-}
-
 public class PopupWarningModel
 {
     public string message;
@@ -17,32 +12,14 @@ public class PopupWarningModel
     public float delay;
 }
 
-public class PopupWarningPresenter
+public class PopupWarningView : MonoBehaviour
 {
-    private readonly IPopupWarningView _warningView;
     private PopupWarningModel _model;
 
-    public PopupWarningPresenter(IPopupWarningView minimapView, PopupWarningModel model)
+    public UniTask SetMessage(PopupWarningModel model)
     {
-        _warningView = minimapView;
         _model = model;
-    }
-    
-    public UniTask SetMessage()
-    {
-        return _warningView.SetMessage(_model.message, _model.delay);
-    }
-}
-
-public class PopupWarningView : MonoBehaviour, IPopupWarningView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupWarningPresenter presenter;
-
-    public PopupWarningPresenter Bind(PopupWarningModel model)
-    {
-        presenter = new PopupWarningPresenter(this, model);
-        return presenter;
+        return SetMessage(_model.message, _model.delay);
     }
 
     private CancellationTokenSource warningCancellation;

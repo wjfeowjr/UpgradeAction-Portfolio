@@ -17,17 +17,17 @@ public partial class GameManager
             uiInterface.Setup(eUIType.UI_Interface);
         }
 
-        uiInterface.ComboView.Bind(new UIComboModel { comboCount = 0 }).SetCombo();
+        uiInterface.ComboView.SetCombo();
 
         RefreshFace();
         RefreshPlayerHp();
         RefreshPlayerResource();
 
-        uiInterface.BindBossHp().HideHp();
-        uiInterface.PlaceNameView.Bind(new UIPlaceNameModel()).HideImmediate();
-        uiInterface.ObjectInfoView.Bind(new UIObjectInfoModel()).HideImmediate();
+        uiInterface.BossHpView.HideHp();
+        uiInterface.PlaceNameView.HideImmediate();
+        uiInterface.ObjectInfoView.HideImmediate();
 
-        uiInterface.BindSkill(new UISkillModel
+        uiInterface.BindSkill(() => new UISkillModel
         {
             changeSkill = changeSkill,
             potionSkill = potionSkill,
@@ -55,25 +55,23 @@ public partial class GameManager
             message = message,
             delay = delay,
         };
-        var warningPresenter = popupWarning.WarningView.Bind(warningModel);
-        popupWarning.SetWarningPresenter(warningPresenter);
-        await popupWarning.PopupWarningPresenter.SetMessage();
+        await popupWarning.WarningView.SetMessage(warningModel);
     }
 
     public void GetGold(int getGold, int totalGold)
     {
-        uiInterface.GoodsView.Bind(new UIGoodsModel
+        uiInterface.GoodsView.SetGoldText(new UIGoodsModel
         {
             getGold = getGold,
             totalGold = totalGold,
-        }).PlusGoldText();
+        });
     }
 
     public void RefreshGoods()
     {
         Gold = saveData.gold;
 
-        uiInterface.GoodsView.Bind(new UIGoodsModel { totalGold = Gold }).SetGoldText();
+        uiInterface.GoodsView.SetGoldText(new UIGoodsModel { totalGold = Gold });
     }
 
     public void RefreshPlaceName()
@@ -81,25 +79,25 @@ public partial class GameManager
         if (RoomManager.Instance == null || RoomManager.Instance.CurrentRoom == null)
             return;
 
-        uiInterface.PlaceNameView.Bind(new UIPlaceNameModel
+        uiInterface.PlaceNameView.SetPlaceText(new UIPlaceNameModel
         {
             placeName = RoomManager.Instance.CurrentRoom.Place,
-        }).SetPlaceText();
+        });
     }
 
     public void ProductObjectInfo(string id, string objectName, int count)
     {
-        uiInterface.ObjectInfoView.Bind(new UIObjectInfoModel
+        uiInterface.ObjectInfoView.SetObjectText(new UIObjectInfoModel
         {
             id = id,
             objectName = objectName,
             count = count,
-        }).SetObjectText();
+        });
     }
 
     public void HidePlaceName()
     {
-        uiInterface.PlaceNamePresenter?.HideImmediate();
+        uiInterface.PlaceNameView?.HideImmediate();
     }
 
     public GameObject GetUI(eUIType type)
@@ -218,14 +216,8 @@ public partial class GameManager
                 commonActions = common
             };
             
-            var selectPresenter = popupSelect.SelectView.Bind(selectModel);
-            popupSelect.SetSelectPresenter(selectPresenter);
-            selectPresenter.Expansion(() =>
-            {
-                uiBase.ExpansionOpen(false, false).Forget();
-            });
-            selectPresenter.SetModel();
-            selectPresenter.SetAction();
+            uiBase.ExpansionOpen(false, false).Forget();
+            popupSelect.SelectView.SetData(selectModel);
         }
     }
 }

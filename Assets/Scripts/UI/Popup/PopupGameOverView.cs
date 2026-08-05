@@ -4,12 +4,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IPopupGameOverView
-{
-    void SetModel(string title, string message);
-    void BgActive(bool active);
-}
-
 public class PopupGameOverModel
 {
     public string title;
@@ -17,36 +11,22 @@ public class PopupGameOverModel
     public Action replayAction;
 }
 
-public class PopupGameOverPresenter
+public class PopupGameOverView : MonoBehaviour
 {
-    private IPopupGameOverView _gameOverView;
     private PopupGameOverModel _model;
     private bool _isRestarted;
 
-    public PopupGameOverPresenter(IPopupGameOverView gameOverView,  PopupGameOverModel model)
+    public void SetData(PopupGameOverModel model)
     {
-        _gameOverView = gameOverView;
         _model = model;
-    }
-    
-    public void Open(Action action)
-    {
-        action?.Invoke();
+        _isRestarted = false;
+        SetModel(_model.title, _model.message);
     }
 
-    public void SetModel()
-    {
-        _gameOverView.SetModel(_model.title, _model.message);
-    }
-
-    public void BgActive(bool active)
-    {
-        _gameOverView.BgActive(active);
-    }
-    
+    // 컨테이너(Popup_GameOver)가 열림 완료 후 매 프레임 호출한다
     public void Restart()
     {
-        if (_isRestarted)
+        if (_model == null || _isRestarted)
             return;
 
         if (Input.GetKeyDown(GameManager.Instance.enterKey))
@@ -54,18 +34,6 @@ public class PopupGameOverPresenter
             _isRestarted = true;
             _model.replayAction?.Invoke();
         }
-    }
-}
-
-public class PopupGameOverView : MonoBehaviour, IPopupGameOverView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupGameOverPresenter presenter;
-
-    public PopupGameOverPresenter Bind(PopupGameOverModel model)
-    {
-        presenter = new PopupGameOverPresenter(this, model);
-        return presenter;
     }
 
     [SerializeField] private TMP_Text titleText;

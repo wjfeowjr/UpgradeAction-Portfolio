@@ -5,13 +5,6 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
-public interface IPopupAttributeView
-{
-    void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo);
-    void SetPlayerInfo(); // 정보 갱신용 추가
-    void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action, bool> popupAction, Action closeAction);
-}
-
 public class PopupAttributeModel
 {
     public string playerId;
@@ -22,35 +15,18 @@ public class PopupAttributeModel
     public Action closeAction;
 }
 
-public class PopupAttributePresenter
+public class PopupAttributeView : MonoBehaviour
 {
-    private readonly IPopupAttributeView _view;
-    private readonly PopupAttributeModel _model;
+    private PopupAttributeModel _model;
 
-    public PopupAttributePresenter(IPopupAttributeView view, PopupAttributeModel model)
-    {
-        _view = view;
-        _model = model;
-    }
+    public void SetData(PopupAttributeModel model) => _model = model;
 
     public void UpdatePlayerInfo(string newId)
     {
         _model.playerId = newId;
-        _view.SetModel(newId, _model.skillDataList, _model.playerInfoList);
-        _view.SetAction(_model.commonActions, _model.popupAction, _model.closeAction);
-        _view.SetPlayerInfo();
-    }
-}
-
-public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupAttributePresenter presenter;
-
-    public PopupAttributePresenter Bind(PopupAttributeModel model)
-    {
-        presenter = new PopupAttributePresenter(this, model);
-        return presenter;
+        SetModel(newId, _model.skillDataList, _model.playerInfoList);
+        SetAction(_model.commonActions, _model.popupAction, _model.closeAction);
+        SetPlayerInfo();
     }
 
     private enum eStep
@@ -545,7 +521,7 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
 
     #region Data/Refresh
 
-    public void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo)
+    private void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo)
     {
         curPlayerId = playerId;
         
@@ -565,20 +541,19 @@ public class PopupAttributeView : MonoBehaviour, IPopupAttributeView
             enterText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.enterKey); 
     }
     
-    public void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action, bool> popupAction, Action closeAction)
+    private void SetAction(PopupCommonActions commonActions, Action<string, Sprite, int, Action, Action, bool> popupAction, Action closeAction)
     {
         _actions = commonActions;
         _popupAction = popupAction;
         _closeAction = closeAction;
     }
 
-    public void SetPlayerInfo()
+    private void SetPlayerInfo()
     {
         SetSkillList();
         SetupSkillNavigation();
         RefreshLeftPoint();
         
-
         // 초기 상태: 스킬 선택 단계, 0번 선택
         curStep = eStep.SkillSelect;
         SetSkillIndex(0, true);

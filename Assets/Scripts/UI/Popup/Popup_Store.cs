@@ -1,4 +1,3 @@
-using Unity.VisualScripting;
 using UnityEngine;
 
 public class Popup_Store : UIBase
@@ -6,13 +5,7 @@ public class Popup_Store : UIBase
     public PopupStoreView StoreView => storeView;
 
     [SerializeField] private PopupStoreView storeView;
-    private PopupStorePresenter popupStorePresenter;
 
-    public void SetStorePresenter(PopupStorePresenter presenter)
-    {
-        popupStorePresenter = presenter;
-    }
-    
     private void Update()
     {
         if (!openComplete)
@@ -27,7 +20,7 @@ public class Popup_Store : UIBase
             if (storeView.IsConfirmActive)
                 return;
 
-            popupStorePresenter.CloseStore();
+            storeView.CloseStore();
         }
     }
 }

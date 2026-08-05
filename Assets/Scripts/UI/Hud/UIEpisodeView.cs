@@ -6,57 +6,13 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IUIEpisodeView
-{
-    void SetEpisode(string episodeName);
-    UniTask EpisodeProduct(Action soundAction);
-    event Action EpisodeEnd;
-}
-
 public class UIEpisodeModel
 {
     public string episodeName;
 }
 
-public class UIEpisodePresenter
+public class UIEpisodeView : MonoBehaviour
 {
-    private readonly IUIEpisodeView _episodeview;
-    private UIEpisodeModel _model;
-
-    public UIEpisodePresenter(IUIEpisodeView episodeView, UIEpisodeModel model)
-    {
-        _episodeview = episodeView;
-        _model = model;
-    }
-    
-    public void SetEpisode()
-    {
-        _episodeview.SetEpisode(_model.episodeName);
-    }
-
-    public UniTask EpisodeProduct(Action soundAction)
-    {
-        return _episodeview.EpisodeProduct(soundAction);
-    }
-
-    public void HandelEpisodeEnd(Action action)
-    {
-        _episodeview.EpisodeEnd += action;
-    }
-}
-
-public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private UIEpisodePresenter presenter;
-    public UIEpisodePresenter Presenter => presenter;
-
-    public UIEpisodePresenter Bind(UIEpisodeModel model)
-    {
-        presenter = new UIEpisodePresenter(this, model);
-        return presenter;
-    }
-
     private CancellationTokenSource episodeCancellation;
     
     private float fadeTime = 0.5f;
@@ -70,15 +26,18 @@ public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
     [SerializeField] private Transform endTransform;
     [SerializeField] private Image fadeImage;
     
-    public event Action EpisodeEnd;
-
     // 딜레이
     private async UniTask EpisodeDelay(float second)
     {
         await UniTask.Delay(TimeSpan.FromSeconds(second), cancellationToken: episodeCancellation.Token);
     }
     
-    public void SetEpisode(string episodeName)
+    public void SetEpisode(UIEpisodeModel model)
+    {
+        SetEpisode(model.episodeName);
+    }
+
+    private void SetEpisode(string episodeName)
     {
         episodeText.text = episodeName;
         episodeText.transform.position = startTransform.transform.position;
@@ -116,7 +75,6 @@ public class UIEpisodeView : MonoBehaviour, IUIEpisodeView
         if (await EpisodeDelay(finish).SuppressCancellationThrow())
             return;
         
-        EpisodeEnd?.Invoke();
         gameObject.SetActive(false);
     }
 }

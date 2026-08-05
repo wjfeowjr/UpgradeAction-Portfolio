@@ -11,61 +11,26 @@ public class PopupPauseModel
     public PopupCommonActions commonActions;
 }
 
-// ── Interface ─────────────────────────────────────────────────────────────────
-public interface IPopupPauseView
-{
-    void SetAction(PopupPausePresenter presenter, PopupCommonActions commonActions);
-    void SetSettingOpen(bool isOpen);
-    void SetButtonText();
-}
-
-// ── Presenter ─────────────────────────────────────────────────────────────────
-public class PopupPausePresenter
-{
-    private readonly IPopupPauseView _view;
-    private readonly PopupPauseModel _model;
-
-    public PopupPausePresenter(IPopupPauseView view, PopupPauseModel model)
-    {
-        _view  = view;
-        _model = model;
-    }
-
-    public void SetAction()
-    {
-        _view.SetAction(this, _model.commonActions);
-    }
-
-    public void ResumeAction()
-    {
-        _model.resumeAction?.Invoke();
-    }
-    public void SettingAction()          => _model.settingAction?.Invoke();
-    public void ReturnAction()           => _model.returnAction?.Invoke();
-
-    public void HandleEsc()
-    {
-        _model.resumeAction?.Invoke();
-    }
-    public void SetSettingOpen(bool isOpen) => _view.SetSettingOpen(isOpen);
-    public void SetButtonText() => _view.SetButtonText();
-}
-
 // ── View ──────────────────────────────────────────────────────────────────────
-public class PopupPauseView : MonoBehaviour, IPopupPauseView
+public class PopupPauseView : MonoBehaviour
 {
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupPausePresenter presenter;
+    private PopupPauseModel _model;
 
-    public PopupPausePresenter Bind(PopupPauseModel model)
+    public void SetAction(PopupPauseModel model)
     {
-        presenter = new PopupPausePresenter(this, model);
-        return presenter;
+        _model         = model;
+        _commonActions = model.commonActions;
+        _cursor        = 0;
+
+        SetButtonText();
+        RefreshCursors();
     }
+
+    // 컨테이너(Popup_Pause)가 ESC 입력 시 호출한다
+    public void HandleEsc() => _model?.resumeAction?.Invoke();
 
     private const int ButtonCount = 3;
 
-    private PopupPausePresenter _presenter;
     private PopupCommonActions  _commonActions;
     private int  _cursor      = 0;
     
@@ -80,7 +45,7 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
     // 입력 처리는 소유 Popup_Pause의 Update에서 openComplete일 때만 호출됨
     public void HandleInput()
     {
-        if (_presenter == null || _isSettingOpen)
+        if (_model == null || _isSettingOpen)
             return;
 
         if (Input.GetKeyDown(GameManager.Instance.upKey))
@@ -124,19 +89,19 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
         switch (_cursor)
         {
             case 0:
-                _presenter.ResumeAction();
+                _model.resumeAction?.Invoke();
                 break;
             case 1:
-                _presenter.SettingAction();
+                _model.settingAction?.Invoke();
                 _commonActions?.PlaySelectSound?.Invoke();
                 break;
             case 2:
-                _presenter.ReturnAction();
+                _model.returnAction?.Invoke();
                 break;
         }
     }
 
-    // IPopupPauseView
+    // 표시
     public void SetSettingOpen(bool isOpen)
     {
         _isSettingOpen = isOpen;
@@ -147,16 +112,6 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
         resumeButton.SetText(GameManager.Instance.GetTalk(30049));
         settingButton.SetText(GameManager.Instance.GetTalk(30026));
         returnButton.SetText(GameManager.Instance.GetTalk(30050));
-    }
-
-    public void SetAction(PopupPausePresenter presenter, PopupCommonActions commonActions)
-    {
-        _presenter     = presenter;
-        _commonActions = commonActions;
-        _cursor        = 0;
-
-        SetButtonText();
-        RefreshCursors();
     }
 
     // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
@@ -201,6 +156,6 @@ public class PopupPauseView : MonoBehaviour, IPopupPauseView
     }
 
     // 팝업 열림 연출이 끝나고 설정 창이 닫혀 있을 때만 마우스 입력 허용
-    private bool CanMouseInput() => _presenter != null && !_isSettingOpen && _ownerPopup && _ownerPopup.OpenComplete;
+    private bool CanMouseInput() => _model != null && !_isSettingOpen && _ownerPopup && _ownerPopup.OpenComplete;
     */
 }

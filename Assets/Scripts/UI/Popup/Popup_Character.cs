@@ -48,12 +48,7 @@ public class Popup_Character : UIBase
 
     protected List<PlayerInfo> playerInfoList = new List<PlayerInfo>();
 
-    private PopupCharacterPresenter _characterPresenter;
-    private PopupSkillPresenter     _skillPresenter;
     private PopupSkillModel         _skillModel;
-    private PopupAttributePresenter _attributePresenter;
-    private PopupRelicPresenter     _relicPresenter;
-    private PopupItemPresenter      _itemPresenter;
 
     private string curPlayerId;
     private Action closeAction;
@@ -92,7 +87,7 @@ public class Popup_Character : UIBase
             playerId      = curPlayerId,
             commonActions = common
         };
-        _characterPresenter = characterView.Bind(charModel);
+        characterView.SetData(charModel);
 
         _skillModel = new PopupSkillModel
         {
@@ -102,7 +97,7 @@ public class Popup_Character : UIBase
             commonActions   = common,
             closeAction     = () => SetState(ePopupState.Character),
         };
-        _skillPresenter = skillView.Bind(_skillModel);
+        skillView.SetData(_skillModel);
 
         var attrModel = new PopupAttributeModel
         {
@@ -113,7 +108,7 @@ public class Popup_Character : UIBase
             popupAction    = GameManager.Instance.SpawnSelect,
             closeAction    = () => SetState(ePopupState.Character),
         };
-        _attributePresenter = attributeView.Bind(attrModel);
+        attributeView.SetData(attrModel);
 
         var relicModel = new PopupRelicModel
         {
@@ -128,7 +123,7 @@ public class Popup_Character : UIBase
                 RefreshAll();
             },
         };
-        _relicPresenter = relicView.Bind(relicModel);
+        relicView.SetData(relicModel);
 
         var itemModel = new PopupItemModel
         {
@@ -136,7 +131,7 @@ public class Popup_Character : UIBase
             commonActions = common,
             closeAction   = () => SetState(ePopupState.Character),
         };
-        _itemPresenter = itemView.Bind(itemModel);
+        itemView.SetData(itemModel);
 
         SetState(ePopupState.Character);
         RefreshAll();
@@ -242,14 +237,14 @@ public class Popup_Character : UIBase
     private void RefreshAll()
     {
         UpdateCommonUI(curPlayerId);
-        _characterPresenter.UpdatePlayerInfo(curPlayerId);
+        characterView.UpdatePlayerInfo(curPlayerId);
 
         // 캐릭터 전환(Q/E)에 맞춰 현재 캐릭터의 PlayerSkill 목록 갱신
-        _skillPresenter.UpdatePlayerInfo(curPlayerId);
+        skillView.UpdatePlayerInfo(curPlayerId);
 
-        _attributePresenter.UpdatePlayerInfo(curPlayerId);
-        _relicPresenter.UpdatePlayerInfo(curPlayerId);
-        _itemPresenter.UpdateItemInfo();
+        attributeView.UpdatePlayerInfo(curPlayerId);
+        relicView.UpdatePlayerInfo(curPlayerId);
+        itemView.UpdateItemInfo();
     }
 
     private void UpdateCommonUI(string playerId)

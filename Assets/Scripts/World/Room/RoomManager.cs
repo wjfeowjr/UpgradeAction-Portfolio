@@ -211,11 +211,9 @@ public class RoomManager : Singleton<RoomManager>
             {
                 bossName = bossName
             };
-            var episodePresenter = bossMessageView.BossMessageView.Bind(bossMessageModel);
-            bossMessageView.SetEpisodePresenter(episodePresenter);
             bossMessageView.ViewActive();
-            episodePresenter.SetBossMessage();
-            episodePresenter.BossMessageProduct(() => { SoundManager.Instance.PlaySound(ConstValues.WarningSound); });
+            bossMessageView.BossMessageView.SetBossMessage(bossMessageModel);
+            bossMessageView.BossMessageView.BossMessageProduct(() => { SoundManager.Instance.PlaySound(ConstValues.WarningSound); });
         }
     }
 
@@ -239,9 +237,7 @@ public class RoomManager : Singleton<RoomManager>
             commonActions = common,
         };
 
-        var presenter = popupPause.PauseView.Bind(model);
-        popupPause.SetPausePresenter(presenter);
-        presenter.SetAction();
+        popupPause.PauseView.SetAction(model);
 
         PopupLayerOn();
     }
@@ -264,14 +260,14 @@ public class RoomManager : Singleton<RoomManager>
     
     private void OpenSettingPopup()
     {
-        popupPause.PausePresenter.SetSettingOpen(true);
+        popupPause.PauseView.SetSettingOpen(true);
         var popup = GameManager.Instance.SpawnToPopupPool(eUIType.Popup_Setting, Vector3.zero).GetComponent<Popup_Setting>();
         popup.FadeOpen(false, false, 0.2f, false).Forget();
         popup.InitPresenters(
             () =>
             {
-                popupPause.PausePresenter.SetSettingOpen(false); 
-                popupPause.PausePresenter.SetButtonText();
+                popupPause.PauseView.SetSettingOpen(false); 
+                popupPause.PauseView.SetButtonText();
             },
             LanguageSetting,
             KeyboardSetting);
@@ -320,9 +316,7 @@ public class RoomManager : Singleton<RoomManager>
             checkAction = SpawnCheckMark,
             closeAction = PopupLayerReset,
         };
-        var minimapPresenter = popupMinimap.MinimapView.Bind(minimapModel);
-        popupMinimap.SetMinimapPresenter(minimapPresenter);
-        popupMinimap.PopupMinimapPresenter.SetMinimapText();
+        popupMinimap.MinimapView.SetData(minimapModel);
 
         popupMinimap.OpenAction(PopupLayerReset);
         PopupLayerOn();
@@ -363,7 +357,7 @@ public class RoomManager : Singleton<RoomManager>
         boolArray[1] = minimapCameraPos.x >= rightLimit;
         boolArray[2] = minimapCameraPos.y >= upLimit;
         boolArray[3] =minimapCameraPos.y <= downLimit;
-        popupMinimap.PopupMinimapPresenter.LimitAction(boolArray);
+        popupMinimap.MinimapView.LimitAction(boolArray);
     }
 
     private void SpawnCheckMark()
@@ -399,13 +393,8 @@ public class RoomManager : Singleton<RoomManager>
                     CloseGameOverAsync(uiBase).Forget();
                 }
             };
-            var gameOverPresenter = popupGameOver.GameOverView.Bind(gameOverModel);
-            popupGameOver.SetGuidePresenter(gameOverPresenter);
-            gameOverPresenter.Open(() =>
-            {
-                uiBase.FadeOpen(true, true, 0.75f, false).Forget();
-            });
-            gameOverPresenter.SetModel();
+            uiBase.FadeOpen(true, true, 0.75f, false).Forget();
+            popupGameOver.GameOverView.SetData(gameOverModel);
         }
     }
     private async UniTaskVoid CloseGameOverAsync(UIBase uiBase)
@@ -429,11 +418,9 @@ public class RoomManager : Singleton<RoomManager>
         {
             episodeName = episodeName,
         };
-        var episodePresenter = uiEpisode.EpisodeView.Bind(episodeModel);
-        uiEpisode.SetEpisodePresenter(episodePresenter);
-        episodePresenter.SetEpisode();
-        
-        await uiEpisode.EpisodePresenter.EpisodeProduct(() => { SoundManager.Instance.PlaySound(ConstValues.Upgrade); });
+        uiEpisode.EpisodeView.SetEpisode(episodeModel);
+
+        await uiEpisode.EpisodeView.EpisodeProduct(() => { SoundManager.Instance.PlaySound(ConstValues.Upgrade); });
     }
 
     protected async UniTask NormalDelay(float second, CancellationTokenSource tokenSource)
@@ -465,14 +452,8 @@ public class RoomManager : Singleton<RoomManager>
                     CloseGuideAsync(uiBase).Forget();
                 }
             };
-            var guidePresenter = popupGuide.GuideView.Bind(guideModel);
-            popupGuide.SetGuidePresenter(guidePresenter);
-            guidePresenter.Open(() =>
-            {
-                uiBase.FadeOpen(true, true, 0.25f).Forget();
-            });
-            guidePresenter.SetModel();
-            guidePresenter.SetAction(guideModel.closeAction);
+            uiBase.FadeOpen(true, true, 0.25f).Forget();
+            popupGuide.GuideView.SetData(guideModel);
             PopupLayerOn();
         }
     }

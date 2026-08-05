@@ -5,13 +5,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IPopupSkillView
-{
-    void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo);
-    void SetPlayerInfo();
-    void SetAction(PopupCommonActions commonActions, Action closeAction);
-}
-
 public class PopupSkillModel
 {
     public string playerId;
@@ -21,35 +14,18 @@ public class PopupSkillModel
     public Action closeAction;
 }
 
-public class PopupSkillPresenter
+public class PopupSkillView : MonoBehaviour
 {
-    private readonly IPopupSkillView _view;
-    private readonly PopupSkillModel _model;
+    private PopupSkillModel _model;
 
-    public PopupSkillPresenter(IPopupSkillView view, PopupSkillModel model)
-    {
-        _view = view;
-        _model = model;
-    }
+    public void SetData(PopupSkillModel model) => _model = model;
 
     public void UpdatePlayerInfo(string newId)
     {
         _model.playerId = newId;
-        _view.SetModel(newId, _model.skillTableList, _model.playerInfoList);
-        _view.SetAction(_model.commonActions, _model.closeAction);
-        _view.SetPlayerInfo();
-    }
-}
-
-public class PopupSkillView : MonoBehaviour, IPopupSkillView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupSkillPresenter presenter;
-
-    public PopupSkillPresenter Bind(PopupSkillModel model)
-    {
-        presenter = new PopupSkillPresenter(this, model);
-        return presenter;
+        SetModel(newId, _model.skillTableList, _model.playerInfoList);
+        SetAction(_model.commonActions, _model.closeAction);
+        SetPlayerInfo();
     }
 
     [Header("Texts")]
@@ -113,20 +89,20 @@ public class PopupSkillView : MonoBehaviour, IPopupSkillView
 
     #region Data / Refresh
 
-    public void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo)
+    private void SetModel(string playerId, List<SkillData> skillData, List<PlayerInfo> playerInfo)
     {
         curPlayerId = playerId;
         skillTableList = skillData;
         playerInfoList = playerInfo;
     }
 
-    public void SetAction(PopupCommonActions commonActions, Action closeAction)
+    private void SetAction(PopupCommonActions commonActions, Action closeAction)
     {
         _actions = commonActions;
         _closeAction = closeAction;
     }
 
-    public void SetPlayerInfo()
+    private void SetPlayerInfo()
     {
         SetSkillList();
         SetupSkillNavigation();

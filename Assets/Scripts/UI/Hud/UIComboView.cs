@@ -5,68 +5,22 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
-public interface IUIComboView
-{
-    void SetCombo();
-    void ComboProduct(int comboCount);
-    event Action OnComboEnd;
-}
-
+// 표시할 값 묶음. 로직은 없다.
 public class UIComboModel
 {
     public int comboCount;
 }
 
-public class UIComboPresenter
+// 받은 값을 그리기만 한다.
+// 무엇을 그릴지 판단하는 부분이 없어 Presenter 를 두지 않았다.
+public class UIComboView : MonoBehaviour
 {
-    private readonly IUIComboView _comboview;
-    private UIComboModel _model;
-
-    public UIComboPresenter(IUIComboView hpView, UIComboModel model)
-    {
-        _comboview = hpView;
-        _model = model;
-        _comboview.OnComboEnd += OnComboEndHandler;
-    }
-    
-    public void SetCombo()
-    {
-        _comboview.SetCombo();
-    }
-
-    public void ComboProduct()
-    {
-        _model.comboCount = GameManager.Instance.ComboCount;
-        _comboview.ComboProduct(_model.comboCount);
-    }
-    
-    private void OnComboEndHandler()
-    {
-        GameManager.Instance.ComboCount = 0;
-    }
-}
-
-public class UIComboView : MonoBehaviour, IUIComboView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    // 호출부가 인터페이스 변환 -> Model 생성 -> Presenter 생성 -> 역주입을
-    // 매번 반복하던 것을 한 줄로 줄인다.
-    private UIComboPresenter presenter;
-    public UIComboPresenter Presenter => presenter;
-
-    public UIComboPresenter Bind(UIComboModel model)
-    {
-        presenter = new UIComboPresenter(this, model);
-        return presenter;
-    }
-
     private CancellationTokenSource comboCancellation;
     private float expansionTime = 0.02f;
     private float reduceTime = 0.4f;
     private float delay = 2.0f;
     private float fadeTime = 0.1f;
-    
-    public event Action OnComboEnd;
+
     [SerializeField] private TMP_Text comboText;
 
     private void OnDisable()
@@ -85,37 +39,45 @@ public class UIComboView : MonoBehaviour, IUIComboView
     {
         comboText.gameObject.SetActive(false);
     }
-    
-    public async void ComboProduct(int comboCount)
+
+    public void ComboProduct()
+    {
+        ComboProduct(GameManager.Instance.ComboCount);
+    }
+
+    private async void ComboProduct(int comboCount)
     {
         comboCancellation?.Cancel();
         comboCancellation = new CancellationTokenSource();
         comboText.gameObject.SetActive(true);
-        
+
         comboText.text = $"{comboCount} {ConstValues.Combo}!";
         comboText.DOPause();
         comboText.transform.DOPause();
-        
+
         comboText.color = ConstValues.WhiteColor;
         comboText.transform.localScale = Vector3.one;
         comboText.gameObject.SetActive(true);
-        
+
         comboText.transform.DOScale(new Vector3(2.0f, 2.0f, 2.0f), expansionTime).SetEase(Ease.Linear);
         if (await ComboDelay(expansionTime).SuppressCancellationThrow())
             return;
-        
+
         comboText.transform.DOScale(new Vector3(1, 1, 1), reduceTime);
         if (await ComboDelay(reduceTime).SuppressCancellationThrow())
             return;
-        
+
         if (await ComboDelay(delay).SuppressCancellationThrow())
             return;
-        
+
         comboText.DOFade(0, fadeTime).SetEase(Ease.Linear);
         if (await ComboDelay(fadeTime).SuppressCancellationThrow())
             return;
-        
+
         comboText.gameObject.SetActive(false);
-        OnComboEnd?.Invoke();
+
+        // 연출이 끝나면 콤보 카운트를 초기화한다.
+        // 이전에는 View 가 이벤트를 쏘고 Presenter 가 받아서 처리했다.
+        GameManager.Instance.ComboCount = 0;
     }
 }

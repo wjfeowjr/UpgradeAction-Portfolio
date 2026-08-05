@@ -9,44 +9,9 @@ public class PopupGameModel
     public PopupCommonActions commonActions;
 }
 
-// ── Interface ─────────────────────────────────────────────────────────────────
-public interface IPopupGameView
-{
-    void SetAction(PopupGamePresenter presenter, PopupCommonActions commonActions, Action languageChangeAction);
-}
-
-// ── Presenter ─────────────────────────────────────────────────────────────────
-public class PopupGamePresenter
-{
-    private readonly IPopupGameView _view;
-    private readonly PopupGameModel _model;
-
-    public PopupGamePresenter(IPopupGameView view, PopupGameModel model)
-    {
-        _view  = view;
-        _model = model;
-    }
-
-    public void SetAction() => _view.SetAction(this, _model.commonActions, _model.languageChangeAction);
-    public void HandleEsc()
-    {
-        _model.closeAction?.Invoke();
-        _model.commonActions.PlayCancelSound?.Invoke();
-    }
-}
-
 // ── View ──────────────────────────────────────────────────────────────────────
-public class PopupGameView : MonoBehaviour, IPopupGameView
+public class PopupGameView : MonoBehaviour
 {
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupGamePresenter presenter;
-
-    public PopupGamePresenter Bind(PopupGameModel model)
-    {
-        presenter = new PopupGamePresenter(this, model);
-        return presenter;
-    }
-
     private static readonly string[] LanguageOptions =
     {
         ConstValues.Korean,
@@ -61,7 +26,7 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
 
     [SerializeField] private ExpansionUiObject[] gameFrames;
 
-    private PopupGamePresenter _presenter;
+    private PopupGameModel _model;
     private PopupCommonActions _commonActions;
     private Action             _languageChangeAction;
     private int _cursor = 0;
@@ -76,7 +41,7 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
 
     private void Update()
     {
-        if (_presenter == null)
+        if (_model == null)
             return;
 
         if (Input.GetKeyDown(GameManager.Instance.upKey))
@@ -90,7 +55,7 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
         if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
             HandleEnter();
         if (Input.GetKeyDown(GameManager.Instance.escKey))
-            _presenter.HandleEsc();
+            HandleEsc();
     }
 
     private void HandleArrow(int dir)
@@ -145,7 +110,7 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
                 break;
 
             case 3:
-                _presenter.HandleEsc();
+                HandleEsc();
                 break;
         }
     }
@@ -189,12 +154,17 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
         }
     }
 
-    // IPopupGameView
-    public void SetAction(PopupGamePresenter presenter, PopupCommonActions commonActions, Action languageChangeAction)
+    public void SetAction(PopupGameModel model)
     {
-        _presenter            = presenter;
-        _commonActions        = commonActions;
-        _languageChangeAction = languageChangeAction;
+        _model                = model;
+        _commonActions        = model.commonActions;
+        _languageChangeAction = model.languageChangeAction;
+    }
+
+    private void HandleEsc()
+    {
+        _model.closeAction?.Invoke();
+        _commonActions?.PlayCancelSound?.Invoke();
     }
 
     // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
@@ -253,6 +223,6 @@ public class PopupGameView : MonoBehaviour, IPopupGameView
     }
 
     // 팝업 열림 연출이 끝난 뒤에만 마우스 입력 허용
-    private bool CanMouseInput() => _presenter != null && _ownerPopup && _ownerPopup.OpenComplete;
+    private bool CanMouseInput() => _model != null && _ownerPopup && _ownerPopup.OpenComplete;
     */
 }

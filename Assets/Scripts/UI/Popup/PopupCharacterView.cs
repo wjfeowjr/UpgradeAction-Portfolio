@@ -5,48 +5,24 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.Serialization;
 
-public interface IPopupCharacterView
-{
-    void SetModel(string playerId);
-    void SetPlayerInfo();
-    void SetAction(PopupCommonActions commonActions);
-}
- 
 public class PopupCharacterModel
 {
     public string playerId;
     public PopupCommonActions commonActions;
 }
- 
-public class PopupCharacterPresenter
+
+public class PopupCharacterView : MonoBehaviour
 {
-    private readonly IPopupCharacterView _view;
-    private readonly PopupCharacterModel _model;
- 
-    public PopupCharacterPresenter(IPopupCharacterView view, PopupCharacterModel model)
-    {
-        _view = view;
-        _model = model;
-    }
-    
+    private PopupCharacterModel _model;
+
+    public void SetData(PopupCharacterModel model) => _model = model;
+
     public void UpdatePlayerInfo(string newId)
     {
         _model.playerId = newId;
-        _view.SetModel(newId);
-        _view.SetAction(_model.commonActions);
-        _view.SetPlayerInfo();
-    }
-}
- 
-public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupCharacterPresenter presenter;
-
-    public PopupCharacterPresenter Bind(PopupCharacterModel model)
-    {
-        presenter = new PopupCharacterPresenter(this, model);
-        return presenter;
+        SetModel(newId);
+        SetAction(_model.commonActions);
+        SetPlayerInfo();
     }
 
     private PopupCommonActions commonActions;
@@ -67,17 +43,17 @@ public class PopupCharacterView : MonoBehaviour, IPopupCharacterView
     // 엔터 입력 시 Popup_Character로 선택된 상태를 전달하는 콜백
     private Action<ePopupState> _onStateSelected;
  
-    public void SetModel(string playerId)
+    private void SetModel(string playerId)
     {
         curPlayerId = playerId;
     }
 
-    public void SetAction(PopupCommonActions common)
+    private void SetAction(PopupCommonActions common)
     {
         commonActions = common;
     }
  
-    public void SetPlayerInfo()
+    private void SetPlayerInfo()
     {
         selectKeyUpText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.upKey);
         selectKeyDownText.text = GameManager.Instance.GetKeyCode(GameManager.Instance.downKey);

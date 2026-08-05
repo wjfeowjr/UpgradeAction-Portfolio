@@ -6,51 +6,14 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IUIBossMessageView
-{
-    void SetBossMessage(string bossName, EMonsterType monsterType);
-    void BossMessageProduct(Action soundAction);
-}
-
 public class UIBossMessageModel
 {
     public string bossName;
     public EMonsterType monsterType;
 }
 
-public class UIBossMessagePresenter
+public class UIBossMessageView : MonoBehaviour
 {
-    private readonly IUIBossMessageView _bossMessageview;
-    private UIBossMessageModel _model;
-
-    public UIBossMessagePresenter(IUIBossMessageView episodeView, UIBossMessageModel model)
-    {
-        _bossMessageview = episodeView;
-        _model = model;
-    }
-    
-    public void SetBossMessage()
-    {
-        _bossMessageview.SetBossMessage(_model.bossName, _model.monsterType);
-    }
-
-    public void BossMessageProduct(Action soundAction)
-    {
-        _bossMessageview.BossMessageProduct(soundAction);
-    }
-}
-
-public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private UIBossMessagePresenter presenter;
-    public UIBossMessagePresenter Presenter => presenter;
-
-    public UIBossMessagePresenter Bind(UIBossMessageModel model)
-    {
-        presenter = new UIBossMessagePresenter(this, model);
-        return presenter;
-    }
 
     private CancellationTokenSource bossMessageCancellation;
     
@@ -72,7 +35,12 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
         await UniTask.Delay(TimeSpan.FromSeconds(second), ignoreTimeScale: true, cancellationToken: bossMessageCancellation.Token);
     }
     
-    public void SetBossMessage(string bossName, EMonsterType monsterType)
+    public void SetBossMessage(UIBossMessageModel model)
+    {
+        SetBossMessage(model.bossName, model.monsterType);
+    }
+
+    private void SetBossMessage(string bossName, EMonsterType monsterType)
     {
         bossMessageTransform.position = startTransform.transform.position;
         switch (monsterType)
@@ -115,7 +83,6 @@ public class UIBossMessageView : MonoBehaviour, IUIBossMessageView
         fadeImage.DOFade(0, fadeTime).SetEase(Ease.Linear).SetUpdate(true);
         if (await BossMessageDelay(fadeTime).SuppressCancellationThrow())
             return;
-        
         
         GameManager.Instance.Flow.ResumeTime(this);
         gameObject.SetActive(false);

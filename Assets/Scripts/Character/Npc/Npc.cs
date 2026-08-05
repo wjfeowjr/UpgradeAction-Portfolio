@@ -140,11 +140,7 @@ public class Npc : Character
                     }
                 };
                 
-                var storePresenter = popupStore.StoreView.Bind(storeModel);
-                popupStore.SetStorePresenter(storePresenter);
-                storePresenter.SetModel(popupId);
-                storePresenter.SetItem();
-                storePresenter.SetAction();
+                popupStore.StoreView.SetData(storeModel, popupId);
             }
         }
         else

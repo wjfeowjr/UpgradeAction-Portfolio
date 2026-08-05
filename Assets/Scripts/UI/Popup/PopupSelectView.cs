@@ -5,12 +5,6 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-public interface IPopupSelectView
-{
-    void SetModel(string message, Sprite goods, int cost, bool yes);
-    void SetAction(Action start, Action yes, Action no, Action escAction, PopupCommonActions commonActions);
-}
-
 public class PopupSelectModel
 {
     public bool yes;
@@ -25,42 +19,15 @@ public class PopupSelectModel
     public PopupCommonActions commonActions;
 }
 
-public class PopupSelectPresenter
+public class PopupSelectView : MonoBehaviour
 {
-    private IPopupSelectView _selectView;
     private PopupSelectModel _model;
 
-    public PopupSelectPresenter(IPopupSelectView selectView, PopupSelectModel model)
+    public void SetData(PopupSelectModel model)
     {
-        _selectView = selectView;
         _model = model;
-    }
-    
-    public void Expansion(Action action)
-    {
-        action?.Invoke();
-    }
-
-    public void SetModel()
-    {
-        _selectView.SetModel(_model.message, _model.goods, _model.cost, _model.yes);
-    }
-    
-    public void SetAction()
-    {
-        _selectView.SetAction(_model.startAction, _model.yesAction, _model.noAction, _model.escAction, _model.commonActions);
-    }
-}
-
-public class PopupSelectView : MonoBehaviour, IPopupSelectView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupSelectPresenter presenter;
-
-    public PopupSelectPresenter Bind(PopupSelectModel model)
-    {
-        presenter = new PopupSelectPresenter(this, model);
-        return presenter;
+        SetModel(_model.message, _model.goods, _model.cost, _model.yes);
+        SetAction(_model.startAction, _model.yesAction, _model.noAction, _model.escAction, _model.commonActions);
     }
 
     [SerializeField] private TMP_Text messageText;

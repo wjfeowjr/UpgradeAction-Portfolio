@@ -3,69 +3,22 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IUIHpView
-{
-    void SetHp(Player player);
-    void SetHpText(Player player);
-    void HpReduce(Player player, float speed);
-    
-    void SetResource(Player player);
-    void SetResourceText(Player player);
-}
-
 public class UIHpModel
 {
     public Player player;
 }
 
-public class UIHpPresenter
+public class UIHpView : MonoBehaviour
 {
-    private readonly IUIHpView _hpview;
     private UIHpModel _model;
 
-    public UIHpPresenter(IUIHpView hpView, UIHpModel model)
-    {
-        _hpview = hpView;
-        _model = model;
-    }
+    public void SetModel(UIHpModel model) => _model = model;
 
-    public void SetHp()
-    {
-        _hpview.SetHp(_model.player);
-    }
-    public void SetHpText()
-    {
-        _hpview.SetHpText(_model.player);
-    }
-    public void HpReduce()
-    {
-        _hpview.HpReduce(_model.player, 1.5f);
-    }
-    
-    public void SetResource()
-    {
-        _hpview.SetResource(_model.player);
-    }
-    
-    public void SetResourceText()
-    {
-        _hpview.SetResourceText(_model.player);
-    }
-}
-
-public class UIHpView : MonoBehaviour, IUIHpView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    // 호출부가 인터페이스 변환 -> Model 생성 -> Presenter 생성 -> 역주입을
-    // 매번 반복하던 것을 한 줄로 줄인다.
-    private UIHpPresenter presenter;
-    public UIHpPresenter Presenter => presenter;
-
-    public UIHpPresenter Bind(UIHpModel model)
-    {
-        presenter = new UIHpPresenter(this, model);
-        return presenter;
-    }
+    public void SetHp()           => SetHp(_model.player);
+    public void SetHpText()       => SetHpText(_model.player);
+    public void HpReduce()        => HpReduce(_model.player, 1.5f);
+    public void SetResource()     => SetResource(_model.player);
+    public void SetResourceText() => SetResourceText(_model.player);
 
     [SerializeField] private Gauge hpGauge;
     [SerializeField] private Gauge shieldGauge;

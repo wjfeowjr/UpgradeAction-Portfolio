@@ -1142,11 +1142,9 @@ public partial class Room : MonoBehaviour
                 bossName = bossName,
                 monsterType = monsterType
             };
-            var bossMessagePresenter = bossMessageView.BossMessageView.Bind(bossMessageModel);
-            bossMessageView.SetEpisodePresenter(bossMessagePresenter);
             bossMessageView.ViewActive();
-            bossMessagePresenter.SetBossMessage();
-            bossMessagePresenter.BossMessageProduct(() => { SoundManager.Instance.PlaySound(ConstValues.WarningSound); });
+            bossMessageView.BossMessageView.SetBossMessage(bossMessageModel);
+            bossMessageView.BossMessageView.BossMessageProduct(() => { SoundManager.Instance.PlaySound(ConstValues.WarningSound); });
         }
     }
 

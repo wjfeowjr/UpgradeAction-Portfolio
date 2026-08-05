@@ -517,10 +517,10 @@ public class Monster : Character
             {
                 character = this
             };
-            uiInterface.BossHpPresenter.SetModel(bossHpModel);
-            uiInterface.BossHpPresenter.SetHp();
-            uiInterface.BossHpPresenter.SetHpText();
-            uiInterface.BossHpPresenter.SetStagger();
+            uiInterface.BossHpView.SetModel(bossHpModel);
+            uiInterface.BossHpView.SetHp();
+            uiInterface.BossHpView.SetHpText();
+            uiInterface.BossHpView.SetStagger();
         }
         else
         {
@@ -1075,7 +1075,7 @@ public class Monster : Character
         if (!isTrapAttack)
         {
             GameManager.Instance.ComboCount += 1;
-            uiInterface.ComboPresenter.ComboProduct();
+            uiInterface.ComboView.ComboProduct();
         }
 
         // 대미지를 입을 시, 페이즈가 넘어가는 체력관리
@@ -1101,9 +1101,9 @@ public class Monster : Character
             {
                 character = this
             };
-            uiInterface.BossHpPresenter.SetModel(bossHpModel);
-            uiInterface.BossHpPresenter.SetHpText();
-            uiInterface.BossHpPresenter.HpReduce();
+            uiInterface.BossHpView.SetModel(bossHpModel);
+            uiInterface.BossHpView.SetHpText();
+            uiInterface.BossHpView.HpReduce();
         }
         else
         {
@@ -1131,17 +1131,17 @@ public class Monster : Character
             {
                 character = this
             };
-            uiInterface.BossHpPresenter.SetModel(bossHpModel);
+            uiInterface.BossHpView.SetModel(bossHpModel);
 
             if (basicStat.stagger > 0)
             {
-                uiInterface.BossHpPresenter.StaggerReduce();
+                uiInterface.BossHpView.StaggerReduce();
             }
             else
             {
                 // 터지는 전기 연출
-                uiInterface.BossHpPresenter.StaggerExplosion(this, uiInterface.BossHpPresenter.StaggerGaugeTransform());
-                uiInterface.BossHpPresenter.SetStagger();
+                uiInterface.BossHpView.StaggerExplosion(this, uiInterface.BossHpView.StaggerGaugeTransform());
+                uiInterface.BossHpView.SetStagger();
             }
         }
     }
@@ -1165,8 +1165,8 @@ public class Monster : Character
             {
                 character = this
             };
-            uiInterface.BossHpPresenter.SetModel(bossHpModel);
-            uiInterface.BossHpPresenter.SetStagger();
+            uiInterface.BossHpView.SetModel(bossHpModel);
+            uiInterface.BossHpView.SetStagger();
         }
     }
 

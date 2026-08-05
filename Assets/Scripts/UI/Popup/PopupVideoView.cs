@@ -8,44 +8,9 @@ public class PopupVideoModel
     public PopupCommonActions commonActions;
 }
 
-// ── Interface ─────────────────────────────────────────────────────────────────
-public interface IPopupVideoView
-{
-    void SetAction(PopupVideoPresenter presenter, PopupCommonActions commonActions);
-}
-
-// ── Presenter ─────────────────────────────────────────────────────────────────
-public class PopupVideoPresenter
-{
-    private readonly IPopupVideoView _view;
-    private readonly PopupVideoModel _model;
-
-    public PopupVideoPresenter(IPopupVideoView view, PopupVideoModel model)
-    {
-        _view  = view;
-        _model = model;
-    }
-
-    public void SetAction() => _view.SetAction(this, _model.commonActions);
-    public void HandleEsc()
-    {
-        _model.closeAction?.Invoke();
-        _model.commonActions.PlayCancelSound?.Invoke();
-    }
-}
-
 // ── View ──────────────────────────────────────────────────────────────────────
-public class PopupVideoView : MonoBehaviour, IPopupVideoView
+public class PopupVideoView : MonoBehaviour
 {
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupVideoPresenter presenter;
-
-    public PopupVideoPresenter Bind(PopupVideoModel model)
-    {
-        presenter = new PopupVideoPresenter(this, model);
-        return presenter;
-    }
-
     // 지원 해상도 목록 (16:9, 4:3 두 종류)
     private static readonly Vector2Int[] Resolutions =
     {
@@ -63,7 +28,7 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
 
     [SerializeField] private ExpansionUiObject[] videoFrames;
 
-    private PopupVideoPresenter _presenter;
+    private PopupVideoModel _model;
     private PopupCommonActions  _commonActions;
     private int _cursor = 0;
     private int _lastFullScreen;
@@ -79,7 +44,7 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
 
     private void Update()
     {
-        if (_presenter == null)
+        if (_model == null)
             return;
 
         // Alt+Enter 토글 등 외부에서 전체화면 상태가 바뀐 경우 표시 갱신
@@ -100,7 +65,7 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
         if (InputHelper.GetEnterDown() || InputHelper.GetKeypadEnterDown())
             HandleEnter();
         if (Input.GetKeyDown(GameManager.Instance.escKey))
-            _presenter.HandleEsc();
+            HandleEsc();
     }
 
     private void HandleEnter()
@@ -118,7 +83,7 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
                 break;
 
             case 4:
-                _presenter.HandleEsc();
+                HandleEsc();
                 break;
         }
     }
@@ -277,11 +242,16 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
         }
     }
 
-    // IPopupVideoView
-    public void SetAction(PopupVideoPresenter presenter, PopupCommonActions commonActions)
+    public void SetAction(PopupVideoModel model)
     {
-        _presenter     = presenter;
-        _commonActions = commonActions;
+        _model         = model;
+        _commonActions = model.commonActions;
+    }
+
+    private void HandleEsc()
+    {
+        _model.closeAction?.Invoke();
+        _commonActions?.PlayCancelSound?.Invoke();
     }
 
     // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
@@ -340,6 +310,6 @@ public class PopupVideoView : MonoBehaviour, IPopupVideoView
     }
 
     // 팝업 열림 연출이 끝난 뒤에만 마우스 입력 허용
-    private bool CanMouseInput() => _presenter != null && _ownerPopup && _ownerPopup.OpenComplete;
+    private bool CanMouseInput() => _model != null && _ownerPopup && _ownerPopup.OpenComplete;
     */
 }

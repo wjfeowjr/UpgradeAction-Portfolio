@@ -8,62 +8,26 @@ using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
 
-public interface IPopupStoreView
-{
-    void SetModel(string storeId);
-    void SetItem();
-    void SetAction(PopupCommonActions commonActions);
-}
-
 public class PopupStoreModel
 {
     public PopupCommonActions commonActions;
     public Action closeAction;
 }
 
-public class PopupStorePresenter
+public class PopupStoreView : MonoBehaviour
 {
-    private IPopupStoreView _view;
     private PopupStoreModel _model;
 
-    public PopupStorePresenter(IPopupStoreView view, PopupStoreModel model)
+    public void SetData(PopupStoreModel model, string storeId)
     {
-        _view  = view;
         _model = model;
+        SetModel(storeId);
+        SetItem();
+        SetAction(_model.commonActions);
     }
 
-    public void SetModel(string storeId)
-    {
-        _view.SetModel(storeId);
-    }
-
-    public void SetItem()
-    {
-        _view.SetItem();
-    }
-
-    public void SetAction()
-    {
-        _view.SetAction(_model.commonActions);
-    }
-
-    public void CloseStore()
-    {
-        if (Input.GetKeyDown(GameManager.Instance.escKey))
-            _model.closeAction?.Invoke();
-    }
-}
-
-public class PopupStoreView : MonoBehaviour, IPopupStoreView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupStorePresenter presenter;
-    
-    public PopupStorePresenter Bind(PopupStoreModel model)
-    {
-        presenter = new PopupStorePresenter(this, model);
-        return presenter;
-    }
+    // 컨테이너(Popup_Store)가 ESC 입력 시 호출한다
+    public void CloseStore() => _model?.closeAction?.Invoke();
 
     [SerializeField] private TMP_Text popupText;
     [SerializeField] private TMP_Text goldText;
@@ -233,7 +197,7 @@ public class PopupStoreView : MonoBehaviour, IPopupStoreView
         GameManager.Instance.RefreshGoods();
     }
 
-    // %% IPopupStoreView 구현 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    // %% 표시 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     public async void SetModel(string storeId)
     {
         popupText.text = GameManager.Instance.GetTalk(30024);

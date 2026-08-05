@@ -99,8 +99,7 @@ public class Popup_Setting : UIBase
             closeAction   = () => SetState(eSettingState.Setting),
             commonActions = common,
         };
-        var gamePresenter = gameView.Bind(gameModel);
-        gamePresenter.SetAction();
+        gameView.SetAction(gameModel);
 
         // AudioView
         var audioModel = new PopupAudioModel
@@ -108,8 +107,7 @@ public class Popup_Setting : UIBase
             closeAction   = () => SetState(eSettingState.Setting),
             commonActions = common,
         };
-        var audioPresenter = audioView.Bind(audioModel);
-        audioPresenter.SetAction();
+        audioView.SetAction(audioModel);
 
         // VideoView
         var videoModel = new PopupVideoModel
@@ -117,8 +115,7 @@ public class Popup_Setting : UIBase
             closeAction   = () => SetState(eSettingState.Setting),
             commonActions = common,
         };
-        var videoPresenter = videoView.Bind(videoModel);
-        videoPresenter.SetAction();
+        videoView.SetAction(videoModel);
 
         // KeyboardView
         var keyboardModel = new PopupKeyboardModel
@@ -130,8 +127,7 @@ public class Popup_Setting : UIBase
             },
             commonActions = common,
         };
-        var keyboardPresenter = keyboardView.Bind(keyboardModel);
-        keyboardPresenter.SetAction();
+        keyboardView.SetAction(keyboardModel);
 
         // SettingView
         var settingModel = new PopupSettingModel
@@ -143,8 +139,7 @@ public class Popup_Setting : UIBase
             closeAction        = ClosePopup,
             commonActions      = common,
         };
-        var settingPresenter = settingView.Bind(settingModel);
-        settingPresenter.SetAction();
+        settingView.SetAction(settingModel);
     }
 
     private void Update()

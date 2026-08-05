@@ -68,54 +68,53 @@ public class PopupFastTravelPresenter
         _view.RefreshSelect(_index, false);
     }
 
-    // 매 프레임 입력 처리 (위/아래 이동, ESC 닫기)
-    public void Tick()
+    // 팝업이 스폰된 프레임의 잔여 입력(GetKeyDown)을 무시한다.
+    // 컨테이너가 매 프레임 확인해서, false 인 프레임에는 입력을 넘기지 않는다.
+    public bool InputReady
     {
-        // 스폰된 프레임에서는 입력을 받지 않고 한 프레임 뒤부터 감지
-        if (!_inputReady)
+        get
         {
+            if (_inputReady)
+                return true;
+
             _inputReady = true;
-            return;
-        }
-
-        NavigateAction();
-
-        // Enter 입력 시 선택한 세이브 포인트로 확정(이동)
-        if (InputHelper.GetEnterDown() && _model.targetPositions.Count > 0)
-        {
-            _moveTween?.Kill();
-            _model.selectAction?.Invoke(_index);
-            return;
-        }
-
-        // ESC 입력 시 닫기
-        if (Input.GetKeyDown(GameManager.Instance.escKey))
-        {
-            _moveTween?.Kill();
-            _model.closeAction?.Invoke();
+            return false;
         }
     }
 
-    private void NavigateAction()
+    // 아래는 키를 모른다. 컨테이너(Popup_FastTravel)가 입력을 읽어 의미 단위로 부른다.
+    public void MoveUp()   => Move(-1);
+    public void MoveDown() => Move(+1);
+
+    public void Confirm()
+    {
+        if (_model.targetPositions.Count == 0)
+            return;
+
+        _moveTween?.Kill();
+        _model.selectAction?.Invoke(_index);
+    }
+
+    public void Cancel()
+    {
+        _moveTween?.Kill();
+        _model.closeAction?.Invoke();
+    }
+
+    // 위: 이전(idx 작은) 세이브 포인트 / 아래: 다음(idx 큰) 세이브 포인트, 양 끝에서 워프
+    private void Move(int dir)
     {
         var count = _model.targetPositions.Count;
         if (count == 0)
             return;
 
-        // 위: 이전(idx 작은) 세이브 포인트 / 아래: 다음(idx 큰) 세이브 포인트, 양 끝에서 워프
-        if (Input.GetKeyDown(GameManager.Instance.upKey))
-        {
-            _index = (_index - 1 + count) % count;
-            MoveCamera(true);
-            _view.RefreshSelect(_index, true);
-        }
-        else if (Input.GetKeyDown(GameManager.Instance.downKey))
-        {
-            _index = (_index + 1) % count;
-            MoveCamera(true);
-            _view.RefreshSelect(_index, true);
-        }
+        _index = WrapIndex(_index, dir, count);
+        MoveCamera(true);
+        _view.RefreshSelect(_index, true);
     }
+
+    public static int WrapIndex(int current, int dir, int count)
+        => count == 0 ? 0 : (current + dir + count) % count;
 
     private void MoveCamera(bool smooth)
     {
@@ -134,7 +133,6 @@ public class PopupFastTravelPresenter
 
 public class PopupFastTravelView : MonoBehaviour, IPopupFastTravelView
 {
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
     private PopupFastTravelPresenter presenter;
 
     public PopupFastTravelPresenter Bind(PopupFastTravelModel model)

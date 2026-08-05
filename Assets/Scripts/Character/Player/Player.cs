@@ -935,8 +935,8 @@ public abstract class Player : Character
             return;
         
         var uiInterface = uiInterfaceObj.GetComponent<UI_Interface>();
-        uiInterface.HpPresenter.SetHpText();
-        uiInterface.HpPresenter.HpReduce();
+        uiInterface.HpView.SetHpText();
+        uiInterface.HpView.HpReduce();
     }
 
     protected override void Heal(int healHp)

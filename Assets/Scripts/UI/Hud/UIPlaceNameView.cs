@@ -2,53 +2,16 @@ using DG.Tweening;
 using TMPro;
 using UnityEngine;
 
-public interface IUIPlaceNameView
-{
-    void SetPlaceText(string placeName);
-    void HideImmediate();
-}
-
+// 표시할 값 묶음. 로직은 없다.
 public class UIPlaceNameModel
 {
     public string placeName;
 }
 
-public class UIPlaceNamePresenter
+// 받은 값을 그리기만 한다.
+// 무엇을 그릴지 판단하는 부분이 없어 Presenter 를 두지 않았다.
+public class UIPlaceNameView : MonoBehaviour
 {
-    private readonly IUIPlaceNameView _placeNameView;
-    private UIPlaceNameModel _model;
-
-    public UIPlaceNamePresenter(IUIPlaceNameView placeNameView, UIPlaceNameModel model)
-    {
-        _placeNameView = placeNameView;
-        _model         = model;
-    }
-
-    public void SetPlaceText()
-    {
-        _placeNameView.SetPlaceText(_model.placeName);
-    }
-
-    public void HideImmediate()
-    {
-        _placeNameView.HideImmediate();
-    }
-}
-
-public class UIPlaceNameView : MonoBehaviour, IUIPlaceNameView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    // 호출부가 인터페이스 변환 -> Model 생성 -> Presenter 생성 -> 역주입을
-    // 매번 반복하던 것을 한 줄로 줄인다.
-    private UIPlaceNamePresenter presenter;
-    public UIPlaceNamePresenter Presenter => presenter;
-
-    public UIPlaceNamePresenter Bind(UIPlaceNameModel model)
-    {
-        presenter = new UIPlaceNamePresenter(this, model);
-        return presenter;
-    }
-
     private const float FadeDuration = 0.5f;
     private const float StayDuration = 1.5f;
 
@@ -57,7 +20,12 @@ public class UIPlaceNameView : MonoBehaviour, IUIPlaceNameView
 
     private Sequence _sequence;
 
-    public void SetPlaceText(string placeName)
+    public void SetPlaceText(UIPlaceNameModel model)
+    {
+        SetPlaceText(model.placeName);
+    }
+
+    private void SetPlaceText(string placeName)
     {
         _sequence?.Kill();
 

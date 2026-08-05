@@ -4,11 +4,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IPopupGuideView
-{
-    void SetModel(string guideTitle, string guideMessage, List<string> imgNameList);
-}
-
 public class PopupGuideModel
 {
     public string guideTitle;
@@ -17,48 +12,21 @@ public class PopupGuideModel
     public Action closeAction;
 }
 
-public class PopupGuidePresenter
+public class PopupGuideView : MonoBehaviour
 {
-    private IPopupGuideView _guideView;
     private PopupGuideModel _model;
 
-    public PopupGuidePresenter(IPopupGuideView guideView, PopupGuideModel model)
+    public void SetData(PopupGuideModel model)
     {
-        _guideView = guideView;
         _model = model;
+        SetModel(_model.guideTitle, _model.guideMessage, _model.imgNameList);
     }
 
-    public void Open(Action action)
-    {
-        action?.Invoke();
-    }
-
-    public void SetModel()
-    {
-        _guideView.SetModel(_model.guideTitle, _model.guideMessage, _model.imgNameList);
-    }
-
-    public void SetAction(Action action)
-    {
-        _model.closeAction = action;
-    }
-
+    // 컨테이너(Popup_Guide)가 열림 완료 후 매 프레임 호출한다
     public void Close()
     {
-        if (Input.GetKeyDown(GameManager.Instance.escKey))
+        if (_model != null && Input.GetKeyDown(GameManager.Instance.escKey))
             _model.closeAction?.Invoke();
-    }
-}
-
-public class PopupGuideView : MonoBehaviour, IPopupGuideView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupGuidePresenter presenter;
-
-    public PopupGuidePresenter Bind(PopupGuideModel model)
-    {
-        presenter = new PopupGuidePresenter(this, model);
-        return presenter;
     }
 
     [SerializeField] private TMP_Text titleText;

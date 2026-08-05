@@ -9,44 +9,9 @@ public class PopupKeyboardModel
     public PopupCommonActions commonActions;
 }
 
-// ── Interface ─────────────────────────────────────────────────────────────────
-public interface IPopupKeyboardView
-{
-    void SetAction(PopupKeyboardPresenter presenter, PopupCommonActions commonActions);
-}
-
-// ── Presenter ─────────────────────────────────────────────────────────────────
-public class PopupKeyboardPresenter
-{
-    private readonly IPopupKeyboardView _view;
-    private readonly PopupKeyboardModel _model;
-
-    public PopupKeyboardPresenter(IPopupKeyboardView view, PopupKeyboardModel model)
-    {
-        _view  = view;
-        _model = model;
-    }
-
-    public void SetAction() => _view.SetAction(this, _model.commonActions);
-    public void HandleEsc()
-    {
-        _model.closeAction?.Invoke();
-        _model.commonActions.PlayCancelSound?.Invoke();
-    }
-}
-
 // ── View ──────────────────────────────────────────────────────────────────────
-public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
+public class PopupKeyboardView : MonoBehaviour
 {
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupKeyboardPresenter presenter;
-
-    public PopupKeyboardPresenter Bind(PopupKeyboardModel model)
-    {
-        presenter = new PopupKeyboardPresenter(this, model);
-        return presenter;
-    }
-
     private const int Cols = 2;
 
     [SerializeField] private KeySettingFrame leftKey;
@@ -69,7 +34,7 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
     
     private ExpansionUiObject[] _grid; // [leftKey, rightKey, upKey, downKey]
 
-    private PopupKeyboardPresenter _presenter;
+    private PopupKeyboardModel _model;
     private PopupCommonActions     _commonActions;
     private int  _cursor          = 0;
     private bool _isRebinding     = false;
@@ -111,7 +76,7 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
 
     private void Update()
     {
-        if (_presenter == null)
+        if (_model == null)
             return;
 
         if (_isRebinding || Time.frameCount == _rebindDoneFrame)
@@ -130,7 +95,7 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
         if (Input.GetKeyDown(GameManager.Instance.rightKey))
             HandleArrow(+1, 0);
         if (Input.GetKeyDown(GameManager.Instance.escKey))
-            _presenter.HandleEsc();
+            HandleEsc();
     }
 
     private void OnGUI()
@@ -223,7 +188,7 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
 
         if (_cursor == _grid.Length - 1) // defaultButtons[1]
         {
-            _presenter.HandleEsc();
+            HandleEsc();
             return;
         }
 
@@ -327,11 +292,16 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
         }
     }
 
-    // IPopupKeyboardView
-    public void SetAction(PopupKeyboardPresenter presenter, PopupCommonActions commonActions)
+    public void SetAction(PopupKeyboardModel model)
     {
-        _presenter     = presenter;
-        _commonActions = commonActions;
+        _model         = model;
+        _commonActions = model.commonActions;
+    }
+
+    private void HandleEsc()
+    {
+        _model.closeAction?.Invoke();
+        _commonActions?.PlayCancelSound?.Invoke();
     }
 
     // ── 마우스 상호작용 (보류) ── 재활성화 시 아래 주석 해제
@@ -385,6 +355,6 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
     }
 
     // 팝업 열림 연출이 끝난 뒤에만 마우스 입력 허용
-    private bool CanMouseInput() => _presenter != null && _ownerPopup && _ownerPopup.OpenComplete;
+    private bool CanMouseInput() => _model != null && _ownerPopup && _ownerPopup.OpenComplete;
     */
 }

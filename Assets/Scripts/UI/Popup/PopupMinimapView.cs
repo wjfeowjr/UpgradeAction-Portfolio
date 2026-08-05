@@ -6,12 +6,6 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-public interface IPopupMinimapView
-{
-    void SetMinimapText(string check, string cancel);
-    void LimitAction(bool[] boolArray);
-}
-
 public class PopupMinimapModel
 {
     public string checkString;
@@ -21,48 +15,22 @@ public class PopupMinimapModel
     public Action closeAction;
 }
 
-public class PopupMinimapPresenter
+public class PopupMinimapView : MonoBehaviour
 {
-    private readonly IPopupMinimapView _view;
     private PopupMinimapModel _model;
 
-    public PopupMinimapPresenter(IPopupMinimapView minimapView, PopupMinimapModel model)
+    public void SetData(PopupMinimapModel model)
     {
-        _view = minimapView;
         _model = model;
+        SetMinimapText(_model.checkString, _model.closeString);
     }
-    
-    public void SetMinimapText()
-    {
-        _view.SetMinimapText(_model.checkString, _model.closeString);
-    }
+
+    public void MoveAction() => _model?.moveAction?.Invoke();
 
     public void CheckAction()
     {
-        if (InputHelper.GetEnterDown())
-            _model.checkAction();
-    }
-
-    public void MoveAction()
-    {
-        _model.moveAction();
-    }
-
-    public void LimitAction(bool[] limitArray)
-    {
-        _view.LimitAction(limitArray);
-    }
-}
-
-public class PopupMinimapView : MonoBehaviour, IPopupMinimapView
-{
-    // 이 View 가 자기 Presenter 를 직접 조립한다.
-    private PopupMinimapPresenter presenter;
-
-    public PopupMinimapPresenter Bind(PopupMinimapModel model)
-    {
-        presenter = new PopupMinimapPresenter(this, model);
-        return presenter;
+        if (_model != null && InputHelper.GetEnterDown())
+            _model.checkAction?.Invoke();
     }
 
     private CancellationTokenSource minimapCancellation;
