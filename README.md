@@ -3,14 +3,6 @@
 > 3인의 캐릭터를 **전투 중 실시간으로 교체**하며 싸우는 2D 액션 메트로배니아.
 > Unity 6 / C# 기반, 개인 개발 프로젝트입니다.
 
-<!--
-  [스크린샷 자리 #1 — 대표 이미지]
-  권장: 전투 중 스킬 이펙트가 크게 터지는 순간의 가로 스크린샷 1장.
-  Unity 에디터에서 F5 (Tools/스크린샷 찍기)로 캡처 가능합니다.
-  docs/images/hero.png 로 저장 후 아래 주석을 해제하세요.
--->
-<!-- ![대표 이미지](docs/images/hero.png) -->
-
 ---
 
 ## 목차
@@ -60,13 +52,6 @@
 
 교체 순서도 이 순서로 고정되어 있습니다 (`GameManager.PlayerRotation`).
 
-<!--
-  [스크린샷 자리 #2 — 캐릭터 교체]
-  권장: 교체 순간의 연출을 담은 GIF (2~3초).
-  docs/images/change-character.gif
--->
-<!-- ![캐릭터 교체](docs/images/change-character.gif) -->
-
 ### 스킬을 "고르는" 게 아니라 "키우는" 성장
 
 스킬 자체보다 **스킬 특성(Attribute) 트리**가 성장의 축입니다.
@@ -82,13 +67,6 @@ Berserker_UpperSlash
 특성은 수치 강화에 그치지 않고 **스킬의 동작 자체를 바꿉니다**.
 방어 타입(`SuperArmor`)을 부여하거나, 투사체를 추가 생성하거나, 디버프를 얹는 식입니다.
 이 모든 분기는 코드가 아니라 `SkillAttribute.json` 한 곳에서 정의됩니다.
-
-<!--
-  [스크린샷 자리 #3 — 특성 트리 UI]
-  권장: PopupAttributeView가 열린 화면.
-  docs/images/attribute-tree.png
--->
-<!-- ![특성 트리](docs/images/attribute-tree.png) -->
 
 ---
 
@@ -444,14 +422,6 @@ popupStore.StoreView.Bind(storeModel).SetAction();
   "transforms":[ { "name": "Monster_Bat", "grid": { "x": 12, "y": 4 } } ]
 }
 ```
-
-<!--
-  [스크린샷 자리 #4 — 에디터 툴]
-  권장: RoomAssemblerWindow 실행 화면 + 조립된 룸이 나란히 보이는 캡처.
-  이 프로젝트에서 가장 어필력이 높은 이미지입니다.
-  docs/images/room-assembler.png
--->
-<!-- ![RoomAssembler](docs/images/room-assembler.png) -->
 
 ---
 
