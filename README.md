@@ -12,10 +12,10 @@
 - [핵심 구현 하이라이트](#핵심-구현-하이라이트)
 - [기술 스택](#기술-스택)
 - [프로젝트 구조](#프로젝트-구조)
+- [적용한 설계 패턴](#적용한-설계-패턴)
 - [직접 만든 에디터 툴](#직접-만든-에디터-툴)
 - [이 저장소에 대하여](#이-저장소에-대하여)
 - [플레이 정보](#플레이-정보)
-- [더 읽을 문서](#더-읽을-문서)
 
 ---
 
@@ -25,7 +25,6 @@
 |---|---|
 | **장르** | 2D 액션 메트로배니아 (횡스크롤) |
 | **엔진** | Unity `6000.3.10f1` / C# |
-| **개발 기간** | 2025.04 ~ 진행 중 (16개월 이상, 커밋 257회) |
 | **개발 인원** | 1인 (기획·프로그래밍·연출) |
 | **코드 규모** | C# 스크립트 234개 / 약 42,900줄 (에디터 툴 6개 · EditMode 테스트 67개 포함) |
 | **컨텐츠 규모** | 룸 59개 · 몬스터 21종 · 플레이어블 3종 |
@@ -72,9 +71,6 @@ Berserker_UpperSlash
 
 ## 핵심 구현 하이라이트
 
-> 아래는 요약입니다. **왜 그렇게 만들었는지**에 대한 상세한 설명은
-> [`docs/TECH-NOTES.md`](docs/TECH-NOTES.md) 에 사례별로 정리해 두었습니다.
-
 ### 1. 7단계 방어 타입으로 만든 액션 타격감
 
 액션 게임의 손맛은 "누가 맞고 누가 밀리는가"의 규칙에서 나옵니다.
@@ -97,8 +93,6 @@ public enum EBodyType
 광전사의 `SwordCounter`는 가드 자세 진입 후 정확한 타이밍에 피격당했을 때만
 반격으로 전환되며, 그 외에는 일반 가드로 처리됩니다.
 
-→ [상세: 왜 방어 타입을 7단계까지 나눴는가](docs/TECH-NOTES.md#1-방어-타입을-7단계까지-나눈-이유)
-
 ### 2. 우선순위 기반 실드 소비 로직
 
 여러 실드가 동시에 걸릴 수 있는 구조에서 **"무엇부터 깎을 것인가"** 가 문제가 됩니다.
@@ -120,8 +114,6 @@ shieldList.Sort((a, b) =>
 
 **우선순위 → 잔여시간 짧은 순 → 무한 실드 순**으로 소모됩니다.
 곧 사라질 실드를 먼저 쓰게 해서 낭비를 막는 설계입니다.
-
-→ [상세: 실드가 겹칠 때 생긴 문제](docs/TECH-NOTES.md#2-실드가-겹칠-때-무엇부터-깎을-것인가)
 
 ### 3. 틱 기반 버프/디버프 시스템
 
@@ -203,21 +195,78 @@ public class Buff
 
 ### 6. 리소스 로딩과 메모리 관리
 
-- **에디터에서 참조를 미리 수집해 씬에 직렬화**합니다. `PrefabCacher` / `SoundCacher` 가
-  `AssetDatabase` 로 프리팹과 오디오 클립을 훑어 목록을 채워두고, 런타임은 그 목록만 씁니다.
-  런타임에 경로 문자열로 에셋을 찾는 경로가 없어, **에셋을 옮기거나 이름을 바꾸면
-  실행 중이 아니라 캐싱 시점에 드러납니다.**
-- **SpriteAtlas 2종**(UI / 배경)을 초기화 시 한 번에 펼쳐 캐싱합니다.
-- **JSON 테이블은 `Resources.Load`** 로 한 번에 읽고 id 인덱스를 만듭니다 (`TableManager`).
-- **오브젝트 풀 5종** — 월드 오브젝트 / UI 오브젝트 / HUD / 팝업 / 최상위를 분리 운영합니다.
-  uGUI는 형제 순서가 곧 렌더 순서라, 부모를 나누면 **계층 정리와 레이어 관리를 동시에** 얻습니다.
-- **`GameObject.Find` 계열 호출을 전 코드베이스에서 2회로 억제**했습니다.
-  문자열 탐색은 비용도 크지만, **이름을 바꾸면 컴파일 에러 없이 조용히 깨지는** 쪽이 더 문제입니다.
+**에셋 참조를 에디터에서 확정합니다.** 런타임에 경로 문자열로 에셋을 찾는 경로가 없습니다.
+에디터 툴이 미리 참조를 수집해 씬에 직렬화해 두고, 런타임은 그 목록만 사용합니다.
 
-풀링에서 실제로 어려웠던 것은 성능이 아니라 **재사용 시 이전 상태를 물려받는 문제**였습니다.
-파티클 잔상, 이전 소유자의 콜백이 남는 버그를 겪고 나서 초기화 규칙을 테스트로 고정했습니다.
+```csharp
+// PrefabCacher — 인스펙터 우클릭 "Cache Prefabs"
+string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { ConstValues.PrefabFolder });
+foreach (var guid in guids)
+{
+    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
+    if (prefab != null)
+        GameManager.Instance.GetPrefabList().Add(prefab);
+}
+```
 
-→ [상세: 부활 후 미사일 — 재현이 안 되던 고질적 버그](docs/TECH-NOTES.md#4-부활-후-미사일--재현이-안-되던-고질적-버그)
+수집된 목록은 `GameManager.prefabList` 로 직렬화되어 초기화 때 `ObjectPoolService` 에 넘어갑니다.
+오디오도 `SoundCacher` 가 같은 방식으로 처리합니다.
+
+**이 방식의 이점은 실패 시점입니다.** 경로 문자열 로딩은 에셋을 옮기거나 이름을 바꿔도
+컴파일 에러가 나지 않고, 해당 오브젝트를 생성하는 순간에야 조용히 깨집니다.
+참조를 미리 확정해 두면 캐싱 시점에 드러나고, 그때는 아직 에디터 안입니다.
+대신 에셋을 추가하면 캐싱을 다시 돌려야 합니다.
+
+> 초기에는 Addressables 를 사용했지만 걷어냈습니다.
+> 그룹·번들 설정을 유지하는 비용에 비해 단일 PC 빌드에서 얻는 것이 없었습니다.
+
+**스프라이트 아틀라스**는 매번 `GetSprite(name)` 을 부르면 내부 탐색 비용이 발생하므로,
+초기화 시 한 번에 펼쳐 딕셔너리에 담습니다. 조회는 O(1) 입니다.
+
+```csharp
+private void InitAtlas(SpriteAtlas spriteAtlas)
+{
+    cloneSprites = new Sprite[spriteAtlas.spriteCount];
+    spriteAtlas.GetSprites(cloneSprites);          // 한 번에 채워진다
+
+    foreach (var sprite in cloneSprites)
+    {
+        // "Icon_Sword(Clone)" → "Icon_Sword"
+        var keyName = sprite.name.Split(ConstValues.AtlasClone)[0];
+        atlasDic.Add(keyName, sprite);
+    }
+}
+```
+
+**오브젝트 풀은 용도별로 5개 부모 Transform** 을 분리 운영합니다.
+
+| 풀 | 용도 |
+|---|---|
+| `objectPool` | 몬스터 · 투사체 · 이펙트 등 월드 오브젝트 |
+| `uiObjectPool` | 데미지 텍스트 등 월드 상의 UI 오브젝트 |
+| `uiPool` | HUD 화면 |
+| `popupPool` | 팝업 화면 |
+| `highestPool` | 항상 최상단에 그려져야 하는 요소 |
+
+uGUI는 형제 순서가 곧 렌더 순서이므로, 부모를 나누면 **계층 정리와 레이어 관리를 동시에** 얻습니다.
+
+이전 구현은 전체 인스턴스를 `GameObject.name` 으로 훑었습니다.
+`.name` 은 네이티브 접근이라 **읽을 때마다 문자열을 할당**하므로, 조회 비용이 그대로 GC 부담이 됐습니다.
+id 기반 딕셔너리로 바꾼 뒤:
+
+| | 조회 시간 | 호출당 할당 |
+|---|---|---|
+| 이전 | 36,122 ms | 3,565 B |
+| 이후 | 69 ms | **0 B** |
+
+> 인스턴스 3,000개 / 조회 20,000회 기준. 시간 차이는 인스턴스 수에 비례하므로
+> 실제 게임 규모에서는 체감되지 않습니다. 규모와 무관한 것은 할당이 0이 된 부분입니다.
+
+**JSON 테이블**은 `Resources.Load` 로 한 번에 읽고 id 인덱스를 만듭니다 (`TableManager`).
+
+**`GameObject.Find` / `FindObjectOfType` 는 전체 코드베이스에서 2회**만 사용합니다.
+나머지는 인스펙터 주입 또는 매니저 경유입니다. 문자열 탐색은 비용도 크지만,
+**이름을 바꾸면 컴파일 에러 없이 조용히 깨지는** 쪽이 더 문제입니다.
 
 ### 7. UniTask 기반 비동기 연출
 
@@ -394,6 +443,208 @@ popupStore.StoreView.Bind(storeModel).SetAction();
 
 ---
 
+## 적용한 설계 패턴
+
+패턴을 쓰기 위해 쓴 것이 아니라, 문제를 풀다 보니 자리 잡은 것들입니다.
+실제로 코드에 적용된 것만 적었습니다.
+
+### Template Method
+
+가장 넓게 쓰인 패턴입니다. **골격은 부모가 정하고 세부는 자식이 채웁니다.**
+
+```csharp
+public abstract class Character : InteractionController
+{
+    // 공통: 상태 머신, 버프/실드, HP/MP, 방어 타입은 여기서 처리한다
+    protected List<Buff> buffList;
+    protected List<Shield> shieldList;
+    protected EBodyType bodyType;
+
+    public int ConsumeShield(int damage) { … }   // 모든 캐릭터가 공유
+
+    // 자식이 반드시 구현해야 하는 부분
+    protected abstract void StateSetting(ENormalState state, string trigger, string animId);
+    protected abstract void StateCheck();
+    protected abstract void StateRecovery();
+}
+
+public abstract class Player : Character
+{
+    public abstract void Skill(KeyCode skillKey);   // 직업마다 스킬 구성이 다르다
+    public abstract void ChangeAttack();            // 교체 등장 공격도 직업마다 다르다
+}
+```
+
+`Character` 하나에 구현한 버프·실드·상태이상 로직을
+**플레이어 3종 + 몬스터 21종 + NPC 8종**이 그대로 씁니다.
+몬스터를 추가할 때 다시 구현할 것이 없습니다. `virtual` 50개 / `override` 130개.
+
+### Singleton
+
+씬을 넘어 유지되어야 하는 매니저에 적용했습니다. **용도가 달라 두 가지를 만들었습니다.**
+
+```csharp
+// 씬에 미리 배치해 두는 매니저 — 배치된 것을 찾아 쓴다
+public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
+{
+    public static T Instance
+    {
+        get
+        {
+            if (instance == null)
+                instance = (T)FindObjectOfType(typeof(T));
+            return instance;
+        }
+    }
+}
+
+// 씬 배치가 필요 없는 매니저 — 없으면 만들어서 쓴다
+public class SingletonMono<T> : MonoBehaviour where T : MonoBehaviour
+{
+    private static object _lock = new object();
+
+    public static T Instance
+    {
+        get
+        {
+            lock (_lock)                                  // 스레드 세이프
+            {
+                if (null == instance)
+                {
+                    GameObject singleton = new GameObject();
+                    instance = singleton.AddComponent<T>();
+                    if (Application.isPlaying)
+                        DontDestroyOnLoad(singleton);
+                }
+                return instance;
+            }
+        }
+    }
+}
+```
+
+13개 클래스가 상속받습니다.
+
+> 이 패턴의 대가도 겪었습니다. 어디서든 접근 가능하다 보니
+> `GameManager` 에 계속 기능이 붙어 3,840줄까지 커졌습니다.
+
+### Facade
+
+내부 구조를 바꾸면서 **호출부를 건드리지 않기 위해** 썼습니다.
+`GetTalk` 은 코드베이스 293곳에서 호출됩니다. 이걸 전부 고치는 대신
+`GameManager` 가 얇은 창구로 남았습니다.
+
+```csharp
+// GameManager.Text.cs — 실제 로직은 LocalizationService 에 있다
+public string GetTalk(int idx)
+    => localization.GetTalk(idx, language);
+
+// GameManager.Pool.cs — 실제 로직은 ObjectPoolService 에 있다
+public GameObject SpawnToObjectPool(string id, Vector3 pos)
+    => pool.Spawn(id, objectPool, pos);
+```
+
+덕분에 다국어 조회를 선형 탐색에서 `Dictionary` 로,
+오브젝트 풀을 이름 기반에서 id 기반으로 바꾸면서도 **호출부는 한 곳도 수정하지 않았습니다.**
+
+---
+
+아래 둘은 성격이 다릅니다. 객체 간 관계를 정리하는 패턴이 아니라,
+**특정 문제 영역을 위해 정립된 구조**입니다.
+
+### Object Pool
+
+전투 중 이펙트·투사체가 초당 수십 개 생성됩니다.
+매번 `Instantiate`/`Destroy` 하면 GC 부담이 프레임 튐으로 돌아옵니다.
+
+```csharp
+public class ObjectPoolService
+{
+    private readonly Dictionary<string, GameObject> prefabById;
+    private readonly Dictionary<string, List<GameObject>> instancesById;
+
+    public GameObject Spawn(string id, Transform parent, Vector3 position)
+    {
+        var go = GetRecyclable(id) ?? Create(id, parent);   // 재사용 우선, 없으면 생성
+        if (!go)
+            return null;                 // 프리팹이 없으면 경고 후 null (이전에는 크래시)
+
+        go.transform.position = position;
+        go.SetActive(true);
+        ResetParticles(go);              // 재사용 시 이전 상태를 물려받지 않도록 초기화
+        return go;
+    }
+
+    private GameObject GetRecyclable(string id)
+    {
+        if (!instancesById.TryGetValue(id, out var list))
+            return null;
+
+        for (int i = 0; i < list.Count; i++)
+            if (list[i] && !list[i].activeSelf)
+                return list[i];      // 같은 id 의 비활성 인스턴스를 앞에서부터
+        return null;
+    }
+}
+```
+
+**이 패턴의 핵심은 `Instantiate` 를 줄이는 것이 아니라, 재사용 시 이전 상태를
+물려받는 위험을 관리하는 것**입니다. 실제로 파티클 잔상이 남거나 미사일이
+이전 소유자의 콜백을 물고 다니던 버그를 겪었고, 그래서 재사용 규칙을 테스트 13개로 고정했습니다.
+
+### MVP (Model–View–Presenter)
+
+UI 로직이 `MonoBehaviour` 에 붙어 있으면 검증할 수 없습니다.
+**Presenter를 `MonoBehaviour` 밖에 두는 것**이 목적이었습니다.
+
+```csharp
+// 1) View 계약 — 화면이 무엇을 할 수 있는지만 정의한다
+public interface IPopupCommonView
+{
+    void SetTitle(string title);
+    void SetDesc(string desc);
+    void SetButton(UIButtonData data);
+    void SetClose(Action onClose);
+}
+
+// 2) Model — 표시할 데이터
+public class PopupCommonModel
+{
+    public string Title;
+    public string Desc;
+    public UIButtonData ButtonData;
+}
+
+// 3) Presenter — 로직. MonoBehaviour 가 아니다
+public class PopupCommonPresenter
+{
+    private readonly IPopupCommonView _view;
+    private readonly PopupCommonModel _model;
+
+    public PopupCommonPresenter(IPopupCommonView view, PopupCommonModel model)
+    {
+        _view = view;
+        _model = model;
+
+        _view.SetTitle(_model.Title);
+        _view.SetDesc(_model.Desc);
+        _view.SetButton(_model.ButtonData);
+    }
+}
+
+// 4) View 구현 — uGUI 바인딩만 담당한다
+public class PopupCommonView : UIBase, IPopupCommonView
+{
+    [SerializeField] private TMP_Text titleText;
+
+    public void SetTitle(string title) => titleText.text = title;
+}
+```
+
+View 인터페이스 33개(`IPopup*View` 21 + `IUI*View` 12), Presenter 30개.
+
+---
+
 ## 직접 만든 에디터 툴
 
 작업량이 늘어나면서 반복 작업을 툴로 옮겼습니다. 총 6개 / 약 760줄입니다.
@@ -441,10 +692,9 @@ popupStore.StoreView.Bind(storeModel).SetAction();
 Assets/Scripts/     게임 로직 114개 (발췌)
 Assets/Editor/      직접 만든 에디터 툴 6개 (전부)
 Assets/Tests/       EditMode 테스트 67개 (전부)
-docs/               설계 문서 · 기술 노트 · UI 목업
 ```
 
-문서에서 근거로 든 코드는 전부 담았습니다.
+이 README 에서 근거로 든 코드는 전부 담았습니다.
 `RoomMinimap` · `MinimapCellCodec` · `GameFlowService` · `TableParse` ·
 `LocalizationService` · `ObjectPoolService` 와 각각의 테스트가 여기 있습니다.
 
@@ -475,17 +725,6 @@ docs/               설계 문서 · 기술 노트 · UI 목업
 ```
 %USERPROFILE%\AppData\LocalLow\HansanGame\Damn Adventure Demo\Save\
 ```
-
----
-
-## 더 읽을 문서
-
-### 기술 문서
-
-| 문서 | 내용 |
-|---|---|
-| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | 시스템별 설계 상세 — 상태 머신, 전투 판정, 데이터 로딩, UI 계층, 룸 전환 |
-| [`docs/ARCHITECTURE.md#14`](docs/ARCHITECTURE.md#14-적용한-설계-패턴) | **적용한 설계 패턴** — Template Method · Singleton · Facade · Object Pool · MVP |
 
 ---
 
