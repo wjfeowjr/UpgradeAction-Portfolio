@@ -174,6 +174,18 @@ public partial class GameManager : Singleton<GameManager>
             ControlStart = true;
     }
 
+    /// <summary>
+    /// 요청만 거두고 조작은 복구하지 않는다.
+    /// 팝업이 닫힌 뒤 이어지는 연출이 조작을 직접 관리하는 경우에 쓴다
+    /// (패스트 트래블처럼 닫자마자 다시 멈춰야 하는 흐름).
+    ///
+    /// 거두지 않으면 요청자로 영원히 남아, 이후 어떤 팝업이 닫혀도 잠금이 풀리지 않는다.
+    /// </summary>
+    public void ReleaseControl(object owner)
+    {
+        flow.UnlockInput(owner);
+    }
+
     public bool RoomMoving
     {
         get => roomMoving;

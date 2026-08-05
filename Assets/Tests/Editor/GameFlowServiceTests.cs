@@ -83,6 +83,23 @@ public class GameFlowServiceTests
     }
 
     [Test]
+    public void 요청을_거두지_않으면_다른_팝업이_닫혀도_잠금이_남는다()
+    {
+        // 실제로 겪은 버그다.
+        // 패스트 트래블이 잠금을 걸고 닫히면서 요청을 거두지 않아,
+        // 이후 일시정지 팝업을 열었다 닫아도 조작이 돌아오지 않았다.
+        flow.LockInput(PopupA);          // 패스트 트래블
+        flow.LockInput(PopupB);          // 일시정지
+        flow.UnlockInput(PopupB);        // 일시정지만 닫힘
+
+        Assert.IsTrue(flow.IsInputLocked, "거두지 않은 요청이 남아 잠금이 유지된다");
+
+        // 닫을 때 요청을 거두면 정상으로 돌아온다
+        flow.UnlockInput(PopupA);
+        Assert.IsFalse(flow.IsInputLocked);
+    }
+
+    [Test]
     public void 요청하지_않은_대상이_풀어도_영향이_없다()
     {
         flow.StopTime(PopupA);
