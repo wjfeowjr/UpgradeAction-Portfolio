@@ -39,7 +39,6 @@ flowchart TB
     subgraph Persist["DontDestroyOnLoad 영속 계층"]
         GM[GameManager]
         TM[TableManager]
-        RES[ResourceManager]
         CT[Controller]
         SND[SoundManager / BgmManager]
         STM[SteamWorksManager]
@@ -71,7 +70,7 @@ flowchart TB
 | `Singleton<T>` | `FindObjectOfType` 기반 | 씬에 이미 배치된 매니저 |
 | `SingletonMono<T>` | 스레드 세이프, 인스턴스 자동 생성 | 씬 배치가 필요 없는 순수 매니저 |
 
-`ResourceManager`, `TableManager` 등은 `SingletonMono<T>` 를 사용합니다.
+`TableManager` 등은 `SingletonMono<T>` 를 사용합니다.
 
 ---
 
@@ -82,7 +81,6 @@ flowchart TB
 | `GameManager` | 플레이어 상태 · 스탯 · 재화 · 세이브/로드 · 오브젝트 풀 · 아틀라스 캐시 · 키 바인딩 |
 | `RoomManager` | 룸 이동, 카메라 경계, 미니맵, 페이드 전환, 게임오버 흐름 |
 | `Controller` | 입력 폴링 및 플레이어 액션 디스패치 |
-| `ResourceManager` | Addressables 로딩 (동기 / 비동기) |
 | `TableManager` | JSON 데이터 테이블 로드 및 조회 |
 | `BgmManager` / `SoundManager` | 오디오 재생 |
 | `VolumeManager` | AudioMixer 볼륨 제어 |
@@ -365,7 +363,7 @@ case EBuffType.Stagger:
 ```
 
 방어 타입은 **스킬 실행 중 동적으로도 변경**됩니다.
-예: 버서커 `SwordCounter` 는 시전과 동시에 `Counter` 로 전환됩니다.
+예: 광전사 `SwordCounter` 는 시전과 동시에 `Counter` 로 전환됩니다.
 
 ```csharp
 StateSetting(ENormalState.Skill, ConstValues.BerserkerSwordCounter, …);
@@ -877,32 +875,46 @@ SpawnToPopupPool(type, pos)  → pool.Spawn(id, popupPool,  pos)
 
 ## 10. 리소스 · 메모리 관리
 
-### Addressables
+### 에셋 참조를 에디터에서 확정한다
 
-3개 그룹으로 분리되어 있습니다.
-
-| 그룹 | 대상 |
-|---|---|
-| `Default Local Group` | 공통 리소스 |
-| `UI` | HUD 관련 |
-| `Popup` | 팝업 화면 |
-
-`ResourceManager` 는 동기·비동기 로더를 모두 제공하며,
-**키 존재 여부를 먼저 확인**해 없는 키에 대해 예외 대신 `default` 를 반환합니다.
+런타임에 경로 문자열로 에셋을 찾는 경로가 없습니다.
+에디터 툴이 미리 참조를 수집해 씬에 직렬화해 두고, 런타임은 그 목록만 사용합니다.
 
 ```csharp
-public async UniTask<T> LoadAssetAsync<T>(string path)
+// PrefabCacher — 인스펙터 우클릭 "Cache Prefabs"
+string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { ConstValues.PrefabFolder });
+foreach (var guid in guids)
 {
-    // 키에 맞는 번들이 존재하는지 확인 후 리소스를 리턴한다
-    var locations = await Addressables.LoadResourceLocationsAsync(path).Task;
-    if (locations.Any())
-        return await Addressables.LoadAssetAsync<T>(path).Task;
-
-    return default(T);
+    var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(AssetDatabase.GUIDToAssetPath(guid));
+    if (prefab != null)
+        GameManager.Instance.GetPrefabList().Add(prefab);
 }
 ```
 
-로딩 실패가 **게임 전체를 중단시키지 않도록** 설계했습니다.
+수집된 목록은 `GameManager.prefabList` 로 직렬화되고, 초기화 때 `ObjectPoolService` 에 넘어갑니다.
+오디오도 `SoundCacher` 가 같은 방식으로 처리합니다.
+
+**이 방식의 이점은 실패 시점입니다.** 경로 문자열 로딩은 에셋을 옮기거나 이름을 바꿔도
+컴파일 에러가 나지 않고, 해당 오브젝트를 생성하는 순간에야 조용히 깨집니다.
+참조를 미리 확정해 두면 **캐싱 시점에 드러나고, 그때는 아직 에디터 안입니다.**
+
+대신 에셋을 추가하면 캐싱을 다시 돌려야 합니다.
+빌드 전 체크리스트에 넣어 두는 것으로 감당하고 있습니다.
+
+> 초기에는 Addressables 를 사용했지만 걷어냈습니다.
+> 그룹·번들 설정을 유지하는 비용에 비해, 단일 PC 빌드에서 얻는 것이 없었습니다.
+> 다운로드 컨텐츠나 플랫폼별 번들 분리가 필요해지면 다시 검토할 부분입니다.
+
+### JSON 테이블
+
+데이터 테이블 20종은 `Resources.Load` 로 한 번에 읽습니다.
+
+```csharp
+var jsonText = Resources.Load<TextAsset>($"JsonFolder/{fileName}");
+```
+
+로드 직후 id 인덱스를 만들어 이후 조회는 `Dictionary` 를 탑니다
+([3절 데이터 레이어](#3-데이터-레이어) 참고).
 
 ### 스프라이트 아틀라스 캐싱
 
@@ -1280,7 +1292,7 @@ public class SingletonMono<T> : MonoBehaviour where T : MonoBehaviour
 | | 방식 | 대상 |
 |---|---|---|
 | `Singleton<T>` | `FindObjectOfType` | `GameManager`, `Controller` 등 씬에 배치된 것 |
-| `SingletonMono<T>` | `lock` + 자동 생성 | `TableManager`, `ResourceManager` 등 |
+| `SingletonMono<T>` | `lock` + 자동 생성 | `TableManager` 등 |
 
 13개 클래스가 상속받습니다.
 

@@ -46,7 +46,7 @@
 
 ### 캐릭터 교체가 곧 전투 시스템
 
-이 게임의 중심 메커닉은 **파이터 / 거너 / 버서커 3인의 실시간 교체**입니다.
+이 게임의 중심 메커닉은 **광전사 / 총잡이 / 싸움꾼 3인의 실시간 교체**입니다.
 세 캐릭터는 각자 별도의 HP·스킬·쿨타임을 가지며, `Shift` 키로 즉시 교체됩니다.
 
 교체는 단순한 캐릭터 변경이 아니라 **공격 수단**입니다.
@@ -54,9 +54,11 @@
 
 | 캐릭터 | 콘셉트 | 대표 스킬 |
 |---|---|---|
-| **파이터 (Fighter)** | 전기 속성 근접 연타 | `LightningKick` · `LightningPunch` · `LightningSmash` · `StrongPunch` |
-| **거너 (Gunner)** | 원거리 사격 + 속성 부여 | `Grenade` · `KnockBackShot` · `CrazyShot` · `ElementalInfusion` · `BigShot` |
-| **버서커 (Berserker)** | 대검 · 저스트 카운터 | `UpperSlash` · `FireStrike` · `SwordCounter` · `Crash` · `ChargeCrash` |
+| **광전사 (Berserker)** | 대검 · 저스트 카운터 | `UpperSlash` · `FireStrike` · `SwordCounter` · `Crash` · `ChargeCrash` |
+| **총잡이 (Gunner)** | 원거리 사격 + 속성 부여 | `Grenade` · `KnockBackShot` · `CrazyShot` · `ElementalInfusion` · `BigShot` |
+| **싸움꾼 (Fighter)** | 전기 속성 근접 연타 | `LightningKick` · `LightningPunch` · `LightningSmash` · `StrongPunch` |
+
+교체 순서도 이 순서로 고정되어 있습니다 (`GameManager.PlayerRotation`).
 
 <!--
   [스크린샷 자리 #2 — 캐릭터 교체]
@@ -114,7 +116,7 @@ public enum EBodyType
 ```
 
 특히 `Counter`는 **저스트 프레임(0.15초) 판정**을 가집니다.
-버서커의 `SwordCounter`는 가드 자세 진입 후 정확한 타이밍에 피격당했을 때만
+광전사의 `SwordCounter`는 가드 자세 진입 후 정확한 타이밍에 피격당했을 때만
 반격으로 전환되며, 그 외에는 일반 가드로 처리됩니다.
 
 → [상세: 왜 방어 타입을 7단계까지 나눴는가](docs/TECH-NOTES.md#1-방어-타입을-7단계까지-나눈-이유)
@@ -223,10 +225,12 @@ public class Buff
 
 ### 6. 리소스 로딩과 메모리 관리
 
-- **Addressables** — 3개 그룹(Default / UI / Popup)으로 분리해 필요 시점에 로드합니다.
-  동기 / 비동기 로더를 모두 제공하고, 키 존재 여부를 먼저 확인해
-  **없는 키에 예외 대신 `default` 를 반환**합니다. 로딩 실패가 게임 전체를 멈추지 않게 하기 위해서입니다.
+- **에디터에서 참조를 미리 수집해 씬에 직렬화**합니다. `PrefabCacher` / `SoundCacher` 가
+  `AssetDatabase` 로 프리팹과 오디오 클립을 훑어 목록을 채워두고, 런타임은 그 목록만 씁니다.
+  런타임에 경로 문자열로 에셋을 찾는 경로가 없어, **에셋을 옮기거나 이름을 바꾸면
+  실행 중이 아니라 캐싱 시점에 드러납니다.**
 - **SpriteAtlas 2종**(UI / 배경)을 초기화 시 한 번에 펼쳐 캐싱합니다.
+- **JSON 테이블은 `Resources.Load`** 로 한 번에 읽고 id 인덱스를 만듭니다 (`TableManager`).
 - **오브젝트 풀 5종** — 월드 오브젝트 / UI 오브젝트 / HUD / 팝업 / 최상위를 분리 운영합니다.
   uGUI는 형제 순서가 곧 렌더 순서라, 부모를 나누면 **계층 정리와 레이어 관리를 동시에** 얻습니다.
 - **`GameObject.Find` 계열 호출을 전 코드베이스에서 2회로 억제**했습니다.
@@ -265,7 +269,7 @@ private async UniTask<bool> SwordCounter()
 |---|---|
 | **엔진 / 언어** | Unity 6000.3.10f1, C# |
 | **비동기** | UniTask (`Cysharp.Threading.Tasks`) |
-| **에셋 관리** | Addressables, SpriteAtlas |
+| **에셋 관리** | SpriteAtlas, 에디터 캐싱(`PrefabCacher` / `SoundCacher`) |
 | **연출 / 트윈** | DOTween, Cinemachine |
 | **UI** | uGUI, TextMeshPro |
 | **플랫폼 SDK** | Steamworks.NET |
@@ -293,7 +297,6 @@ flowchart TD
     GM[GameManager<br/>플레이어 상태·세이브·성장]
     RM[RoomManager<br/>룸 이동·카메라·미니맵]
     CT[Controller<br/>입력]
-    RES[ResourceManager<br/>Addressable 로딩]
     TM[TableManager<br/>JSON 테이블 + id 인덱스]
     AUD[BgmManager / SoundManager]
     STM[SteamWorksManager<br/>플랫폼 연동]
@@ -305,7 +308,6 @@ flowchart TD
 
     GM --> RM
     GM --> CT
-    GM --> RES
     GM --> TM
     GM --> AUD
     GM --> STM
@@ -342,7 +344,7 @@ GameManager.Text.cs          32줄   다국어 서비스 위임
 
 ```
 Character (상태 머신 · 버프/실드 · HP/MP · 방어 타입)
-├── Player  ──► Player_Fighter / Player_Gunner / Player_Berserker
+├── Player  ──► Player_Berserker / Player_Gunner / Player_Fighter
 ├── Monster ──► Monster_Bat, Monster_Bull, Monster_FireWizard, … (21종)
 └── Npc     ──► Npc_Merchant, Npc_Fighter, Npc_Gunner, Npc_GameSystem, …
 ```
