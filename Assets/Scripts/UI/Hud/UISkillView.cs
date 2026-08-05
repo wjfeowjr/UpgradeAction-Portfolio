@@ -48,6 +48,12 @@ public class UISkillPresenter
     
     private void OnSkillDropped()
     {
+        Refresh();
+    }
+
+    // 모델을 다시 읽어 표시를 갱신한다 (스킬 교체·키 설정 변경 등)
+    public void Refresh()
+    {
         RefreshModel();
         // UI 전체 갱신
         SetSkillInfo();
@@ -159,9 +165,7 @@ public class UISkillView : MonoBehaviour, IUISkillView
         myKeyCode = keyCode;
         mySkillId = skillId;
 
-        skillKey.text = keyCode.ToString();
-        if (keyCode == KeyCode.LeftShift)
-            skillKey.text = ConstValues.Shift;
+        skillKey.text = GameManager.Instance.GetKeyCode(keyCode);
         
         skillImage.gameObject.SetActive(!string.IsNullOrEmpty(skillId));
         coolTimeText.gameObject.SetActive(!string.IsNullOrEmpty(skillId));

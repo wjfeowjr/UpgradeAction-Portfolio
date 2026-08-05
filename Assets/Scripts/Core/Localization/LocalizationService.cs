@@ -131,6 +131,8 @@ public class LocalizationService
             KeyCode.Escape => "Esc",
             KeyCode.Return => "Enter",
             KeyCode.LeftShift => "Shift",
+            KeyCode.LeftControl => "Ctrl",
+            KeyCode.LeftAlt => "Alt",
             KeyCode.BackQuote => "`",
             _ => keycode.ToString(),
         };

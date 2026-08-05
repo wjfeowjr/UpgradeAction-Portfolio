@@ -372,6 +372,9 @@ public partial class GameManager
         skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
         potionKey = KeyBinding.LoadKey(ConstValues.PotionKey, KeyCode.R);
         pauseKey = KeyBinding.LoadKey(ConstValues.PauseKey, KeyCode.Escape);
+
+        // 세이브에 기록된 스킬 슬롯 keyCode 도 함께 되돌린다
+        SyncSkillKeyCode();
     }
 
     private void DefaultRelicSetting()

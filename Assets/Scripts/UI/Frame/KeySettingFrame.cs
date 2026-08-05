@@ -90,6 +90,9 @@ public class KeySettingFrame : ExpansionUiObject
             case ConstValues.SkillKey4:         GameManager.Instance.skillKey4         = changeKeyCode; break;
             case ConstValues.PotionKey:         GameManager.Instance.potionKey         = changeKeyCode; break;
         }
+        // 스킬은 세이브의 keyCode 로 skillId 를 역조회하므로, 바뀐 키를 세이브에도 반영해야 한다
+        GameManager.Instance.SyncSkillKeyCode();
+
         CurrentKeyCode   = changeKeyCode;
         keyText.text     = GameManager.Instance.GetKeyCode(changeKeyCode);
     }

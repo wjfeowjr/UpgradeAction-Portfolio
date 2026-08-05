@@ -347,9 +347,11 @@ public partial class GameManager : Singleton<GameManager>
         if (Input.GetKeyDown(KeyCode.F12))
             inGameDebugConsole.SetActive(!inGameDebugConsole.activeSelf);
 
-        // Alt+Enter: 전체화면 <-> 창모드 토글
-        if (InputHelper.IsAltPressed && (Input.GetKeyDown(enterKey) || Input.GetKeyDown(KeyCode.KeypadEnter)))
-            ToggleFullScreen();
+        // Alt+Enter 전체화면 토글은 보류.
+        // Alt 를 게임 키로 바인딩할 수 있게 되면서 충돌하므로, 처리 방식을 정할 때까지 막아둔다.
+        // 전체화면 전환은 설정 팝업의 비디오 항목에서 한다.
+        // if (InputHelper.IsAltPressed && (Input.GetKeyDown(enterKey) || Input.GetKeyDown(KeyCode.KeypadEnter)))
+        //     ToggleFullScreen();
 
     }
 
@@ -375,6 +377,8 @@ public partial class GameManager : Singleton<GameManager>
         }
         
         LockAttributeSetting();
+        // 구버전 세이브는 스킬 슬롯 keyCode 가 최초 생성 시점의 키로 굳어 있으므로 현재 키 설정으로 맞춘다
+        SyncSkillKeyCode();
         curPlayer = GetPlayer(saveData.playerList[0]);
     }
 

@@ -136,7 +136,12 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
     private void OnGUI()
     {
         var e = Event.current;
-        if (e.type != EventType.KeyDown || e.keyCode == KeyCode.None)
+        if (e.type != EventType.KeyDown)
+            return;
+
+        // Shift/Ctrl/Alt 단독 입력은 keyCode 가 None 으로 오고 modifiers 에만 표시된다
+        KeyCode keyCode = e.keyCode != KeyCode.None ? e.keyCode : GetModifierKeyCode(e);
+        if (keyCode == KeyCode.None)
             return;
 
         // 다른 뷰에서 전환된 프레임에는 입력 무시 (같은 Enter가 중복 처리되는 것 방지)
@@ -145,12 +150,8 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
 
         if (!_isRebinding)
         {
-            if (e.keyCode == GameManager.Instance.enterKey)
+            if (keyCode == GameManager.Instance.enterKey)
             {
-                // Alt+Enter(전체화면 토글)는 무시
-                if (e.alt)
-                    return;
-
                 HandleEnter();
                 e.Use();
             }
@@ -158,7 +159,7 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
         }
 
         // 대기 중 키 입력 처리
-        if (e.keyCode is KeyCode.Escape or KeyCode.Return)
+        if (keyCode is KeyCode.Escape or KeyCode.Return)
         {
             _isRebinding     = false;
             _rebindDoneFrame = Time.frameCount;
@@ -167,7 +168,7 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
         }
         else
         {
-            ApplyKeyWithSwap(e.keyCode);
+            ApplyKeyWithSwap(keyCode);
             _isRebinding     = false;
             _rebindDoneFrame = Time.frameCount;
             _commonActions?.PlaySelectSound?.Invoke();
@@ -175,6 +176,16 @@ public class PopupKeyboardView : MonoBehaviour, IPopupKeyboardView
         }
 
         e.Use();
+    }
+
+    // 수식키 단독 입력을 KeyCode 로 환산한다.
+    // IMGUI 는 좌/우를 구분하지 않으므로 왼쪽 키로 바인딩한다(표시도 "Shift" 등으로 통일되어 있다)
+    private static KeyCode GetModifierKeyCode(Event e)
+    {
+        if (e.shift)   return KeyCode.LeftShift;
+        if (e.control) return KeyCode.LeftControl;
+        if (e.alt)     return KeyCode.LeftAlt;
+        return KeyCode.None;
     }
 
     // 다른 프레임에 같은 키가 있으면 스왑, 없으면 단순 변경

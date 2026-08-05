@@ -38,6 +38,56 @@ public partial class GameManager
         return skillKey;
     }
 
+    // skillKeyList 는 [0]=대시, [1~4]=스킬1~4 순서로 생성된다(DefaultSkillSetting).
+    // 키 설정이 바뀌면 세이브에 기록된 keyCode 도 같은 순서로 다시 맞춰 준다.
+    // (스킬은 keyCode 로 skillId 를 역조회하므로, 동기화하지 않으면 키를 바꾼 스킬이 아예 발동되지 않는다)
+    public void SyncSkillKeyCode()
+    {
+        // 캐릭터 교체·포션은 세이브가 아니라 런타임 SettingSkill 이 키를 들고 있다
+        if (changeSkill != null)
+            changeSkill.keyCode = changeCharacterKey;
+        if (potionSkill != null)
+            potionSkill.keyCode = potionKey;
+
+        SyncSaveSkillKeyCode();
+
+        // 배틀 씬에 HUD 가 떠 있으면 바뀐 키를 즉시 반영한다
+        if (uiInterface)
+            uiInterface.SkillPresenter?.Refresh();
+    }
+
+    private void SyncSaveSkillKeyCode()
+    {
+        if (saveData?.playerInfoList == null)
+            return;
+
+        foreach (var playerInfo in saveData.playerInfoList)
+        {
+            var skillKeyList = playerInfo?.skillKeyList;
+            if (skillKeyList == null)
+                continue;
+
+            for (int i = 0; i < skillKeyList.Count; i++)
+            {
+                if (skillKeyList[i] == null)
+                    continue;
+
+                skillKeyList[i].keyCode = GetSkillSlotKeyCode(i);
+            }
+        }
+    }
+
+    private KeyCode GetSkillSlotKeyCode(int slotIdx)
+        => slotIdx switch
+        {
+            0 => dashKey,
+            1 => skillKey1,
+            2 => skillKey2,
+            3 => skillKey3,
+            4 => skillKey4,
+            _ => KeyCode.None,
+        };
+
     public KeyCode GetSkillKey(string skillId)
     {
         KeyCode keyCode = default;
