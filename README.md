@@ -26,7 +26,7 @@
 | **장르** | 2D 액션 메트로배니아 (횡스크롤) |
 | **엔진** | Unity `6000.3.10f1` / C# |
 | **개발 인원** | 1인 (기획·프로그래밍·연출) |
-| **코드 규모** | C# 스크립트 234개 / 약 42,900줄 (에디터 툴 6개 · EditMode 테스트 67개 포함) |
+| **코드 규모** | C# 스크립트 227개 / 약 41,400줄 (에디터 툴 6개 · EditMode 테스트 49개 포함) |
 | **컨텐츠 규모** | 룸 59개 · 몬스터 21종 · 플레이어블 3종 |
 | **지원 언어** | 8개 (한/영/일/중간체/중번체/스페인/러시아/포르투갈) |
 | **플랫폼** | PC (Steam / Steamworks.NET 연동) |
@@ -401,45 +401,25 @@ Character (상태 머신 · 버프/실드 · HP/MP · 방어 타입)
 > 에피소드 연출을 담당하던 `Stage` 계열 클래스는 **2챕터 컨셉 변경으로 제거**했습니다.
 > 연출 흐름은 재설계 중입니다.
 
-### UI 아키텍처 (MVP)
+### UI 아키텍처
 
-UI는 **View 인터페이스 / Model / Presenter**로 분리되어 있습니다.
-현재 `IPopup*View`·`IUI*View` 계열 인터페이스 **33개**가 정의되어 있습니다.
+대부분의 화면은 `MonoBehaviour` 인 View 가 Model(값 묶음)을 받아 직접 그립니다.
+**화면 상태를 계산해야 하는 두 곳에만** Presenter 를 두었습니다.
 
-```csharp
-public interface IPopupCommonView          // View 계약
-{
-    void SetTitle(string title);
-    void SetDesc(string desc);
-    void SetButton(UIButtonData data);
-    void SetClose(Action onClose);
-}
+```
+UI_Interface        HUD 컨테이너 — 각 View 참조를 보관
+  └ UIGoodsView     받은 값을 그린다 (Presenter 없음)
+  └ UISkillView ×6  ─┐
+                     └ UISkillPresenter — 슬롯 여러 개를 한 모델로 조율
 
-public class PopupCommonModel { … }        // 데이터
-
-public class PopupCommonPresenter          // 로직 (MonoBehaviour 아님)
-{
-    public PopupCommonPresenter(IPopupCommonView view, PopupCommonModel model) { … }
-}
-
-public class PopupCommonView : UIBase, IPopupCommonView   // uGUI 구현
-{
-    private PopupCommonPresenter presenter;
-
-    // View 가 자기 Presenter 를 조립한다
-    public PopupCommonPresenter Bind(PopupCommonModel model)
-    {
-        presenter = new PopupCommonPresenter(this, model);
-        return presenter;
-    }
-}
+Popup_Character     팝업 컨테이너 — 상태 전환과 조립
+  └ PopupSkillView      각자 자기 화면만 그린다 (Presenter 없음)
+  └ PopupAttributeView
 ```
 
-**조립 책임을 View가 갖습니다.** 호출부는 한 줄입니다.
+`Popup_*` 컨테이너가 열림/닫힘과 입력 게이팅을 맡고, `*View` 가 표시를 맡습니다.
+적용 기준과 코드는 [적용한 설계 패턴](#적용한-설계-패턴)의 MVP 항목에 있습니다.
 
-```csharp
-popupStore.StoreView.Bind(storeModel).SetAction();
-```
 
 ---
 
@@ -594,56 +574,63 @@ public class ObjectPoolService
 
 ### MVP (Model–View–Presenter)
 
-UI 로직이 `MonoBehaviour` 에 붙어 있으면 검증할 수 없습니다.
-**Presenter를 `MonoBehaviour` 밖에 두는 것**이 목적이었습니다.
+**화면 상태를 계산해야 하는 곳에만 적용했습니다.** 표시만 하는 화면에는 두지 않습니다.
+
+Presenter 를 둘 값어치는 "무엇을 그릴지 판단하는 부분"이 있을 때 생깁니다.
+받은 값을 그대로 그리기만 한다면 전달 계층이 하나 늘어날 뿐입니다.
+
+적용한 두 곳입니다.
+
+| 대상 | 왜 필요한가 |
+|---|---|
+| `UISkillPresenter` | 스킬 슬롯 · 교체 · 물약 **View 여러 개를 한 모델로 조율**한다. View 하나가 자기 것만 봐서는 답이 안 나온다 |
+| `PopupFastTravelPresenter` | 선택 인덱스와 입력 준비 여부 등 **화면 상태를 들고 있다** |
 
 ```csharp
-// 1) View 계약 — 화면이 무엇을 할 수 있는지만 정의한다
-public interface IPopupCommonView
+// View 여러 개를 조율하는 쪽 — 이런 경우에만 Presenter 를 둔다
+public class UISkillPresenter
 {
-    void SetTitle(string title);
-    void SetDesc(string desc);
-    void SetButton(UIButtonData data);
-    void SetClose(Action onClose);
-}
+    private readonly IUISkillView _changeView;
+    private readonly IUISkillView _potionView;
+    private readonly List<IUISkillView> _views;   // 스킬 슬롯들
+    private UISkillModel _model;
 
-// 2) Model — 표시할 데이터
-public class PopupCommonModel
-{
-    public string Title;
-    public string Desc;
-    public UIButtonData ButtonData;
-}
-
-// 3) Presenter — 로직. MonoBehaviour 가 아니다
-public class PopupCommonPresenter
-{
-    private readonly IPopupCommonView _view;
-    private readonly PopupCommonModel _model;
-
-    public PopupCommonPresenter(IPopupCommonView view, PopupCommonModel model)
+    public void SetSkillInfo()
     {
-        _view = view;
-        _model = model;
+        _changeView.SetSkillInfo(_model.changeSkill.keyCode, _model.changeSkill.skillId, …);
 
-        _view.SetTitle(_model.Title);
-        _view.SetDesc(_model.Desc);
-        _view.SetButton(_model.ButtonData);
+        for (int i = 0; i < _model.settingSkillList.Count; i++)
+        {
+            var playerSkill = _model.settingSkillList[i].playerSkill;
+            if (playerSkill == null)                       // 아직 못 얻은 스킬
+                _views[i].SetSkillInfo(_model.settingSkillList[i].keyCode, default);
+            else
+                _views[i].SetSkillInfo(…);
+        }
     }
-}
-
-// 4) View 구현 — uGUI 바인딩만 담당한다
-public class PopupCommonView : UIBase, IPopupCommonView
-{
-    [SerializeField] private TMP_Text titleText;
-
-    public void SetTitle(string title) => titleText.text = title;
 }
 ```
 
-View 인터페이스 33개(`IPopup*View` 21 + `IUI*View` 12), Presenter 30개.
+나머지 화면은 `MonoBehaviour` 인 View 가 Model 을 직접 받아 그립니다.
 
----
+```csharp
+// 판단할 것이 없는 화면 — Presenter 없이 View 가 직접 처리한다
+public class UIGoodsView : MonoBehaviour
+{
+    [SerializeField] private TMP_Text goldText;
+
+    public void SetGoldText(UIGoodsModel model) => SetGoldText(model.totalGold);
+
+    private void SetGoldText(int gold)
+        => goldText.text = GameManager.Instance.GetThousandCommaText(gold);
+}
+```
+
+> 처음에는 UI 30종 전체에 Presenter 를 두었습니다.
+> 다시 세어 보니 그중 **분기가 하나라도 있는 것은 2개뿐**이었고,
+> 나머지 28개는 값을 그대로 넘기는 껍데기였습니다.
+> 인터페이스 33개와 함께 정리해 **Presenter 2개 · 인터페이스 2개**가 남았습니다.
+
 
 ## 직접 만든 에디터 툴
 
@@ -684,14 +671,14 @@ View 인터페이스 33개(`IPopup*View` 21 + `IUI*View` 12), Presenter 30개.
 ### 담긴 것
 
 > 📌 **전체 코드가 아니라, 문서에서 설명한 부분의 대표 코드만 발췌했습니다.**
-> 전체 규모는 **C# 스크립트 234개 / 약 42,900줄**이고, 이 저장소에는 그중 **128개**가 있습니다.
+> 전체 규모는 **C# 스크립트 227개 / 약 41,400줄**이고, 이 저장소에는 그중 **122개**가 있습니다.
 > 같은 패턴이 반복되는 부분(몬스터 21종, 팝업 30종 등)은 **대표 사례만** 담았습니다.
 > 예를 들어 `Monster` 기반 클래스와 변형 5종이 있으면 상속 구조를 판단하기에 충분하다고 보았습니다.
 
 ```
-Assets/Scripts/     게임 로직 114개 (발췌)
+Assets/Scripts/     게임 로직 111개 (발췌)
 Assets/Editor/      직접 만든 에디터 툴 6개 (전부)
-Assets/Tests/       EditMode 테스트 67개 (전부)
+Assets/Tests/       EditMode 테스트 49개 (전부)
 ```
 
 이 README 에서 근거로 든 코드는 전부 담았습니다.
