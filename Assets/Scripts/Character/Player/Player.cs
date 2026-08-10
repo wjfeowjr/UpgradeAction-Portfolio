@@ -774,7 +774,13 @@ public abstract class Player : Character
         DeleteDashFrameUI();
         ClearIgnorePlatform();
         ClearObjectList(attackObject);
+
+        // 진행 중이던 대기를 끊고, 다음 대기를 위해 새로 만든다.
+        // 이전에는 취소만 하고 다시 만들지 않아서, 방을 한 번 이동하면
+        // 이 토큰을 쓰는 모든 대기가 그 뒤로 즉시 취소됐다.
+        // (플레이어 오브젝트는 방 이동으로 비활성화되지 않아 OnEnable 의 InitToken 이 다시 돌지 않는다)
         delayCancellation?.Cancel();
+        delayCancellation = new CancellationTokenSource();
     }
 
     private void UpdateCameraLimit()
@@ -912,10 +918,9 @@ public abstract class Player : Character
             return;
 
         // 첫 피격 회피 가이드.
-        // 이전에는 Damaged() 안에 있었는데, Damaged() 는 피격 리액션이
-        // EEffectType.Damaged 일 때만 호출된다. 그래서 공중에 뜨는 공격(Airborne)이나
-        // 점프 중 피격에는 가이드가 아예 뜨지 않았다.
-        // 리액션 종류와 무관하게 뜨도록 데미지를 받는 지점으로 옮겼다.
+        // 이전에는 Damaged() 와 Airborne() 두 곳에서 불렀는데, 둘 다 피격 리액션이라
+        // 슈퍼아머처럼 리액션이 없는 상태로 맞으면 호출되지 않았다.
+        // 모든 피격이 반드시 지나가는 이 지점 한 곳으로 모았다.
         DamageEscapeGuide();
 
         // 패시브
@@ -975,9 +980,7 @@ public abstract class Player : Character
         }
         if(basicStat.hp > 0)
             PlaySound(ConstValues.PlayerDamaged1);
-        
-        DamageEscapeGuide();
-        
+
         base.Airborne(xVelocity, yVelocity, false);
 
         curDashDelay = 0f;
