@@ -910,7 +910,14 @@ public abstract class Player : Character
 
         if (damage == 0)
             return;
-        
+
+        // 첫 피격 회피 가이드.
+        // 이전에는 Damaged() 안에 있었는데, Damaged() 는 피격 리액션이
+        // EEffectType.Damaged 일 때만 호출된다. 그래서 공중에 뜨는 공격(Airborne)이나
+        // 점프 중 피격에는 가이드가 아예 뜨지 않았다.
+        // 리액션 종류와 무관하게 뜨도록 데미지를 받는 지점으로 옮겼다.
+        DamageEscapeGuide();
+
         // 패시브
         switch (playerStat.passive)
         {
@@ -984,8 +991,6 @@ public abstract class Player : Character
     
     public override void Damaged(float damagedTime)
     {
-        DamageEscapeGuide();
-        
         base.Damaged(damagedTime);
         if(basicStat.hp > 0)
             PlaySound(ConstValues.PlayerDamaged1);
@@ -999,10 +1004,6 @@ public abstract class Player : Character
         if (damageGuideRunning || GameManager.Instance.FirstDamaged)
             return;
 
-        // 함정 피격(리스폰 연출 후 안전발판 이동) 상황에서는 가이드를 띄우지 않음
-        if (trapRespawning)
-            return;
-
         damageGuideRunning = true;
 
         // stateCancellation은 base.Damaged/base.Airborne의 CancelMotion에서 즉시 취소되므로,
@@ -1010,6 +1011,15 @@ public abstract class Player : Character
         if (await NormalDelay(0.5f, delayCancellation).SuppressCancellationThrow())
         {
             // 방 이동 등으로 취소됐다면 다음 피격에서 다시 시도한다
+            damageGuideRunning = false;
+            return;
+        }
+
+        // 함정 피격(리스폰 연출 후 안전발판 이동) 상황에서는 가이드를 띄우지 않는다.
+        // TrapRespawning 은 데미지 적용(8단계)보다 나중인 리스폰 처리(17단계)에서 세워지므로,
+        // 호출 시점이 아니라 대기가 끝난 뒤에 확인해야 한다.
+        if (trapRespawning)
+        {
             damageGuideRunning = false;
             return;
         }
