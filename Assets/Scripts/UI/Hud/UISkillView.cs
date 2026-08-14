@@ -141,6 +141,52 @@ public class UISkillView : MonoBehaviour, IUISkillView
 
     public event Action OnSkillDropped;
 
+    // ── 표시 캐시 ──────────────────────────────────────
+    // UpdateCoolTimeText 는 매 프레임 불린다.
+    // 쿨타임은 소수점 한 자리라 초당 10번만 바뀌는데, 이전에는 프레임마다
+    // ToString 으로 문자열을 새로 만들어 버리고 있었다 (슬롯 수만큼 × 60fps).
+    // 마지막으로 표시한 값을 들고 있다가 실제로 바뀔 때만 만든다.
+    private const int NoCache = int.MinValue;
+    private int cachedCoolTimeTenth = NoCache;   // 쿨타임 × 10 (표시 단위)
+    private int cachedStack = NoCache;
+
+    // 스택은 한 자리 수라 미리 만들어 두면 할당이 아예 없다
+    private static readonly string[] StackNumbers = { "0", "1", "2", "3", "4", "5", "6", "7", "8", "9" };
+
+    // View 는 풀링되어 재사용되므로 다른 스킬이 들어오면 캐시를 버려야 한다.
+    // 버리지 않으면 이전 스킬의 표시값과 같다고 판단해 갱신을 건너뛴다.
+    private void ClearDisplayCache()
+    {
+        cachedCoolTimeTenth = NoCache;
+        cachedStack = NoCache;
+    }
+
+    private void SetCoolTimeText(float value)
+    {
+        // 표시되는 자리수(0.1)까지만 비교한다
+        int tenth = Mathf.RoundToInt(value * 10f);
+        if (tenth == cachedCoolTimeTenth)
+            return;
+
+        cachedCoolTimeTenth = tenth;
+        coolTimeText.text = value.ToString("F1");
+    }
+
+    private void SetStackText(int stack)
+    {
+        if (stack == cachedStack)
+            return;
+
+        cachedStack = stack;
+        stackText.text = (stack >= 0 && stack < StackNumbers.Length) ? StackNumbers[stack] : stack.ToString();
+    }
+
+    private static void SetActiveIfChanged(GameObject target, bool active)
+    {
+        if (target.activeSelf != active)
+            target.SetActive(active);
+    }
+
     public bool IsChangeCharacter()
     {
         return myKeyCode == GameManager.Instance.changeCharacterKey;
@@ -165,6 +211,10 @@ public class UISkillView : MonoBehaviour, IUISkillView
     {
         myKeyCode = keyCode;
         mySkillId = skillId;
+
+        // 슬롯에 다른 스킬이 들어오므로 이전 표시값을 버린다.
+        // 남겨두면 값이 같다고 판단해 첫 갱신을 건너뛴다.
+        ClearDisplayCache();
 
         skillKey.text = GameManager.Instance.GetKeyCode(keyCode);
         
@@ -210,64 +260,62 @@ public class UISkillView : MonoBehaviour, IUISkillView
         // 스택형 쿨타임 표시
         if (coolTime.Count > 1)
         {
+            int stack = (int)coolTime[2];
+
             if (maxCoolTime[1] <= 0)
             {
-                coolTimeImage.gameObject.SetActive(false);
-                stackCoolTimeImage.gameObject.SetActive(false);
-                coolTimeText.gameObject.SetActive(false);
-                coolTimeObject.SetActive(false);
-                stackText.gameObject.SetActive((int)coolTime[2] > 0);
-                stackText.text = ((int)coolTime[2]).ToString();
-                cantSkillObject.SetActive(coolTime[2] == 0);
+                SetActiveIfChanged(coolTimeImage.gameObject, false);
+                SetActiveIfChanged(stackCoolTimeImage.gameObject, false);
+                SetActiveIfChanged(coolTimeText.gameObject, false);
+                SetActiveIfChanged(coolTimeObject, false);
+                SetActiveIfChanged(stackText.gameObject, stack > 0);
+                SetStackText(stack);
+                SetActiveIfChanged(cantSkillObject, stack == 0);
             }
             else
             {
                 // 모든 스택을 소모하지 않았다면, 기본 쿨타임을 보여준다
                 var finalCoolTime = maxCoolTime[0] - coolTime[0];
                 var finalStackCoolTime = maxCoolTime[1] - coolTime[1];
-            
-                if (coolTime[2] > 0)
+
+                if (stack > 0)
                 {
-                    coolTimeText.gameObject.SetActive(finalCoolTime > 0);
-                    coolTimeObject.SetActive(finalCoolTime > 0);
-                    coolTimeText.text = finalCoolTime.ToString("F1");
+                    SetActiveIfChanged(coolTimeText.gameObject, finalCoolTime > 0);
+                    SetActiveIfChanged(coolTimeObject, finalCoolTime > 0);
+                    SetCoolTimeText(finalCoolTime);
                     coolTimeImage.fillAmount = finalCoolTime / maxCoolTime[0];
                 }
                 // 모든 스택을 소모하였다면, 스택 쿨타임을 기본 쿨타임으로 보여준다
                 else
                 {
-                    coolTimeText.gameObject.SetActive(finalStackCoolTime > 0);
-                    coolTimeObject.SetActive(finalStackCoolTime > 0);
-                    coolTimeText.text = finalStackCoolTime.ToString("F1");
+                    SetActiveIfChanged(coolTimeText.gameObject, finalStackCoolTime > 0);
+                    SetActiveIfChanged(coolTimeObject, finalStackCoolTime > 0);
+                    SetCoolTimeText(finalStackCoolTime);
                     coolTimeImage.fillAmount = finalStackCoolTime / maxCoolTime[1];
                 }
-            
+
                 // 기본 쿨타임이 돌아가는동안은 스택 쿨타임이 보이지 않는다.
-                stackText.gameObject.SetActive((int)coolTime[2] > 0);
-                stackCoolTimeImage.gameObject.SetActive(finalCoolTime <= 0 && coolTime[2] > 0);
-            
-                stackText.text = ((int)coolTime[2]).ToString();
+                SetActiveIfChanged(stackText.gameObject, stack > 0);
+                SetActiveIfChanged(stackCoolTimeImage.gameObject, finalCoolTime <= 0 && stack > 0);
+
+                SetStackText(stack);
                 stackCoolTimeImage.fillAmount = finalStackCoolTime / maxCoolTime[1];
-                
-                if(cantSkillObject.activeSelf)
-                    cantSkillObject.SetActive(false);
+
+                SetActiveIfChanged(cantSkillObject, false);
             }
         }
         // 일반형 쿨타임 표시, 기본 쿨타임을 보여준다
         else
         {
             var finalCoolTime = maxCoolTime[0] - coolTime[0];
-            coolTimeText.gameObject.SetActive(finalCoolTime > 0);
-            coolTimeObject.SetActive(finalCoolTime > 0);
-            coolTimeText.text = finalCoolTime.ToString("F1");
+            SetActiveIfChanged(coolTimeText.gameObject, finalCoolTime > 0);
+            SetActiveIfChanged(coolTimeObject, finalCoolTime > 0);
+            SetCoolTimeText(finalCoolTime);
             coolTimeImage.fillAmount = finalCoolTime / maxCoolTime[0];
-            
-            if(stackText.gameObject.activeSelf)
-                stackText.gameObject.SetActive(false);
-            if(stackCoolTimeImage.gameObject.activeSelf)
-                stackCoolTimeImage.gameObject.SetActive(false);
-            if(cantSkillObject.activeSelf)
-                cantSkillObject.SetActive(false);
+
+            SetActiveIfChanged(stackText.gameObject, false);
+            SetActiveIfChanged(stackCoolTimeImage.gameObject, false);
+            SetActiveIfChanged(cantSkillObject, false);
         }
     }
 
