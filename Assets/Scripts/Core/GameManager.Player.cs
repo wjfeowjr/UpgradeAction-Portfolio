@@ -264,39 +264,60 @@ public partial class GameManager
         return character;
     }
 
-    public async void PlayerRespawn()
+    /// <summary>
+    /// 함정에 맞은 플레이어를 마지막 안전 지점으로 되돌린다.
+    ///
+    /// 대상 플레이어를 인자로 받아 끝까지 그 참조만 쓴다.
+    /// 이전에는 매 단계 curPlayer 를 다시 읽었는데, 연출이 1초가량 이어지는 동안
+    /// 캐릭터가 교체되면 시작한 쪽과 끝낸 쪽이 달라졌다.
+    /// 그러면 TrapRespawning 을 켠 캐릭터와 끈 캐릭터가 어긋나, 켜진 쪽은
+    /// 영원히 무적이 된다(IsHittable 이 false 를 돌려준다).
+    /// </summary>
+    public async void PlayerRespawn(Player player)
     {
+        if (!player)
+            return;
+
         // 함정 피해를 입은 그 프레임에 즉시 완전 무적 — ignoreImmortal인 함정도 막아 2회 피격 방지
-        curPlayer.TrapRespawning = true;
-        curPlayer.Immortal = true;
+        player.TrapRespawning = true;
+        player.Immortal = true;
         ControlStart = false;
 
         float delay1 = 0.3f;
         float delay2 = 0.1f;
 
         InitProductCancellation();
-        if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
-            return;
-        
-        curPlayer.SpawnObject(ConstValues.BangEffect, curPlayer.CenterPos.position);
-        curPlayer.gameObject.SetActive(false);
-        if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
-            return;
-        
-        // 이동기능 추가
-        curPlayer.transform.position = curPlayer.GetLastMarkerPosition();
-        if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
-            return;
-        
-        curPlayer.SpawnObject(ConstValues.BangEffect, curPlayer.CenterPos.position);
-        curPlayer.gameObject.SetActive(true);
-        
-        if(await NormalDelay(delay2, productCancellation).SuppressCancellationThrow())
-            return;
-        
-        curPlayer.Immortal = false;
-        curPlayer.Dodge = false;
-        curPlayer.TrapRespawning = false;
-        ControlStart = true;
+
+        // 연출 도중 취소되더라도 TrapRespawning 은 반드시 거둔다.
+        // 남겨두면 그 캐릭터가 이후 모든 공격에 맞지 않는다.
+        try
+        {
+            if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
+                return;
+
+            player.SpawnObject(ConstValues.BangEffect, player.CenterPos.position);
+            player.gameObject.SetActive(false);
+            if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
+                return;
+
+            // 이동기능 추가
+            player.transform.position = player.GetLastMarkerPosition();
+            if(await NormalDelay(delay1, productCancellation).SuppressCancellationThrow())
+                return;
+
+            player.SpawnObject(ConstValues.BangEffect, player.CenterPos.position);
+            player.gameObject.SetActive(true);
+
+            if(await NormalDelay(delay2, productCancellation).SuppressCancellationThrow())
+                return;
+
+            ControlStart = true;
+        }
+        finally
+        {
+            player.Immortal = false;
+            player.Dodge = false;
+            player.TrapRespawning = false;
+        }
     }
 }

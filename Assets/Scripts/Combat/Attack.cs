@@ -568,7 +568,9 @@ public class Attack : MonoBehaviour
         if (player == null)
             return;
 
-        GameManager.Instance.PlayerRespawn();
+        // 맞은 플레이어를 그대로 넘긴다.
+        // 이전에는 GameManager 가 curPlayer 를 다시 읽어서, 교체가 겹치면 엉뚱한 캐릭터가 리스폰됐다.
+        GameManager.Instance.PlayerRespawn(player);
     }
 
     // 미사일/수류탄 등 투사체를 파괴할 수 있다면 파괴하고 true 반환

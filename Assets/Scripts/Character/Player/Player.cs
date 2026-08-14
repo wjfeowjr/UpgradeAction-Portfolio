@@ -1059,10 +1059,15 @@ public abstract class Player : Character
             PlaySound(ConstValues.Upgrade);
         }
         
-        // 점프 도중에만 글로벌 쿨타임을 준다
-        await UniTask.WaitUntil(()=> normalState is ENormalState.Idle or ENormalState.Move || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime));
+        // 점프 도중에만 글로벌 쿨타임을 준다.
+        // 함정 리스폰 연출 중에는 교체를 성립시키지 않는다.
+        // 공중에서 교체를 누르면 착지할 때까지 예약 상태로 대기하는데,
+        // 그 사이에 함정을 밟으면 리스폰과 교체가 겹쳐 두 캐릭터의 상태가 어긋났다.
+        await UniTask.WaitUntil(()=> !trapRespawning
+                                     && (normalState is ENormalState.Idle or ENormalState.Move
+                                         || (normalState is ENormalState.Jump && curChangeGlobalCoolTime >= changeGlobalCoolTime)));
         waitCharacterUI.SetActive(false);
-        
+
         isChanging = false;
         targetSkill.SetCoolTime();
         return true;
