@@ -78,7 +78,7 @@ public class PopupCharacterView : MonoBehaviour
             switch (i)
             {
                 case 0:
-                    statTexts[i].text = $"{curPlayer.BasicStat.hp} / {curPlayer.BasicStat.maxHp}";
+                    statTexts[i].SetText("{0} / {1}", curPlayer.BasicStat.hp, curPlayer.BasicStat.maxHp);
                     break;
                 case 1:
                     statTexts[i].text = curPlayer.BasicStat.power.ToString();
