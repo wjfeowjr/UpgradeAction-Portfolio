@@ -207,6 +207,11 @@ public abstract class Character : InteractionController
     [SerializeField] protected List<GameObject> normalObject = new List<GameObject>(); // 직접 관리하는 '일반 오브젝트'
     [SerializeField] protected List<GameObject> buffObject = new List<GameObject>();   // 직접 관리하는 '버프 오브젝트'
 
+    // 버프 타입 -> 이펙트 오브젝트.
+    // 이전에는 buffObject 를 GameObject.name 문자열로 선형 탐색했다.
+    // name 은 네이티브 접근이라 비교할 때마다 문자열을 새로 할당한다.
+    private readonly Dictionary<EBuffType, GameObject> buffEffectByType = new Dictionary<EBuffType, GameObject>();
+
     [SerializeField] protected ENormalState normalState;
     [SerializeField] protected EMoveState moveState;
     [SerializeField] protected ELandingState landingState;
@@ -990,13 +995,20 @@ public abstract class Character : InteractionController
         if (expiredCount == 0)
             return;
 
-        var expiredDeBuffList = buffList.FindAll(x => (x.buffTime > 0 && x.currentTime <= 0) || (x.buffTime == 0 && x.currentCount == 0));
+        // 판정 조건과 순서는 기존 FindAll 과 동일하다.
+        // 목록을 따로 뜨는 이유는 아래 루프에서 buffList 를 수정하기 때문이다.
+        var expiredDeBuffList = new List<Buff>();
+        for (int i = 0; i < buffList.Count; i++)
+        {
+            var buff = buffList[i];
+            if ((buff.buffTime > 0 && buff.currentTime <= 0) || (buff.buffTime == 0 && buff.currentCount == 0))
+                expiredDeBuffList.Add(buff);
+        }
+
         foreach (var expiredDeBuff in expiredDeBuffList)
         {
             buffList.Remove(expiredDeBuff);
-            var removeEffect = buffObject.Find(x => x.name == $"{expiredDeBuff.buffType}{ConstValues.Effect}(Clone)");
-            if (removeEffect != null)
-                RemoveObjectList(buffObject, removeEffect);
+            RemoveBuffEffect(expiredDeBuff.buffType);
 
             // 스턴, 무력화, 빙결 상태 회복
             if (expiredDeBuff.buffId is ConstValues.Stun or ConstValues.Stagger or ConstValues.Frozen)
@@ -1027,6 +1039,7 @@ public abstract class Character : InteractionController
             buff.SetActive(false);
 
         buffObject.Clear();
+        buffEffectByType.Clear();
 
         // 실드도 함께 초기화 (이펙트는 buffObject에서 이미 비활성화됨)
         shieldList.Clear();
@@ -1754,11 +1767,11 @@ public abstract class Character : InteractionController
 
     private void RemoveObjectList(List<GameObject> list, GameObject obj)
     {
-        var removeObj = list.Find(x => x == obj);
+        if (!obj)
+            return;
 
-        obj.gameObject.SetActive(false);
-        if (removeObj != null)
-            list.Remove(removeObj);
+        obj.SetActive(false);
+        list.Remove(obj);
     }
 
     protected async void ClearObjectList(List<GameObject> list, float timer = 0.0f)
@@ -1769,6 +1782,10 @@ public abstract class Character : InteractionController
         // 예약 시점의 목록만 정리 대상으로 확정 (대기 중 새로 추가된 오브젝트 보호)
         var targets = new List<GameObject>(list);
         list.Clear();
+
+        // 버프 이펙트 인덱스는 buffObject 와 수명을 맞춘다
+        if (ReferenceEquals(list, buffObject))
+            buffEffectByType.Clear();
 
         if (timer > 0)
             await UniTask.WaitForSeconds(timer);
@@ -2164,6 +2181,31 @@ public abstract class Character : InteractionController
     }
     
     // 버프
+    /// <summary>
+    /// 버프 이펙트를 생성하고 타입 -> 오브젝트 인덱스에 등록한다.
+    /// buffObject 가 관리하는 이펙트만 등록한다. 수명이 지정된 이펙트는 스스로 회수되므로 대상이 아니다.
+    /// </summary>
+    private GameObject SpawnBuffEffect(EBuffType buffType, Transform posTransform)
+    {
+        var effectObj = SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", posTransform, 0, true);
+        if (effectObj && buffObject.Contains(effectObj))
+            buffEffectByType[buffType] = effectObj;
+
+        return effectObj;
+    }
+
+    /// <summary>
+    /// 버프 이펙트를 제거한다. 등록된 것이 없으면 아무 일도 하지 않는다.
+    /// </summary>
+    private void RemoveBuffEffect(EBuffType buffType)
+    {
+        if (!buffEffectByType.TryGetValue(buffType, out var effectObj))
+            return;
+
+        buffEffectByType.Remove(buffType);
+        RemoveObjectList(buffObject, effectObj);
+    }
+
     protected void AddBuff(string buffId, int buffValue, float buffTime, int buffCount, Action endAction = null, float tickInterval = 0, float nextTickTime = 0, Action tickAction = null)
     {
         var findDeBuff = TargetBuff(buffId);
@@ -2198,7 +2240,7 @@ public abstract class Character : InteractionController
                         posTransform = centerPos;
                         break;
                 }
-                SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", posTransform, 0, true);
+                SpawnBuffEffect(buffType, posTransform);
             }
             else
             {
@@ -2246,33 +2288,33 @@ public abstract class Character : InteractionController
             switch (buffType)
             {
                 case EBuffType.Stun:
-                    SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, 0, true);
+                    SpawnBuffEffect(buffType, buffEffectPos);
                     break;
                 case EBuffType.Stagger:
                     // 스트롱 아머만 깨짐
                     if (originStat.bodyType == EBodyType.StrongArmor)
                         basicStat.bodyType = EBodyType.Normal;
                     SpawnObject($"{buffType.ToString()}{ConstValues.Explosion}", buffEffectPos);
-                    SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", buffEffectPos, 0, true);
+                    SpawnBuffEffect(buffType, buffEffectPos);
                     break;
                 case EBuffType.ArmorBreak:
                     if (originStat.bodyType == EBodyType.SuperArmor)
                     {
                         basicStat.bodyType = EBodyType.Normal;
-                        SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
+                        SpawnBuffEffect(buffType, centerPos);
                     }
                     break;
                 case EBuffType.Frozen:
-                    var frozenEffect = SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
+                    var frozenEffect = SpawnBuffEffect(buffType, centerPos);
                     frozenEffect.transform.localScale = new Vector3(myBoxCollider.size.x, myBoxCollider.size.y, 1);
                     break;
                 case EBuffType.Shock:
-                    var shockEffect = SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
+                    var shockEffect = SpawnBuffEffect(buffType, centerPos);
                     var shockSize = myBoxCollider.size.x;
                     shockEffect.transform.localScale = new Vector3(shockSize, shockSize, shockSize);
                     break;
                 case EBuffType.Burn:
-                    var burnEffect = SpawnObject($"{buffType.ToString()}{ConstValues.Effect}", centerPos, 0, true);
+                    var burnEffect = SpawnBuffEffect(buffType, centerPos);
                     var burnSize = myBoxCollider.size.x;
                     burnEffect.transform.localScale = new Vector3(burnSize, burnSize, burnSize);
                     break;
@@ -2297,10 +2339,8 @@ public abstract class Character : InteractionController
     {
         Buff findBuff = TargetBuff(buffId);
         buffList.Remove(findBuff);
-        var removeEffect = buffObject.Find(x => x.name == $"{findBuff.buffType}{ConstValues.Effect}(Clone)");
-        if (removeEffect != null)
-            RemoveObjectList(buffObject, removeEffect);
-        
+        RemoveBuffEffect(findBuff.buffType);
+
         InitBonusStat();
     }
     
