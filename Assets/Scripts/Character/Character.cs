@@ -2338,6 +2338,14 @@ public abstract class Character : InteractionController
     protected void RemoveBuff(string buffId)
     {
         Buff findBuff = TargetBuff(buffId);
+
+        // 걸려 있지 않은 버프를 지우라는 요청은 아무 일도 하지 않는다.
+        // 이전에는 findBuff.buffType 에서 NullReferenceException 이 났고,
+        // 호출부인 TakeDamage 가 중간에 끊겨 HP UI 갱신까지 건너뛰었다.
+        // (거너 자원이 0 이면 SmileShotBuff 가 없는데도 해제를 시도한다)
+        if (findBuff == null)
+            return;
+
         buffList.Remove(findBuff);
         RemoveBuffEffect(findBuff.buffType);
 
