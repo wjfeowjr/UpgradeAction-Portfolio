@@ -12,11 +12,6 @@ public enum ShortcutType
     Obstacle,
 }
 
-public interface IHitProduct
-{
-    public void HitProduct();
-}
-
 public class ShortcutObject : Lever
 {
     [SerializeField] private ShortcutType type;

@@ -11,13 +11,6 @@ public enum MissileType
     Vertical,
 }
 
-// 보스인지 확인하기
-public interface IProjectile
-{
-    public bool IsBoss();
-    public void Delete();
-}
-
 [Serializable]
 public class MissileInfo
 {
