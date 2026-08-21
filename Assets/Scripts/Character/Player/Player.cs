@@ -205,6 +205,18 @@ public abstract class Player : Character, IPassiveHost
 
     protected float globalCoolTime;
     protected float curGlobalCoolTime;
+
+    // 스킬 루틴의 세대 번호. 스킬을 새로 시작할 때만 증가한다.
+    //
+    // 스킬을 스킬(또는 대시)로 캔슬하면 옛 루틴이 await 에서 깨어나
+    // 새 루틴이 막 설정한 아머와 공격속도를 되돌려버린다.
+    // 옛 루틴이 "내가 아직 최신인가" 를 판단할 근거가 필요하다.
+    //
+    // stateCancellation 으로는 이 판단을 할 수 없다.
+    // 그 필드는 Leap, Airborne, Grabbed, Stun 등 코드베이스 50 곳에서 교체되고,
+    // 그중 여러 개가 같은 스킬 안에서 불린다.
+    // (LightningKick 은 시작하자마자 Leap 을 부른다)
+    protected int skillRunId;
     
     private float dashDelay;
     private float curDashDelay;
