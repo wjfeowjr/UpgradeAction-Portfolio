@@ -48,7 +48,13 @@ public partial class GameManager : Singleton<GameManager>
     public int fullScreen;
     public int vSync;
 
-    public string language;
+    // 실제 값은 LocalizationService 가 소유한다.
+    // 세이브/옵션 팝업이 쓰는 기존 이름은 유지해서 호출부를 건드리지 않는다.
+    public string language
+    {
+        get => localization.CurrentLanguage;
+        set => localization.CurrentLanguage = value;
+    }
     public int cameraShaking;
    
     [SerializeField] private SpriteAtlas uiAtlas;

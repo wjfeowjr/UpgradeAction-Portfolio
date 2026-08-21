@@ -44,6 +44,20 @@ public class LocalizationService
     public int TalkCount => talkById.Count;
 
     /// <summary>
+    /// 현재 언어. 이전에는 GameManager.language 가 들고 있어서 조회할 때마다 넘겨줘야 했다.
+    /// 언어는 이 서비스의 상태이므로 여기서 소유한다.
+    /// 저장/불러오기와 옵션 팝업은 GameManager.language 를 통해 이 값을 읽고 쓴다.
+    /// </summary>
+    public string CurrentLanguage { get; set; }
+
+    public string GetTalk(int idx) => GetTalk(idx, CurrentLanguage);
+    public string GetCharacterTalk(string id) => GetCharacterTalk(id, CurrentLanguage);
+    public string GetItemTalk(string id) => GetItemTalk(id, CurrentLanguage);
+    public string GetItemExplain(string id) => GetItemExplain(id, CurrentLanguage);
+    public string GetStatName(string statId) => GetStatName(statId, CurrentLanguage);
+    public string GetPlaceName(ePlace place) => GetPlaceName(place, CurrentLanguage);
+
+    /// <summary>
     /// idx 에 해당하는 텍스트를 현재 언어로 반환한다.
     /// 없는 idx 면 null 을 반환한다(기존 동작은 예외였다).
     /// </summary>
