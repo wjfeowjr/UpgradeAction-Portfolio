@@ -11,54 +11,153 @@ public partial class GameManager : Singleton<GameManager>
     public Material hitMaterial;
     public GameObject inGameDebugConsole;
     
-    public KeyCode escKey;
-    public KeyCode enterKey;
-    public KeyCode deleteKey;
-    public KeyCode copyKey;
-    
-    public KeyCode leftKey;
-    public KeyCode rightKey;
-    public KeyCode upKey;
-    public KeyCode downKey;
-    public KeyCode miniMapKey;
-    public KeyCode characterInfoKey;
-    public KeyCode attackKey;
-    public KeyCode jumpKey;
+    // 설정 값은 GameSettings 가 소유한다.
+    // 호출부 265 곳이 쓰는 기존 이름을 유지하려고 위임 프로퍼티로 남긴다.
+    public KeyCode escKey => settings.EscKey;
+    public KeyCode enterKey => settings.EnterKey;
+    public KeyCode deleteKey => settings.DeleteKey;
+    public KeyCode copyKey => settings.CopyKey;
+    public KeyCode leftKey
+    {
+        get => settings.LeftKey;
+        set => settings.LeftKey = value;
+    }
+    public KeyCode rightKey
+    {
+        get => settings.RightKey;
+        set => settings.RightKey = value;
+    }
+    public KeyCode upKey
+    {
+        get => settings.UpKey;
+        set => settings.UpKey = value;
+    }
+    public KeyCode downKey
+    {
+        get => settings.DownKey;
+        set => settings.DownKey = value;
+    }
+    public KeyCode miniMapKey
+    {
+        get => settings.MiniMapKey;
+        set => settings.MiniMapKey = value;
+    }
+    public KeyCode characterInfoKey
+    {
+        get => settings.CharacterInfoKey;
+        set => settings.CharacterInfoKey = value;
+    }
+    public KeyCode attackKey
+    {
+        get => settings.AttackKey;
+        set => settings.AttackKey = value;
+    }
+    public KeyCode jumpKey
+    {
+        get => settings.JumpKey;
+        set => settings.JumpKey = value;
+    }
+    public KeyCode changeCharacterKey
+    {
+        get => settings.ChangeCharacterKey;
+        set => settings.ChangeCharacterKey = value;
+    }
+    public KeyCode dashKey
+    {
+        get => settings.DashKey;
+        set => settings.DashKey = value;
+    }
+    public KeyCode skillKey1
+    {
+        get => settings.SkillKey1;
+        set => settings.SkillKey1 = value;
+    }
+    public KeyCode skillKey2
+    {
+        get => settings.SkillKey2;
+        set => settings.SkillKey2 = value;
+    }
+    public KeyCode skillKey3
+    {
+        get => settings.SkillKey3;
+        set => settings.SkillKey3 = value;
+    }
+    public KeyCode skillKey4
+    {
+        get => settings.SkillKey4;
+        set => settings.SkillKey4 = value;
+    }
+    public KeyCode potionKey
+    {
+        get => settings.PotionKey;
+        set => settings.PotionKey = value;
+    }
+    public KeyCode changeCharacterLeftKey
+    {
+        get => settings.ChangeCharacterLeftKey;
+        set => settings.ChangeCharacterLeftKey = value;
+    }
+    public KeyCode changeCharacterRightKey
+    {
+        get => settings.ChangeCharacterRightKey;
+        set => settings.ChangeCharacterRightKey = value;
+    }
+    public KeyCode pauseKey
+    {
+        get => settings.PauseKey;
+        set => settings.PauseKey = value;
+    }
+    public float masterVolume
+    {
+        get => settings.MasterVolume;
+        set => settings.MasterVolume = value;
+    }
+    public float sfxVolume
+    {
+        get => settings.SfxVolume;
+        set => settings.SfxVolume = value;
+    }
+    public float bgmVolume
+    {
+        get => settings.BgmVolume;
+        set => settings.BgmVolume = value;
+    }
+    public int resolutionX
+    {
+        get => settings.ResolutionX;
+        set => settings.ResolutionX = value;
+    }
+    public int resolutionY
+    {
+        get => settings.ResolutionY;
+        set => settings.ResolutionY = value;
+    }
+    public int fullScreen
+    {
+        get => settings.FullScreen;
+        set => settings.FullScreen = value;
+    }
+    public int vSync
+    {
+        get => settings.VSync;
+        set => settings.VSync = value;
+    }
+    public int cameraShaking
+    {
+        get => settings.CameraShaking;
+        set => settings.CameraShaking = value;
+    }
 
-    public KeyCode changeCharacterKey;
-    public KeyCode dashKey;
-    public KeyCode skillKey1;
-    public KeyCode skillKey2;
-    public KeyCode skillKey3;
-    public KeyCode skillKey4;
-    
-    public KeyCode potionKey;
-
-    public KeyCode changeCharacterLeftKey;
-    public KeyCode changeCharacterRightKey;
-    
-    public KeyCode pauseKey;
-
-    public float masterVolume;
-    public float sfxVolume;
-    public float bgmVolume;
-
-    public int resolutionX;
-    public int resolutionY;
-    public int fullScreen;
-    public int vSync;
-
-    // 실제 값은 LocalizationService 가 소유한다.
-    // 세이브/옵션 팝업이 쓰는 기존 이름은 유지해서 호출부를 건드리지 않는다.
+    // 언어는 LocalizationService 가 소유한다.
     public string language
     {
         get => localization.CurrentLanguage;
         set => localization.CurrentLanguage = value;
     }
-    public int cameraShaking;
    
     [SerializeField] private SpriteAtlas uiAtlas;
     [SerializeField] private SpriteAtlas bgAtlas;
+    [SerializeField] private SpriteAtlas guideAtlas;
     private Sprite[] cloneSprites;
     private Dictionary<string, Sprite> atlasDic = new Dictionary<string, Sprite>();
 
@@ -118,6 +217,9 @@ public partial class GameManager : Singleton<GameManager>
 
     private GameFlowService flow;
     public GameFlowService Flow => flow;
+
+    private GameSettings settings;
+    public GameSettings Settings => settings;
 
     // 카메라
     private FollowCamera mainCamera;
@@ -353,6 +455,7 @@ public partial class GameManager : Singleton<GameManager>
         SetCopyData();
         InitAtlas(uiAtlas);
         InitAtlas(bgAtlas);
+        InitAtlas(guideAtlas);
         SetPrefabActive(false);
         DefaultKeySetting();
         FirstCashing();
@@ -412,6 +515,7 @@ public partial class GameManager : Singleton<GameManager>
         // prefabList 는 PrefabCacher 가 에디터에서 채워둔 상태여야 한다
         pool = new ObjectPoolService(prefabList);
         flow = new GameFlowService();
+        settings = new GameSettings();
     }
 
 

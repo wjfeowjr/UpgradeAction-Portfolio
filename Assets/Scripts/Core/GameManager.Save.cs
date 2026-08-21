@@ -261,117 +261,33 @@ public partial class GameManager
 
     private void DefaultKeySetting()
     {
-        escKey = KeyCode.Escape;
-        enterKey = KeyCode.Return;
-        deleteKey = KeyCode.X;
-        copyKey = KeyCode.C;
-        
-        changeCharacterLeftKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterLeftKey, KeyCode.Q);
-        changeCharacterRightKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterRightKey, KeyCode.E);
-        
-        // 게임
+        settings.LoadAll();
+
+        // 언어는 LocalizationService 가 소유한다
         language = SettingStringBinding.LoadSetting(ConstValues.Language, Application.systemLanguage.ToString());
-        cameraShaking = SettingIntBinding.LoadSetting(ConstValues.CameraShaking, 1);
-        
-        // 오디오
-        masterVolume = VolumeBinding.LoadVolume(ConstValues.MasterVolume, 0.8f);
-        sfxVolume = VolumeBinding.LoadVolume(ConstValues.SFXVolume, 1.0f);
-        bgmVolume = VolumeBinding.LoadVolume(ConstValues.BGMVolume, 1.0f);
-        
-        // 비디오
-        resolutionX = SettingIntBinding.LoadSetting(ConstValues.ResolutionX, 1920);
-        resolutionY = SettingIntBinding.LoadSetting(ConstValues.ResolutionY, 1080);
-        fullScreen = SettingIntBinding.LoadSetting(ConstValues.FullScreen, 1);
-        vSync = SettingIntBinding.LoadSetting(ConstValues.Vsync, 1);
-        
-        // 키 코드
-        leftKey = KeyBinding.LoadKey(ConstValues.LeftKey, KeyCode.LeftArrow);
-        rightKey = KeyBinding.LoadKey(ConstValues.RightKey, KeyCode.RightArrow);
-        upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
-        downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
-        miniMapKey = KeyBinding.LoadKey(ConstValues.MiniMapKey, KeyCode.Tab);
-        characterInfoKey = KeyBinding.LoadKey(ConstValues.CharacterInfoKey, KeyCode.I);
-        attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
-        jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
-        changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
-        potionKey = KeyBinding.LoadKey(ConstValues.PotionKey, KeyCode.R);
-        
-        dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
-        skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.A);
-        skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
-        skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
-        skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
-        pauseKey = KeyBinding.LoadKey(ConstValues.PauseKey, KeyCode.Escape);
     }
 
     public void SetDefaultGame()
     {
         SettingStringBinding.SaveGameSetting(ConstValues.Language, Application.systemLanguage.ToString());
-        SettingIntBinding.SaveGameSetting(ConstValues.CameraShaking, 1);
-        
         language = SettingStringBinding.LoadSetting(ConstValues.Language, Application.systemLanguage.ToString());
-        cameraShaking = SettingIntBinding.LoadSetting(ConstValues.CameraShaking, 1);
+
+        settings.ResetGame();
     }
 
     public void SetDefaultAudio()
     {
-        VolumeBinding.SaveVolume(ConstValues.MasterVolume, 0.8f);
-        VolumeBinding.SaveVolume(ConstValues.SFXVolume, 1.0f);
-        VolumeBinding.SaveVolume(ConstValues.BGMVolume, 1.0f);
-        
-        masterVolume = VolumeBinding.LoadVolume(ConstValues.MasterVolume, 0.8f);
-        sfxVolume = VolumeBinding.LoadVolume(ConstValues.SFXVolume, 1.0f);
-        bgmVolume = VolumeBinding.LoadVolume(ConstValues.BGMVolume, 1.0f);
+        settings.ResetAudio();
     }
 
     public void SetDefaultVideo()
     {
-        SettingIntBinding.SaveGameSetting(ConstValues.ResolutionX, 1920);
-        SettingIntBinding.SaveGameSetting(ConstValues.ResolutionY, 1080);
-        SettingIntBinding.SaveGameSetting(ConstValues.FullScreen, 1);
-        SettingIntBinding.SaveGameSetting(ConstValues.Vsync, 1);
-        
-        resolutionX = SettingIntBinding.LoadSetting(ConstValues.ResolutionX, 1920);
-        resolutionY = SettingIntBinding.LoadSetting(ConstValues.ResolutionY, 1080);
-        fullScreen = SettingIntBinding.LoadSetting(ConstValues.FullScreen, 1);
-        vSync = SettingIntBinding.LoadSetting(ConstValues.Vsync, 1);
+        settings.ResetVideo();
     }
 
     public void SetDefaultKeyboard()
     {
-        KeyBinding.SaveKey(ConstValues.LeftKey, KeyCode.LeftArrow);
-        KeyBinding.SaveKey(ConstValues.RightKey, KeyCode.RightArrow);
-        KeyBinding.SaveKey(ConstValues.UpKey, KeyCode.UpArrow);
-        KeyBinding.SaveKey(ConstValues.DownKey, KeyCode.DownArrow);
-        KeyBinding.SaveKey(ConstValues.MiniMapKey, KeyCode.Tab);
-        KeyBinding.SaveKey(ConstValues.CharacterInfoKey, KeyCode.I);
-        KeyBinding.SaveKey(ConstValues.AttackKey, KeyCode.X);
-        KeyBinding.SaveKey(ConstValues.JumpKey, KeyCode.C);
-        KeyBinding.SaveKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
-        KeyBinding.SaveKey(ConstValues.DashKey, KeyCode.Z);
-        KeyBinding.SaveKey(ConstValues.SkillKey1, KeyCode.A);
-        KeyBinding.SaveKey(ConstValues.SkillKey2, KeyCode.S);
-        KeyBinding.SaveKey(ConstValues.SkillKey3, KeyCode.D);
-        KeyBinding.SaveKey(ConstValues.SkillKey4, KeyCode.F);
-        KeyBinding.SaveKey(ConstValues.PotionKey, KeyCode.R);
-        KeyBinding.SaveKey(ConstValues.PauseKey, KeyCode.Escape);
-        
-        leftKey = KeyBinding.LoadKey(ConstValues.LeftKey, KeyCode.LeftArrow);
-        rightKey = KeyBinding.LoadKey(ConstValues.RightKey, KeyCode.RightArrow);
-        upKey = KeyBinding.LoadKey(ConstValues.UpKey, KeyCode.UpArrow);
-        downKey = KeyBinding.LoadKey(ConstValues.DownKey, KeyCode.DownArrow);
-        miniMapKey = KeyBinding.LoadKey(ConstValues.MiniMapKey, KeyCode.Tab);
-        characterInfoKey = KeyBinding.LoadKey(ConstValues.CharacterInfoKey, KeyCode.I);
-        attackKey = KeyBinding.LoadKey(ConstValues.AttackKey, KeyCode.X);
-        jumpKey = KeyBinding.LoadKey(ConstValues.JumpKey, KeyCode.C);
-        changeCharacterKey = KeyBinding.LoadKey(ConstValues.ChangeCharacterKey, KeyCode.LeftShift);
-        dashKey = KeyBinding.LoadKey(ConstValues.DashKey, KeyCode.Z);
-        skillKey1 = KeyBinding.LoadKey(ConstValues.SkillKey1, KeyCode.A);
-        skillKey2 = KeyBinding.LoadKey(ConstValues.SkillKey2, KeyCode.S);
-        skillKey3 = KeyBinding.LoadKey(ConstValues.SkillKey3, KeyCode.D);
-        skillKey4 = KeyBinding.LoadKey(ConstValues.SkillKey4, KeyCode.F);
-        potionKey = KeyBinding.LoadKey(ConstValues.PotionKey, KeyCode.R);
-        pauseKey = KeyBinding.LoadKey(ConstValues.PauseKey, KeyCode.Escape);
+        settings.ResetKeyboard();
 
         // 세이브에 기록된 스킬 슬롯 keyCode 도 함께 되돌린다
         SyncSkillKeyCode();
