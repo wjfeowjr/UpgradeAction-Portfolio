@@ -281,11 +281,21 @@ public class Player_Berserker : Player
         MotionFlip();
 
         stateCancellation = new CancellationTokenSource();
+        // 이번 호출의 소유권 표식. 다른 스킬이 시작하면 필드가 새 토큰으로 교체된다.
+        var mySkillCts = stateCancellation;
+
         bool finishSuccess = true;
         if (skillKey == GameManager.Instance.dashKey)
         {
             finishSuccess = await Dash();
         }
+
+
+        // 대시 대기 중 다른 스킬이 시작됐다면 이 루틴은 물러난다.
+        // 그대로 진행하면 아래 SkillSpeedAndArmorCheck / ResetBodyType 이
+        // 새 스킬이 막 설정한 아머(반격 등)와 공격속도를 덮어쓴다.
+        if (!ReferenceEquals(stateCancellation, mySkillCts))
+            return;
 
         SkillSpeedAndArmorCheck(skillId);
         if (skillId == ConstValues.BerserkerUpperSlash)
@@ -315,6 +325,12 @@ public class Player_Berserker : Player
             finishSuccess = await ChargeCrash();
         }
         
+
+        // 스킬 도중 다른 스킬로 캔슬된 경우, 원상복구는 새 루틴이 책임진다.
+        // 피격 캔슬은 토큰을 취소만 하고 교체하지 않으므로 여기를 통과한다.
+        if (!ReferenceEquals(stateCancellation, mySkillCts))
+            return;
+
         // 스킬을 끝마치건 도중 캔슬되던, 스피드는 원상태로 복구됨
         ResetSkillSpeed();
         // 성공여부와 상관없이 바디타입 원상복구
