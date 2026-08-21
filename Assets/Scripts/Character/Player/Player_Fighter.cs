@@ -43,10 +43,10 @@ public class Player_Fighter : Player
         StateSetting(ENormalState.Normal, ConstValues.Normal, ConstValues.Normal);
         
     }
-    private async UniTask<bool> FighterChangeAttack()
+    private UniTask<bool> FighterChangeAttack()
     {
         SpawnAttack($"{ConstValues.Fighter}_{ConstValues.ChangeAttack}", centerPos);
-        return true;
+        return UniTask.FromResult(true);
     }
     private void FighterChangeAttackNotMotion()
     {
@@ -451,7 +451,6 @@ public class Player_Fighter : Player
         
         StateSetting(ENormalState.Skill, skillId, skillId);
         
-        float delay1 = 0.2f;
         float delay2 = 0.3f;
         
         if(landingState == ELandingState.Ground)

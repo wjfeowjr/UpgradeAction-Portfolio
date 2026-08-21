@@ -302,7 +302,6 @@ public class Monster_Tree : Monster
         float delay3 = 0.15f;
         float delay4 = 0.5f;
         float jumpHeight = 3.5f;
-        float dropForce = 5.0f;
 
         var centerVector = RayCenterVector();
         var arrivePos = new Vector2(centerVector.x, transform.position.y + jumpHeight);

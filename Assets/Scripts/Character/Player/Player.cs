@@ -883,18 +883,20 @@ public abstract class Player : Character, IPassiveHost
     }
     
     // 플레이어 공격
-    public virtual async UniTask<bool> Attack()
+    // await 가 없으므로 async 를 붙이지 않는다(CS1998).
+    // 파생 클래스는 그대로 async override 로 await base.Attack() 할 수 있다.
+    public virtual UniTask<bool> Attack()
     {
         if (normalState is ENormalState.Skill or ENormalState.Potion || IsDamaged() || downJumping)
         {
             GameLog.Info("공격을 할 수 없는 상태임");
-            return false;
+            return UniTask.FromResult(false);
         }
 
         
         if ((normalState is ENormalState.Attack or ENormalState.JumpAttack) && !canAttack)
         {
-            return false;
+            return UniTask.FromResult(false);
         }
 
         // 대시 도중 공격 입력으로 캔슬되는 경우, 서브클래스의 landingState 분기보다 먼저
@@ -904,7 +906,7 @@ public abstract class Player : Character, IPassiveHost
 
         canAttack = false;
         curGlobalCoolTime = 0;
-        return true;
+        return UniTask.FromResult(true);
     }
 
     public override void TakeDamage(int damage, bool isTrapAttack)

@@ -544,7 +544,6 @@ public class Player_Berserker : Player
         
         float delay1 = 0.2f;
         float delay2 = 0.5f;
-        float delay3 = 0.2f;
         float justTime = 0.15f;
 
         if(landingState == ELandingState.Ground)

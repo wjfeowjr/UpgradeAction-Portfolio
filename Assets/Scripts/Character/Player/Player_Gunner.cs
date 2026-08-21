@@ -228,7 +228,6 @@ public class Player_Gunner : Player
         attackBuffer = false;
 
         var delay1 = 0.2f;
-        var delay2 = 0.3f;
 
         StateSetting(ENormalState.JumpAttack, ConstValues.JumpAttack, ConstValues.JumpAttack);
         if (await AttackDelay(delay1).SuppressCancellationThrow())
@@ -584,7 +583,6 @@ public class Player_Gunner : Player
         bool piercingStreak = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.PiercingStreak);
         bool finishShot = GameManager.Instance.IsHaveAttribute(skillId, ConstValues.FinishShot);
 
-        var delay1 = 0.5f;
         var delay2 = 0.5f;
         
         if(landingState == ELandingState.Ground)

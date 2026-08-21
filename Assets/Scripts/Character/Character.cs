@@ -2691,7 +2691,7 @@ public abstract class Character : InteractionController
         StateSetting(state, triggerName, animId);
     }
     
-    public async void ForceIdle()
+    public void ForceIdle()
     {
         
         MoveStateSetting(EMoveState.Stopping);

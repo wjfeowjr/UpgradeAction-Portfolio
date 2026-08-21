@@ -12,7 +12,10 @@ public class Singleton<T> : MonoBehaviour where T : MonoBehaviour
         get
         {
             if (instance == null)
-                instance = (T)FindObjectOfType(typeof(T));
+                // FindObjectOfType 은 Unity 6 에서 폐기됐다.
+                // FindAnyObjectByType 은 어느 것이 나올지 보장하지 않으므로,
+                // 기존 동작에 가까운 FindFirstObjectByType 을 쓴다.
+                instance = (T)FindFirstObjectByType(typeof(T));
             return instance;
         }
     }
