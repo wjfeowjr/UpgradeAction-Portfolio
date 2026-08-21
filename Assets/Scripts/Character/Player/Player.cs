@@ -142,7 +142,7 @@ public class PlayerStat
     public float jumpHeight;
 }
 
-public abstract class Player : Character
+public abstract class Player : Character, IPassiveHost
 {
     // 벽 판정 몬스터 체크
     private RaycastHit2D wallBodyDownLeftHit;
@@ -411,35 +411,32 @@ public abstract class Player : Character
             myAnimator.SetFloat(ConstValues.IgnoreTime, Time.unscaledDeltaTime / Time.deltaTime);
     }
 
+    // 현재 장착된 패시브 구현. playerStat.passive 가 바뀌면 자동으로 다시 찾는다.
+    private PlayerPassiveBase curPassive;
+    private string curPassiveId;
+
+    protected PlayerPassiveBase CurPassive
+    {
+        get
+        {
+            if (curPassiveId != playerStat.passive)
+            {
+                curPassiveId = playerStat.passive;
+                curPassive = PassiveRegistry.Get(curPassiveId);
+            }
+            return curPassive;
+        }
+    }
+
     // 패시브 적용
     public void ApplyPassive()
     {
-        switch (playerStat.passive)
-        {
-            case ConstValues.IronMan:
-                if (playerStat.passive == ConstValues.IronMan)
-                {
-                    originStat.bodyType = EBodyType.SuperArmor;
-                    basicStat.bodyType = EBodyType.SuperArmor;
-                }
-                break;
-        }
+        CurPassive?.OnEquip(this);
     }
 
     public void ChangeApplyPassive()
     {
-        switch (playerStat.passive)
-        {
-            case ConstValues.SmileShot:
-                var smilePassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
-                // 이동속도 버프 추가
-                if(playerStat.resource >= smilePassive.getBuffResource)
-                    AddBuff(smilePassive.buffId, smilePassive.buffValue, smilePassive.buffTime, 0);
-                
-                // 치명타 확률 조정
-                RefreshPassiveStat(smilePassive.resourceStat, smilePassive.valueResource, smilePassive.resourceValue, playerStat.resource);
-                break;
-        }
+        CurPassive?.OnCharacterChanged(this);
 
         InitBonusStat();
         GameManager.Instance.RefreshPlayerHp();
@@ -463,47 +460,49 @@ public abstract class Player : Character
         // 게이지 실시간 갱신
         GameManager.Instance.RefreshPlayerResource();
 
-        // 패시브
-        switch (playerStat.passive)
-        {
-            // 분노
-            case ConstValues.Fury:
-                if (playerStat.resource >= playerStat.maxResource)
-                {
-                    SpawnAttack(ConstValues.BerserkerFuryExplosion, centerPos);
-                    var furyPassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
-                    AddBuff(furyPassive.buffId, furyPassive.buffValue, furyPassive.buffTime, 0);
-                    playerStat.resource = 0;
-                    GameManager.Instance.RefreshPlayerResource();
-                }
-                break;
-            
-            case ConstValues.SmileShot:
-                var smilePassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
-                // 이동속도 버프 추가
-                if(playerStat.resource >= smilePassive.getBuffResource)
-                    AddBuff(smilePassive.buffId, smilePassive.buffValue, smilePassive.buffTime, 0);
-                // 치명타 확률 조정
-                RefreshPassiveStat(smilePassive.resourceStat, smilePassive.valueResource, smilePassive.resourceValue, playerStat.resource);
-                break;
-        }
+        CurPassive?.OnGainResource(this);
     }
-    
-    private void RefreshPassiveStat(string resourceStat, int valueResource, int resourceValue, int currentResource)
-    {
-        int cycle = currentResource / valueResource;
 
-        if (cycle <= 0)
-            return;
-        
-        switch (resourceStat)
-        {
-            case ConstValues.CritPercent:
-                passiveStat.criticalChance = resourceValue * cycle;
-                break;
-        }
-        InitBonusStat();
+
+    #region IPassiveHost
+    // 패시브 구현이 Player 를 직접 알지 않도록 열어주는 창구.
+    // 명시적 구현으로 둬서 Player 의 public 표면이 넓어지지 않게 한다.
+    // (AddBuff 등은 Character 의 protected 멤버라 이름 충돌도 함께 피한다)
+
+    int IPassiveHost.Resource
+    {
+        get => playerStat.resource;
+        set => playerStat.resource = value;
     }
+
+    int IPassiveHost.MaxResource => playerStat.maxResource;
+
+    bool IPassiveHost.IsActive => gameObject.activeInHierarchy;
+
+    PassiveCopy IPassiveHost.GetPassiveData(string passiveId)
+        => GameManager.Instance.GetPassiveCopy(passiveId);
+
+    void IPassiveHost.AddBuff(string buffId, int buffValue, float buffTime, int buffCount)
+        => AddBuff(buffId, buffValue, buffTime, buffCount);
+
+    void IPassiveHost.RemoveBuff(string buffId) => RemoveBuff(buffId);
+
+    void IPassiveHost.AddShield(string sourceId, int amount, float duration)
+        => AddShield(sourceId, amount, duration);
+
+    void IPassiveHost.SpawnAttackAtCenter(string attackId) => SpawnAttack(attackId, centerPos);
+
+    void IPassiveHost.SetBodyType(EBodyType bodyType)
+    {
+        originStat.bodyType = bodyType;
+        basicStat.bodyType = bodyType;
+    }
+
+    void IPassiveHost.SetPassiveCriticalChance(float value) => passiveStat.criticalChance = value;
+
+    void IPassiveHost.RefreshResourceUI() => GameManager.Instance.RefreshPlayerResource();
+
+    #endregion
 
     public void ResetSkillCoolTime()
     {
@@ -898,20 +897,9 @@ public abstract class Player : Character
 
     public override void TakeDamage(int damage, bool isTrapAttack)
     {
-        // 패시브
-        switch (playerStat.passive)
-        {
-            case ConstValues.IronMan:
-                if (playerStat.resource >= playerStat.maxResource)
-                {
-                    var ironPassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
-                    AddShield(ironPassive.buffId, ironPassive.buffValue, ironPassive.buffTime);
-                    playerStat.resource = 0;
-                    GameManager.Instance.RefreshPlayerResource();
-                }
-                break;
-        }
-        
+        // 패시브 (실드처럼 피해 적용 전에 걸려야 하는 처리)
+        CurPassive?.OnBeforeTakeDamage(this);
+
         base.TakeDamage(damage, isTrapAttack);
 
         if (damage == 0)
@@ -924,22 +912,8 @@ public abstract class Player : Character
         DamageEscapeGuide();
 
         // 패시브
-        switch (playerStat.passive)
-        {
-            case ConstValues.SmileShot:
-                var smilePassive = GameManager.Instance.GetPassiveCopy(playerStat.passive);
-                // 패널티 게이지 감소
-                playerStat.resource -= smilePassive.penaltyValue;
-                if (playerStat.resource < 0)
-                    playerStat.resource = 0;
-                if(playerStat.resource < smilePassive.getBuffResource)
-                    RemoveBuff(smilePassive.buffId);
-                
-                // 치명타 확률 조정
-                RefreshPassiveStat(smilePassive.resourceStat, smilePassive.valueResource, smilePassive.resourceValue, playerStat.resource);
-                GameManager.Instance.RefreshPlayerResource();
-                break;
-        }
+        CurPassive?.OnAfterTakeDamage(this);
+
         
         GameManager.Instance.SetPlayerHp(basicStat.hp);
         var uiInterfaceObj = GameManager.Instance.GetUI(eUIType.UI_Interface);
