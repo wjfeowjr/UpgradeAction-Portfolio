@@ -915,7 +915,7 @@ public partial class GameManager
                 return skill.attributeList.Contains(attributeId);
         }
 
-        GameLog.Info("해당 특성 자체가 없음");
+        GameLog.Info($"{attributeId} 특성 자체가 없음");
         return false;
     }
 
