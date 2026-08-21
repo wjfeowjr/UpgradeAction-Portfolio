@@ -197,13 +197,14 @@ public partial class GameManager : Singleton<GameManager>
     [SerializeField] private SettingSkill potionSkill;
     
     // 복제체 데이터들
-    public List<SkillAttributeCopy> skillAttributeCopyList = new List<SkillAttributeCopy>();
-    public List<ItemCopy> itemCopyList = new List<ItemCopy>();
-    public List<RelicCopy> relicCopyList = new List<RelicCopy>();
-    public List<NpcCopy> npcCopyList = new List<NpcCopy>();
-    public List<DialogueChoiceCopy> dialogueChoiceCopyList = new List<DialogueChoiceCopy>();
-    public List<GrenadeCopy> grenadeCopyList = new List<GrenadeCopy>();
-    public List<PassiveCopy> passiveCopyList = new List<PassiveCopy>();
+    // 복제본은 GameDataService 가 소유한다. 기존 이름은 위임으로 남긴다.
+    public List<SkillAttributeCopy> skillAttributeCopyList => gameData.skillAttributeCopyList;
+    public List<ItemCopy> itemCopyList => gameData.itemCopyList;
+    public List<RelicCopy> relicCopyList => gameData.relicCopyList;
+    public List<NpcCopy> npcCopyList => gameData.npcCopyList;
+    public List<DialogueChoiceCopy> dialogueChoiceCopyList => gameData.dialogueChoiceCopyList;
+    public List<GrenadeCopy> grenadeCopyList => gameData.grenadeCopyList;
+    public List<PassiveCopy> passiveCopyList => gameData.passiveCopyList;
     
     // 매니저들
     public TableManager tableManager;
@@ -220,6 +221,9 @@ public partial class GameManager : Singleton<GameManager>
 
     private GameSettings settings;
     public GameSettings Settings => settings;
+
+    private GameDataService gameData;
+    public GameDataService GameData => gameData;
 
     // 카메라
     private FollowCamera mainCamera;
@@ -452,7 +456,7 @@ public partial class GameManager : Singleton<GameManager>
         base.Awake();
         
         InitManager();
-        SetCopyData();
+        gameData.SetCopyData();
         InitAtlas(uiAtlas);
         InitAtlas(bgAtlas);
         InitAtlas(guideAtlas);
@@ -513,6 +517,9 @@ public partial class GameManager : Singleton<GameManager>
         localization = new LocalizationService(tableManager.talkTable, tableManager.itemTable);
 
         // prefabList 는 PrefabCacher 가 에디터에서 채워둔 상태여야 한다
+        // 테이블 복제본. SetCopyData 는 Awake 에서 따로 부른다.
+        gameData = new GameDataService(tableManager);
+
         pool = new ObjectPoolService(prefabList);
         flow = new GameFlowService();
         settings = new GameSettings();
