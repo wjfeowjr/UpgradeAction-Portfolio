@@ -21,6 +21,34 @@ public class Npc : Character
 {
     [SerializeField] private NpcInfo npcInfo;
     [SerializeField] private Npc[] anotherNpc;
+
+    // Character 가 InteractionController 를 상속하지 않게 되면서 컴포넌트로 바뀌었다.
+    // 인스펙터 연결을 빠뜨려도 같은 오브젝트에서 찾아 쓴다.
+    [SerializeField] private InteractionController interaction;
+
+    private InteractionController Interaction
+    {
+        get
+        {
+            if (!interaction)
+                interaction = GetComponent<InteractionController>();
+            return interaction;
+        }
+    }
+
+    // Player 의 OnTriggerStay2D / OnTriggerExit2D 가 부르던 이름을 그대로 유지한다.
+    public bool IsPlayerTouch
+    {
+        get => Interaction && Interaction.IsPlayerTouch;
+        set { if (Interaction) Interaction.IsPlayerTouch = value; }
+    }
+
+    public void SpawnInteractionObject() => Interaction.SpawnInteractionObject();
+    public void ReduceInteractionObject() => Interaction.ReduceInteractionObject();
+
+    // Room.RefreshTalk / RefreshKey 가 부른다(언어 변경, 키 재설정 직후)
+    public void RefreshTalkText() => Interaction.RefreshTalkText();
+    public void RefreshKeyText(KeyCode key) => Interaction.RefreshKeyText(key);
     
     private NpcCopy npcCopyData;
     private bool isFirstTalk;
@@ -47,7 +75,7 @@ public class Npc : Character
 
     public void SetInteractionAction()
     {
-        SetInteractionAction(StartDialogue, 30016, GameManager.Instance.upKey);
+        Interaction.SetInteractionAction(StartDialogue, 30016, GameManager.Instance.upKey);
     }
 
     public void SetAnotherNpc(Npc[] npc)
@@ -106,7 +134,7 @@ public class Npc : Character
 
     private async void SetDialogueAction(string choice)
     {
-        ActiveInteractionSelect(false);
+        Interaction.ActiveInteractionSelect(false);
 
         var choiceSplit = choice.Split('_');
         var choiceType = choiceSplit[0];
@@ -135,7 +163,7 @@ public class Npc : Character
                     closeAction = () =>
                     {
                         uiBase.ReductionClose(true, true).Forget();
-                        isPlayerTouch = false;
+                        IsPlayerTouch = false;
                         GameManager.Instance.CurPlayer.MyRigidbody.WakeUp();
                     }
                 };
@@ -151,19 +179,19 @@ public class Npc : Character
 
     private async UniTask SetFirstDialogueAction(string choice)
     {
-        ActiveInteractionSelect(false);
+        Interaction.ActiveInteractionSelect(false);
         await GameManager.Instance.NpcDialogue(choice, anotherNpc, npcInfo, RefreshInteractionSelect);
     }
 
     // endEvent 발생 시 선택지를 현재 dialogKey 상태 기준으로 재구성
     private void RefreshInteractionSelect()
     {
-        SpawnInteractionSelect(npcCopyData, npcInfo);
+        Interaction.SpawnInteractionSelect(npcCopyData, npcInfo);
     }
 
     protected virtual async void StartDialogue()
     {
-        ReduceInteractionObject();
+        Interaction.ReduceInteractionObject();
         GameManager.Instance.InitProductCancellation();
         GameManager.Instance.ControlStart = false;
         
@@ -202,7 +230,7 @@ public class Npc : Character
                 await GameManager.Instance.NpcFirstTalk(npcCopyData.startDialog, speechPos);
                 isFirstTalk = true;
             }
-            SetActionInteractionSelect(SetDialogueAction, SetInteractionSelectCloseAction);
+            Interaction.SetActionInteractionSelect(SetDialogueAction, Interaction.SetInteractionSelectCloseAction);
         }
     }
 
@@ -223,7 +251,7 @@ public class Npc : Character
     
     public void SetSelectAction()
     {
-        SpawnInteractionSelect(npcCopyData, npcInfo);
+        Interaction.SpawnInteractionSelect(npcCopyData, npcInfo);
     }
 
     // 미션 NPC가 모든 재료를 충족했고, 아직 클리어 처리가 안 된 상태인지 확인

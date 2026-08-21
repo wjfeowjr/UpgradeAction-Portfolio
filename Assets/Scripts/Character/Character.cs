@@ -172,7 +172,7 @@ public class PlatformObject
     public float height;
 }
 
-public abstract class Character : InteractionController
+public abstract class Character : MonoBehaviour
 {
     [SerializeField] protected BasicStat originStat; // 원본 스텟
     [SerializeField] protected BasicStat basicStat;  // 내 스텟(변동되어야 함)

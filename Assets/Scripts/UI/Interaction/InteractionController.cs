@@ -3,6 +3,16 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Serialization;
 
+// 상호작용 프롬프트와 선택지를 담당하는 컴포넌트.
+//
+// 이전에는 Character 가 이 클래스를 상속했다.
+// 그래서 몬스터 21 종과 플레이어 3 종이 쓰지도 않는 상호작용 API 15 개를 물려받았고,
+// 이 파일을 고치면 캐릭터/몬스터/NPC/문/레버/보물상자가 전부 영향을 받았다.
+//
+// 지금은 실제로 필요한 쪽만 붙인다.
+// - World/Object 계열(Elevator, Lever, LockDoor, SaveObject, PortalObject,
+//   RoomObject, RoomTreasureBox)은 그대로 상속한다. Character 와 무관하다.
+// - Npc 는 Character 를 이미 상속하므로 컴포넌트로 붙여 쓴다.
 public class InteractionController : MonoBehaviour
 {
     [SerializeField] private Transform objectPos;
@@ -40,7 +50,7 @@ public class InteractionController : MonoBehaviour
         interactionObject.gameObject.SetActive(active);
     }
     
-    protected void SetInteractionAction(Action action, int idx, KeyCode key)
+    public void SetInteractionAction(Action action, int idx, KeyCode key)
     {
         talkIdx = idx;
         keyCode = key;
@@ -103,7 +113,7 @@ public class InteractionController : MonoBehaviour
     }
     
     // 대화 선택지 및 선택 액션
-    protected void SetActionInteractionSelect(Action<string> dialogueAction, Action closeAction)
+    public void SetActionInteractionSelect(Action<string> dialogueAction, Action closeAction)
     {
         ActiveInteractionSelect(true);
         interactionSelect.SetAction(dialogueAction, closeAction);
@@ -117,7 +127,7 @@ public class InteractionController : MonoBehaviour
         interactionSelect.SetDelay();
     }
     
-    protected void SetInteractionSelectCloseAction()
+    public void SetInteractionSelectCloseAction()
     {
         ActiveInteractionSelect(false);
         GameManager.Instance.ControlStart = true;
@@ -125,7 +135,7 @@ public class InteractionController : MonoBehaviour
         isPlayerTouch = false;
     }
     
-    protected void SpawnInteractionSelect(NpcCopy npcCopy, NpcInfo npcInfo)
+    public void SpawnInteractionSelect(NpcCopy npcCopy, NpcInfo npcInfo)
     {
         var selectList = GameManager.Instance.dialogueChoiceCopyList.FindAll(x =>
         {
@@ -187,7 +197,7 @@ public class InteractionController : MonoBehaviour
         interactionSelect.StartSetting(choiceIdxList, null);
     }
 
-    protected void ActiveInteractionSelect(bool active)
+    public void ActiveInteractionSelect(bool active)
     {
         if (interactionSelect)
         {
